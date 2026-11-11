@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
@@ -19,8 +18,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,8 +45,8 @@ import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed
@@ -70,8 +68,10 @@ import com.orbin.uinext.resources.next_thread_watching
 import com.orbin.uinext.resources.reader_first_new
 import com.orbin.uinext.resources.reader_media_more
 import com.orbin.uinext.resources.reader_new
+import com.orbin.uinext.resources.reader_open_browser
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_reply_link
+import com.orbin.uinext.resources.reader_reveal_spoiler
 import com.orbin.uinext.resources.social_feed_save
 import com.orbin.uinext.resources.social_feed_saved_while_watching
 import com.orbin.uinext.resources.social_feed_unsave
@@ -112,6 +112,8 @@ data class Post(
     val fileLabel: String = "",
     val mediaCount: Int = if (hasMedia) 1 else 0,
     val replyNumbers: List<String> = emptyList(),
+    val stableKey: String = id,
+    val imageSpoiler: Boolean = false,
 )
 
 object ThreadTags {
@@ -121,6 +123,7 @@ object ThreadTags {
     const val UNREAD = "thread-unread-marker"
     const val STATUS = "thread-status"
     const val FILE = "thread-file"
+    const val PROGRESS = "thread-progress"
 }
 
 /**
@@ -144,17 +147,17 @@ fun ThreadScreen(
     subtitle: String? = null,
     watching: Boolean = false,
     layout: ThreadLayout = ThreadLayout.POSTS,
-    onLayoutChange: (ThreadLayout) -> Unit = {},
+    onLayoutChange: ((ThreadLayout) -> Unit)? = null,
     files: List<MediaCell> = emptyList(),
-    onOpenFile: (MediaCell) -> Unit = {},
+    onOpenFile: ((MediaCell) -> Unit)? = null,
     fileTile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     collapsed: Set<String> = emptySet(),
-    onToggleCollapse: (Post) -> Unit = {},
-    onWatch: () -> Unit = {},
-    onDownloadAll: () -> Unit = {},
+    onToggleCollapse: ((Post) -> Unit)? = null,
+    onWatch: (() -> Unit)? = null,
+    onDownloadAll: (() -> Unit)? = null,
     onSavePage: (() -> Unit)? = null,
-    onShare: () -> Unit = {},
-    onPostClick: (Post) -> Unit = {},
+    onShare: (() -> Unit)? = null,
+    onPostClick: ((Post) -> Unit)? = null,
     listState: LazyListState? = null,
     scrollToPostId: String? = null,
     firstUnreadPostId: String? = null,
@@ -166,8 +169,12 @@ fun ThreadScreen(
     saved: Boolean = false,
     onToggleSaved: (() -> Unit)? = null,
     onReload: (() -> Unit)? = null,
-    onPostReference: (String) -> Unit = {},
+    onPostReference: ((String) -> Unit)? = null,
     wideWindow: Boolean = false,
+    reloading: Boolean = false,
+    onOpenBrowser: (() -> Unit)? = null,
+    statusText: String? = null,
+    stateContent: (@Composable () -> Unit)? = null,
 ) {
     val colors = reader
     val state = listState ?: rememberLazyListState()
@@ -179,7 +186,7 @@ fun ThreadScreen(
     val reveal: (String) -> Unit = { id ->
         val target = posts.indexOfFirst { it.id == id }
         if (target >= 0) {
-            if (posts[target].id in collapsed) onToggleCollapse(posts[target])
+            if (posts[target].id in collapsed) onToggleCollapse?.invoke(posts[target])
             scope.launch { state.animateScrollToItem(target + HEADER_ITEMS) }
         }
     }
@@ -187,7 +194,7 @@ fun ThreadScreen(
         if (!showingPosts) return@LaunchedEffect
         val target = posts.indexOfFirst { it.id == scrollToPostId }
         if (scrollToPostId != null && target >= 0) {
-            if (posts[target].id in collapsed) onToggleCollapse(posts[target])
+            if (posts[target].id in collapsed) onToggleCollapse?.invoke(posts[target])
             state.animateScrollToItem(target + HEADER_ITEMS)
             onScrollConsumed()
         }
@@ -218,11 +225,27 @@ fun ThreadScreen(
                     canJump = showingPosts && posts.size > 1,
                     onTop = { scope.launch { state.animateScrollToItem(0) } },
                     onFirstNew = firstUnreadPostId?.let { id -> { reveal(id) } },
-                    onBottom = { scope.launch { state.animateScrollToItem(posts.size) } },
+                    onBottom = { scope.launch { state.animateScrollToItem(posts.size + HEADER_ITEMS) } },
                     onDownloadAll = onDownloadAll,
                     onSavePage = onSavePage,
+                    onOpenBrowser = onOpenBrowser,
                 ),
         )
+        Box(Modifier.fillMaxWidth().height(ReaderSize.progress)) {
+            if (reloading) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(ReaderSize.progress)
+                        .background(colors.accent)
+                        .testTag(ThreadTags.PROGRESS),
+                )
+            }
+        }
+        if (stateContent != null) {
+            stateContent()
+            return@Column
+        }
         BoxWithConstraints(
             Modifier
                 .fillMaxSize()
@@ -230,7 +253,6 @@ fun ThreadScreen(
         ) {
             val fileColumns = catalogGridColumns(maxWidth)
             val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
-            val thumbnailSize = if (wideWindow) ReaderSize.thumbnailWide else ReaderSize.thumbnail
             LazyColumn(
                 state = if (showingPosts) state else filesState,
                 modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
@@ -251,7 +273,12 @@ fun ThreadScreen(
                     }
                 }
                 if (showingPosts) {
-                    itemsIndexed(posts, key = { _, post -> post.id }, contentType = { _, _ -> ThreadLayout.POSTS }) {
+                    itemsIndexed(posts, key = {
+                        _,
+                        post,
+                        ->
+                        post.stableKey
+                    }, contentType = { _, _ -> ThreadLayout.POSTS }) {
                         index,
                         post,
                         ->
@@ -261,7 +288,7 @@ fun ThreadScreen(
                                 post = post,
                                 original = index == 0,
                                 collapsed = post.id in collapsed,
-                                thumbnailSize = thumbnailSize,
+                                wideWindow = wideWindow,
                                 onToggleCollapse = onToggleCollapse,
                                 onClick = onPostClick,
                                 onReference = onPostReference,
@@ -271,7 +298,11 @@ fun ThreadScreen(
                         }
                     }
                     item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
-                        ThreadStatus(replies = maxOf(0, posts.size - 1), fileCount = posts.sumOf { it.mediaCount })
+                        ThreadStatus(
+                            replies = maxOf(0, posts.size - 1),
+                            fileCount = posts.sumOf { it.mediaCount },
+                            statusText = statusText,
+                        )
                     }
                 } else {
                     items(
@@ -292,41 +323,49 @@ const val MAX_REPLY_DEPTH = 3
 @Composable
 private fun threadActions(
     watching: Boolean,
-    onWatch: () -> Unit,
+    onWatch: (() -> Unit)?,
     onReload: (() -> Unit)?,
 ): List<ReaderAction> =
     buildList {
         if (onReload != null) add(ReaderAction(ReaderIcons.Refresh, stringResource(Res.string.reader_reload), onReload))
-        add(
-            ReaderAction(
-                icon = if (watching) ReaderIcons.SavedFilled else ReaderIcons.Saved,
-                label = stringResource(if (watching) Res.string.next_thread_watching else Res.string.next_thread_watch),
-                onClick = onWatch,
-            ),
-        )
+        if (onWatch != null) {
+            add(
+                ReaderAction(
+                    icon = if (watching) ReaderIcons.SavedFilled else ReaderIcons.Saved,
+                    label =
+                        stringResource(
+                            if (watching) Res.string.next_thread_watching else Res.string.next_thread_watch,
+                        ),
+                    onClick = onWatch,
+                ),
+            )
+        }
     }
 
 @Composable
 private fun threadOverflow(
     subject: String,
     showingPosts: Boolean,
-    onLayoutChange: (ThreadLayout) -> Unit,
+    onLayoutChange: ((ThreadLayout) -> Unit)?,
     saved: Boolean,
     watching: Boolean,
     onToggleSaved: (() -> Unit)?,
-    onShare: () -> Unit,
+    onShare: (() -> Unit)?,
     canJump: Boolean,
     onTop: () -> Unit,
     onFirstNew: (() -> Unit)?,
     onBottom: () -> Unit,
-    onDownloadAll: () -> Unit,
+    onDownloadAll: (() -> Unit)?,
     onSavePage: (() -> Unit)?,
+    onOpenBrowser: (() -> Unit)?,
 ): List<ReaderMenuItem> =
     buildList {
-        if (showingPosts) {
-            add(ReaderMenuItem(stringResource(Res.string.next_thread_files)) { onLayoutChange(ThreadLayout.FILES) })
-        } else {
-            add(ReaderMenuItem(stringResource(Res.string.next_thread_posts)) { onLayoutChange(ThreadLayout.POSTS) })
+        if (onLayoutChange != null) {
+            if (showingPosts) {
+                add(ReaderMenuItem(stringResource(Res.string.next_thread_files)) { onLayoutChange(ThreadLayout.FILES) })
+            } else {
+                add(ReaderMenuItem(stringResource(Res.string.next_thread_posts)) { onLayoutChange(ThreadLayout.POSTS) })
+            }
         }
         if (onToggleSaved != null) {
             when {
@@ -349,7 +388,10 @@ private fun threadOverflow(
                     )
             }
         }
-        add(ReaderMenuItem(stringResource(Res.string.social_thread_share), onClick = onShare))
+        if (onShare != null) add(ReaderMenuItem(stringResource(Res.string.social_thread_share), onClick = onShare))
+        if (onOpenBrowser != null) {
+            add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
+        }
         if (canJump) {
             add(ReaderMenuItem(stringResource(Res.string.next_thread_jump_top), onClick = onTop))
             if (onFirstNew !=
@@ -360,7 +402,9 @@ private fun threadOverflow(
             add(ReaderMenuItem(stringResource(Res.string.next_thread_jump_bottom), onClick = onBottom))
         }
         if (!showingPosts) {
-            add(ReaderMenuItem(stringResource(Res.string.next_thread_download_all), onClick = onDownloadAll))
+            if (onDownloadAll != null) {
+                add(ReaderMenuItem(stringResource(Res.string.next_thread_download_all), onClick = onDownloadAll))
+            }
             if (onSavePage != null) {
                 add(ReaderMenuItem(stringResource(Res.string.next_thread_save_page), onClick = onSavePage))
             }
@@ -376,10 +420,10 @@ private fun PostCell(
     post: Post,
     original: Boolean,
     collapsed: Boolean,
-    thumbnailSize: Dp,
-    onToggleCollapse: (Post) -> Unit,
-    onClick: (Post) -> Unit,
-    onReference: (String) -> Unit,
+    wideWindow: Boolean,
+    onToggleCollapse: ((Post) -> Unit)?,
+    onClick: ((Post) -> Unit)?,
+    onReference: ((String) -> Unit)?,
     body: (@Composable (Post) -> Unit)?,
     media: (@Composable (Post, Modifier) -> Unit)?,
 ) {
@@ -391,22 +435,22 @@ private fun PostCell(
             .testTag(ThreadTags.POST)
             .fillMaxWidth()
             .background(colors.background)
-            .nextClickable(role = null) { onClick(post) },
+            .then(if (onClick != null) Modifier.nextClickable(role = null) { onClick(post) } else Modifier)
+            .semantics(mergeDescendants = true) {},
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(
-                start = ReaderSpace.gutter + indent,
-                end = ReaderSpace.gutter,
-                bottom = ReaderSpace.postPadY,
-            ),
-        ) {
-            if (showThumbnail) {
-                PostThumbnail(post, thumbnailSize, media, Modifier.padding(top = ReaderSpace.postPadY))
-                Spacer(Modifier.width(ReaderSpace.gap))
-            }
-            Column(Modifier.weight(1f).widthIn(max = ReaderSize.readingMax)) {
-                // The header owns the padding above and the gap below it, so the area that toggles
-                // the post is a full touch target without changing where anything is drawn.
+        ReaderCellLayout(
+            wideWindow = wideWindow,
+            verticalPadding = ReaderSpace.postPadY,
+            indent = indent,
+            contentMaxWidth = ReaderSize.readingMax,
+            thumbnail =
+                if (showThumbnail) {
+                    { thumbnailModifier -> PostThumbnail(post, media, thumbnailModifier) }
+                } else {
+                    null
+                },
+        ) { contentModifier ->
+            Column(contentModifier) {
                 PostHeader(post, original, collapsed, onToggleCollapse)
                 if (!collapsed) {
                     PostBody(post, body)
@@ -421,23 +465,27 @@ private fun PostCell(
 @Composable
 private fun PostThumbnail(
     post: Post,
-    size: Dp,
     media: (@Composable (Post, Modifier) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val colors = reader
+    var revealed by rememberSaveable(post.stableKey) { mutableStateOf(false) }
+    val covered = post.imageSpoiler && !revealed
     Box(
         modifier
             .testTag(ThreadTags.THUMBNAIL)
-            .size(size)
             .clip(RoundedCornerShape(ReaderRadius.small))
             .background(colors.surfaceVariant),
     ) {
-        media?.invoke(post, Modifier.fillMaxSize())
+        if (covered) {
+            ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+        } else {
+            media?.invoke(post, Modifier.fillMaxSize())
+        }
         if (post.mediaCount > 1) {
             Text(
                 text = stringResource(Res.string.reader_media_more, post.mediaCount - 1),
-                style = ReaderType.meta,
+                style = ReaderType.meta.copy(textDirection = TextDirection.Ltr),
                 color = colors.ink,
                 modifier =
                     Modifier
@@ -454,7 +502,7 @@ private fun PostHeader(
     post: Post,
     original: Boolean,
     collapsed: Boolean,
-    onToggleCollapse: (Post) -> Unit,
+    onToggleCollapse: ((Post) -> Unit)?,
 ) {
     val colors = reader
     val expandLabel = stringResource(Res.string.next_post_expand)
@@ -466,11 +514,17 @@ private fun PostHeader(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = ReaderSize.touchTarget)
-                .nextClickable(
-                    onClickLabel = if (collapsed) expandLabel else collapseLabel,
-                    onClick = { onToggleCollapse(post) },
-                ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
-                .padding(top = ReaderSpace.postPadY, bottom = ReaderSpace.gapSmall),
+                .then(
+                    if (onToggleCollapse != null) {
+                        Modifier
+                            .nextClickable(
+                                onClickLabel = if (collapsed) expandLabel else collapseLabel,
+                                onClick = { onToggleCollapse(post) },
+                            ).semantics { stateDescription = if (collapsed) collapsedState else expandedState }
+                    } else {
+                        Modifier
+                    },
+                ).padding(bottom = ReaderSpace.gapSmall),
         verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
     ) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall)) {
@@ -531,7 +585,7 @@ private fun PostBody(
             Text(text = revealLabel, style = ReaderType.label, color = colors.ink)
         }
     } else if (body != null) {
-        body(post)
+        ProvideTextStyle(ReaderType.body.copy(color = colors.ink)) { body(post) }
     } else {
         Text(text = post.body, style = ReaderType.body, color = colors.ink)
     }
@@ -541,22 +595,27 @@ private fun PostBody(
 @Composable
 private fun PostReplies(
     post: Post,
-    onReference: (String) -> Unit,
+    onReference: ((String) -> Unit)?,
 ) {
     val colors = reader
-    if (post.replyNumbers.isNotEmpty()) {
+    if (post.replyNumbers.isNotEmpty() && onReference != null) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall)) {
             post.replyNumbers.forEach { number ->
                 Box(
                     modifier =
                         Modifier
                             .heightIn(min = ReaderSize.touchTarget)
+                            .widthIn(min = ReaderSize.touchTarget)
                             .nextClickable(role = Role.Button) { onReference(number) },
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = stringResource(Res.string.reader_reply_link, number),
-                        style = ReaderType.meta.copy(textDecoration = TextDecoration.Underline),
+                        style =
+                            ReaderType.meta.copy(
+                                textDecoration = TextDecoration.Underline,
+                                textDirection = TextDirection.Ltr,
+                            ),
                         color = colors.quoteLink,
                     )
                 }
@@ -592,14 +651,15 @@ private fun UnreadMarker() {
 private fun ThreadStatus(
     replies: Int,
     fileCount: Int,
+    statusText: String?,
 ) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(ReaderSize.threadStatus).testTag(ThreadTags.STATUS),
+        modifier = Modifier.fillMaxWidth().heightIn(min = ReaderSize.threadStatus).testTag(ThreadTags.STATUS),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text =
-                stringResource(
+                statusText ?: stringResource(
                     Res.string.next_row_counts,
                     pluralStringResource(Res.plurals.next_row_replies, replies, replies),
                     pluralStringResource(Res.plurals.next_row_files, fileCount, fileCount),
@@ -615,7 +675,7 @@ private fun ThreadStatus(
 private fun FileRow(
     cells: List<MediaCell>,
     columns: Int,
-    onOpenFile: (MediaCell) -> Unit,
+    onOpenFile: ((MediaCell) -> Unit)?,
     fileTile: (@Composable (MediaCell, Modifier) -> Unit)?,
 ) {
     Row(
@@ -628,6 +688,9 @@ private fun FileRow(
         horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gridGap),
     ) {
         cells.forEach { cell ->
+            var revealed by rememberSaveable(cell.id) { mutableStateOf(false) }
+            val covered = cell.spoiler && !revealed
+            val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
             Box(
                 modifier =
                     Modifier
@@ -636,9 +699,19 @@ private fun FileRow(
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(ReaderRadius.card))
                         .background(reader.surfaceVariant)
-                        .nextClickable(onClick = { onOpenFile(cell) }),
+                        .then(
+                            when {
+                                covered -> Modifier.nextClickable(onClickLabel = revealLabel) { revealed = true }
+                                onOpenFile != null -> Modifier.nextClickable(onClick = { onOpenFile(cell) })
+                                else -> Modifier
+                            },
+                        ),
             ) {
-                fileTile?.invoke(cell, Modifier.fillMaxSize())
+                if (covered) {
+                    ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+                } else {
+                    fileTile?.invoke(cell, Modifier.fillMaxSize())
+                }
             }
         }
         // Empty cells keep a short last row's tiles the same size as the rows above.

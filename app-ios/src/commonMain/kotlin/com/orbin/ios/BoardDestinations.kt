@@ -1,50 +1,65 @@
 package com.orbin.ios
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.SaveableStateHolder
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.readerPaneWidths
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.ios.resources.Res
-import com.orbin.ios.resources.ios_media_play_video
+import com.orbin.ios.resources.ios_catalog_empty_message
+import com.orbin.ios.resources.ios_catalog_empty_title
+import com.orbin.ios.resources.ios_catalog_no_matches_message
+import com.orbin.ios.resources.ios_catalog_no_matches_title
+import com.orbin.ios.resources.ios_reader_reload
 import com.orbin.uinext.BoardScreen
+import com.orbin.uinext.CatalogMode
+import com.orbin.uinext.LocalReaderOpenDrawer
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MediaWallScreen
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
+import com.orbin.uinext.ReaderAction
+import com.orbin.uinext.ReaderBoardOption
+import com.orbin.uinext.ReaderBoardPicker
+import com.orbin.uinext.ReaderCatalogSearch
+import com.orbin.uinext.ReaderCatalogSkeleton
+import com.orbin.uinext.ReaderEmptyState
+import com.orbin.uinext.ReaderErrorState
+import com.orbin.uinext.ReaderIcons
+import com.orbin.uinext.ReaderNavigation
+import com.orbin.uinext.ReaderRefreshFailure
+import com.orbin.uinext.ReaderRefreshProgress
+import com.orbin.uinext.ReaderScaffold
 import com.orbin.uinext.ReaderTwoPane
-import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
-import kotlin.time.Clock
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 // A board: its catalog, its media wall, the iPad split beside a thread, and catalog tiles.
 
@@ -56,35 +71,111 @@ internal fun CatalogDestination(
     wideWindow: Boolean = false,
     selectedThread: ThreadKey? = null,
 ) {
+    val reload = remember(browser, board) { { browser.refreshCatalog(board) } }
     val catalog by browser.catalog.collectAsState()
+    val preparedRows by browser.preparedCatalogRows.collectAsState()
+    val refreshing by browser.catalogRefreshing.collectAsState()
+    val refreshFailure by browser.catalogRefreshFailure.collectAsState()
+    val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val sort by browser.catalogSort.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
-    NextPullToRefresh(
-        isRefreshing = catalog is Load.Loading,
-        onRefresh = browser::retry,
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        Loaded(catalog, onRetry = browser::retry) { threads ->
-            val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
-            val sorted = remember(threads, sort) { threads.sortedWith(sort.comparator()) }
-            val rows =
-                remember(sorted, visited, unread) {
-                    sorted.map { thread ->
-                        val number = thread.key.thread.value
-                        thread.toRow(now, read = number in visited, unread = unread[number] ?: 0)
-                    }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var pickerVisible by rememberSaveable { mutableStateOf(false) }
+    val threads = (catalog as? Load.Ready)?.value.orEmpty()
+    val sorted = remember(threads, sort) { threads.sortedWith(sort.comparator()) }
+    val rows =
+        remember(sorted, preparedRows, visited, unread, query) {
+            val terms = query.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+            sorted
+                .mapNotNull { thread ->
+                    val number = thread.key.thread.value
+                    preparedRows[thread.key]?.copy(read = number in visited, unread = unread[number] ?: 0)
+                }.filter { row ->
+                    terms.all { term -> "${row.subject} ${row.excerpt}".contains(term, ignoreCase = true) }
                 }
-            val byRow =
-                remember(
-                    threads,
-                ) { threads.associateBy { "${it.key.provider.value}/${it.key.board.value}/${it.key.thread.value}" } }
-            // The window's size, not the pane's, decides the thumbnail size.
-            BoxWithConstraints {
+        }
+    val byRow = remember(threads) { threads.associateBy { it.key.catalogRowId } }
+    val availableBoards =
+        remember(boards, settings.hideNsfwBoards) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        }
+    val boardOptions =
+        remember(availableBoards) {
+            availableBoards.map { ReaderBoardOption(it.provider.value, it.siteName, it.board.id.value, it.board.title) }
+        }
+    val mode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST
+    val uriHandler = LocalUriHandler.current
+    val webUrl = remember(board) { browser.boardWebUrl(board) }
+    ReaderScaffold(
+        title = board.board.title,
+        destination = NextDestination.BOARDS,
+        onDestination = browser::openDestination,
+        drawAppBar = false,
+    ) { _ ->
+        val openDrawer = LocalReaderOpenDrawer.current
+        NextPullToRefresh(
+            isRefreshing = refreshing,
+            onRefresh = reload,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                // The window's size, not the pane's, decides the thumbnail size.
+                val wide = wideWindow || isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt())
+                val state: (@Composable () -> Unit)? =
+                    when (val load = catalog) {
+                        Load.Loading -> {
+                            { ReaderCatalogSkeleton(mode = mode, wideWindow = wide, showProgress = false) }
+                        }
+                        is Load.Failed -> {
+                            {
+                                ReaderErrorState(
+                                    load.cause.toReaderCause(),
+                                    onRetry = reload,
+                                    message = load.message,
+                                )
+                            }
+                        }
+                        is Load.Ready ->
+                            if (rows.isEmpty()) {
+                                {
+                                    ReaderEmptyState(
+                                        title =
+                                            stringResource(
+                                                if (query.isBlank()) {
+                                                    Res.string.ios_catalog_empty_title
+                                                } else {
+                                                    Res.string.ios_catalog_no_matches_title
+                                                },
+                                            ),
+                                        message =
+                                            stringResource(
+                                                if (query.isBlank()) {
+                                                    Res.string.ios_catalog_empty_message
+                                                } else {
+                                                    Res.string.ios_catalog_no_matches_message
+                                                },
+                                            ),
+                                        onReload = reload,
+                                    )
+                                }
+                            } else {
+                                null
+                            }
+                    }
                 BoardScreen(
-                    wideWindow = wideWindow || isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
-                    onReload = browser::retry,
+                    wideWindow = wide,
+                    navigation = ReaderNavigation.MENU,
+                    onNavigation = { openDrawer?.invoke() },
+                    onPickBoard = { pickerVisible = true },
+                    onSearch = {
+                        searchVisible = !searchVisible
+                        if (!searchVisible) query = ""
+                    },
+                    onReload = reload,
+                    reloading = refreshing || catalog is Load.Loading,
                     board = "/${board.board.id.value}/",
                     description = board.board.title,
                     itemCount = rows.size,
@@ -92,20 +183,70 @@ internal fun CatalogDestination(
                     rowAt = { index -> rows.getOrNull(index) },
                     sortLabel = sort.label,
                     onSort = browser::cycleCatalogSort,
+                    mode = mode,
+                    onModeChange = { selected ->
+                        browser.settings.setCatalogMode(
+                            if (selected ==
+                                CatalogMode.GRID
+                            ) {
+                                StoredCatalogMode.GRID
+                            } else {
+                                StoredCatalogMode.LIST
+                            },
+                        )
+                    },
                     onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
                     onOpenMedia = { browser.open(Route.BoardMedia(board)) },
+                    onOpenBrowser = webUrl?.let { url -> { uriHandler.openUri(url) } },
+                    headerContent =
+                        if (searchVisible) {
+                            {
+                                ReaderCatalogSearch(
+                                    query = query,
+                                    onQueryChange = { query = it },
+                                    onClose = {
+                                        searchVisible = false
+                                        query = ""
+                                    },
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                    stateContent = state,
                     thumbnail = { row, modifier ->
-                        byRow[row.id]?.let { thread ->
-                            CatalogThumbnail(
-                                thread,
-                                modifier,
-                                playback = settings.playbackPreferences.resolve(thread.key.provider, thread.key.board),
-                            )
+                        byRow[row.id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
+                            // The shared cell invokes this slot only after its spoiler is revealed.
+                            ReaderThumbnail(attachment.copy(isSpoiler = false), modifier)
                         }
                     },
                 )
+                refreshFailure?.let { failure ->
+                    ReaderRefreshFailure(
+                        cause = failure.cause.toReaderCause(),
+                        onRetry = reload,
+                        message = failure.message,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
         }
+    }
+    if (pickerVisible) {
+        ReaderBoardPicker(
+            boards = boardOptions,
+            selectedProvider = board.provider.value,
+            selectedBoard = board.board.id.value,
+            onDismiss = { pickerVisible = false },
+            onSelect = { option ->
+                pickerVisible = false
+                availableBoards
+                    .firstOrNull {
+                        it.provider.value == option.providerId &&
+                            it.board.id.value == option.boardId
+                    }?.let(browser::replaceBoard)
+            },
+        )
     }
 }
 
@@ -116,37 +257,68 @@ internal fun BoardMediaDestination(
     board: SiteBoard,
 ) {
     val catalog by browser.catalog.collectAsState()
-    NextPullToRefresh(
-        isRefreshing = catalog is Load.Loading,
-        onRefresh = browser::retry,
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        Loaded(catalog, onRetry = browser::retry) { threads ->
-            val items = remember(threads) { boardMediaItems(board, threads) }
-            val byId = remember(items) { items.associateBy { it.id } }
-            val label = "/${board.board.id.value}/"
-            MediaWallScreen(
-                scanned = 1,
-                total = 1,
-                failed = 0,
-                cells = remember(items) { items.map { MediaCell(it.id, label) } },
-                showRail = false,
-                title = label,
-                onOpen = { cell -> byId[cell.id]?.let { browser.openThread(it.key) } },
-                tile = { cell, modifier ->
-                    byId[cell.id]?.let { item ->
-                        Box(modifier) {
-                            SharpImage(
-                                item.attachment,
-                                contentDescription = null,
-                                Modifier.fillMaxSize(),
-                                fill = Modifier.fillMaxSize(),
+    val refreshing by browser.catalogRefreshing.collectAsState()
+    val refreshFailure by browser.catalogRefreshFailure.collectAsState()
+    val reload = remember(browser, board) { { browser.refreshCatalog(board) } }
+    val label = "/${board.board.id.value}/"
+    ReaderScaffold(
+        title = label,
+        onBack = { browser.back() },
+        actions = listOf(ReaderAction(ReaderIcons.Refresh, stringResource(Res.string.ios_reader_reload), reload)),
+    ) { _ ->
+        NextPullToRefresh(
+            isRefreshing = refreshing,
+            onRefresh = reload,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            Box(Modifier.fillMaxSize()) {
+                Column(Modifier.fillMaxSize()) {
+                    ReaderRefreshProgress(refreshing || catalog is Load.Loading)
+                    when (val load = catalog) {
+                        Load.Loading -> ReaderCatalogSkeleton(showProgress = false)
+                        is Load.Failed ->
+                            ReaderErrorState(
+                                load.cause.toReaderCause(),
+                                onRetry = reload,
+                                message = load.message,
                             )
-                            if (item.attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                        is Load.Ready -> {
+                            val items = remember(load.value) { boardMediaItems(board, load.value) }
+                            val byId = remember(items) { items.associateBy { it.id } }
+                            MediaWallScreen(
+                                scanned = 1,
+                                total = 1,
+                                failed = 0,
+                                cells = remember(items) { items.map { MediaCell(it.id, label) } },
+                                showRail = false,
+                                title = label,
+                                onOpen = { cell -> byId[cell.id]?.let { browser.openThread(it.key) } },
+                                tile = { cell, modifier ->
+                                    byId[cell.id]?.let { item ->
+                                        Box(modifier) {
+                                            SharpImage(
+                                                item.attachment,
+                                                contentDescription = null,
+                                                Modifier.fillMaxSize(),
+                                                fill = Modifier.fillMaxSize(),
+                                            )
+                                            if (item.attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
+                                        }
+                                    }
+                                },
+                            )
                         }
                     }
-                },
-            )
+                }
+                refreshFailure?.let { failure ->
+                    ReaderRefreshFailure(
+                        failure.cause.toReaderCause(),
+                        onRetry = reload,
+                        message = failure.message,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
+            }
         }
     }
 }
@@ -191,6 +363,10 @@ internal fun BoardReaderDestination(
             CatalogDestination(browser, board, wideWindow, selectedThread)
         },
         threadContent = { ThreadDestination(browser, downloads, pages) },
+        onDestination = browser::openDestination,
+        onVisiblePanesChanged = { wide, catalogVisible, threadVisible ->
+            browser.setReaderPanesVisible(route, wide, catalogVisible, threadVisible)
+        },
     )
 }
 
@@ -201,7 +377,13 @@ internal fun BoardReaderFrame(
     stateHolder: SaveableStateHolder,
     catalogContent: @Composable (SiteBoard, Boolean, ThreadKey?) -> Unit,
     threadContent: @Composable (Route.ThreadPage) -> Unit,
+    onDestination: ((NextDestination) -> Unit)? = null,
+    onVisiblePanesChanged: ((wide: Boolean, catalogVisible: Boolean, threadVisible: Boolean) -> Unit)? = null,
 ) {
+    val reportVisiblePanes by rememberUpdatedState(onVisiblePanesChanged)
+    DisposableEffect(Unit) {
+        onDispose { reportVisiblePanes?.invoke(false, false, false) }
+    }
     // Move the provider together with its content. A new provider at another call site would
     // initialize before the outgoing provider saves on disposal, losing the live reading state.
     val catalogPane =
@@ -228,13 +410,22 @@ internal fun BoardReaderFrame(
         val width = maxWidth.value.roundToInt()
         val height = maxHeight.value.roundToInt()
         val thread = route.thread
-        if (showsTwoPanes(width, height)) {
-            ThreadSplitDestination(
-                catalogWidth = readerPaneWidths(width).catalogDp.dp,
-                threadOpen = thread != null,
-                catalogContent = { catalogPane(route, true, catalogContent) },
-                threadContent = { thread?.let { threadPane(it, threadContent) } },
-            )
+        val wide = showsTwoPanes(width, height)
+        SideEffect { reportVisiblePanes?.invoke(wide, wide || thread == null, thread != null) }
+        if (wide) {
+            ReaderScaffold(
+                title = route.catalog.board.board.title,
+                destination = NextDestination.BOARDS,
+                onDestination = onDestination,
+                drawAppBar = false,
+            ) { _ ->
+                ThreadSplitDestination(
+                    catalogWidth = readerPaneWidths(width).catalogDp.dp,
+                    threadOpen = thread != null,
+                    catalogContent = { catalogPane(route, true, catalogContent) },
+                    threadContent = { thread?.let { threadPane(it, threadContent) } },
+                )
+            }
         } else if (thread == null) {
             catalogPane(route, false, catalogContent)
         } else {
@@ -260,70 +451,9 @@ internal fun ThreadSplitDestination(
     )
 }
 
-@Composable
-internal fun CatalogThumbnail(
-    thread: CatalogThread,
-    modifier: Modifier,
-    // Whether a video or GIF loops in place, muted; otherwise it shows its picture and a play badge.
-    playsPreview: Boolean = true,
-    playback: PlaybackSettings = PlaybackSettings(),
-) {
-    val attachment = thread.originalPost.attachments.firstOrNull() ?: return
-    Box(modifier) {
-        val canLoop =
-            playsPreview &&
-                playback.autoplay &&
-                !attachment.isSpoiler &&
-                attachment.isPlayable &&
-                (!attachment.isWebM || supportsWebM)
-        // One preview loops at a time, as on Android: each is a web view and a video decoder.
-        val loops = rememberInlineLoopSlot(thread.key.toString(), canLoop)
-        SharpImage(
-            attachment,
-            contentDescription = null,
-            Modifier.fillMaxSize(),
-            fill = Modifier.fillMaxSize(),
-            // A looping preview covers the picture anyway, so it needs no still frame under it.
-            videoFrame = !loops,
-        )
-        if (loops) {
-            NativeInlineLoop(
-                attachment.sourceUrl,
-                Modifier.matchParentSize(),
-                loop = playback.loopVideos,
-                muted = playback.startMuted && SessionAudio.muted,
-            )
-        }
-        if (attachment.isSpoiler) {
-            SpoilerCover(Modifier.matchParentSize())
-        } else if (!loops && attachment.isPlayable) {
-            PlayBadge(Modifier.align(Alignment.Center))
-        }
-    }
-}
-
 /** A video whose frames this device can decode: WebM needs iOS 17.4, MP4 and MOV play anywhere. */
 private val MediaAttachment.hasDecodableVideo: Boolean
     get() = type == MediaType.VIDEO && (!isWebM || supportsWebM)
-
-/** The mark on a video that is not playing: white on a dark disc, readable over any picture. */
-@Composable
-private fun PlayBadge(modifier: Modifier) {
-    Icon(
-        imageVector = Icons.Filled.PlayArrow,
-        contentDescription = stringResource(Res.string.ios_media_play_video),
-        tint = Color.White,
-        modifier =
-            modifier
-                .size(PLAY_BADGE_SIZE)
-                .background(Color.Black.copy(alpha = PLAY_BADGE_SCRIM), CircleShape)
-                .padding(PLAY_BADGE_PADDING),
-    )
-}
-
-private val PLAY_BADGE_SIZE = 40.dp
-private val PLAY_BADGE_PADDING = 6.dp
-private const val PLAY_BADGE_SCRIM = 0.5f
 
 /**
  * A file's picture at the size it is shown: the site's thumbnail first, so the space fills at

@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -26,8 +27,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.compose.rememberConstraintsSizeResolver
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.uinext.tokens.ReaderRadius
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -119,6 +123,7 @@ internal fun rollDelta(
 internal fun PencilHoverPreview(
     attachment: MediaAttachment,
     modifier: Modifier = Modifier,
+    thumbnailOnly: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val density = LocalDensity.current.density
@@ -141,15 +146,45 @@ internal fun PencilHoverPreview(
         // A spoiler stays covered: hovering must not show what a tap would still ask about.
         if (showing && !attachment.isSpoiler) {
             Popup(alignment = Alignment.Center) {
-                AsyncImage(
-                    // A still image previews whole; anything else has only its thumbnail.
-                    model = if (attachment.type == MediaType.IMAGE) attachment.sourceUrl else attachment.thumbnailUrl,
-                    contentDescription = attachment.originalFileName,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(12.dp)),
-                )
+                if (thumbnailOnly) {
+                    ReaderThumbnailHover(attachment)
+                } else {
+                    AsyncImage(
+                        // A still image previews whole; anything else has only its thumbnail.
+                        model =
+                            if (attachment.type ==
+                                MediaType.IMAGE
+                            ) {
+                                attachment.sourceUrl
+                            } else {
+                                attachment.thumbnailUrl
+                            },
+                        contentDescription = attachment.originalFileName,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(12.dp)),
+                    )
+                }
             }
         }
+    }
+}
+
+/** Catalog hover keeps the same provider-thumbnail-only contract as the square beneath it. */
+@Composable
+private fun ReaderThumbnailHover(attachment: MediaAttachment) {
+    val context = LocalPlatformContext.current
+    val sizeResolver = rememberConstraintsSizeResolver()
+    val request =
+        remember(context, attachment.thumbnailUrl, sizeResolver) {
+            readerThumbnailRequest(context, attachment, sizeResolver)
+        }
+    Box(Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(ReaderRadius.small))) {
+        AsyncImage(
+            model = request,
+            contentDescription = attachment.originalFileName,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().then(sizeResolver),
+        )
     }
 }
 

@@ -14,7 +14,17 @@ import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.provider.api.ProviderRegistry
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 
 private const val PAGE_SIZE = 100
 private const val INITIAL_LOAD_SIZE = 500
@@ -26,36 +36,101 @@ class CatalogRepositoryImpl(
         provider: ProviderId,
         board: BoardId,
         sort: CatalogSort,
-    ): Flow<PagingData<CatalogThread>> =
-        Pager(
+    ): Flow<PagingData<CatalogThread>> = catalogStreamWhileVisible(provider, board, sort, MutableStateFlow(true))
+
+    override fun catalogStreamWhileVisible(
+        provider: ProviderId,
+        board: BoardId,
+        sort: CatalogSort,
+        visible: StateFlow<Boolean>,
+        onRefreshFailure: ((Throwable?) -> Unit)?,
+    ): Flow<PagingData<CatalogThread>> {
+        val session = CatalogSession(registry, CatalogRequest(provider, board, sort = sort), visible, onRefreshFailure)
+        return Pager(
             config =
                 PagingConfig(
                     pageSize = PAGE_SIZE,
                     initialLoadSize = INITIAL_LOAD_SIZE,
                     enablePlaceholders = false,
                 ),
-            pagingSourceFactory = {
-                CatalogPagingSource(registry, CatalogRequest(provider, board, sort = sort))
-            },
+            pagingSourceFactory = { CatalogPagingSource(session) },
         ).flow
+    }
 }
 
-private class CatalogPagingSource(
+/** Paging generations share the last successful revision, including a canceled in-place refresh. */
+private class CatalogSession(
     private val registry: ProviderRegistry,
     private val request: CatalogRequest,
+    private val visible: StateFlow<Boolean>,
+    private val onRefreshFailure: ((Throwable?) -> Unit)?,
+) {
+    private var loaded: List<CatalogThread>? = null
+
+    @Suppress("TooGenericExceptionCaught")
+    suspend fun load(): List<CatalogThread> {
+        onRefreshFailure?.invoke(null)
+        while (true) {
+            visible.first { it }
+            val result =
+                supervisorScope {
+                    val fetch = async { fetchVisible() }
+                    var hiddenByVisibility = false
+                    val hidden =
+                        launch {
+                            visible.first { !it }
+                            hiddenByVisibility = true
+                            fetch.cancel(CatalogHidden())
+                        }
+                    try {
+                        fetch.await()
+                    } catch (_: CatalogHidden) {
+                        currentCoroutineContext().ensureActive()
+                        loaded
+                    } catch (cancelled: CancellationException) {
+                        currentCoroutineContext().ensureActive()
+                        if (!hiddenByVisibility) throw cancelled
+                        loaded
+                    } catch (error: Exception) {
+                        currentCoroutineContext().ensureActive()
+                        val retained = loaded
+                        if (retained == null || onRefreshFailure == null) throw error
+                        // Keep a populated cached generation for collectors returning from a route.
+                        // The host still receives the cause and an explicit refresh retry action.
+                        onRefreshFailure(error)
+                        retained
+                    } finally {
+                        hidden.cancel()
+                    }
+                }
+            if (result != null) {
+                loaded = result
+                return result
+            }
+            // An interrupted first load has nothing to retain. Resume only when its pane returns.
+        }
+    }
+
+    private suspend fun fetchVisible(): List<CatalogThread> {
+        if (!visible.value) throw CatalogHidden()
+        return withContext(Dispatchers.Default) {
+            val provider = registry.get(request.provider) ?: error("Unknown provider")
+            ContentPolicy.visibleCatalog(provider.getCatalog(request))
+        }
+    }
+}
+
+private class CatalogHidden : CancellationException("Catalog is hidden")
+
+private class CatalogPagingSource(
+    private val session: CatalogSession,
 ) : PagingSource<Int, CatalogThread>() {
     private var cached: List<CatalogThread>? = null
 
     @Suppress("TooGenericExceptionCaught")
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CatalogThread> =
         try {
-            val provider =
-                registry.get(request.provider)
-                    ?: return LoadResult.Error(IllegalStateException("Unknown provider"))
-            val all =
-                cached ?: ContentPolicy
-                    .visibleCatalog(provider.getCatalog(request))
-                    .also { cached = it }
+            val all = cached ?: session.load().also { cached = it }
 
             val offset = params.key ?: 0
             val end = minOf(offset + params.loadSize, all.size)
@@ -74,7 +149,8 @@ private class CatalogPagingSource(
 
     override fun getRefreshKey(state: PagingState<Int, CatalogThread>): Int? =
         state.anchorPosition?.let { anchor ->
-            state.closestPageToPosition(anchor)?.prevKey?.plus(PAGE_SIZE)
-                ?: state.closestPageToPosition(anchor)?.nextKey?.minus(PAGE_SIZE)
+            state.closestPageToPosition(anchor)?.let { page ->
+                page.prevKey?.plus(PAGE_SIZE) ?: page.nextKey?.minus(page.data.size)
+            }
         }
 }

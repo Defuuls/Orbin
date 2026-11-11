@@ -3,8 +3,10 @@ package com.orbin.feature.thread
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.orbin.core.common.dispatchers.Dispatcher
+import com.orbin.core.common.dispatchers.OrbinDispatcher
+import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
-import com.orbin.core.common.result.fold
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
@@ -13,9 +15,8 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.matchesFilterTokens
-import com.orbin.domain.filter.ContentPolicy
+import com.orbin.core.reader.ThreadPresentationCache
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DisabledThreadArchive
 import com.orbin.domain.repository.DownloadRepository
@@ -26,6 +27,8 @@ import com.orbin.domain.repository.ThreadArchiveRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -37,8 +40,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -60,6 +64,9 @@ class ThreadViewModel
         private val settingsRepository: SettingsRepository,
         private val savedThreadRepository: SavedThreadRepository,
         private val threadArchive: ThreadArchiveRepository = DisabledThreadArchive,
+        @Dispatcher(
+            OrbinDispatcher.Default,
+        ) private val presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
@@ -72,6 +79,10 @@ class ThreadViewModel
             get() = observeThread.threadWebUrl(key)
 
         private var loadedThread: Thread? = null
+        private val presentationCache = ThreadPresentationCache()
+        private var lastSuccess: ThreadUiState.Success? = null
+        private var settledAttempt: Int? = null
+        private var settledState: ThreadUiState? = null
 
         private val _initialScrollPosition = MutableStateFlow<ThreadScrollPosition?>(null)
         val initialScrollPosition: StateFlow<ThreadScrollPosition?> = _initialScrollPosition.asStateFlow()
@@ -108,28 +119,51 @@ class ThreadViewModel
         val uiState: StateFlow<ThreadUiState> =
             reloads
                 .flatMapLatest { attempt ->
-                    observeThread(provider, board, threadId, forceRefresh = attempt > 0)
-                }.onEach { result ->
-                    if (result is OrbinResult.Success) onThreadLoaded(result.data)
-                    _isRefreshing.value = false
-                }.map { result ->
-                    result.fold(
-                        onSuccess = {
-                            ContentPolicy.visibleThread(it)?.let(ThreadUiState::Success) ?: ThreadUiState.Blocked
-                        },
-                        onFailure = { error ->
-                            val saved = savedThreadRepository.load(key)
-                            when {
-                                saved == null -> ThreadUiState.Error(error.message)
-                                else ->
-                                    ContentPolicy
-                                        .visibleThread(saved)
-                                        ?.let { ThreadUiState.Success(thread = it, fromSavedCopy = true) }
-                                        ?: ThreadUiState.Blocked
+                    val settled = settledState?.takeIf { settledAttempt == attempt }
+                    if (settled != null) {
+                        flowOf(settled)
+                    } else {
+                        observeThread(provider, board, threadId, forceRefresh = attempt > 0)
+                            .mapLatest { result ->
+                                val state =
+                                    when (result) {
+                                        is OrbinResult.Success -> stateForLoadedThread(result.data)
+                                        is OrbinResult.Failure -> stateForFailure(result.error)
+                                    }
+                                _isRefreshing.value = false
+                                settledAttempt = attempt
+                                settledState = state
+                                state
                             }
-                        },
-                    )
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadUiState.Loading)
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ThreadUiState.Loading)
+
+        private suspend fun stateForLoadedThread(thread: Thread): ThreadUiState {
+            val presentation = presentationCache.prepareVisible(thread, dispatcher = presentationDispatcher)
+            if (presentation == null) {
+                lastSuccess = null
+                return ThreadUiState.Blocked
+            }
+            onThreadLoaded(presentation.thread)
+            return ThreadUiState.Success(presentation.thread, presentation).also { lastSuccess = it }
+        }
+
+        private suspend fun stateForFailure(error: DataError): ThreadUiState {
+            lastSuccess?.let { return it.copy(refreshFailure = error) }
+            val saved = savedThreadRepository.load(key) ?: return ThreadUiState.Error(error.message, error)
+            val presentation =
+                presentationCache.prepareVisible(
+                    saved,
+                    fromSavedCopy = true,
+                    dispatcher = presentationDispatcher,
+                ) ?: return ThreadUiState.Blocked
+            return ThreadUiState
+                .Success(
+                    thread = presentation.thread,
+                    presentation = presentation,
+                    fromSavedCopy = true,
+                ).also { lastSuccess = it }
+        }
 
         val bookmark: StateFlow<Bookmark?> =
             bookmarkRepository
@@ -160,7 +194,7 @@ class ThreadViewModel
                             .getOrNull(savedBookmark.lastSeenReplyCount)
                             ?.id
                 }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
         fun refresh() {
             _isRefreshing.value = true
@@ -325,9 +359,7 @@ class ThreadViewModel
             lastPersistedScrollPosition = position
         }
 
-        private fun onThreadLoaded(thread: Thread) {
-            if (thread.isPermanentlyFiltered()) return
-            val visible = ContentPolicy.visibleThread(thread) ?: return
+        private fun onThreadLoaded(visible: Thread) {
             loadedThread = visible
             viewModelScope.launch {
                 val existingBookmark = bookmarkRepository.getBookmark(key)

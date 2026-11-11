@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
 import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.compose.rememberConstraintsSizeResolver
+import coil3.request.ImageRequest
+import coil3.size.Precision
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.R
@@ -37,6 +42,7 @@ import com.orbin.media.hasHttpStatus
 import com.orbin.media.video.InlineLoop
 import com.orbin.media.video.canAutoplayInFeed
 import com.orbin.network.interceptor.RetryAfter
+import com.orbin.uinext.ReaderSpoilerCover
 
 /**
  * Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics.
@@ -55,17 +61,37 @@ fun OrbinAsyncImage(
     placeholderUrl: String? = null,
     model: Any? = null,
 ) {
-    val request = model ?: url
+    val context = LocalPlatformContext.current
+    val sizeResolver = rememberConstraintsSizeResolver()
+    val request =
+        model ?: remember(context, url, sizeResolver) {
+            url?.let {
+                ImageRequest
+                    .Builder(context)
+                    .data(it)
+                    .size(sizeResolver)
+                    .precision(Precision.EXACT)
+                    .build()
+            }
+        }
     // remember(url) already resets these when the URL changes; no effect needed.
     var loadFailed by remember(request) { mutableStateOf(false) }
     var failureMessage by remember(request) { mutableStateOf<String?>(null) }
     var loaded by remember(request) { mutableStateOf(false) }
 
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    Box(modifier = modifier.then(sizeResolver), contentAlignment = Alignment.Center) {
         val distinctPlaceholder = placeholderUrl?.takeUnless { it == url }
         if (distinctPlaceholder != null && request != null && !loaded) {
             AsyncImage(
-                model = distinctPlaceholder,
+                model =
+                    remember(context, distinctPlaceholder, sizeResolver) {
+                        ImageRequest
+                            .Builder(context)
+                            .data(distinctPlaceholder)
+                            .size(sizeResolver)
+                            .precision(Precision.EXACT)
+                            .build()
+                    },
                 // Described by the image drawn over it; announcing both would duplicate it.
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
@@ -144,6 +170,8 @@ fun MediaThumbnail(
     cornerRadius: androidx.compose.ui.unit.Dp = 8.dp,
 ) {
     val finalModifier = if (modifier == Modifier) modifier.size(120.dp) else modifier
+    var revealed by rememberSaveable(attachment.id, attachment.thumbnailUrl) { mutableStateOf(false) }
+    val covered = attachment.isSpoiler && !revealed
     // Provider thumbnails are only ~250px wide, so they look soft in the larger layouts. Those
     // callers pass [fullResolution] to pull the original file instead; AsyncImage sizes the
     // request from the layout constraints, so the bitmap is still downsampled to the cell and
@@ -167,23 +195,26 @@ fun MediaThumbnail(
         modifier =
             finalModifier
                 .clip(RoundedCornerShape(cornerRadius))
-                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+                .then(if (!covered && onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        OrbinAsyncImage(
-            url = imageUrl,
-            contentDescription = attachment.originalFileName,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = contentScale,
-            // Only meaningful when imageUrl is the full-resolution source; otherwise it is the
-            // same URL and the placeholder is skipped.
-            placeholderUrl = attachment.thumbnailUrl,
-        )
-        if (loopsInPlace) InlineLoop(url = attachment.sourceUrl, modifier = Modifier.fillMaxSize())
+        if (covered) {
+            ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+        } else {
+            OrbinAsyncImage(
+                url = imageUrl,
+                contentDescription = attachment.originalFileName,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = contentScale,
+                // Only meaningful when imageUrl is the full-resolution source; otherwise it is the
+                // same URL and the placeholder is skipped.
+                placeholderUrl = attachment.thumbnailUrl,
+            )
+            if (loopsInPlace) InlineLoop(url = attachment.sourceUrl, modifier = Modifier.fillMaxSize())
+        }
 
-        if (attachment.isSpoiler) {
-            SpoilerOverlay()
-        } else if (showPlayBadge && !loopsInPlace && attachment.isPlayable) {
+        val showVideoBadge = showPlayBadge && !loopsInPlace && attachment.isPlayable
+        if (!covered && showVideoBadge) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
                 contentDescription = stringResource(R.string.media_play),

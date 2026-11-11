@@ -3,102 +3,144 @@ package com.orbin.uinext
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.google.common.truth.Truth.assertThat
+import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Each visible tab must dispatch its own destination, including the new Search and Saved tabs. */
+/** Drawer entries preserve the five primary destinations and expose Settings after a divider. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class SocialNavigationTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /** Replaces `all five tabs dispatch distinct destinations`; Settings is also a real route. */
     @Test
-    fun `all five tabs dispatch distinct destinations`() {
+    fun `all five roots and Settings dispatch once and close the drawer`() {
         val selected = mutableListOf<NextDestination>()
         composeRule.setContent {
-            NextTheme { DestinationPill(NextDestination.SAVED, selected::add) }
+            NextTheme {
+                ReaderScaffold("Saved", destination = NextDestination.SAVED, onDestination = selected::add) {}
+            }
         }
-        composeRule.onNodeWithContentDescription("Saved").assertIsSelected()
-        listOf("Home", "Watched", "Boards", "Search", "Saved").forEach { label ->
-            composeRule.onNodeWithContentDescription(label).performClick()
+
+        drawerDestinations.forEach { destination ->
+            composeRule.onNodeWithContentDescription("Menu").performClick()
+            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertIsDisplayed().performClick()
+            composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertIsNotDisplayed()
         }
-        assertThat(selected)
-            .containsExactly(
-                NextDestination.FEED,
-                NextDestination.WATCHED,
-                NextDestination.BOARDS,
-                NextDestination.SEARCH,
-                NextDestination.SAVED,
-            ).inOrder()
+        composeRule.runOnIdle { assertThat(selected).containsExactlyElementsIn(drawerDestinations).inOrder() }
     }
 
+    /** Replaces the center add-button test: Boards is an ordered, selected drawer destination. */
     @Test
-    fun `the center add action opens Boards once and announces selection`() {
+    fun `Boards entry opens once and announces selection in the ordered drawer`() {
         var calls = 0
         var selected: NextDestination? = null
         composeRule.setContent {
             NextTheme {
-                DestinationPill(NextDestination.BOARDS, {
+                ReaderDrawer(NextDestination.BOARDS, {
                     selected = it
                     calls++
                 })
             }
         }
-        val home = composeRule.onNodeWithContentDescription("Home").getUnclippedBoundsInRoot()
-        val watched = composeRule.onNodeWithContentDescription("Watched").getUnclippedBoundsInRoot()
-        val boards = composeRule.onNodeWithContentDescription("Boards").getUnclippedBoundsInRoot()
-        val search = composeRule.onNodeWithContentDescription("Search").getUnclippedBoundsInRoot()
-        val saved = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
-        assertThat(home.left.value).isLessThan(watched.left.value)
-        assertThat(watched.left.value).isLessThan(boards.left.value)
-        assertThat(boards.left.value).isLessThan(search.left.value)
-        assertThat(search.left.value).isLessThan(saved.left.value)
-        assertThat(((boards.left.value + boards.right.value) / 2)).isWithin(0.5f).of(
-            (home.left.value + saved.right.value) / 2,
-        )
-        composeRule.onNodeWithContentDescription("Boards").assertIsSelected().performClick()
-        assertThat(selected).isEqualTo(NextDestination.BOARDS)
-        assertThat(calls).isEqualTo(1)
+
+        val bounds =
+            drawerDestinations.map { destination ->
+                composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).getUnclippedBoundsInRoot()
+            }
+        bounds.zipWithNext().forEach { (before, after) ->
+            assertThat(before.bottom.value).isAtMost(after.top.value)
+        }
+        composeRule
+            .onNodeWithTag(
+                ReaderDrawerTags.ENTRY + NextDestination.BOARDS.name,
+            ).assertIsSelected()
+            .performClick()
+        composeRule.runOnIdle {
+            assertThat(selected).isEqualTo(NextDestination.BOARDS)
+            assertThat(calls).isEqualTo(1)
+        }
     }
 
+    /** Replaces the tab decorative-label test with accessible, full-width drawer targets. */
     @Test
-    fun `navigation exposes full control bounds while decorative labels stay hidden from accessibility`() {
+    fun `drawer entries expose labels selection and full touch bounds`() {
         composeRule.setContent {
-            NextTheme { DestinationPill(NextDestination.FEED, {}) }
+            NextTheme { ReaderDrawer(NextDestination.FEED, {}) }
         }
-        listOf("Home", "Watched", "Boards", "Search", "Saved").forEach { label ->
-            composeRule
-                .onNodeWithContentDescription(label)
-                .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.HideFromAccessibility))
-                .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
-                .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+
+        drawerDestinations
+            .zip(
+                listOf("Home", "Watched", "Boards", "Search", "Saved", "Settings"),
+            ).forEach { (destination, label) ->
+                composeRule
+                    .onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name)
+                    .assertTextContains(label)
+                    .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.HideFromAccessibility))
+                    .assertWidthIsAtLeast(ReaderSize.touchTarget)
+                    .assertHeightIsAtLeast(ReaderSize.touchTarget)
+            }
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.FEED.name).assertIsSelected()
+    }
+
+    /** Replaces `secondary pages do not claim a primary tab` with real Back/Menu behavior. */
+    @Test
+    fun `secondary routes show Back and cannot open a drawer`() {
+        var backs = 0
+        var destinations = 0
+        composeRule.setContent {
+            NextTheme {
+                ReaderScaffold(
+                    "Settings",
+                    destination = NextDestination.SETTINGS,
+                    onDestination = { destinations++ },
+                    onBack = { backs++ },
+                ) {}
+            }
         }
-        listOf("Home", "Watched", "Search", "Saved").forEach { label ->
-            composeRule
-                .onAllNodesWithText(label, useUnmergedTree = true)
-                .assertCountEquals(0)
+
+        composeRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.runOnIdle {
+            assertThat(backs).isEqualTo(1)
+            assertThat(destinations).isEqualTo(0)
         }
     }
 
     @Test
-    fun `secondary pages do not claim a primary tab`() {
-        assertThat(NextDestination.DOWNLOADS.drawsPill()).isFalse()
-        assertThat(NextDestination.SETTINGS.drawsPill()).isFalse()
-        assertThat(NextDestination.SEARCH.drawsPill()).isTrue()
-        assertThat(NextDestination.SAVED.drawsPill()).isTrue()
+    fun `a root without a navigation callback omits Menu`() {
+        composeRule.setContent {
+            NextTheme { ReaderScaffold("Boards", destination = NextDestination.BOARDS) {} }
+        }
+
+        composeRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Back").assertDoesNotExist()
     }
 }
+
+private val drawerDestinations =
+    listOf(
+        NextDestination.FEED,
+        NextDestination.WATCHED,
+        NextDestination.BOARDS,
+        NextDestination.SEARCH,
+        NextDestination.SAVED,
+        NextDestination.SETTINGS,
+    )

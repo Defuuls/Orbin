@@ -1,14 +1,15 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -123,36 +124,46 @@ class ProposalScreenshotTest {
     @Test
     fun boardLoading() =
         capture("next_board_loading") {
-            MessageScreen(
+            ReaderScaffold(
                 title = "/g/",
-                subtitle = "Loading…",
-                where = "/g/",
-                skeleton = true,
-            )
+                destination = NextDestination.BOARDS,
+                onDestination = {},
+            ) { padding ->
+                ReaderCatalogSkeleton(modifier = Modifier.padding(padding))
+            }
         }
 
     @Test
     fun boardError() =
         capture("next_board_error") {
-            MessageScreen(
+            ReaderScaffold(
                 title = "/g/",
-                subtitle = "Couldn't load this board's catalog",
-                actionLabel = "Try again",
-                onAction = {},
-                where = "/g/",
-            )
+                destination = NextDestination.BOARDS,
+                onDestination = {},
+            ) { padding ->
+                ReaderErrorState(
+                    cause = ReaderFailureCause.NETWORK,
+                    onRetry = {},
+                    modifier = Modifier.padding(padding),
+                )
+            }
         }
 
     @Test
     fun boardEmpty() =
         capture("next_board_empty") {
-            MessageScreen(
+            ReaderScaffold(
                 title = "/g/",
-                subtitle = "Nothing on this board right now.",
-                actionLabel = "Refresh",
-                onAction = {},
-                where = "/g/",
-            )
+                destination = NextDestination.BOARDS,
+                onDestination = {},
+            ) { padding ->
+                ReaderEmptyState(
+                    title = "No threads",
+                    message = "Reload to check for new threads.",
+                    onReload = {},
+                    modifier = Modifier.padding(padding),
+                )
+            }
         }
 
     @Test
@@ -234,10 +245,12 @@ class ProposalScreenshotTest {
 
     @Test
     fun navigationMaxText() =
-        capture("next_navigation_max_text", fontScale = MAX_FONT_SCALE) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                DestinationPill(selected = NextDestination.DOWNLOADS, onSelect = {})
-            }
+        capture(
+            "next_navigation_max_text",
+            fontScale = MAX_FONT_SCALE,
+            beforeCapture = { composeRule.onNodeWithContentDescription("Menu").performClick() },
+        ) {
+            ReaderScaffold(title = "Saved", destination = NextDestination.SAVED, onDestination = {}) {}
         }
 
     /** The list at rest: every row closed. */
@@ -318,6 +331,7 @@ class ProposalScreenshotTest {
         amoled: Boolean = false,
         fontScale: Float = 1f,
         palette: NextPalette? = null,
+        beforeCapture: () -> Unit = {},
         content: @Composable () -> Unit,
     ) {
         composeRule.setContent {
@@ -327,6 +341,8 @@ class ProposalScreenshotTest {
                 }
             }
         }
+        composeRule.waitForIdle()
+        beforeCapture()
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage("src/androidHostTest/screenshots/$name.png")
     }

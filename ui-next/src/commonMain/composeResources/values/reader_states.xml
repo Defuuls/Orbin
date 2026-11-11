@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_loading_catalog">Loading catalog</string>
+    <string name="reader_loading_thread">Loading thread</string>
+    <string name="reader_refreshing">Refreshing</string>
+    <string name="reader_retry">Retry</string>
+    <string name="reader_error_network">Network error</string>
+    <string name="reader_error_not_found">Not found</string>
+    <string name="reader_error_server">Server error</string>
+    <string name="reader_error_unknown">Unable to load</string>
+    <string name="reader_error_network_helper">Check your connection and try again.</string>
+    <string name="reader_error_not_found_helper">This board or thread is no longer available.</string>
+    <string name="reader_error_server_helper">The server could not complete the request. Try again.</string>
+    <string name="reader_error_unknown_helper">Try again in a moment.</string>
+    <string name="reader_refresh_failure">%1$s. Your loaded content is still available.</string>
+</resources>

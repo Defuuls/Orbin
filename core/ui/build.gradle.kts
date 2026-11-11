@@ -19,6 +19,7 @@ kotlin {
             implementation(project(":core:model"))
             implementation(libs.cmp.resources)
             implementation(libs.kotlinx.immutable)
+            implementation(libs.kotlinx.coroutines.core)
         }
         androidMain.dependencies {
             // Pins the Android side to the app's Compose release rather than the older one the

@@ -8,14 +8,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import coil3.ColorImage
+import coil3.EventListener
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
+import coil3.request.ImageRequest
+import coil3.size.Size
 import coil3.test.FakeImageLoaderEngine
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.MediaAttachment
@@ -49,6 +56,8 @@ class MediaThumbnailScaleTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    private val resolvedRequests = mutableListOf<Pair<Any, Size>>()
+
     @Before
     fun installFakeImageLoader() {
         // Twice as wide as it is tall, so a square tile cannot show all of it without letterboxing.
@@ -58,7 +67,19 @@ class MediaThumbnailScaleTest {
                 .default(ColorImage(IMAGE_COLOUR.toArgb(), width = 200, height = 100))
                 .build()
         SingletonImageLoader.setSafe { context ->
-            ImageLoader.Builder(context).components { add(engine) }.build()
+            ImageLoader
+                .Builder(context)
+                .components { add(engine) }
+                .eventListener(
+                    object : EventListener() {
+                        override fun resolveSizeEnd(
+                            request: ImageRequest,
+                            size: Size,
+                        ) {
+                            resolvedRequests += request.data to size
+                        }
+                    },
+                ).build()
         }
     }
 
@@ -80,6 +101,35 @@ class MediaThumbnailScaleTest {
         // The grid, the image wall and the thread reader all rely on the default, so a change to it
         // is a change to them.
         assertThat(tileEdgeColour(contentScale = null)).isEqualTo(IMAGE_COLOUR)
+    }
+
+    @Test
+    fun `catalog sized video requests only its thumbnail decoded at the drawn density size`() {
+        composeRule.setContent {
+            MediaThumbnail(attachment = WIDE_IMAGE.copy(type = MediaType.VIDEO), modifier = Modifier.size(72.dp))
+        }
+        composeRule.waitForIdle()
+        assertThat(resolvedRequests).containsExactly(WIDE_IMAGE.thumbnailUrl to Size(144, 144))
+    }
+
+    @Test
+    fun `a spoiler first tap reveals its thumbnail without opening media or fetching the original`() {
+        var opened = 0
+        composeRule.setContent {
+            MediaThumbnail(
+                attachment = WIDE_IMAGE.copy(isSpoiler = true),
+                modifier = Modifier.size(72.dp).testTag("spoiler-thumbnail"),
+                onClick = { opened++ },
+            )
+        }
+        composeRule.waitForIdle()
+        assertThat(resolvedRequests).isEmpty()
+        composeRule.onNodeWithText("Spoiler").performClick()
+        composeRule.waitForIdle()
+        assertThat(opened).isEqualTo(0)
+        assertThat(resolvedRequests).containsExactly(WIDE_IMAGE.thumbnailUrl to Size(144, 144))
+        composeRule.onNodeWithTag("spoiler-thumbnail").performClick()
+        assertThat(opened).isEqualTo(1)
     }
 
     /**

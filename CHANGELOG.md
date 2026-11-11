@@ -6,24 +6,31 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- Speeding up the iOS simulator CI job: the simulator boots in the background during JDK and
-  Kotlin/Native setup, `~/.konan` is cached, the booted device is passed as an environment
-  variable so it does not bust the Gradle configuration cache, xcodebuild skips index stores
-  and inactive architectures, and pushes to main use the same path filters as pull requests.
-- Replaced the design-system documentation with a normative catalog and thread reader specification: independent color, type, spacing, and size tokens for light, dark, and AMOLED themes; phone list and grid layouts; two-pane rules; states; and a performance contract. The app does not implement this design yet.
+## [199-Komatsuna] - 2026-11-11
 
-### Testing
-- Moved shared `:app-ios` logic tests from `commonTest` to `androidHostTest` so they run only
-  on the Android host already exercised by `./gradlew test` in CI, and left UIKit, AVKit, and
-  other native API tests in `iosTest` on the simulator.
-- Added checks for the specification's arithmetic, contrast ratios, token references, and diagrams, and a visual regression check of the diagrams and companion page that runs only when the design documentation changes.
+### Added
+- Remembered List and Grid catalogs with a site-grouped board picker, search within the loaded catalog, sorting, and source-aware actions.
+- Nested and collapsible thread replies, unread markers, and shared Files grids on Android and iOS.
+- Reader loading skeletons, centered empty states, cause-specific errors, and refresh progress with Retry feedback.
+- A shared reader design guide with layout and theme rules, diagrams, and an implementation and verification record.
+
+### Changed
+- Applied the green reader palette in Light, Dark, and AMOLED, with shared catalog and post cells that adapt to larger text and right-to-left layouts.
+- Replaced bottom navigation tabs with fixed app bars and a drawer for Home, Watched, Boards, Search, Saved, and Settings. Child screens use Back, and Home keeps its black media feed below the app bar.
+- Kept catalogs and threads side by side on wide screens while preserving catalog selection and separate reading positions.
+- Simplified Appearance to System, Light, or Dark with optional AMOLED and an app-wide Catalog view. Retired color-theme and tablet-column preferences; backups containing the removed color-theme format are refused before any data is restored.
 
 ### Fixed
-- The iOS simulator job no longer fails after passing tests: the default simulator device is a
-  constant instead of an `xcrun` lookup, which Gradle's configuration cache rejects at the end
-  of the build. `~/.konan` is also saved when a later step fails, so the next run can reuse the
-  Kotlin/Native compiler.
+- Stopped obsolete catalog and thread loads when leaving a screen or hiding its pane; returning reuses loaded content, and refreshes retain loaded rows and the correct reading position.
+- Kept permanently filtered content out of reused thread data and prevented stale board or thread results from replacing the current selection.
+- Back closes an open drawer before leaving the reader, hidden drawers no longer expose controls to accessibility, and refresh-failure actions stay clear of system insets.
+- Reserved attachment preview space, requested thumbnails at their drawn size, and kept revealing spoilers separate from opening media.
+
+### Testing
+- Added reader navigation, layout, refresh retention, shared presentation, thumbnail, and accessibility regressions, plus populated catalog, thread, Files, and two-pane performance and profile journeys.
+- Added specification, token, and diagram checks and an iPhone/iPad reader checklist; shared logic tests run on the host while native UIKit and media tests remain on the iOS simulator.
+
+
 
 ## [198-Celtuce] - 2026-11-11
 
@@ -2985,7 +2992,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...HEAD
+[199-Komatsuna]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...v199-Komatsuna
 [198-Celtuce]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...v198-Celtuce
 [197-Okahijiki]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...v197-Okahijiki
 [196-Kai-Lan]: https://github.com/Defuuls/Orbin/compare/v195-Bitter-Melon...v196-Kai-Lan

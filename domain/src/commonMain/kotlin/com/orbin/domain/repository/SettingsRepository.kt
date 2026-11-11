@@ -1,8 +1,8 @@
 package com.orbin.domain.repository
 
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
@@ -28,8 +28,6 @@ interface SettingsRepository {
     suspend fun setDeepMediaScan(enabled: Boolean)
 
     suspend fun setOpenThreadComments(enabled: Boolean)
-
-    suspend fun setColorTheme(theme: AppColorTheme)
 
     suspend fun setThemeMode(mode: AppThemeMode)
 
@@ -57,6 +55,6 @@ interface SettingsRepository {
         columns: Int,
     )
 
-    /** Saves a tablet's board catalog column count. */
-    suspend fun setTabletCatalogColumns(columns: Int)
+    /** Saves the device-wide board catalog presentation. */
+    suspend fun setCatalogMode(mode: CatalogMode)
 }

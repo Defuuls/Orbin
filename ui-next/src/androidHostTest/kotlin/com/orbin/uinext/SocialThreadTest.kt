@@ -1,12 +1,15 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
@@ -23,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.unit.Density
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals
@@ -157,11 +161,13 @@ class SocialThreadTest {
     }
 
     @Test
-    fun `a thread that cannot be saved offers no save entry`() {
+    fun `a thread without action callbacks offers no save watch share files or download controls`() {
         composeRule.setContent { NextTheme { ThreadScreen(subject = "Landscapes", board = "/wg/", posts = ONE_POST) } }
 
-        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithContentDescription("More options").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Watch").assertDoesNotExist()
         composeRule.onNodeWithText("Save Landscapes").assertDoesNotExist()
+        composeRule.onNodeWithText("Share thread").assertDoesNotExist()
     }
 
     @Test
@@ -257,6 +263,7 @@ class SocialThreadTest {
                     posts = listOf(Post(number = "No. 1", time = "2m", body = "A post")),
                     layout = layout,
                     onLayoutChange = { layout = it },
+                    onDownloadAll = {},
                     files = listOf(MediaCell(id = "file-1", board = "/g/")),
                 )
             }
@@ -470,6 +477,117 @@ class SocialThreadTest {
         composeRule.onNodeWithText("The ending", useUnmergedTree = true).assertDoesNotExist()
         composeRule.onNodeWithText("Spoiler — press to reveal", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("The ending", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `at font two a post puts the square thumbnail above its body`() {
+        composeRule.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+                NextTheme {
+                    ThreadScreen(
+                        subject = "A thread",
+                        board = "/g/",
+                        posts = listOf(Post(number = "1", time = "2m", body = "Large text", hasMedia = true)),
+                    )
+                }
+            }
+        }
+        val thumbnail = composeRule.onNodeWithTag(ThreadTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
+        val body = composeRule.onNodeWithText("Large text", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertEquals(ReaderSize.thumbnail.value, (thumbnail.right - thumbnail.left).value, 0.5f)
+        assertEquals((thumbnail.right - thumbnail.left).value, (thumbnail.bottom - thumbnail.top).value, 0.5f)
+        assertTrue(body.top > thumbnail.bottom)
+        assertEquals(ReaderSpace.gutter.value, body.left.value, 0.5f)
+    }
+
+    @Test
+    fun `the image spoiler first tap reveals without opening the viewer`() {
+        var opens = 0
+        composeRule.setContent {
+            NextTheme {
+                ThreadScreen(
+                    subject = "A thread",
+                    board = "/g/",
+                    posts =
+                        listOf(
+                            Post(number = "1", time = "2m", body = "Body", hasMedia = true, imageSpoiler = true),
+                        ),
+                    media = { _, modifier -> Box(modifier.testTag("media-viewer").clickable { opens++ }) },
+                )
+            }
+        }
+        composeRule.onNodeWithTag("media-viewer", true).assertDoesNotExist()
+        composeRule.onNodeWithText("Spoiler").performClick()
+        assertEquals(0, opens)
+        composeRule.onNodeWithTag("media-viewer").performClick()
+        assertEquals(1, opens)
+    }
+
+    @Test
+    fun `a Files spoiler first tap reveals its preview without opening the viewer`() {
+        var opens = 0
+        composeRule.setContent {
+            NextTheme {
+                ThreadScreen(
+                    subject = "A thread",
+                    board = "/g/",
+                    posts = emptyList(),
+                    layout = ThreadLayout.FILES,
+                    files = listOf(MediaCell("file", "/g/", spoiler = true)),
+                    onOpenFile = { opens++ },
+                    fileTile = { _, modifier -> Box(modifier.testTag("file-preview")) },
+                )
+            }
+        }
+        composeRule.onNodeWithTag("file-preview", true).assertDoesNotExist()
+        composeRule.onNodeWithText("Spoiler").performClick()
+        assertEquals(0, opens)
+        composeRule.onNodeWithTag("file-preview", true).assertExists()
+        composeRule.onNodeWithTag(ThreadTags.FILE).performClick()
+        assertEquals(1, opens)
+    }
+
+    @Test
+    fun `reply numbers have no link action when the host cannot follow references`() {
+        composeRule.setContent {
+            NextTheme {
+                ThreadScreen(
+                    subject = "A thread",
+                    board = "/g/",
+                    posts =
+                        listOf(
+                            Post(
+                                number = "1",
+                                time = "2m",
+                                body = "Body",
+                                replies = 2,
+                                replyNumbers = listOf("7", "9"),
+                            ),
+                        ),
+                )
+            }
+        }
+        composeRule.onNodeWithText(">>9").assertDoesNotExist()
+        composeRule.onNodeWithText("2 replies", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `refresh preserves posts under a progress bar and footer uses the loaded timestamp`() {
+        composeRule.setContent {
+            NextTheme {
+                ThreadScreen(
+                    subject = "A thread",
+                    board = "/g/",
+                    posts = ONE_POST,
+                    reloading = true,
+                    statusText = "0 replies · 0 images · Updated 10:42",
+                )
+            }
+        }
+        composeRule.onNodeWithTag(ThreadTags.PROGRESS).assertHeightIsEqualTo(ReaderSize.progress)
+        composeRule.onNodeWithText("A quiet lake").assertIsDisplayed()
+        composeRule.onNodeWithText("0 replies · 0 images · Updated 10:42").assertExists()
     }
 
     @Test

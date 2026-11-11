@@ -39,6 +39,7 @@ include(":core:graph")
 include(":core:network")
 include(":core:designsystem")
 include(":core:ui")
+include(":core:reader")
 include(":core:testing")
 
 include(":domain")
@@ -61,4 +62,3 @@ include(":feature:downloads")
 include(":feature:onboarding")
 
 include(":ui-next")
-

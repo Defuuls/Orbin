@@ -14,7 +14,11 @@ android {
 
 dependencies {
     implementation(project(":ui-next"))
+    implementation(project(":core:reader"))
     implementation(project(":media"))
 
     testImplementation(project(":core:testing"))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

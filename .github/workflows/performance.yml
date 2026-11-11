@@ -5,6 +5,10 @@ on:
     paths:
       - 'app/**'
       - 'benchmark/**'
+      - 'core/model/**'
+      - 'core/reader/**'
+      - 'core/ui/**'
+      - 'core/designsystem/**'
       - 'data/**'
       - 'domain/**'
       - 'feature/**'
@@ -32,7 +36,9 @@ jobs:
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
       - name: Compile macrobenchmark APKs
-        run: ./gradlew :app:assembleDebug :benchmark:assemble
+        run: ./gradlew :app:assembleDebug && ./gradlew :app:assembleBenchmarkRelease :app:assembleNonMinifiedRelease :benchmark:assemble
+      - name: Verify benchmark report validator
+        run: python -m unittest discover -s benchmark/tests
 
   macrobenchmark:
     name: Macrobenchmark metrics
@@ -99,22 +105,24 @@ jobs:
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          # Hosted emulators cannot reliably produce HOT-start or feed frame samples: HOT may
-          # relaunch no activity and an unseeded feed can contain no scrollable frames. Keep those
-          # benchmarks in the suite for real-device runs, while PR CI gates the deterministic
-          # cold/warm startup metrics. Run one build variant instead of connectedCheck's duplicate
-          # benchmarkRelease + nonMinifiedRelease executions.
+          # Real MainActivity cold/warm startup and all five populated production-reader journeys.
+          # HOT stays available for physical-device runs: a hosted HOT start can relaunch no
+          # Activity and produce no startup sample. Run one target variant, rather than both
+          # benchmarkRelease and nonMinifiedRelease through connectedCheck.
           script: >-
             ./gradlew :benchmark:connectedBenchmarkReleaseAndroidTest
             -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,DEBUGGABLE,NOT-PROFILEABLE
-            -Pandroid.testInstrumentationRunnerArguments.class=com.orbin.benchmark.AppPerformanceBenchmark#coldStartup,com.orbin.benchmark.AppPerformanceBenchmark#warmStartup
+            -Pandroid.testInstrumentationRunnerArguments.class=com.orbin.benchmark.AppPerformanceBenchmark#coldStartup,com.orbin.benchmark.AppPerformanceBenchmark#warmStartup,com.orbin.benchmark.AppPerformanceBenchmark#catalogListScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#catalogGridScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#threadScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#filesScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#twoPaneScrollRetentionFrames
+      - name: Validate populated journeys and finite frame samples
+        if: always()
+        run: python benchmark/validate_reports.py benchmark/build
       - name: Upload benchmark reports
         if: always()
-        continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: macrobenchmark-results
           path: |
             benchmark/build/outputs/connected_android_test_additional_output/**
             benchmark/build/reports/androidTests/**
-          if-no-files-found: ignore
+            benchmark/build/outputs/androidTest-results/**
+          if-no-files-found: error

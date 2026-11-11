@@ -150,15 +150,18 @@ numbers into the CI step summary — different tool, overlapping name.
 
 ## Baseline profiles
 
-`:benchmark` records startup/feed paths for ahead-of-time optimization. Generate with:
+`:benchmark` records real launcher startup and populated catalog list/grid, thread, Files, and
+two-pane renderer paths for ahead-of-time optimization. Generate with:
 
 ```bash
 ./gradlew :app:generateReleaseBaselineProfile
 ```
 
 This requires a suitable rooted device/emulator. The Baseline Profile workflow
-(`baseline-profile.yml`) can generate and propose updated profile data through CI — manually via
-`workflow_dispatch`, and on a monthly schedule so the profile does not go stale.
+(`baseline-profile.yml`) generates an artifact on relevant pull requests. Manual and monthly runs
+also propose a draft profile PR. Benchmark-only fixture code is excluded from the shipping profile.
+See [the benchmark journeys](../../benchmark/README.md) for fixture isolation, coverage, commands,
+and the limits of renderer measurements.
 
 ## Release signing
 

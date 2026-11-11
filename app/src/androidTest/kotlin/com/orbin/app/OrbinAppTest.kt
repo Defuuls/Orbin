@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
@@ -83,6 +84,7 @@ class OrbinAppTest {
         composeTestRule.onNodeWithText("Start browsing").assertExists().assertIsNotEnabled()
         composeTestRule.onNodeWithText("Continue").assertDoesNotExist()
         composeTestRule.onNodeWithText("Privacy").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
     }
 
     @Test

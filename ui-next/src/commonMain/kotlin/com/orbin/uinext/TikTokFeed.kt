@@ -96,6 +96,8 @@ import com.orbin.uinext.resources.tiktok_feed_thread_source
 import com.orbin.uinext.resources.tiktok_feed_watch_label
 import com.orbin.uinext.resources.tiktok_feed_watching_label
 import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.ReaderAmoledColors
+import com.orbin.uinext.tokens.ReaderDarkColors
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -118,7 +120,7 @@ internal fun TikTokFeedPage(
         Modifier
             .fillMaxSize()
             .clipToBounds()
-            .background(TikTokDesign.Black)
+            .background(ReaderAmoledColors.background)
             .testTag(TikTokFeedTags.page(row.id)),
     ) {
         val compact = maxHeight < 480.dp || LocalDensity.current.fontScale > 1.5f
@@ -147,10 +149,10 @@ internal fun TikTokFeedPage(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (row.muted) {
-                    Icon(ReaderIcons.Hide, null, tint = TikTokDesign.White, modifier = Modifier.size(32.dp))
+                    Icon(ReaderIcons.Hide, null, tint = ReaderDarkColors.ink, modifier = Modifier.size(32.dp))
                     Text(
                         stringResource(Res.string.tiktok_feed_hidden),
-                        color = TikTokDesign.White,
+                        color = ReaderDarkColors.ink,
                         style = NextType.body,
                     )
                 } else {
@@ -158,10 +160,10 @@ internal fun TikTokFeedPage(
                         row.subject,
                         style = NextType.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp),
                         fontWeight = FontWeight.Bold,
-                        color = TikTokDesign.White,
+                        color = ReaderDarkColors.ink,
                     )
                     if (row.excerpt.isNotBlank()) {
-                        Text(row.excerpt, style = NextType.body, color = TikTokDesign.White)
+                        Text(row.excerpt, style = NextType.body, color = ReaderDarkColors.ink)
                     }
                 }
             }
@@ -171,10 +173,10 @@ internal fun TikTokFeedPage(
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = 0.35f),
+                    0f to ReaderAmoledColors.background.copy(alpha = 0.35f),
                     0.2f to Color.Transparent,
                     0.55f to Color.Transparent,
-                    1f to Color.Black.copy(alpha = 0.78f),
+                    1f to ReaderAmoledColors.background.copy(alpha = 0.78f),
                 ),
             ),
         )
@@ -193,7 +195,7 @@ internal fun TikTokFeedPage(
                 "@${row.board.trim('/')}",
                 style = NextType.bodyMedium.copy(fontSize = 16.sp, lineHeight = 21.sp, shadow = FEED_TEXT_SHADOW),
                 fontWeight = FontWeight.Bold,
-                color = TikTokDesign.White,
+                color = ReaderDarkColors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -201,7 +203,7 @@ internal fun TikTokFeedPage(
                 Text(
                     row.subject,
                     style = NextType.bodyMedium.copy(shadow = FEED_TEXT_SHADOW),
-                    color = TikTokDesign.White,
+                    color = ReaderDarkColors.ink,
                     maxLines = if (compact) 1 else 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -209,7 +211,7 @@ internal fun TikTokFeedPage(
                     Text(
                         row.excerpt,
                         style = NextType.bodyMedium.copy(shadow = FEED_TEXT_SHADOW),
-                        color = TikTokDesign.White,
+                        color = ReaderDarkColors.ink,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -223,7 +225,7 @@ internal fun TikTokFeedPage(
                         stringResource(Res.string.tiktok_feed_source, row.sourceAndBoard, activity)
                     },
                 style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 16.sp, shadow = FEED_TEXT_SHADOW),
-                color = TikTokDesign.White,
+                color = ReaderDarkColors.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -248,7 +250,7 @@ internal fun TikTokFeedPage(
                 ReaderIcons.Play,
                 stringResource(Res.string.social_feed_open_thread),
                 onOpen,
-                tint = TikTokDesign.White,
+                tint = ReaderDarkColors.ink,
                 modifier = Modifier.align(Alignment.Center).size(64.dp),
             )
         }
@@ -279,7 +281,7 @@ private fun TikTokFeedActions(
             Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .border(1.5.dp, TikTokDesign.White, CircleShape)
+                .border(1.5.dp, ReaderDarkColors.ink, CircleShape)
                 .then(
                     if (onOpenBoard != null) {
                         Modifier.nextClickable(role = Role.Button, onClick = onOpenBoard).semantics {
@@ -385,21 +387,21 @@ private fun TikTokRailAction(
         Icon(
             icon,
             contentDescription = null,
-            tint = if (selected) TikTokDesign.Pink else TikTokDesign.White,
+            tint = if (selected) ReaderDarkColors.accent else ReaderDarkColors.ink,
             modifier = Modifier.size(TikTokDesign.ActionIconSize),
         )
         Text(
             label,
             style = NextType.footnote.copy(fontSize = 12.sp, lineHeight = 15.sp, shadow = FEED_TEXT_SHADOW),
             fontWeight = FontWeight.SemiBold,
-            color = TikTokDesign.White,
+            color = ReaderDarkColors.ink,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
         )
     }
 }
 
-private val FEED_TEXT_SHADOW = Shadow(Color.Black.copy(alpha = 0.65f), Offset(0f, 1f), 3f)
+private val FEED_TEXT_SHADOW = Shadow(ReaderAmoledColors.background.copy(alpha = 0.65f), Offset(0f, 1f), 3f)
 
 @Composable
 internal fun TikTokFeedHeader(
@@ -417,8 +419,9 @@ internal fun TikTokFeedHeader(
     sourceLabels: List<String>,
     selectedSource: Int,
     onSelectSource: (Int) -> Unit,
+    menuVisible: Boolean,
+    onMenuVisibleChange: (Boolean) -> Unit,
 ) {
-    var menuVisible by rememberSaveable { mutableStateOf(false) }
     var sourceVisible by rememberSaveable { mutableStateOf(false) }
     var queryVisible by rememberSaveable { mutableStateOf(false) }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -427,7 +430,14 @@ internal fun TikTokFeedHeader(
             Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    WindowInsets.safeDrawing.only(
+                        if (LocalReaderFramePresent.current) {
+                            WindowInsetsSides.Horizontal
+                        } else {
+                            WindowInsetsSides.Top +
+                                WindowInsetsSides.Horizontal
+                        },
+                    ),
                 ).testTag(TikTokFeedTags.HEADER)
                 .semantics { subtitle?.let { stateDescription = it } },
         ) {
@@ -435,12 +445,14 @@ internal fun TikTokFeedHeader(
                 Modifier.fillMaxWidth().heightIn(min = TikTokDesign.FeedHeaderHeight),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                NextIconAction(
-                    ReaderIcons.Menu,
-                    stringResource(Res.string.tiktok_feed_menu),
-                    onClick = { menuVisible = true },
-                    tint = TikTokDesign.White,
-                )
+                if (!LocalReaderFramePresent.current) {
+                    NextIconAction(
+                        ReaderIcons.Menu,
+                        stringResource(Res.string.tiktok_feed_menu),
+                        onClick = { onMenuVisibleChange(true) },
+                        tint = ReaderDarkColors.ink,
+                    )
+                }
                 if (headerGeometry.stackedTabs) {
                     Spacer(Modifier.weight(1f))
                 } else {
@@ -464,12 +476,14 @@ internal fun TikTokFeedHeader(
                         }
                     }
                 }
-                NextIconAction(
-                    ReaderIcons.Search,
-                    stringResource(Res.string.next_search_title),
-                    onClick = { if (onSearch != null) onSearch() else queryVisible = true },
-                    tint = TikTokDesign.White,
-                )
+                if (!LocalReaderFramePresent.current) {
+                    NextIconAction(
+                        ReaderIcons.Search,
+                        stringResource(Res.string.next_search_title),
+                        onClick = { if (onSearch != null) onSearch() else queryVisible = true },
+                        tint = ReaderDarkColors.ink,
+                    )
+                }
             }
             if (headerGeometry.stackedTabs) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
@@ -495,7 +509,7 @@ internal fun TikTokFeedHeader(
                 Text(
                     statusMessage,
                     style = NextType.footnote,
-                    color = TikTokDesign.White,
+                    color = ReaderDarkColors.ink,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier =
@@ -503,7 +517,7 @@ internal fun TikTokFeedHeader(
                             .padding(horizontal = 64.dp)
                             .fillMaxWidth()
                             .background(
-                                Color.Black.copy(alpha = 0.72f),
+                                ReaderAmoledColors.background.copy(alpha = 0.72f),
                             ).padding(horizontal = 12.dp, vertical = 6.dp),
                 )
             }
@@ -519,7 +533,7 @@ internal fun TikTokFeedHeader(
             onChooseSource =
                 if (sourceLabels.isNotEmpty()) {
                     {
-                        menuVisible = false
+                        onMenuVisibleChange(false)
                         queryVisible = false
                         sourceVisible = true
                     }
@@ -530,7 +544,7 @@ internal fun TikTokFeedHeader(
             onOpenBoards = onOpenBoards,
             onOpenDownloads = onOpenDownloads,
             onDismiss = {
-                menuVisible = false
+                onMenuVisibleChange(false)
                 queryVisible = false
             },
         )
@@ -574,13 +588,13 @@ private fun TikTokFeedTab(
             label,
             style = TikTokFeedTabStyle.copy(shadow = FEED_TEXT_SHADOW),
             fontWeight = FontWeight.Bold,
-            color = if (selected) TikTokDesign.White else TikTokDesign.SecondaryWhite,
+            color = if (selected) ReaderDarkColors.ink else ReaderDarkColors.inkMuted,
             maxLines = if (wrap) Int.MAX_VALUE else 1,
             overflow = TextOverflow.Clip,
             textAlign = if (wrap) TextAlign.Center else TextAlign.Start,
             modifier = (if (wrap) Modifier.fillMaxWidth() else Modifier).clearAndSetSemantics {},
         )
-        Box(Modifier.width(22.dp).height(2.dp).background(if (selected) TikTokDesign.White else Color.Transparent))
+        Box(Modifier.width(22.dp).height(2.dp).background(if (selected) ReaderDarkColors.ink else Color.Transparent))
     }
 }
 
@@ -665,9 +679,9 @@ internal fun TikTokFeedEmpty(
     Box(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 80.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (isLoading) {
-                CircularProgressIndicator(color = TikTokDesign.White, modifier = Modifier.size(32.dp))
+                CircularProgressIndicator(color = ReaderDarkColors.accent, modifier = Modifier.size(32.dp))
             } else {
-                Icon(ReaderIcons.Heart, null, tint = TikTokDesign.White, modifier = Modifier.size(40.dp))
+                Icon(ReaderIcons.Heart, null, tint = ReaderDarkColors.ink, modifier = Modifier.size(40.dp))
             }
             Text(
                 when {
@@ -679,13 +693,13 @@ internal fun TikTokFeedEmpty(
                         )
                 },
                 style = NextType.titleMedium,
-                color = TikTokDesign.White,
+                color = ReaderDarkColors.ink,
             )
             if (following && !isLoading && errorMessage == null) {
                 Text(
                     stringResource(Res.string.tiktok_feed_following_hint),
                     style = NextType.body,
-                    color = TikTokDesign.SecondaryWhite,
+                    color = ReaderDarkColors.inkMuted,
                 )
             }
             val action =
@@ -708,7 +722,7 @@ internal fun TikTokFeedEmpty(
                         },
                     ),
                     style = NextType.bodyMedium,
-                    color = TikTokDesign.White,
+                    color = ReaderDarkColors.accent,
                     modifier =
                         Modifier
                             .heightIn(

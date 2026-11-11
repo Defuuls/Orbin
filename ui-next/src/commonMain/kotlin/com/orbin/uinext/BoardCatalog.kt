@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -28,22 +26,33 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -54,8 +63,10 @@ import com.orbin.uinext.resources.next_board_media
 import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.reader_count_thousands
 import com.orbin.uinext.resources.reader_muted
+import com.orbin.uinext.resources.reader_open_browser
 import com.orbin.uinext.resources.reader_pick_board
 import com.orbin.uinext.resources.reader_reload
+import com.orbin.uinext.resources.reader_reveal_spoiler
 import com.orbin.uinext.resources.reader_row_meta
 import com.orbin.uinext.resources.reader_row_summary
 import com.orbin.uinext.resources.reader_search
@@ -85,6 +96,7 @@ object CatalogTags {
     const val ROW = "catalog-row"
     const val CARD = "catalog-card"
     const val PILL = "catalog-pill"
+    const val THUMBNAIL = "catalog-thumbnail"
     const val PROGRESS = "catalog-progress"
 }
 
@@ -123,6 +135,9 @@ fun BoardScreen(
     wideWindow: Boolean = false,
     selectedRowId: String? = null,
     state: LazyGridState = rememberLazyGridState(),
+    onOpenBrowser: (() -> Unit)? = null,
+    headerContent: (@Composable () -> Unit)? = null,
+    stateContent: (@Composable () -> Unit)? = null,
 ) {
     val colors = reader
     Column(
@@ -139,7 +154,7 @@ fun BoardScreen(
             onTitleClick = onPickBoard,
             titleClickLabel = stringResource(Res.string.reader_pick_board),
             actions = catalogActions(onReload, onSearch),
-            overflow = catalogOverflow(mode, onModeChange, sortLabel, onSort, onOpenMedia),
+            overflow = catalogOverflow(mode, onModeChange, sortLabel, onSort, onOpenMedia, onOpenBrowser),
         )
         Box(Modifier.fillMaxWidth().height(ReaderSize.progress)) {
             if (reloading) {
@@ -152,6 +167,11 @@ fun BoardScreen(
                 )
             }
         }
+        headerContent?.invoke()
+        if (stateContent != null) {
+            stateContent()
+            return@Column
+        }
         BoxWithConstraints(
             Modifier
                 .fillMaxSize()
@@ -160,7 +180,6 @@ fun BoardScreen(
             val grid = mode == CatalogMode.GRID
             val columns = if (grid) catalogGridColumns(maxWidth) else 1
             val gap = if (grid) ReaderSpace.gridGap else NO_GAP
-            val thumbnailSize = if (wideWindow) ReaderSize.thumbnailWide else ReaderSize.thumbnail
             val cellMin = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
@@ -190,8 +209,7 @@ fun BoardScreen(
                             CatalogRow(
                                 row = row,
                                 selected = row.id == selectedRowId,
-                                thumbnailSize = thumbnailSize,
-                                cellMin = cellMin,
+                                wideWindow = wideWindow,
                                 onOpen = onOpenRow,
                                 thumbnail = thumbnail,
                             )
@@ -253,6 +271,7 @@ private fun catalogOverflow(
     sortLabel: String?,
     onSort: () -> Unit,
     onOpenMedia: (() -> Unit)?,
+    onOpenBrowser: (() -> Unit)?,
 ): List<ReaderMenuItem> =
     buildList {
         if (onModeChange != null) {
@@ -265,6 +284,9 @@ private fun catalogOverflow(
         }
         if (sortLabel != null) add(ReaderMenuItem(stringResource(Res.string.reader_sort, sortLabel), onClick = onSort))
         if (onOpenMedia != null) add(ReaderMenuItem(stringResource(Res.string.next_board_media), onClick = onOpenMedia))
+        if (onOpenBrowser != null) {
+            add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
+        }
     }
 
 /** The text a screen reader gets for a thread: title, then count, then date. */
@@ -295,19 +317,18 @@ private fun rowTitle(row: FeedRow): String = if (row.muted) stringResource(Res.s
 private fun CatalogRow(
     row: FeedRow,
     selected: Boolean,
-    thumbnailSize: Dp,
-    cellMin: Dp,
+    wideWindow: Boolean,
     onOpen: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
 ) {
     val colors = reader
-    val fontScale = LocalDensity.current.fontScale
-    val pillBelow = fontScale >= PILL_BELOW_FROM_FONT_SCALE
-    val stacked = fontScale >= STACKED_FROM_FONT_SCALE
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
+    var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
+    val covered = showThumbnail && row.imageSpoiler && !revealed
+    val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val title = rowTitle(row)
     val summary = rowSummary(row, title)
-    // The tag leads the chain: a tag after clearAndSetSemantics is cleared with the descendants.
+    // The tag leads the chain: clearAndSetSemantics clears the descendants after this node.
     Column(
         Modifier
             .testTag(CatalogTags.ROW)
@@ -317,27 +338,42 @@ private fun CatalogRow(
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
+                if (covered) {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction(revealLabel) {
+                                revealed = true
+                                true
+                            },
+                        )
+                }
             },
     ) {
-        val thumbnailSlot: @Composable () -> Unit = {
-            Box(
-                Modifier
-                    .size(thumbnailSize)
-                    .clip(RoundedCornerShape(ReaderRadius.small))
-                    .background(colors.surfaceVariant),
-            ) {
-                thumbnail?.invoke(row, Modifier.fillMaxSize())
-            }
-        }
-        val text: @Composable (Modifier) -> Unit = { textModifier ->
+        ReaderCellLayout(
+            wideWindow = wideWindow,
+            thumbnail =
+                if (showThumbnail) {
+                    { imageModifier ->
+                        Box(
+                            imageModifier
+                                .testTag(CatalogTags.THUMBNAIL)
+                                .clip(RoundedCornerShape(ReaderRadius.small))
+                                .background(colors.surfaceVariant),
+                        ) {
+                            if (covered) {
+                                ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+                            } else {
+                                thumbnail(row, Modifier.fillMaxSize())
+                            }
+                        }
+                    }
+                } else {
+                    null
+                },
+            trailing = { CountPill(row) },
+        ) { textModifier ->
             Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
-                Text(
-                    text = title,
-                    style = ReaderType.rowTitle,
-                    color = if (row.read || row.muted) colors.inkMuted else colors.ink,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                CatalogTitle(row, title, ReaderType.rowTitle)
                 Text(
                     text =
                         if (row.threadNumber.isEmpty()) {
@@ -358,29 +394,6 @@ private fun CatalogRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (pillBelow) CountPill(row)
-            }
-        }
-        val padding = Modifier.fillMaxWidth().padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.rowPadY)
-        if (stacked) {
-            Column(padding, verticalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall)) {
-                if (showThumbnail) thumbnailSlot()
-                text(Modifier.fillMaxWidth())
-            }
-        } else {
-            Row(
-                modifier = padding.heightIn(min = if (showThumbnail) cellMin - ReaderSpace.rowPadY * 2 else NO_GAP),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (showThumbnail) {
-                    Box(Modifier.align(Alignment.Top)) { thumbnailSlot() }
-                    Spacer(Modifier.width(ReaderSpace.gap))
-                }
-                text(Modifier.weight(1f).align(Alignment.Top))
-                if (!pillBelow) {
-                    Spacer(Modifier.width(ReaderSpace.gapSmall))
-                    CountPill(row)
-                }
             }
         }
         ReaderHairline()
@@ -397,7 +410,7 @@ private fun CountPill(row: FeedRow) {
         modifier =
             Modifier
                 .testTag(CatalogTags.PILL)
-                .height(ReaderSize.pillHeight)
+                .heightIn(min = ReaderSize.pillHeight)
                 .widthIn(min = ReaderSize.pillMinWidth)
                 .clip(RoundedCornerShape(ReaderRadius.pill))
                 .background(if (unread) colors.accent else colors.surfaceVariant)
@@ -425,6 +438,10 @@ private fun CatalogCard(
     val shape = RoundedCornerShape(ReaderRadius.card)
     val title = rowTitle(row)
     val summary = rowSummary(row, title)
+    val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
+    var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
+    val covered = showThumbnail && row.imageSpoiler && !revealed
+    val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     Column(
         Modifier
             .testTag(CatalogTags.CARD)
@@ -436,36 +453,110 @@ private fun CatalogCard(
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
+                if (covered) {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction(revealLabel) {
+                                revealed = true
+                                true
+                            },
+                        )
+                }
             },
     ) {
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).background(colors.surfaceVariant)) {
-            if (row.hasPreview && !row.muted) thumbnail?.invoke(row, Modifier.fillMaxSize())
+        ReaderCatalogCardLayout(
+            image = { imageModifier ->
+                Box(imageModifier.testTag(CatalogTags.THUMBNAIL).background(colors.surfaceVariant)) {
+                    if (covered) {
+                        ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+                    } else if (showThumbnail) {
+                        thumbnail(row, Modifier.fillMaxSize())
+                    }
+                }
+            },
+        ) { textModifier ->
+            Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
+                CatalogTitle(row, title, ReaderType.cardTitle, minLines = 2)
+                Text(
+                    text =
+                        if (row.unread > 0) {
+                            pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread)
+                        } else {
+                            pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies)
+                        },
+                    style = ReaderType.meta,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (row.unread > 0) colors.accent else colors.inkMuted,
+                )
+            }
         }
-        Column(
-            modifier = Modifier.fillMaxWidth().heightIn(min = ReaderSize.gridCardText).padding(ReaderSpace.cardPad),
-            verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
-        ) {
-            Text(
-                text = title,
-                style = ReaderType.cardTitle,
-                color = if (row.read || row.muted) colors.inkMuted else colors.ink,
-                minLines = 2,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text =
-                    if (row.unread > 0) {
-                        pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread)
-                    } else {
-                        pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies)
+    }
+}
+
+/** Inline status icons follow the title and share its wrapping and two-line limit. */
+@Composable
+private fun CatalogTitle(
+    row: FeedRow,
+    title: String,
+    style: TextStyle,
+    minLines: Int = 1,
+) {
+    val colors = reader
+    val text =
+        buildAnnotatedString {
+            append(title)
+            if (!row.muted && row.sticky) {
+                append(" ")
+                appendInlineContent("sticky")
+            }
+            if (!row.muted && row.closed) {
+                append(" ")
+                appendInlineContent("closed")
+            }
+        }
+    val placeholder =
+        Placeholder(ReaderType.meta.lineHeight, ReaderType.meta.lineHeight, PlaceholderVerticalAlign.Center)
+    Text(
+        text = text,
+        style = style,
+        color = if (row.read || row.muted) colors.inkMuted else colors.ink,
+        minLines = minLines,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        inlineContent =
+            mapOf(
+                "sticky" to
+                    InlineTextContent(placeholder) {
+                        Icon(
+                            ReaderIcons.Pin,
+                            null,
+                            Modifier.fillMaxSize().testTag("catalog-sticky"),
+                            tint = colors.inkMuted,
+                        )
                     },
-                style = ReaderType.meta,
-                color = if (row.unread > 0) colors.accent else colors.inkMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+                "closed" to
+                    InlineTextContent(placeholder) {
+                        Icon(
+                            ReaderIcons.Lock,
+                            null,
+                            Modifier.fillMaxSize().testTag("catalog-closed"),
+                            tint = colors.inkMuted,
+                        )
+                    },
+            ),
+    )
+}
+
+/** Shared square image and expanding text block for catalog cards and skeletons. */
+@Composable
+fun ReaderCatalogCardLayout(
+    modifier: Modifier = Modifier,
+    image: @Composable (Modifier) -> Unit,
+    content: @Composable (Modifier) -> Unit,
+) {
+    Column(modifier.fillMaxWidth()) {
+        image(Modifier.fillMaxWidth().aspectRatio(1f))
+        content(Modifier.fillMaxWidth().heightIn(min = ReaderSize.gridCardText).padding(ReaderSpace.cardPad))
     }
 }
 
@@ -485,8 +576,6 @@ internal fun previewText(
 private const val QUOTE_MARK = ">"
 private const val COUNT_ABBREVIATION_FROM = 1000
 private const val TENTHS = 10
-private const val PILL_BELOW_FROM_FONT_SCALE = 1.3f
-private const val STACKED_FROM_FONT_SCALE = 2.0f
 private val NO_GAP = 0.dp
 
 @Composable

@@ -9,14 +9,13 @@
     <!-- Preferences -->
     <string name="settings_hide_nsfw">Hide NSFW boards</string>
     <string name="settings_cover_violent">Cover violent media</string>
-    <string name="settings_color_theme">Color theme</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_feed_columns">Feed columns</string>
     <string name="settings_feed_columns_unfolded">Feed columns when unfolded</string>
-    <string name="settings_catalog_columns">Catalog columns</string>
+    <string name="settings_catalog_view">Catalog view</string>
     <string name="settings_one_column">1 column</string>
     <string name="settings_columns">%1$d columns</string>
-    <string name="settings_true_black">True black</string>
+    <string name="settings_true_black">AMOLED black</string>
     <string name="settings_app_lock">App lock</string>
     <string name="settings_update_on_launch">Tell me about new releases</string>
     <string name="settings_screen_privacy">Screen privacy shield</string>

@@ -291,8 +291,11 @@ class BrowserTest {
             assertNull(closedReader.thread)
             assertEquals(before, requested.size, "nothing was fetched again")
 
+            val retained = browser.catalog.value
             browser.retry()
-            browser.catalog.settled()
+            assertSame(retained, browser.catalog.value, "retry retains the loaded catalog while it fetches")
+            browser.catalogRefreshing.first { !it }
+            assertIs<Load.Ready<*>>(browser.catalog.value)
             assertEquals(before + 1, requested.size, "retry always fetches")
         }
 

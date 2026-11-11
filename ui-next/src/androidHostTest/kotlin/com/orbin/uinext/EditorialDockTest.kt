@@ -18,7 +18,6 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performClick
@@ -40,34 +39,36 @@ class EditorialDockTest {
 
     private val isTab = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
 
+    /** Replaces largeTextKeepsLabelsReadableAndTargetsReachable for the navigation drawer. */
     @Test
-    fun largeTextKeepsLabelsReadableAndTargetsReachable() {
+    fun largeTextKeepsDrawerLabelsReadableAndTargetsReachable() {
         composeRule.setContent {
             NextTheme(fontScale = 2f) {
                 // Match the real-font renderer and viewport used by the screenshot suite.
                 Surface(modifier = Modifier.size(411.dp, 891.dp)) {
                     Box(contentAlignment = Alignment.BottomCenter) {
-                        DestinationPill(NextDestination.FEED, {})
+                        ReaderDrawer(NextDestination.FEED, {})
                     }
                 }
             }
         }
         listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
             composeRule
-                .onNode(isTab and hasContentDescription(label))
+                .onNode(isTab and hasText(label))
                 .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
         }
         assertIndependentTargets()
     }
 
+    /** Replaces choosingATabUpdatesSelectionWithOneCallback. */
     @Test
-    fun choosingATabUpdatesSelectionWithOneCallback() {
+    fun choosingADrawerEntryUpdatesSelectionWithOneCallback() {
         var calls = 0
         composeRule.setContent {
             var selected by remember { mutableStateOf(NextDestination.FEED) }
             NextTheme {
-                DestinationPill(
+                ReaderDrawer(
                     selected = selected,
                     onSelect = {
                         selected = it
@@ -76,24 +77,25 @@ class EditorialDockTest {
                 )
             }
         }
-        composeRule.onNode(isTab and hasContentDescription("Home")).assertIsSelected()
+        composeRule.onNode(isTab and hasText("Home")).assertIsSelected()
         composeRule
-            .onNode(isTab and hasContentDescription("Saved"))
+            .onNode(isTab and hasText("Saved"))
             .performClick()
             .assertIsSelected()
-        composeRule.onNode(isTab and hasContentDescription("Home")).assertIsNotSelected()
+        composeRule.onNode(isTab and hasText("Home")).assertIsNotSelected()
         assertEquals(1, calls)
     }
 
+    /** Replaces narrowViewportKeepsAllFiveIndependent48dpTargets. */
     @Test
-    fun narrowViewportKeepsAllFiveIndependent48dpTargets() {
+    fun narrowViewportKeepsIndependentFullWidthDrawerTargets() {
         var calls = 0
         composeRule.setContent {
             var selected by remember { mutableStateOf(NextDestination.FEED) }
             NextTheme(fontScale = 2f) {
                 Surface(modifier = Modifier.size(248.dp, 400.dp)) {
                     Box(contentAlignment = Alignment.BottomCenter) {
-                        DestinationPill(selected, {
+                        ReaderDrawer(selected, {
                             selected = it
                             calls++
                         })
@@ -103,29 +105,29 @@ class EditorialDockTest {
         }
         listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
             composeRule
-                .onNode(isTab and hasContentDescription(label))
+                .onNode(isTab and hasText(label))
                 .assertWidthIsAtLeast(MIN_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
         }
         assertIndependentTargets()
-        val first = composeRule.onNode(isTab and hasContentDescription("Home")).getUnclippedBoundsInRoot()
-        val last = composeRule.onNode(isTab and hasContentDescription("Saved")).getUnclippedBoundsInRoot()
+        val first = composeRule.onNode(isTab and hasText("Home")).getUnclippedBoundsInRoot()
+        val last = composeRule.onNode(isTab and hasText("Saved")).getUnclippedBoundsInRoot()
         assertEquals(0f, first.left.value, 0.5f)
         assertEquals(248f, last.right.value, 0.5f)
         composeRule
             .onAllNodes(hasText("Watched"), useUnmergedTree = true)
-            .assertCountEquals(0)
-        composeRule.onNode(isTab and hasContentDescription("Saved")).performClick().assertIsSelected()
+            .assertCountEquals(1)
+        composeRule.onNode(isTab and hasText("Saved")).performClick().assertIsSelected()
         assertEquals(1, calls)
     }
 
     private fun assertIndependentTargets() {
         val bounds =
             listOf("Home", "Watched", "Boards", "Search", "Saved").map { label ->
-                composeRule.onNode(isTab and hasContentDescription(label)).getUnclippedBoundsInRoot()
+                composeRule.onNode(isTab and hasText(label)).getUnclippedBoundsInRoot()
             }
         bounds.zipWithNext().forEach { (left, right) ->
-            org.junit.Assert.assertTrue("Neighboring navigation targets must not overlap", left.right <= right.left)
+            org.junit.Assert.assertTrue("Neighboring navigation targets must not overlap", left.bottom <= right.top)
         }
     }
 }

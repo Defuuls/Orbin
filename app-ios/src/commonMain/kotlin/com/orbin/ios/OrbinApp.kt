@@ -22,8 +22,6 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
-import com.orbin.uinext.NextColorTheme
-import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
@@ -31,7 +29,7 @@ import com.orbin.uinext.OnboardingBoard
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.WhatsNewOnUpdate
-import com.orbin.uinext.colorThemePalette
+import com.orbin.uinext.canonicalNextPalette
 import com.orbin.uinext.next
 import kotlinx.coroutines.flow.map
 
@@ -63,7 +61,7 @@ fun OrbinApp(
     val firstRun by browser.firstRun.state.collectAsState()
     val readerReady = firstRun.initialized && !firstRun.needed
 
-    // A home-screen quick action opens its tab, as an Android app shortcut does.
+    // A home-screen quick action opens its destination, as an Android app shortcut does.
     val quickAction by QuickActions.pending.collectAsState()
     LaunchedEffect(quickAction, lockState.locked, lockState.obscured, readerReady) {
         if (!lockState.locked && !lockState.obscured && readerReady) {
@@ -80,7 +78,7 @@ fun OrbinApp(
             AppThemeMode.LIGHT -> false
             AppThemeMode.DARK -> true
         }
-    val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
+    val palette = canonicalNextPalette(dark, settings.amoled)
     val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun.needed, lockState)
     SideEffect { onStatusBarAppearance(lightIcons) }
     NextTheme(
@@ -223,18 +221,5 @@ private fun LockCover(
     // Taps stop here rather than reaching the app underneath.
     Box(Modifier.fillMaxSize().background(next.background).pointerInput(Unit) {}) {
         if (state.locked) LockScreen(message = state.message, unlocking = state.unlocking, onUnlock = { lock.unlock() })
-    }
-}
-
-@Composable
-internal fun <T> Loaded(
-    load: Load<T>,
-    onRetry: () -> Unit,
-    content: @Composable (T) -> Unit,
-) {
-    when (load) {
-        Load.Loading -> NextLoading(Modifier.fillMaxSize())
-        is Load.Failed -> NextError(load.message, onRetry = onRetry)
-        is Load.Ready -> content(load.value)
     }
 }

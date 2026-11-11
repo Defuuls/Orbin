@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
@@ -18,8 +19,9 @@ class ThreadCollectionInteractionTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /** Replaces sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheFiveTabsReachable. */
     @Test
-    fun sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheFiveTabsReachable() {
+    fun sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheDrawerReachable() {
         var opened = ""
         var destination: NextDestination? = null
         composeRule.setContent {
@@ -38,14 +40,19 @@ class ThreadCollectionInteractionTest {
         }
         composeRule.onNodeWithText("BBWChan · /g/").performClick()
         assertEquals("bbwchan/g/7", opened)
-        composeRule.onNodeWithContentDescription("Watched").performClick()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.WATCHED.name).performClick()
+        composeRule.waitForIdle()
         assertEquals(NextDestination.WATCHED, destination)
-        composeRule.onNodeWithContentDescription("Search").performClick()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.SEARCH.name).performClick()
+        composeRule.waitForIdle()
         assertEquals(NextDestination.SEARCH, destination)
     }
 
+    /** Replaces watchedHasItsOwnSelectedTabAndOpensTheSourceQualifiedThread. */
     @Test
-    fun watchedHasItsOwnSelectedTabAndOpensTheSourceQualifiedThread() {
+    fun watchedHasItsOwnSelectedDrawerEntryAndOpensTheSourceQualifiedThread() {
         var opened = ""
         composeRule.setContent {
             NextTheme {
@@ -58,8 +65,9 @@ class ThreadCollectionInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Watched").assertIsSelected()
         composeRule.onNodeWithText("Discussion").performClick()
         assertEquals("bbwchan/gen/7", opened)
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.WATCHED.name).assertIsSelected()
     }
 }

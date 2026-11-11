@@ -1,0 +1,13 @@
+<resources>
+    <plurals name="reader_status_replies">
+        <item quantity="one">%1$d reply</item>
+        <item quantity="other">%1$d replies</item>
+    </plurals>
+    <plurals name="reader_status_files">
+        <item quantity="one">%1$d file</item>
+        <item quantity="other">%1$d files</item>
+    </plurals>
+    <string name="reader_status_counts">%1$s · %2$s</string>
+    <string name="reader_status_updated">%1$s · %2$s</string>
+    <string name="reader_status_saved">%1$s · saved copy</string>
+</resources>

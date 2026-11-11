@@ -2,9 +2,11 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +18,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_pane_thread
 import com.orbin.uinext.resources.reader_select_thread
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderType
@@ -26,6 +29,8 @@ object ReaderTwoPaneTags {
     const val DIVIDER = "reader-pane-divider"
     const val DETAIL = "reader-thread-pane"
     const val EMPTY = "reader-empty-thread-pane"
+    const val EMPTY_HEADER = "reader-empty-thread-header"
+    const val EMPTY_BODY = "reader-empty-thread-body"
 }
 
 /**
@@ -81,7 +86,7 @@ fun ReaderTwoPane(
 @Composable
 private fun EmptyThreadPane() {
     val colors = reader
-    Box(
+    Column(
         Modifier
             .fillMaxSize()
             .background(colors.background)
@@ -92,13 +97,20 @@ private fun EmptyThreadPane() {
                     }
                 }
             },
-        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = stringResource(Res.string.reader_select_thread),
-            modifier = Modifier.testTag(ReaderTwoPaneTags.EMPTY),
-            color = colors.inkMuted,
-            style = ReaderType.stateBody,
-        )
+        Box(Modifier.fillMaxWidth().testTag(ReaderTwoPaneTags.EMPTY_HEADER)) {
+            ReaderAppBar(title = stringResource(Res.string.reader_pane_thread))
+        }
+        Box(
+            Modifier.fillMaxWidth().weight(1f).testTag(ReaderTwoPaneTags.EMPTY_BODY),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(Res.string.reader_select_thread),
+                modifier = Modifier.testTag(ReaderTwoPaneTags.EMPTY),
+                color = colors.inkMuted,
+                style = ReaderType.stateBody,
+            )
+        }
     }
 }

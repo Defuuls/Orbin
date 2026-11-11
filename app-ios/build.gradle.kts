@@ -28,6 +28,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":ui-next"))
             implementation(project(":core:ui"))
+            implementation(project(":core:reader"))
             implementation(project(":storage"))
             implementation(project(":core:data"))
             implementation(project(":core:graph"))
@@ -65,6 +66,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.compose.ui.test.junit4)
             implementation(libs.compose.ui.test.manifest)
+            implementation(libs.coil.test)
         }
     }
 }

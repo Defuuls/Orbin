@@ -15,10 +15,13 @@ android {
 dependencies {
     implementation(project(":ui-next"))
     implementation(project(":media"))
+    implementation(project(":provider:api"))
+    implementation(project(":core:reader"))
     implementation(libs.androidx.paging.compose)
 
     // asSnapshot(), for asserting on what the catalog's PagingData actually holds.
     testImplementation(libs.androidx.paging.testing)
+    testImplementation(project(":core:data"))
 
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)

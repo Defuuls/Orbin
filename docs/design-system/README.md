@@ -1,6 +1,6 @@
 # Orbin reader design
 
-This is the normative design for Orbin's board catalog and thread reader. **The app does not implement it yet.** The shipped screens, and the Roborazzi baselines under `ui-next`, still show the previous design until they are migrated to this one. The tokens are in code already, in `ui-next`'s `ReaderTokens.kt`.
+This is the normative design for Orbin's board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
 The design comes from a set of catalog and thread mockups and from the resources of the Clover 3.0.2 Android app they imitate. Where those sources disagreed, this document records the choice and the reason under [Source record](#source-record).
 
@@ -326,7 +326,7 @@ A stored color theme or column count from an earlier version is ignored. A backu
 
 ![Themes](diagrams/themes.svg)
 
-Light, dark and AMOLED differ only in the color table. Sizes, spacing and type do not change with the theme. AMOLED uses pure black for every ground so that an OLED screen turns those pixels off.
+Light, dark and AMOLED differ only in the color table. Sizes, spacing and type do not change with the theme. AMOLED uses pure black for screen, row, post, card, app bar, sheet and dialog grounds so that an OLED screen turns those pixels off. Placeholder and selection fills keep the distinct `color.surfaceVariant` and `color.selected` values from the color table.
 
 ## States
 
@@ -424,4 +424,4 @@ The unit test reads the tables in this document. It checks that the arithmetic h
 
 The visual check renders every diagram and the companion page in light and dark at phone and desktop widths and compares them with the images in `baselines/`. After an intended change, regenerate them with `node scripts/design_docs_visual.cjs --update` and review the difference. It needs Playwright 1.63.0 and its Chromium build; the `Design docs` workflow installs both and runs only when these files change.
 
-Neither check renders the app. `scripts/tests/test_design_spec.py` does compare `ui-next`'s `ReaderTokens.kt` with the tables here, so the values the app will draw with cannot drift from this document.
+Neither check renders the app. `scripts/tests/test_design_spec.py` also compares `ui-next`'s `ReaderTokens.kt` with the tables here in both directions. App layout, behavior, screenshot, performance and iOS device evidence are separate checks listed in [Implementation and verification](IMPLEMENTATION.md); passing the document checks alone does not establish that the app follows every rule.

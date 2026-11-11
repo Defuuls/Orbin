@@ -22,15 +22,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.SingletonImageLoader
 import coil3.compose.LocalPlatformContext
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumns
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_boards_no_visible
@@ -55,6 +54,7 @@ import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.ThreadCollectionRow
 import com.orbin.uinext.ThreadCollectionScreen
+import com.orbin.uinext.tokens.ReaderSpace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -66,7 +66,7 @@ import kotlin.time.Clock
 
 private const val CLEAR_ARMED_MS = 4_000L
 
-// Home, Boards, Watched, Search and Saved tabs, plus their detail pages.
+// Home, Boards, Watched, Search and Saved drawer destinations, plus their detail pages.
 
 @Composable
 internal fun FeedDestination(
@@ -277,7 +277,7 @@ internal fun BoardsDestination(browser: Browser) {
             onOpenWatched = { browser.openTab(Route.Watched) },
             onOpenSearch = { browser.openTab(Route.Search) },
             onOpenSettings = { browser.open(Route.Settings) },
-            headerContent = { SiteSwitcher(browser, site, gapAfter = 12.dp) },
+            headerContent = { SiteSwitcher(browser, site, gapAfter = ReaderSpace.gap) },
         )
     }
 }
@@ -394,7 +394,7 @@ internal fun SettingsDestination(
                 playbackScope,
                 playbackChoices,
             ) {
-                settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version) +
+                settingsGroups(settings, clearArmed, imageCacheCleared, backupState, version) +
                     ("Playback" to playbackRows(settings, playbackChoices, playbackScope))
             },
         expandedId = expanded,
@@ -450,10 +450,9 @@ internal fun SettingsDestination(
                         browser.settings.setSaveBrowsingHistory(!settings.saveBrowsingHistory)
                     }
                     SettingIds.DOH_PROVIDER,
-                    SettingIds.COLOR_THEME,
                     SettingIds.THEME,
                     SettingIds.FEED_COLUMNS,
-                    SettingIds.CATALOG_COLUMNS,
+                    SettingIds.CATALOG_MODE,
                     "playbackScope",
                     "autoplay",
                     "preloadNextClip",
@@ -503,15 +502,10 @@ internal fun SettingsDestination(
                             .getOrNull(
                                 index,
                             )?.let(browser.settings::setDohProvider)
-                    SettingIds.COLOR_THEME ->
-                        AppColorTheme.entries
-                            .getOrNull(
-                                index,
-                            )?.let(browser.settings::setColorTheme)
                     SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
                     SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
-                    SettingIds.CATALOG_COLUMNS ->
-                        browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
+                    SettingIds.CATALOG_MODE ->
+                        CatalogMode.entries.getOrNull(index)?.let(browser.settings::setCatalogMode)
                 }
             }
             expanded = null
@@ -633,7 +627,7 @@ internal fun ThreadCollectionsDestination(
     )
 }
 
-/** A network failure must not remove the tab bar or trap the reader on a loading screen. */
+/** A network failure keeps the root frame and its Menu available. */
 @Composable
 private fun <T> PrimaryLoaded(
     browser: Browser,

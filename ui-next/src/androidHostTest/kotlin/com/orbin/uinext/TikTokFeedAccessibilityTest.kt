@@ -43,8 +43,9 @@ class TikTokFeedAccessibilityTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /** Replaces narrowMaximumTextKeepsCompleteTabsAndActionLabelsWithSeparateControls. */
     @Test
-    fun narrowMaximumTextKeepsCompleteTabsAndActionLabelsWithSeparateControls() {
+    fun narrowMaximumTextKeepsFeedActionsBelowTheSharedAppBarAndLabelsComplete() {
         composeRule.setContent {
             NextTheme(fontScale = 2f) {
                 Box(Modifier.size(248.dp, 600.dp)) {
@@ -80,11 +81,11 @@ class TikTokFeedAccessibilityTest {
         val search =
             composeRule
                 .onNode(
-                    hasContentDescription("Search") and hasAnyAncestor(hasTestTag(TikTokFeedTags.HEADER)),
+                    hasContentDescription("Search") and hasAnyAncestor(hasTestTag(ReaderAppBarTags.BAR)),
                 ).getUnclippedBoundsInRoot()
         val mute = composeRule.onNodeWithTag(FeedPlaybackTags.MUTE).getUnclippedBoundsInRoot()
-        assertTrue("Mute must clear the menu", mute.left >= menu.right)
-        assertTrue("Mute must clear Search", mute.right <= search.left)
+        assertTrue("Media controls must start below Feed options", mute.top >= menu.bottom)
+        assertTrue("Media controls must start below Search", mute.top >= search.bottom)
         val following = composeRule.onNodeWithTag(TikTokFeedTags.FOLLOWING).getUnclippedBoundsInRoot()
         assertTrue(
             "Enlarged tabs must sit below the icon controls",

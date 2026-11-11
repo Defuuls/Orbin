@@ -37,22 +37,25 @@ disables standalone mode; Gradle leaves its lifecycle to you. Ordinary tests wit
 run in standalone mode with a placeholder device name. The lookup of an available simulator is
 not done at configuration time, because starting `xcrun` then breaks Gradle's configuration cache.
 
-## What it does so far
+## Reader behavior
 
-A reader, so far:
+The shared reader follows the [normative design](design-system/README.md). Physical iPhone and
+iPad verification is tracked separately in the [reader device checklist](ios-reader-checklist.md);
+the checklist is pending and simulator coverage does not establish physical-device behavior.
 
-- the feed, the start screen as on Android: the newest threads of every board you follow on the
-  site picked in the site switcher at its top (the same switcher Boards has), sorted board A–Z and newest first within a board, with per-board thread limits and
-  the permanent filter applied as on Android. A board that fails to load leaves the others;
+- Home, the start screen as on Android, with Following and For You feeds, source selection,
+  per-board thread limits and the permanent filter. A board that fails to load leaves the others;
 - boards from every site (the same two the Android app ships), one site at a time behind
   Android's site switcher (remembered in the same `activeProviderId` setting), with one site
   being down never hiding the other's boards, and a switch on each to follow it. A site that could not be reached
   is named under the Boards title and tried again when you reopen Boards;
-- search, from the boards list: one query over the catalogs of every board you follow, on every
+- Search, from the navigation drawer: one query over the catalogs of every board you follow, on every
   site. It matches as Android's does (`matchesSearch` in `:core:model`, after the permanent filter),
   on the same shared `ui-next` screen. A board that fails to load leaves the others, and the query
   and results are still there when you come back from a thread;
-- a board's catalog, with thumbnails;
+- a board's catalog, with thumbnail list and grid modes. **Catalog view** in Appearance and the
+  catalog overflow selects List or Grid, remembered per device. Grid columns follow the pane
+  width divided by 120dp, rounded down with a minimum of one; there is no column-count setting;
 - a thread's posts drawn by the same renderer as Android (`core:ui`'s `PostCommentText`):
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
   that open in the browser when they pass the same https check Android uses;
@@ -66,20 +69,22 @@ A reader, so far:
   marks the threads you have opened as read in the catalog. Both live in the same Room database
   as Android's (`:storage`), opened through the bundled SQLite driver in Application Support;
 - unread counts on watched threads in their board's catalog, as on Android. `WatchedThreads`
-  refreshes them while the app is open (at launch, on switching tabs and when the app comes to the
-  front, at most once every five minutes), and iOS also wakes the app now and then in the
+  refreshes them while the app is open (at launch, on changing destinations and when the app
+  comes to the front, at most once every five minutes), and iOS also wakes the app now and then in the
   background (`BackgroundRefresh`, a `BGAppRefreshTask`) to do the same, as Android's watch worker
   does. New replies are posted as a notification per thread; iOS asks to notify the first time you
   watch a thread. Opening a watched thread clears its count, and the thread screen offers a jump to
   the first reply you had not seen;
-- saving from the viewer (Save), and the **Downloads** tab listing every save with its progress, a
+- saving from the viewer (Save), and **Downloads** listing every save with its progress, a
   retry for failures and Clear. Photos, GIFs and the videos iOS plays go into the Photos library
   (add-only access); everything else, WebM included, goes to Files › On My iPhone › Orbin, by board
   then thread. The list is the shared `downloads` table; the rules are Android's (https only, and
   nothing the permanent filter catches);
 - backup and restore (Settings › Export data / Import data) in Android's format, through the share
   sheet and the document picker, so a file from either platform restores on the other. As on
-  Android, an import merges and never restores the app lock;
+  Android, an import merges and never restores the app lock. A backup containing an old color
+  theme is refused before any data is applied, with the message "This backup was made by an
+  older version of Orbin and cannot be restored.";
 - encrypted DNS for every request, as Android's always-on DNS-over-HTTPS, so a network that
   blocks a site through DNS (some mobile carriers do) does not hide it. The UIKit app delegate sets it
   app-wide at launch (`NWParameters.PrivacyContext.default`, iOS 16+) with Android's default
@@ -87,34 +92,53 @@ A reader, so far:
   is no fallback to plain DNS where Cloudflare is blocked, and no resolver setting yet;
 - iPhone and iPad, in every orientation on iPad and in Split View and Stage Manager windows. The
   screens size themselves to the window. Home uses one full-viewport vertical page on every
-  device, with natural media aspect ratios, safe captions and a fixed navigation bar. Saved and
-  board directories use adaptive cover grids. Board catalogs take Settings › **Catalog columns** (2–8, from 4) on an iPad's
-  full width, as Android tablets do (`catalogColumns` in `:core:model`), and sort with Android's
-  sort chip. A thread opened from a catalog sits beside it in a window at least 800 x 600 points
-  (`showsTwoPanes`): an iPad Pro 11-inch (M4, 834 x 1210pt) full screen either way up, but not a
-  narrow Split View, Slide Over or Stage Manager window. The app is native arm64 code on every
+  device, with natural media aspect ratios and safe captions on a black ground in every theme.
+  Its app bar sits above the feed; the Following and For You controls and media actions remain
+  over the media. Saved and board directories keep their adaptive cover grids. A thread opened
+  from a catalog sits beside it when the window is at least 800 points wide and both sides are
+  at least 600 points (`showsTwoPanes`): an iPad Pro 11-inch (M4, 834 x 1210pt) full screen either
+  way up, but not a narrow Split View, Slide Over or Stage Manager window. The shared pane rule
+  gives the catalog five twelfths of the width after the 1dp divider, capped at 420dp; the thread
+  takes the rest. Both panes have app bars, and opening a thread retains the catalog's scroll
+  position. Back in the thread pane closes the thread and shows "Select a thread"; Back again
+  leaves the board. The app is native arm64 code on every
   Apple-silicon iPad, and ProMotion iPads run it at up to 120Hz. The share sheet opens as a
   popover in the middle of an iPad's screen;
 - the system edge swipe to go back, returning to pages as they were rather than reloading them.
 
-- settings, from the feed's header or the boards list, on the shared `ui-next` settings screen:
+- Settings, below a divider in the navigation drawer, on the shared `ui-next` settings screen:
   hide NSFW boards (from the boards list, the feed and search, as on Android), cover violent
   media (on by default: a spoilered file, or one whose post is labelled as violent, waits behind a
   cover in the feed, the catalog, the thread and the viewer until tapped), the theme
-  (system, light or dark) and true black, the app lock, clearing the reading history (two taps,
-  as on Android) and clearing the image cache;
+  (System, Light or Dark), AMOLED black and Catalog view (List or Grid), the app lock,
+  clearing the reading history (two taps, as on Android) and clearing the image cache;
 - the app lock, as on Android: with it on, the app is locked at launch and whenever it has been
   in the background, and hidden in the app switcher. It unlocks with Face ID or Touch ID, or the
   device passcode, where Android asks for strong biometrics only. Turning it on asks you to unlock
   once first, so it cannot lock you out. The lock screen is the shared `ui-next` one Android uses.
+
+Home, Watched, Boards, Search and Saved use an app bar with a Menu button opening the navigation
+drawer. Selecting an entry closes the drawer and changes screen; the current entry is announced
+as selected. Settings is below the drawer's divider. Threads, Settings, Downloads and History
+show Back instead of Menu. The drawer is the window width less the 56dp app bar, capped at 320dp.
+The iOS leading-edge swipe goes back and does not open the drawer; Back closes an open drawer
+before navigating. Content starts below the app bar and ends above the bottom system inset.
+
+The canonical green palette is shared with Android. Appearance defaults to Theme **System**,
+**AMOLED black** off and **Catalog view** List. Light, Dark and AMOLED use the normative token
+table, with pure-black sheet and dialog grounds in AMOLED; placeholder and selected fills remain
+distinct. There is no separate color-theme picker, and stored choices from removed color themes
+or catalog column counts are ignored.
 
 Followed boards and settings live in a DataStore file beside the database, read and written by
 the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,
 with the same keys.
 
 iOS decides when the background refresh runs, from how often you use the app; it does not run in
-the simulator, and not at all if Background App Refresh is off in the system settings. (Android no
-longer offers saving a thread, so iOS has nothing to match there.)
+the simulator, and not at all if Background App Refresh is off in the system settings. The thread
+overflow retains Posts and Files, saved-thread membership, sharing, browser and jump actions;
+Files also offers Download all and Save page when the host supplies those actions. Save page
+writes the thread archive to Orbin's folder in Files and offers it through the share sheet.
 
 ## Building on a Mac
 

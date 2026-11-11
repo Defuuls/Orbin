@@ -44,24 +44,16 @@ class FeedLayoutTest {
     }
 
     @Test
-    fun `a tablet catalog shows its chosen columns, capped, and fits itself anywhere else`() {
-        val six = AppSettings(tabletCatalogColumns = 6)
+    fun `catalog view does not change feed columns or two pane eligibility`() {
+        CatalogMode.entries.forEach { mode ->
+            val settings = chosen.copy(catalogMode = mode)
 
-        assertThat(catalogColumns(FormFactor.TABLET, windowWidthDp = 1366, windowHeightDp = 800, six)).isEqualTo(6)
-        assertThat(
-            catalogColumns(FormFactor.TABLET, windowWidthDp = 1366, windowHeightDp = 800, AppSettings.Default),
-        ).isEqualTo(4)
-        assertThat(
-            catalogColumns(
-                FormFactor.TABLET,
-                windowWidthDp = 1366,
-                windowHeightDp = 800,
-                AppSettings(tabletCatalogColumns = 20),
-            ),
-        ).isEqualTo(8)
-        assertThat(catalogColumns(FormFactor.TABLET, windowWidthDp = 400, windowHeightDp = 891, six)).isNull()
-        assertThat(catalogColumns(FormFactor.FOLDABLE, windowWidthDp = 673, windowHeightDp = 800, six)).isNull()
-        assertThat(catalogColumns(FormFactor.PHONE, windowWidthDp = 915, windowHeightDp = 412, six)).isNull()
+            assertThat(feedColumns(FormFactor.TABLET, 1280, 800, settings)).isEqualTo(4)
+            assertThat(feedColumns(FormFactor.FOLDABLE, 673, 800, settings)).isEqualTo(3)
+            assertThat(feedColumns(FormFactor.PHONE, 915, 412, settings)).isEqualTo(1)
+            assertThat(showsTwoPanes(1280, 800)).isTrue()
+            assertThat(showsTwoPanes(915, 412)).isFalse()
+        }
     }
 
     // Galaxy Z Fold8 and Fold8 Ultra windows at Samsung's default display size (about 2.625x):

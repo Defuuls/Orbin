@@ -2,28 +2,24 @@ package com.orbin.ios
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.ios.resources.Res
-import com.orbin.ios.resources.ios_collection_back
 import com.orbin.ios.resources.ios_downloads_clear
 import com.orbin.ios.resources.ios_downloads_clear_message
 import com.orbin.ios.resources.ios_downloads_clear_title
@@ -38,17 +34,18 @@ import com.orbin.ios.resources.ios_downloads_where
 import com.orbin.uinext.DownloadRow
 import com.orbin.uinext.GroupedDivider
 import com.orbin.uinext.GroupedSection
-import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextDestination
-import com.orbin.uinext.NextScaffold
-import com.orbin.uinext.ScreenTitle
-import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.ReaderMenuItem
+import com.orbin.uinext.ReaderScaffold
+import com.orbin.uinext.reader
+import com.orbin.uinext.tokens.ReaderSpace
+import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The Downloads tab: every file saved from a thread, newest first, with live progress, a retry on
+ * Downloads: every file saved from a thread, newest first, with live progress, a retry on
  * the ones that failed, and Clear to forget the list. The same layout as Android's Downloads screen,
  * built from the same shared parts.
  */
@@ -62,28 +59,28 @@ internal fun DownloadsScreen(
 ) {
     val title = stringResource(Res.string.ios_downloads_title)
     var confirmClear by remember { mutableStateOf(false) }
-    NextScaffold(where = title, destination = NextDestination.DOWNLOADS, onDestination = onDestination) { bottomPad ->
+    val clearLabel = stringResource(Res.string.ios_downloads_clear)
+    ReaderScaffold(
+        title = title,
+        destination = NextDestination.DOWNLOADS,
+        onDestination = onDestination,
+        onBack = onBack,
+        overflow =
+            if (records.isNotEmpty()) {
+                listOf(
+                    ReaderMenuItem(clearLabel) { confirmClear = true },
+                )
+            } else {
+                emptyList()
+            },
+    ) { bottomPad ->
         Column(
             Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
                 ),
         ) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = NextSpace.gutter - 4.dp, vertical = 4.dp)) {
-                if (onBack !=
-                    null
-                ) {
-                    InlineAction(
-                        stringResource(Res.string.ios_collection_back),
-                        onClick = onBack,
-                    )
-                }
-                if (records.isNotEmpty()) {
-                    Spacer(Modifier.weight(1f))
-                    InlineAction(stringResource(Res.string.ios_downloads_clear), onClick = { confirmClear = true })
-                }
-            }
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = bottomPad.calculateBottomPadding() + LIST_END_SPACE),
@@ -91,7 +88,12 @@ internal fun DownloadsScreen(
                 item {
                     val subtitle =
                         if (records.isEmpty()) Res.string.ios_downloads_empty else Res.string.ios_downloads_where
-                    ScreenTitle(text = title, subtitle = stringResource(subtitle))
+                    Text(
+                        stringResource(subtitle),
+                        style = ReaderType.stateBody,
+                        color = reader.inkMuted,
+                        modifier = Modifier.padding(ReaderSpace.gutter),
+                    )
                 }
                 if (records.isNotEmpty()) {
                     item {
@@ -143,4 +145,4 @@ private val DownloadStatus.label: StringResource
             DownloadStatus.FAILED -> Res.string.ios_downloads_status_failed
         }
 
-private val LIST_END_SPACE = 28.dp
+private val LIST_END_SPACE = ReaderSpace.gutter + ReaderSpace.gap

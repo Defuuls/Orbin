@@ -6,90 +6,46 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 import kotlin.math.pow
 
-/**
- * Holds the palette to WCAG AA's contrast floor.
- *
- * The ratios are recomputed here from the palette constants rather than recorded as expected
- * numbers, so the test fails when a colour is edited rather than when someone forgets to update a
- * fixture. It exists because the palette shipped below the floor and nothing noticed: [muted] and
- * [faint] measured 3.85:1 and 2.18:1 on the light ground, and 2.83:1 for dark's faint — the
- * timestamps, the reply counts and every read thread, in all three themes.
- *
- * Only colours that carry text are checked. [NextPalette.hairline] is deliberately excluded: it is
- * a separator between rows that are already separated by space, not information a reader has to
- * make out, and holding a hairline to 4.5:1 would draw a rule far heavier than the design wants.
- */
+/** All fourteen pairs from the design's Contrast table, measured through the public palette. */
 class PaletteContrastTest {
     @Test
-    fun `destructive labels and confirmations clear AA across all themes`() {
-        NextColorTheme.entries.forEach { theme ->
-            listOf(false, true).forEach { dark ->
-                listOf(false, true).forEach { amoled ->
-                    val palette = colorThemePalette(theme, dark, amoled)
-                    val material = materialColorScheme(palette, palette.dark, palette.amoled)
-                    assertRatio("$theme destructive label on background", material.error, palette.background)
-                    assertRatio("$theme destructive label on raised", material.error, palette.raised)
-                    assertRatio("$theme destructive label on elevated", material.error, palette.elevated)
-                    assertRatio("$theme destructive confirmation", material.onError, material.error)
-                    assertRatio(
-                        "$theme direct destructive label on background",
-                        palette.destructive,
-                        palette.background,
-                    )
-                    assertRatio("$theme direct destructive label on raised", palette.destructive, palette.raised)
-                    assertRatio("$theme direct destructive label on elevated", palette.destructive, palette.elevated)
-                    assertRatio("$theme direct destructive confirmation", palette.onDestructive, palette.destructive)
+    fun `every reader contrast pair meets the spec minimum in all three modes`() {
+        palettes().forEach { (name, palette) ->
+            listOf(
+                ContrastPair("onAppBar / appBar", palette.onAppBar, palette.appBar),
+                ContrastPair("ink / background", palette.ink, palette.background),
+                ContrastPair("inkMuted / background", palette.muted, palette.background),
+                ContrastPair("ink / surfaceVariant", palette.ink, palette.surfaceVariant),
+                ContrastPair("inkMuted / surfaceVariant", palette.muted, palette.surfaceVariant),
+                ContrastPair("ink / selected", palette.ink, palette.accentContainer),
+                ContrastPair("inkMuted / selected", palette.muted, palette.accentContainer),
+                ContrastPair("quote / background", palette.quote, palette.background),
+                ContrastPair("quote / selected", palette.quote, palette.accentContainer),
+                ContrastPair("author / background", palette.author, palette.background),
+                ContrastPair("quoteLink / background", palette.quoteLink, palette.background),
+                ContrastPair("error / background", palette.destructive, palette.background),
+                ContrastPair("accent / background", palette.accent, palette.background, minimum = 3.0),
+                ContrastPair("onAccent / accent", palette.onAccent, palette.accent),
+            ).forEach { pair -> assertRatio("$name ${pair.name}", pair.foreground, pair.background, pair.minimum) }
+        }
+    }
+
+    @Test
+    fun `compatibility text roles and Material controls keep accessible token pairings`() {
+        palettes().forEach { (name, palette) ->
+            listOf(palette.background, palette.raised, palette.elevated).forEach { ground ->
+                listOf(palette.ink, palette.muted, palette.faint, palette.destructive).forEach { text ->
+                    assertRatio("$name text", text, ground)
                 }
             }
-        }
-    }
-
-    @Test
-    fun `general colors cover text controls selection and Material errors in every mode`() {
-        NextColorTheme.entries.filter { it != NextColorTheme.ORBIN }.forEach { theme ->
-            listOf(false, true).forEach { dark ->
-                listOf(false, true).forEach { amoled ->
-                    val palette = colorThemePalette(theme, dark, amoled)
-                    val name = "$theme dark=$dark amoled=$amoled"
-                    assertSurfaceText(palette, name)
-                    assertRatio("$name filled", palette.onAccent, palette.accent)
-                    assertRatio("$name selected", palette.onAccentContainer, palette.accentContainer)
-                    val material = materialColorScheme(palette, palette.dark, palette.amoled)
-                    assertRatio("$name error", material.error, material.surface)
-                    assertRatio("$name onError", material.onError, material.error)
-                    assertRatio("$name error container", material.onErrorContainer, material.errorContainer)
-                    assertThat(palette.dark).isEqualTo(dark)
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `registry preserves defaults and monochrome accents`() {
-        listOf(false, true).forEach { dark ->
-            assertThat(colorThemePalette(NextColorTheme.ORBIN, dark)).isEqualTo(canonicalNextPalette(dark, false))
-            val palettes = NextColorTheme.entries.map { colorThemePalette(it, dark) }
-            // White and Black are persisted choices for the same monochrome accent family.
-            assertThat(palettes.distinct()).hasSize(NextColorTheme.entries.size - 1)
-        }
-        assertThat(colorThemePalette(NextColorTheme.BLACK, false).background).isEqualTo(Color.White)
-        assertThat(colorThemePalette(NextColorTheme.WHITE, true, true).background).isEqualTo(Color.Black)
-    }
-
-    @Test
-    fun `every text colour clears AA on the light ground`() = assertPalette(LightPalette, "light")
-
-    @Test
-    fun `every text colour clears AA on the dark ground`() = assertPalette(DarkPalette, "dark")
-
-    @Test
-    fun `every text colour clears AA on the AMOLED ground`() = assertPalette(AmoledPalette, "amoled")
-
-    @Test
-    fun `filled accent chips clear AA with onAccent on solid accent`() {
-        // Soft accent-on-soft failed WCAG; filled InlineAction / Go chip use solid accent + onAccent.
-        listOf(LightPalette to "light", DarkPalette to "dark", AmoledPalette to "amoled").forEach { (palette, name) ->
-            assertRatio("$name onAccent on accent", palette.onAccent, palette.accent)
+            assertThat(palette.faint).isEqualTo(palette.muted)
+            assertRatio("$name selected", palette.onAccentContainer, palette.accentContainer)
+            val material = materialColorScheme(palette, palette.dark, palette.amoled)
+            assertRatio("$name error", material.error, material.surface)
+            assertRatio("$name onError", material.onError, material.error)
+            assertRatio("$name error container", material.onErrorContainer, material.errorContainer)
+            assertRatio("$name primary", material.onPrimary, material.primary)
+            assertRatio("$name selected Material control", material.onPrimaryContainer, material.primaryContainer)
         }
     }
 
@@ -102,28 +58,6 @@ class PaletteContrastTest {
         }
     }
 
-    /**
-     * The tiers stay distinguishable from each other, not just from the ground.
-     *
-     * Raising the alphas until each one passes would be satisfied by setting all three to full
-     * ink, which would delete the hierarchy the palette is built on.
-     */
-    @Test
-    fun `the three text tiers stay visibly separated`() {
-        listOf(
-            LightPalette,
-            DarkPalette,
-            AmoledPalette,
-        ).forEach { palette ->
-            val ink = ratio(palette.ink, palette.background)
-            val muted = ratio(palette.muted, palette.background)
-            val faint = ratio(palette.faint, palette.background)
-            assertThat(ink).isGreaterThan(muted)
-            assertThat(muted).isGreaterThan(faint)
-        }
-    }
-
-    /** A pinned board keeps the hue it shipped with; anything else still lands in the table. */
     @Test
     fun `board hues are stable and in range`() {
         assertThat(boardHueIndex("/g/")).isEqualTo(0)
@@ -136,66 +70,36 @@ class PaletteContrastTest {
         }
     }
 
-    private fun assertSurfaceText(
-        palette: NextPalette,
-        name: String,
-    ) {
-        listOf(palette.background, palette.raised, palette.elevated).forEach { ground ->
-            listOf(palette.ink, palette.muted, palette.faint, palette.accent).forEach { text ->
-                assertRatio(name, text, ground)
-            }
-        }
-    }
-
-    private fun assertPalette(
-        palette: NextPalette,
-        name: String,
-    ) {
-        assertRatio("$name ink", palette.ink, palette.background)
-        assertRatio("$name muted", palette.muted, palette.background)
-        assertRatio("$name faint", palette.faint, palette.background)
-        assertRatio("$name accent", palette.accent, palette.background)
-    }
+    private fun palettes(): List<Pair<String, NextPalette>> =
+        listOf("light" to LightPalette, "dark" to DarkPalette, "amoled" to AmoledPalette)
 
     private fun assertRatio(
         what: String,
         foreground: Color,
         background: Color,
+        minimum: Double = 4.5,
     ) {
         val measured = ratio(foreground, background)
-        // Truth's message templates take %s only, so the ratio is formatted before it goes in.
-        assertWithMessage("%s measured %s:1, needs %s:1", what, "%.2f".format(measured), AA_NORMAL_TEXT)
+        assertWithMessage("%s measured %s:1, needs %s:1", what, "%.2f".format(measured), minimum)
             .that(measured)
-            .isAtLeast(AA_NORMAL_TEXT)
+            .isAtLeast(minimum)
     }
 
-    /**
-     * WCAG 2.1 contrast, with the foreground first composited over the background.
-     *
-     * The compositing step is the part that matters here: the palette states its secondary tiers
-     * as alphas over the ground, so measuring the declared colour rather than the drawn one would
-     * report a ratio no reader ever sees.
-     */
+    /** WCAG contrast includes compositing, so an accidental transparent token cannot evade it. */
     private fun ratio(
         foreground: Color,
         background: Color,
     ): Double {
-        val composited = composite(foreground, background)
+        val composited =
+            Color(
+                red = foreground.red * foreground.alpha + background.red * (1f - foreground.alpha),
+                green = foreground.green * foreground.alpha + background.green * (1f - foreground.alpha),
+                blue = foreground.blue * foreground.alpha + background.blue * (1f - foreground.alpha),
+            )
         val a = relativeLuminance(composited)
         val b = relativeLuminance(background)
         return (maxOf(a, b) + 0.05) / (minOf(a, b) + 0.05)
     }
-
-    // Visible to accent-on-soft assertions in this class.
-    private fun composite(
-        foreground: Color,
-        background: Color,
-    ): Color =
-        Color(
-            red = foreground.red * foreground.alpha + background.red * (1f - foreground.alpha),
-            green = foreground.green * foreground.alpha + background.green * (1f - foreground.alpha),
-            blue = foreground.blue * foreground.alpha + background.blue * (1f - foreground.alpha),
-        )
 
     private fun relativeLuminance(color: Color): Double {
         fun channel(value: Float): Double {
@@ -205,8 +109,10 @@ class PaletteContrastTest {
         return 0.2126 * channel(color.red) + 0.7152 * channel(color.green) + 0.0722 * channel(color.blue)
     }
 
-    private companion object {
-        /** WCAG 2.1 success criterion 1.4.3, for text below 18pt (or 14pt bold). */
-        const val AA_NORMAL_TEXT = 4.5
-    }
+    private data class ContrastPair(
+        val name: String,
+        val foreground: Color,
+        val background: Color,
+        val minimum: Double = 4.5,
+    )
 }

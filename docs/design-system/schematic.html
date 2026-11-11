@@ -61,7 +61,7 @@ footer{border-top:1px solid var(--rule);padding-top:16px;color:var(--muted);font
 <span class="eyebrow">Orbin design system · drawing set</span>
 <h1>Orbin Reader Schematic</h1>
 <p>Dimensioned drawings and tokens for the board catalog and thread reader, on phones and in two panes. Orbin is read-only, so no posting controls appear anywhere in this set.</p>
-<div class="status"><span><b>Status</b> normative, not yet implemented</span><span><b>Units</b> dp for layout, sp for type</span><span><b>Sheets</b> 6</span></div>
+<div class="status"><span><b>Status</b> normative; implemented for Android and iOS</span><span><b>Units</b> dp for layout, sp for type</span><span><b>Sheets</b> 6</span></div>
 <p class="notice">The written spec in <code>docs/design-system/README.md</code> is the source of truth. If this page and the spec differ, the spec is correct.</p>
 </header>
 
@@ -211,7 +211,7 @@ footer{border-top:1px solid var(--rule);padding-top:16px;color:var(--muted);font
 </div>
 </section>
 
-<footer>Home, Watched, Saved, Search results, Settings and the media viewer are outside this set and keep their shipped behavior.</footer>
+<footer>Home, Watched, Boards, Search and Saved use the shared app bar, drawer and colors while keeping their content layouts. Settings and Downloads use the app bar with Back. The media viewer keeps its shipped behavior. See <a href="IMPLEMENTATION.md">Implementation and verification</a> for the status of app checks.</footer>
 </div>
 </body>
 </html>

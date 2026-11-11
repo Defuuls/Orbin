@@ -55,7 +55,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
@@ -65,7 +64,6 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
 import com.orbin.uinext.resources.next_settings_no_matches
 import com.orbin.uinext.resources.next_settings_search
-import com.orbin.uinext.resources.social_settings_back
 import com.orbin.uinext.resources.social_settings_downloads
 import com.orbin.uinext.resources.social_settings_search_options
 import com.orbin.uinext.resources.social_settings_title
@@ -161,7 +159,7 @@ fun SettingsScreen(
         if (item.kind == SettingKind.CHOICE) choiceId = item.id
         onActivate(item)
     }
-    Column(modifier = modifier.fillMaxSize().background(next.background).contentInsets()) {
+    Column(modifier = modifier.fillMaxSize().background(next.background)) {
         SettingsNavigationBar(title, backAction)
         Hairline()
         if (choice != null) {
@@ -279,32 +277,11 @@ private fun SettingsNavigationBar(
     title: String,
     onBack: (() -> Unit)?,
 ) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(48.dp)) {
-            if (onBack != null) {
-                NextIconAction(
-                    imageVector = ReaderIcons.Back,
-                    contentDescription = stringResource(Res.string.social_settings_back),
-                    onClick = onBack,
-                    tint = next.ink,
-                )
-            }
-        }
-        Text(
-            title,
-            style =
-                NextType.titleLarge.copy(
-                    fontSize = 18.sp,
-                    lineHeight = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.sp,
-                ),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f).semantics { heading() },
-            color = next.ink,
-        )
-        WidthSpacer(48)
-    }
+    ReaderAppBar(
+        title = title,
+        navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+        onNavigation = { onBack?.invoke() },
+    )
 }
 
 @Composable
@@ -422,7 +399,7 @@ private fun SettingsChoiceList(
                     Icon(
                         ReaderIcons.Check,
                         contentDescription = null,
-                        tint = TikTokDesign.Pink,
+                        tint = reader.accent,
                         modifier = Modifier.size(22.dp),
                     )
                 }

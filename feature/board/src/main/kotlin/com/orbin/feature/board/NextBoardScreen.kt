@@ -1,39 +1,48 @@
 package com.orbin.feature.board
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.isWideWindow
-import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.FeedRow
-import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.LocalReaderOpenDrawer
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.sourceLabel
+import com.orbin.uinext.ReaderBoardPicker
+import com.orbin.uinext.ReaderCatalogSearch
+import com.orbin.uinext.ReaderCatalogSkeleton
+import com.orbin.uinext.ReaderEmptyState
+import com.orbin.uinext.ReaderErrorState
+import com.orbin.uinext.ReaderNavigation
+import com.orbin.uinext.ReaderRefreshFailure
+import com.orbin.uinext.ReaderScaffold
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
-/**
- * The redesigned board catalog, wired to the same [BoardViewModel] the current one uses.
- *
- * Rows are handed over by index because the catalog is paged. [selectedThread] is the thread open
- * beside the catalog in two panes, so its row can show as selected.
- */
+/** A paged catalog keeps its frame and loaded rows through refresh failures. */
 @Composable
 fun NextBoardScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
@@ -41,150 +50,224 @@ fun NextBoardScreen(
     onOpenMedia: ((board: String) -> Unit)? = null,
     selectedThread: Long? = null,
     viewModel: BoardViewModel = hiltViewModel(),
+    onDestination: ((NextDestination) -> Unit)? = null,
+    onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+    picker: BoardPickerViewModel = hiltViewModel(),
 ) {
-    val threads = viewModel.catalog.collectAsLazyPagingItems()
-    val catalogItemKey =
-        threads.itemKey { thread -> "${thread.key.board.value}/${thread.key.thread.value}" }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(viewModel, lifecycle) {
+        val observer =
+            LifecycleEventObserver { _, _ ->
+                viewModel.setCatalogVisible(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+            }
+        lifecycle.addObserver(observer)
+        viewModel.setCatalogVisible(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        onDispose {
+            lifecycle.removeObserver(observer)
+            viewModel.setCatalogVisible(false)
+        }
+    }
+    val threads = viewModel.preparedCatalog.collectAsLazyPagingItems()
+    val catalogItemKey = threads.itemKey { prepared -> prepared.row.id }
     val visitedThreadIds by viewModel.visitedThreadIds.collectAsStateWithLifecycle()
     val watchedUnread by viewModel.watchedUnread.collectAsStateWithLifecycle()
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
-    // The reader's choice lasts while the catalog is open; the Appearance setting will own it.
-    var catalogMode by rememberSaveable { mutableStateOf(CatalogMode.LIST) }
+    val retainedRefreshFailure by viewModel.catalogRefreshFailure.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val boardOptions by picker.options.collectAsStateWithLifecycle()
     val configuration = LocalConfiguration.current
-
+    val uriHandler = LocalUriHandler.current
+    var query by rememberSaveable { mutableStateOf("") }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
+    var pickerVisible by rememberSaveable { mutableStateOf(false) }
     val board = "/${viewModel.boardId}/"
     val snapshot = threads.itemSnapshotList
-    val byThreadId =
-        remember(snapshot) {
-            snapshot.items.associateBy { it.key.thread.value }
-        }
-    // Memoize FeedRows the way the feed/media walls do — BoardCatalog hits rowAt for
-    // key, contentType, and content (up to 3× per cell) on every composition otherwise.
+    val byThreadId = remember(snapshot) { snapshot.items.associate { it.thread.key.thread.value to it.thread } }
     val rows =
         remember(snapshot, visitedThreadIds, watchedUnread, board, threads.itemCount) {
             List(threads.itemCount) { index ->
-                snapshot.getOrNull(index)?.toRow(board, visitedThreadIds, watchedUnread)
+                snapshot.getOrNull(index)?.let { prepared ->
+                    val threadId = prepared.thread.key.thread.value
+                    prepared.row.copy(read = threadId in visitedThreadIds, unread = watchedUnread[threadId] ?: 0)
+                }
             }
         }
+    val matching = remember(rows, query) { catalogMatchingIndices(rows, query) }
     val rowFor: (Int) -> FeedRow? = { index ->
-        if (index in 0 until threads.itemCount) {
-            threads[index]
-        }
-        rows.getOrNull(index)
+        val sourceIndex = matching[index]
+        // Accessing the Paging item triggers prefetch without rebuilding the presentation.
+        if (sourceIndex in 0 until threads.itemCount) threads[sourceIndex]
+        rows.getOrNull(sourceIndex)
     }
+    val mode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST
+    val wide = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp)
+    val load = boardCatalogLoadState(threads.itemCount, threads.loadState.refresh)
+    val failure = (load.failure ?: retainedRefreshFailure)?.catalogFailure()
+    val browserUrl = picker.boardWebUrl(viewModel.providerId, viewModel.boardId)
 
     NextTheme {
-        val refreshState = threads.loadState.refresh
-        if (refreshState is LoadState.Loading && threads.itemCount == 0) {
-            MessageScreen(
-                title = board,
-                subtitle = stringResource(R.string.board_loading),
-                where = board,
-                modifier = modifier,
-                skeleton = true,
-            )
-            return@NextTheme
-        }
-        if (refreshState is LoadState.Error && threads.itemCount == 0) {
-            MessageScreen(
-                title = board,
-                subtitle = stringResource(refreshState.error.catalogFailure().messageRes),
-                actionLabel = stringResource(R.string.board_try_again),
-                onAction = threads::retry,
-                where = board,
-                modifier = modifier,
-            )
-            return@NextTheme
-        }
-        if (threads.itemCount == 0) {
-            MessageScreen(
-                title = board,
-                subtitle = stringResource(R.string.next_board_empty),
-                actionLabel = stringResource(R.string.board_refresh),
-                onAction = threads::refresh,
-                where = board,
-                modifier = modifier,
-            )
-            return@NextTheme
-        }
-        NextPullToRefresh(
-            isRefreshing = refreshState is LoadState.Loading,
-            onRefresh = threads::refresh,
+        ReaderScaffold(
+            title = board,
             modifier = modifier,
+            destination = NextDestination.BOARDS,
+            onDestination = onDestination,
+            onBack = onBack.takeIf { onDestination == null },
+            drawAppBar = false,
         ) {
-            BoardScreen(
-                board = board,
-                description = viewModel.title,
-                itemCount = threads.itemCount,
-                rowAt = rowFor,
-                rowKey = catalogItemKey,
-                sortLabel = catalogSort.label,
-                onSort = viewModel::cycleCatalogSort,
-                onOpenMedia = onOpenMedia?.let { open -> { open(viewModel.boardId) } },
-                onOpenRow = { row ->
-                    row.threadId()?.let { id ->
-                        onOpenThread(
-                            viewModel.providerId,
-                            viewModel.boardId,
-                            id,
-                            byThreadId[id]?.originalPost?.subject ?: "No.$id",
-                        )
-                    }
-                },
-                mode = catalogMode,
-                onModeChange = { catalogMode = it },
-                onReload = threads::refresh,
-                reloading = refreshState is LoadState.Loading,
-                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
-                selectedRowId = selectedThread?.let { "${viewModel.boardId}/$it" },
-                thumbnail = { row, tileModifier ->
-                    row.threadId()?.let { id ->
-                        byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
-                            MediaThumbnail(
-                                attachment = attachment,
-                                fullResolution = false,
-                                contentScale = ContentScale.Crop,
-                                // The row and the card clip their own thumbnail corners.
-                                cornerRadius = 0.dp,
-                                modifier = tileModifier,
+            val openDrawer = LocalReaderOpenDrawer.current
+            Box(Modifier.fillMaxSize()) {
+                NextPullToRefresh(isRefreshing = load.isRefreshing, onRefresh = threads::refresh) {
+                    BoardScreen(
+                        board = board,
+                        description = viewModel.title,
+                        itemCount = matching.size,
+                        rowAt = rowFor,
+                        rowKey = { index -> catalogItemKey(matching[index]) },
+                        sortLabel = catalogSort.label,
+                        onSort = viewModel::cycleCatalogSort,
+                        navigation =
+                            when {
+                                openDrawer != null -> ReaderNavigation.MENU
+                                onBack != null -> ReaderNavigation.BACK
+                                else -> ReaderNavigation.NONE
+                            },
+                        onNavigation = openDrawer ?: onBack ?: {},
+                        onPickBoard =
+                            onOpenBoard?.let {
+                                {
+                                    picker.refresh()
+                                    pickerVisible = true
+                                }
+                            },
+                        onSearch = {
+                            searchVisible = !searchVisible
+                            if (!searchVisible) query = ""
+                        },
+                        onOpenBrowser = browserUrl?.let { url -> { uriHandler.openUri(url) } },
+                        onOpenMedia = onOpenMedia?.let { open -> { open(viewModel.boardId) } },
+                        onOpenRow = { row ->
+                            row.threadId()?.let { id ->
+                                onOpenThread(
+                                    viewModel.providerId,
+                                    viewModel.boardId,
+                                    id,
+                                    byThreadId[id]?.originalPost?.subject ?: "No.$id",
+                                )
+                            }
+                        },
+                        mode = mode,
+                        onModeChange = { selected ->
+                            viewModel.setCatalogMode(
+                                if (selected ==
+                                    CatalogMode.GRID
+                                ) {
+                                    StoredCatalogMode.GRID
+                                } else {
+                                    StoredCatalogMode.LIST
+                                },
                             )
-                        }
-                    }
+                        },
+                        onReload = threads::refresh,
+                        reloading = load.isRefreshing,
+                        wideWindow = wide,
+                        selectedRowId = selectedThread?.let { "${viewModel.providerId}/${viewModel.boardId}/$it" },
+                        headerContent =
+                            if (searchVisible) {
+                                {
+                                    ReaderCatalogSearch(query, { query = it }, {
+                                        query = ""
+                                        searchVisible = false
+                                    })
+                                }
+                            } else {
+                                null
+                            },
+                        stateContent =
+                            when (load.content) {
+                                BoardCatalogContent.LOADING -> {
+                                    { ReaderCatalogSkeleton(mode = mode, wideWindow = wide, showProgress = false) }
+                                }
+                                BoardCatalogContent.ERROR -> {
+                                    { ReaderErrorState(failure!!.readerCause, threads::retry) }
+                                }
+                                BoardCatalogContent.EMPTY -> {
+                                    {
+                                        ReaderEmptyState(
+                                            stringResource(R.string.next_board_empty),
+                                            stringResource(R.string.board_empty_hint),
+                                            threads::refresh,
+                                        )
+                                    }
+                                }
+                                BoardCatalogContent.CONTENT ->
+                                    if (matching.isEmpty()) {
+                                        {
+                                            ReaderEmptyState(
+                                                stringResource(R.string.board_no_matches),
+                                                stringResource(R.string.board_no_matches_hint),
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    }
+                            },
+                        thumbnail = { row, tileModifier ->
+                            row.threadId()?.let { id ->
+                                byThreadId[id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
+                                    MediaThumbnail(
+                                        // The shared catalog slot owns spoiler reveal before composing media.
+                                        attachment = attachment.copy(isSpoiler = false),
+                                        fullResolution = false,
+                                        contentScale = ContentScale.Crop,
+                                        cornerRadius = 0.dp,
+                                        modifier = tileModifier,
+                                    )
+                                }
+                            }
+                        },
+                    )
+                }
+                if (failure != null &&
+                    (load.content == BoardCatalogContent.CONTENT || load.content == BoardCatalogContent.EMPTY)
+                ) {
+                    ReaderRefreshFailure(
+                        failure.readerCause,
+                        threads::refresh,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
+            }
+        }
+        if (pickerVisible && onOpenBoard != null) {
+            ReaderBoardPicker(
+                boards = boardOptions,
+                onSelect = { selected ->
+                    pickerVisible = false
+                    onOpenBoard(selected.providerId, selected.boardId, selected.title)
                 },
+                onDismiss = { pickerVisible = false },
+                selectedProvider = viewModel.providerId,
+                selectedBoard = viewModel.boardId,
             )
         }
     }
 }
 
+/** Searches only the loaded catalog, retaining placeholders while the query is empty. */
+internal fun catalogMatchingIndices(
+    rows: List<FeedRow?>,
+    query: String,
+): List<Int> {
+    val terms = query.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+    return rows.indices.filter { index ->
+        terms.isEmpty() ||
+            rows[index]?.let { row ->
+                terms.all { term -> "${row.subject} ${row.excerpt}".contains(term, ignoreCase = true) }
+            } ==
+            true
+    }
+}
+
 /** The thread number encoded in a row's id, or null if the id is not one this screen made. */
 private fun FeedRow.threadId(): Long? = id.substringAfterLast('/').toLongOrNull()
-
-private fun CatalogThread.toRow(
-    board: String,
-    visited: Set<Long>,
-    unreadByThread: Map<Long, Int> = emptyMap(),
-): FeedRow =
-    FeedRow(
-        id = "${key.board.value}/${key.thread.value}",
-        subject = originalPost.subject ?: "No.${key.thread.value}",
-        board = board,
-        site = sourceLabel(key.provider.value),
-        poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
-        mediaLabel =
-            originalPost.attachments
-                .firstOrNull()
-                ?.extension
-                ?.uppercase()
-                .orEmpty(),
-        excerpt = originalPost.comment.plainText(),
-        activity =
-            formatRelativeTime(
-                if (stats.lastModifiedMillis > 0L) stats.lastModifiedMillis else originalPost.createdAtMillis,
-            ).orEmpty(),
-        replies = stats.replyCount,
-        media = stats.imageCount,
-        hasPreview = originalPost.attachments.isNotEmpty(),
-        read = key.thread.value in visited,
-        unread = unreadByThread[key.thread.value] ?: 0,
-        mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
-    )

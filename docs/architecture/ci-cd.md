@@ -45,11 +45,14 @@ Verifies Roborazzi goldens for UI modules: `verifyRoborazziDebug` for Android mo
 `ui-next`). Re-record locally with `./gradlew recordRoborazziDebug recordRoborazziAndroidHostTest` when intentional UI changes move the goldens; failed runs upload
 a diffs artifact.
 
-### `baseline-profile.yml` — manual (`workflow_dispatch`) and monthly
+### `baseline-profile.yml` — relevant PRs, manual (`workflow_dispatch`), and monthly
 Boots a **rooted** API 35 emulator, records a baseline profile with `:benchmark`, uploads it as
-the `baseline-profile` artifact, and then opens a draft PR with the result. Baseline profile
-generation needs real (or rooted-emulator) hardware, so it cannot run on every push. A light
-monthly schedule keeps the committed profile from rotting between intentional re-records.
+the `baseline-profile` artifact, and opens a draft PR on monthly/manual runs. Pull-request runs
+generate artifacts without publishing another PR. Coverage includes real launcher startup and
+populated catalog list/grid, thread, Files, and two-pane renderer journeys; benchmark-only fixture
+rules are excluded from the shipping profile. A light monthly schedule keeps the committed profile
+from rotting between intentional re-records. Generation has read-only repository permissions;
+the separate publisher job receives write permissions only on monthly/manual events.
 
 The PR step needs **Settings → Actions → General → "Allow GitHub Actions to create and approve
 pull requests"**. Without it that step fails and the run warns saying so; the profile is still
@@ -58,7 +61,13 @@ ordering recorded a profile successfully and then threw it away.
 
 ### `performance.yml` — on PRs touching performance-sensitive paths
 Compile/performance gates (including the benchmark compile gate) for changes that can affect
-startup or scrolling cost. Kept separate from `ci.yml` so the main suite stays focused.
+startup or scrolling cost. CI measures real cold/warm startup plus five deterministic, populated
+reader renderer journeys, including exact two-pane catalog scroll retention. Empty/stationary
+journeys fail. Actual drawn window/pane dimensions are checked, and required XML/JSON results must
+contain nonempty finite frame samples for each iteration. These measure UI rendering, including
+the production prepared rich-text renderer, while host tests verify repository/network behavior.
+See [benchmark coverage and commands](../../benchmark/README.md). Kept separate from `ci.yml` so
+the main suite stays focused.
 
 ### `cut-release.yml` — on push to `main` touching `release/next.toml` (or manual)
 The release cutter, driven by a manifest rather than by dispatch inputs. `release/next.toml`

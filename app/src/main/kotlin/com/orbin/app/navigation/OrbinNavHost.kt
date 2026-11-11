@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +34,9 @@ import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextScaffold
+import com.orbin.uinext.ReaderAction
+import com.orbin.uinext.ReaderIcons
+import com.orbin.uinext.ReaderScaffold
 
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
@@ -55,6 +59,9 @@ fun OrbinNavHost(
     val uriHandler = LocalUriHandler.current
     val onDestination: (NextDestination) -> Unit = { destination ->
         navController.openDestination(destination)
+    }
+    val pickBoard: (String, String, String) -> Unit = { provider, board, title ->
+        navController.selectCatalogBoard(Route.Board(provider, board, title))
     }
     NavHost(
         navController = navController,
@@ -110,28 +117,39 @@ fun OrbinNavHost(
                 Box(Modifier.fillMaxSize().padding(padding)) {
                     NextSearchScreen(
                         onOpenThread = openThread,
-                        onBack = { navController.navigateToTab(Route.NextFeed) },
+                        onBack = null,
                     )
                 }
             }
         }
 
         composable<Route.BoardMedia> { backStackEntry ->
-            NextAllMediaScreen(
+            ReaderScaffold(
                 title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
-                onOpenMedia = { provider, board, thread, attachmentId ->
-                    navController.navigate(
-                        Route.Gallery(
-                            provider = provider,
-                            board = board,
-                            thread = thread,
-                            startIndex = 0,
-                            attachmentId = attachmentId,
-                        ),
-                    )
-                },
-                onOpenSaved = { navController.navigateToTab(Route.Saved) },
-            )
+                onBack = { navController.navigateUp() },
+                actions =
+                    listOf(
+                        ReaderAction(ReaderIcons.Saved, stringResource(R.string.nav_saved)) {
+                            navController.navigateToTab(Route.Saved)
+                        },
+                    ),
+            ) {
+                NextAllMediaScreen(
+                    title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
+                    onOpenMedia = { provider, board, thread, attachmentId ->
+                        navController.navigate(
+                            Route.Gallery(
+                                provider = provider,
+                                board = board,
+                                thread = thread,
+                                startIndex = 0,
+                                attachmentId = attachmentId,
+                            ),
+                        )
+                    },
+                    onOpenSaved = null,
+                )
+            }
         }
 
         composable<Route.Board> { backStackEntry ->
@@ -165,6 +183,8 @@ fun OrbinNavHost(
                             NO_THREAD_MEDIA_SCROLL_INDEX
                     },
                     onBack = navController::navigateUp,
+                    onDestination = onDestination,
+                    onOpenBoard = pickBoard,
                     onOpenBoardMedia = { board ->
                         navController.navigate(Route.BoardMedia(board = board, provider = boardRoute.provider))
                     },
@@ -172,6 +192,9 @@ fun OrbinNavHost(
             } else {
                 NextBoardScreen(
                     onOpenThread = openThread,
+                    onDestination = onDestination,
+                    onOpenBoard = pickBoard,
+                    onBack = { navController.navigateUp() },
                     onOpenMedia = { board ->
                         navController.navigate(Route.BoardMedia(board = board, provider = boardRoute.provider))
                     },
@@ -281,12 +304,16 @@ internal val threadRouteSaver =
             thread?.let { listOf(it.provider, it.board, it.thread, it.title) } ?: emptyList()
         },
         restore = { fields ->
-            Route.Thread(
-                provider = fields[0] as String,
-                board = fields[1] as String,
-                thread = fields[2] as Long,
-                title = fields[3] as String,
-            )
+            if (fields.isEmpty()) {
+                null
+            } else {
+                Route.Thread(
+                    provider = fields[0] as String,
+                    board = fields[1] as String,
+                    thread = fields[2] as Long,
+                    title = fields[3] as String,
+                )
+            }
         },
     )
 
@@ -320,5 +347,15 @@ internal fun NavHostController.openDestination(destination: NextDestination) {
         NextDestination.WATCHED -> navigateToTab(Route.Watched)
         NextDestination.DOWNLOADS -> navigate(Route.Downloads)
         NextDestination.SETTINGS -> navigate(Route.Settings)
+    }
+}
+
+/** Choosing the board already in view retains its paging generation, sort and scroll state. */
+internal fun NavHostController.selectCatalogBoard(board: Route.Board) {
+    val current = currentBackStackEntry?.takeIf { it.destination.hasRoute(Route.Board::class) }?.toRoute<Route.Board>()
+    if (current?.provider == board.provider && current.board == board.board) return
+    navigate(board) {
+        popUpTo<Route.Board> { inclusive = true }
+        launchSingleTop = true
     }
 }

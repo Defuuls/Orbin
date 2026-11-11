@@ -65,18 +65,14 @@ class InlineActionAccessibilityTest {
         composeRule.onAllNodes(isButton).assertCountEquals(0)
     }
 
-    /**
-     * The rail's Go button used to stand for the chrome here. It is gone, so the pill's tabs are
-     * the only thing in the bottom chrome left to hit — and they are drawn as a Column of icon and
-     * caption rather than a control, so their touch target is asserted rather than assumed.
-     */
+    /** Replaces `a destination tab is at least the minimum touch target` with drawer targets. */
     @Test
-    fun `a destination tab is at least the minimum touch target`() {
+    fun `a drawer destination is at least the minimum touch target`() {
         composeRule.setContent {
-            NextTheme { DestinationPill(selected = NextDestination.FEED, onSelect = {}) }
+            NextTheme { ReaderDrawer(selected = NextDestination.FEED, onSelect = {}) }
         }
 
-        composeRule.onAllNodes(isTab).assertCountEquals(5)
-        repeat(5) { index -> composeRule.onAllNodes(isTab)[index].assertHeightIsAtLeast(MIN_TOUCH_TARGET) }
+        composeRule.onAllNodes(isTab).assertCountEquals(6)
+        repeat(6) { index -> composeRule.onAllNodes(isTab)[index].assertHeightIsAtLeast(MIN_TOUCH_TARGET) }
     }
 }

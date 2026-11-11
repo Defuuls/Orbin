@@ -10,6 +10,8 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
+import com.orbin.core.reader.ThreadPresentationIndex
+import com.orbin.core.reader.preparePresentation
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.notification.ThreadNotifier
@@ -20,8 +22,12 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.EngineKind
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
+import com.orbin.uinext.FeedRow
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -45,6 +51,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
 /** Something being fetched: still coming, arrived, or failed with a message to show. */
@@ -57,8 +64,12 @@ sealed interface Load<out T> {
 
     data class Failed(
         val message: String,
+        val cause: BrowserFailureCause = BrowserFailureCause.UNKNOWN,
     ) : Load<Nothing>
 }
+
+/** Stable causes for reader state titles; the provider's detail remains in [Load.Failed.message]. */
+enum class BrowserFailureCause { NETWORK, NOT_FOUND, SERVER, UNKNOWN }
 
 /** A board together with the site it belongs to; board ids are only unique within a site. */
 data class SiteBoard(
@@ -73,7 +84,7 @@ data class FeedThread(
     val thread: CatalogThread,
 )
 
-/** Where the reader is, with Home, Boards, Watched, Search or Saved at the bottom of the back stack. */
+/** Where the reader is, with a drawer destination at the bottom of the back stack. */
 sealed interface Route {
     /** The newest threads of every followed board, one list: the start screen, as on Android. */
     data object Feed : Route
@@ -156,6 +167,7 @@ class Browser(
     notifier: ThreadNotifier? = null,
     onWatch: () -> Unit = {},
     downloadDao: DownloadDao? = null,
+    private val readerDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
@@ -260,6 +272,12 @@ class Browser(
 
     private val _catalog = MutableStateFlow<Load<List<CatalogThread>>>(Load.Loading)
     val catalog: StateFlow<Load<List<CatalogThread>>> = _catalog.asStateFlow()
+    private val _catalogRefreshing = MutableStateFlow(false)
+    val catalogRefreshing: StateFlow<Boolean> = _catalogRefreshing.asStateFlow()
+    private val _catalogRefreshFailure = MutableStateFlow<Load.Failed?>(null)
+    val catalogRefreshFailure: StateFlow<Load.Failed?> = _catalogRefreshFailure.asStateFlow()
+    private val _preparedCatalogRows = MutableStateFlow<Map<ThreadKey, FeedRow>>(emptyMap())
+    val preparedCatalogRows: StateFlow<Map<ThreadKey, FeedRow>> = _preparedCatalogRows.asStateFlow()
 
     private val _catalogSort = MutableStateFlow(CatalogSort.BUMP_ORDER)
 
@@ -273,6 +291,12 @@ class Browser(
 
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)
     val thread: StateFlow<Load<Thread>> = _thread.asStateFlow()
+    private val _threadRefreshing = MutableStateFlow(false)
+    val threadRefreshing: StateFlow<Boolean> = _threadRefreshing.asStateFlow()
+    private val _threadRefreshFailure = MutableStateFlow<Load.Failed?>(null)
+    val threadRefreshFailure: StateFlow<Load.Failed?> = _threadRefreshFailure.asStateFlow()
+    private val _preparedThread = MutableStateFlow<ThreadPresentationIndex?>(null)
+    val preparedThread: StateFlow<ThreadPresentationIndex?> = _preparedThread.asStateFlow()
 
     internal val mediaScroll =
         MediaScrollSync(
@@ -320,7 +344,9 @@ class Browser(
         scope.launch { boardPreferences.setFavoriteBoard(board.provider, board.board.id, favorite) }
     }
 
-    private var pageLoad: Job? = null
+    private val catalogLoad = PageLoad()
+    private val threadLoad = PageLoad()
+    private var readerLayoutWide = false
 
     // What the catalog and thread states hold, so returning to them does not fetch them again.
     private var catalogShown: SiteBoard? = null
@@ -343,7 +369,7 @@ class Browser(
         watched.refresh()
     }
 
-    /** Switches to a tab, leaving whatever was open on the other one. */
+    /** Switches drawer destination and returns to its root. */
     fun openTab(tab: Route) {
         require(
             tab == Route.Feed ||
@@ -354,6 +380,7 @@ class Browser(
         ) { "Not a tab: $tab" }
         mediaScroll.clear()
         _backStack.value = listOf(tab)
+        cancelHiddenPages()
         if (tab == Route.Feed) loadFeed()
         // A site that could not be reached gets another try, on a new network say.
         if (tab == Route.Boards && _unreachableSites.value.isNotEmpty()) loadBoards()
@@ -375,6 +402,7 @@ class Browser(
             followed.first { it.isNotEmpty() }
             _feedSite.value = null
             _backStack.value = listOf(Route.Feed)
+            cancelHiddenPages()
             loadFeed(force = true)
         }
 
@@ -399,6 +427,21 @@ class Browser(
     fun openBoard(board: SiteBoard) {
         if (board != catalogShown) _catalogSort.value = CatalogSort.BUMP_ORDER
         _backStack.update { it + Route.Catalog(board) }
+        loadCurrent()
+    }
+
+    /** The catalog picker changes its board in place instead of growing a trail of catalogs. */
+    fun replaceBoard(board: SiteBoard) {
+        if (board != catalogShown) _catalogSort.value = CatalogSort.BUMP_ORDER
+        _backStack.update { stack ->
+            val previous = stack.getOrNull(stack.lastIndex - 1)
+            when {
+                stack.lastOrNull() is Route.Catalog -> stack.dropLast(1) + Route.Catalog(board)
+                stack.lastOrNull() is Route.ThreadPage && previous is Route.Catalog ->
+                    stack.dropLast(2) + Route.Catalog(board)
+                else -> stack + Route.Catalog(board)
+            }
+        }
         loadCurrent()
     }
 
@@ -431,9 +474,10 @@ class Browser(
         val thread = (_backStack.value.last() as? Route.ThreadPage)?.key ?: return
         mediaScroll.clear()
         _backStack.update { it + Route.Media(thread, index) }
+        cancelHiddenPages()
     }
 
-    /** Pops one destination. Returns false at the boards list, where there is nothing to pop. */
+    /** Pops one destination. Returns false at a drawer root, where there is nothing to pop. */
     fun back(): Boolean {
         if (_backStack.value.size <= 1) return false
         _backStack.update { it.dropLast(1) }
@@ -451,6 +495,14 @@ class Browser(
             else -> "$base/${key.board.value}/res/${key.thread.value}.html"
         }
     }
+
+    /** The provider's canonical board page, used by the catalog's Open in browser action. */
+    fun boardWebUrl(board: SiteBoard): String? =
+        byId[board.provider]
+            ?.metadata
+            ?.baseUrl
+            ?.trimEnd('/')
+            ?.let { "$it/${board.board.id.value}/" }
 
     fun retry() {
         Haptics.light()
@@ -543,6 +595,7 @@ class Browser(
     }
 
     private fun loadCurrent(force: Boolean = false) {
+        cancelHiddenPages()
         when (val route = _backStack.value.last()) {
             Route.Feed -> loadFeed(force)
             Route.Boards,
@@ -556,42 +609,158 @@ class Browser(
             -> Unit
             is Route.Catalog, is Route.BoardMedia -> {
                 val board = route.catalogBoard ?: return
-                if (force || catalogShown != board || _catalog.value !is Load.Ready) {
-                    catalogShown = board
-                    load(_catalog) { provider(board.provider).catalogOf(board.board.id) }
-                }
+                loadCatalog(board, force)
             }
             is Route.ThreadPage ->
                 if (force || threadShown != route.key || _thread.value !is Load.Ready) {
-                    threadShown = route.key
-                    load(_thread) { threadOf(route.key) }
+                    loadThread(route.key)
                 }
             is Route.ThreadVideos ->
                 if (force || threadShown != route.key || _thread.value !is Load.Ready) {
-                    threadShown = route.key
-                    load(_thread) { threadOf(route.key) }
+                    loadThread(route.key)
                 }
         }
     }
 
+    /** Reloads the visible catalog even when a thread is open beside it. */
+    fun refreshCatalog(board: SiteBoard) {
+        if (visibleCatalogBoard() != board) return
+        Haptics.light()
+        loadCatalog(board, force = true)
+    }
+
+    /** A rendered reader reports the actual panes; stale disposal from another route is ignored. */
+    internal fun setReaderPanesVisible(
+        reader: BoardReaderRoute,
+        wideWindow: Boolean,
+        catalogVisible: Boolean,
+        threadVisible: Boolean,
+    ) {
+        if (boardReaderRoute(_backStack.value) != reader) return
+        readerLayoutWide = wideWindow
+        if (!catalogVisible) cancelPage(catalogLoad, _catalogRefreshing)
+        if (!threadVisible) cancelPage(threadLoad, _threadRefreshing)
+        // A hidden initial load has no cache to restore. A canceled refresh keeps its Ready value.
+        if (catalogVisible && _catalog.value is Load.Loading && catalogLoad.job?.isActive != true) {
+            loadCatalog(reader.catalog.board)
+        }
+        if (threadVisible && _thread.value is Load.Loading && threadLoad.job?.isActive != true) {
+            reader.thread?.let { loadThread(it.key) }
+        }
+    }
+
+    private fun visibleCatalogBoard(): SiteBoard? =
+        _backStack.value.last().catalogBoard
+            ?: boardReaderRoute(_backStack.value)?.takeIf { readerLayoutWide }?.catalog?.board
+
+    private fun cancelHiddenPages() {
+        val route = _backStack.value.last()
+        if (visibleCatalogBoard() == null) cancelPage(catalogLoad, _catalogRefreshing)
+        if (route !is Route.ThreadPage && route !is Route.ThreadVideos) cancelPage(threadLoad, _threadRefreshing)
+        if (boardReaderRoute(_backStack.value) == null) readerLayoutWide = false
+    }
+
+    private fun cancelPage(
+        page: PageLoad,
+        refreshing: MutableStateFlow<Boolean>,
+    ) {
+        if (page.job?.isActive == true) {
+            page.generation++
+            page.job?.cancel()
+            page.job = null
+        }
+        refreshing.value = false
+    }
+
+    private fun loadCatalog(
+        board: SiteBoard,
+        force: Boolean = false,
+    ) {
+        if (!force && catalogShown == board && _catalog.value is Load.Ready) return
+        val sameBoard = catalogShown == board
+        catalogShown = board
+        if (!sameBoard) _preparedCatalogRows.value = emptyMap()
+        load(
+            catalogLoad,
+            _catalog,
+            _catalogRefreshing,
+            _catalogRefreshFailure,
+            retainContent = sameBoard,
+            preparePublication = { threads ->
+                val timestamp = now()
+                val rows = withContext(readerDispatcher) { threads.associate { it.key to it.toRow(timestamp) } }
+                val publish: () -> Unit = { _preparedCatalogRows.value = rows }
+                publish
+            },
+        ) { provider(board.provider).catalogOf(board.board.id, readerDispatcher) }
+    }
+
+    private fun loadThread(key: ThreadKey) {
+        val sameThread = threadShown == key
+        threadShown = key
+        if (!sameThread) {
+            _preparedThread.value = null
+            _firstUnreadPostId.value = null
+        }
+        load(
+            threadLoad,
+            _thread,
+            _threadRefreshing,
+            _threadRefreshFailure,
+            retainContent = sameThread,
+            preparePublication = { loaded ->
+                val index = loaded.preparePresentation(nowMillis = now(), dispatcher = readerDispatcher)
+                val firstUnread = watched.read(loaded)
+                val publish: () -> Unit = {
+                    _preparedThread.value = index
+                    _firstUnreadPostId.value = firstUnread
+                }
+                publish
+            },
+        ) { threadOf(key) }
+    }
+
+    private class PageLoad {
+        var job: Job? = null
+        var generation = 0
+    }
+
     private fun <T> load(
+        page: PageLoad,
         target: MutableStateFlow<Load<T>>,
+        refreshing: MutableStateFlow<Boolean>,
+        refreshFailure: MutableStateFlow<Load.Failed?>,
+        retainContent: Boolean,
+        preparePublication: suspend (T) -> (() -> Unit) = { {} },
         fetch: suspend () -> T,
     ) {
-        pageLoad?.cancel()
-        target.value = Load.Loading
-        pageLoad =
+        page.job?.cancel()
+        val generation = ++page.generation
+        val retained = target.value.takeIf { retainContent && it is Load.Ready }
+        refreshFailure.value = null
+        refreshing.value = retained != null
+        if (retained == null) target.value = Load.Loading
+        page.job =
             scope.launch {
-                target.value =
-                    try {
-                        Load.Ready(fetch())
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (
-                        @Suppress("TooGenericExceptionCaught") error: Exception,
-                    ) {
-                        Load.Failed(error.readable())
-                    }
+                try {
+                    val value = fetch()
+                    val publishPrepared = preparePublication(value)
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    if (generation != page.generation) return@launch
+                    publishPrepared()
+                    target.value = Load.Ready(value)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") error: Exception,
+                ) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    if (generation != page.generation) return@launch
+                    val failure = Load.Failed(error.readable(), error.browserFailureCause())
+                    if (retained == null) target.value = failure else refreshFailure.value = failure
+                } finally {
+                    if (generation == page.generation) refreshing.value = false
+                }
             }
     }
 
@@ -614,23 +783,27 @@ class Browser(
     }
 
     private suspend fun threadOf(key: ThreadKey): Thread {
-        _firstUnreadPostId.value = null
         val loaded = provider(key.provider).getThread(key.board, key.thread)
         // A thread the content filter catches is not shown, as on Android; otherwise its caught
         // replies are hidden. Neither is recorded as read.
-        val visible = ContentPolicy.visibleThread(loaded) ?: throw ContentBlocked()
-        return visible.also {
-            recordVisit(it)
-            _firstUnreadPostId.value = watched.read(it)
-        }
+        val visible =
+            withContext(readerDispatcher) {
+                ContentPolicy.visibleThread(loaded) ?: throw ContentBlocked()
+            }
+        kotlinx.coroutines.currentCoroutineContext().ensureActive()
+        recordVisit(visible)
+        return visible
     }
 
     // Android records a visit when a thread loads and skips the permanently filtered ones; so does
     // this. A failed write only loses the read mark, so it never fails the load.
     private suspend fun recordVisit(thread: Thread) {
-        if (thread.isPermanentlyFiltered()) return
         if (!settings.current.value.saveBrowsingHistory) return
-        runCatching { history.record(thread.toHistoryEntry(now())) }
+        val timestamp = now()
+        runCatching {
+            val entry = withContext(readerDispatcher) { thread.toHistoryEntry(timestamp) }
+            history.record(entry)
+        }
     }
 
     private fun provider(id: ProviderId): ImageBoardProvider =
@@ -642,6 +815,16 @@ private class ContentBlocked : Exception(ContentPolicy.BLOCKED_THREAD_MESSAGE)
 
 /** A one-line reason for the error view. Provider failures already carry a readable message. */
 internal fun Throwable.readable(): String = message?.takeIf { it.isNotBlank() } ?: (this::class.simpleName ?: "Error")
+
+internal fun Throwable.browserFailureCause(): BrowserFailureCause =
+    when (this) {
+        is ProviderException.Network -> BrowserFailureCause.NETWORK
+        is ProviderException.NotFound -> BrowserFailureCause.NOT_FOUND
+        is ProviderException.Http ->
+            if (code == HttpStatusCode.NotFound.value) BrowserFailureCause.NOT_FOUND else BrowserFailureCause.SERVER
+        is ProviderException.RateLimited -> BrowserFailureCause.SERVER
+        else -> BrowserFailureCause.UNKNOWN
+    }
 
 /** A site the app reads: its provider id and the name it goes by. */
 data class Site(
@@ -681,5 +864,10 @@ private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
             },
         ).map { SiteBoard(metadata.id, metadata.displayName, it) }
 
-private suspend fun ImageBoardProvider.catalogOf(board: BoardId): List<CatalogThread> =
-    ContentPolicy.visibleCatalog(getCatalog(CatalogRequest(metadata.id, board)))
+private suspend fun ImageBoardProvider.catalogOf(
+    board: BoardId,
+    dispatcher: CoroutineDispatcher,
+): List<CatalogThread> {
+    val loaded = getCatalog(CatalogRequest(metadata.id, board))
+    return withContext(dispatcher) { ContentPolicy.visibleCatalog(loaded) }
+}

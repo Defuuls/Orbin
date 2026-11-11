@@ -84,6 +84,31 @@ class OnboardingNavigationTest {
         compose.onNodeWithText("Queued Search").assertExists()
         compose.runOnIdle { assertEquals(1, handledRoutes) }
     }
+
+    @Test
+    fun queuedExternalThreadKeepsSetupMandatoryAndOpensAfterPersistence() {
+        val queuedThread = Route.Thread("fourchan", "g", 42L, "External topic")
+        var handledRoutes = 0
+        compose.setContent {
+            val navigation = rememberNavController()
+            var pendingRoute by remember { mutableStateOf<Route?>(queuedThread) }
+            OnboardingNavigation(
+                navController = navigation,
+                startWithOnboarding = true,
+                pendingRoute = pendingRoute,
+                onPendingRouteHandled = {
+                    pendingRoute = null
+                    handledRoutes++
+                },
+                onOnboardingCompleted = {},
+            ) { acknowledgeCompletion -> TestDestinations(navigation, acknowledgeCompletion) }
+        }
+        compose.onNodeWithText("Queued external thread").assertDoesNotExist()
+        compose.runOnIdle { assertEquals(0, handledRoutes) }
+        compose.onNodeWithText("Finish persisted setup").performClick()
+        compose.onNodeWithText("Queued external thread").assertExists()
+        compose.runOnIdle { assertEquals(1, handledRoutes) }
+    }
 }
 
 @androidx.compose.runtime.Composable
@@ -107,5 +132,6 @@ private fun TestDestinations(
         }
         composable<Route.NextFeed> { Text("Initialized Home") }
         composable<Route.Search> { Text("Queued Search") }
+        composable<Route.Thread> { Text("Queued external thread") }
     }
 }

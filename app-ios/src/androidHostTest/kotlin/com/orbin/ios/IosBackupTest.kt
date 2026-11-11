@@ -1,9 +1,9 @@
 package com.orbin.ios
 
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
@@ -14,6 +14,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -72,7 +74,7 @@ class IosBackupTest {
         runTest {
             val from = Stores()
             from.settings.setThemeMode(AppThemeMode.DARK)
-            from.settings.setColorTheme(AppColorTheme.PURPLE)
+            from.settings.setCatalogMode(CatalogMode.GRID)
             from.settings.setCoverViolentMedia(false)
             from.settings.setOpenThreadComments(true)
             from.settings.setBiometricLockEnabled(true)
@@ -86,6 +88,18 @@ class IosBackupTest {
             )
 
             val json = backup(from).exportToJson()
+            val exportedSettings =
+                Json
+                    .parseToJsonElement(json)
+                    .jsonObject
+                    .getValue("settings")
+                    .jsonObject
+            assertEquals("\"GRID\"", exportedSettings.getValue("catalogMode").toString())
+            assertFalse(
+                exportedSettings.keys.any {
+                    it in setOf("colorTheme", "color_theme", "tabletCatalogColumns", "tablet_catalog_columns")
+                },
+            )
 
             val to = Stores()
             val staleScope = PlaybackScope(site.value, "old")
@@ -94,7 +108,7 @@ class IosBackupTest {
             assertEquals(1 to 1, result)
             val settings = to.settings.settings.first()
             assertEquals(AppThemeMode.DARK, settings.themeMode)
-            assertEquals(AppColorTheme.PURPLE, settings.colorTheme)
+            assertEquals(CatalogMode.GRID, settings.catalogMode)
             assertFalse(settings.coverViolentMedia)
             assertTrue(settings.openThreadComments)
             assertFalse(settings.biometricLockEnabled, "a backup must not change the app lock")
@@ -109,17 +123,88 @@ class IosBackupTest {
     @Test
     fun importingAnOlderBackupCompletesSetupWithoutChangingTheAppLock() =
         runTest {
-            for (json in listOf("{}", """{"settings":{"onboardingCompleted":false}}""")) {
+            val compatibleBackups =
+                listOf(
+                    "{}",
+                    """{"settings":{"onboardingCompleted":false}}""",
+                    """{"settings":{"tabletCatalogColumns":6}}""",
+                )
+            for (json in compatibleBackups) {
                 val stores = Stores()
                 stores.settings.setOnboardingCompleted(true)
                 stores.settings.setBiometricLockEnabled(true)
                 stores.settings.setOpenThreadComments(true)
+                stores.settings.setCatalogMode(CatalogMode.GRID)
                 backup(stores).importFromJson(json).getOrThrow()
                 val restored = stores.settings.settings.first()
                 assertTrue(restored.onboardingCompleted)
                 assertTrue(restored.biometricLockEnabled)
                 assertFalse(restored.openThreadComments, "older backups restore the video-first chat default")
+                assertEquals(CatalogMode.LIST, restored.catalogMode)
             }
+        }
+
+    @Test
+    fun backupsContainingALegacyColorThemeAreRefusedBeforeAnyDataIsApplied() =
+        runTest {
+            for (field in listOf("colorTheme", "color_theme")) {
+                for (value in listOf("\"PURPLE\"", "null", "\"UNRECOGNIZED\"")) {
+                    val stores = Stores()
+                    stores.settings.setThemeMode(AppThemeMode.DARK)
+                    stores.settings.setCatalogMode(CatalogMode.GRID)
+                    stores.settings.setBiometricLockEnabled(true)
+                    stores.boards.setSubscribedBoard(site, BoardId("g"), true)
+                    stores.boards.setFavoriteBoard(site, BoardId("a"), true)
+                    val key = ThreadKey(site, BoardId("g"), ThreadId(7))
+                    val keptBookmark = Bookmark(key, "Keep", createdAtMillis = 1, isWatched = true)
+                    stores.bookmarks.addBookmark(keptBookmark)
+                    val beforeSettings = stores.settings.settings.first()
+                    val beforeBoards = stores.boards.subscribed.value
+                    val beforeFavorites = stores.boards.favorites.value
+                    val beforeBookmarks = stores.bookmarks.saved.value
+                    val json =
+                        """
+                        {
+                          "settings": {"$field": $value, "themeMode":"LIGHT", "catalogMode":"LIST"},
+                          "subscribedBoards": [{"providerId":"site","boardId":"x"}],
+                          "favoriteBoards": [{"providerId":"site","boardId":"x"}],
+                          "bookmarks": [{"providerId":"site","boardId":"x","threadId":42}]
+                        }
+                        """.trimIndent()
+
+                    val result = backup(stores).importFromJson(json)
+
+                    assertEquals(
+                        "This backup was made by an older version of Orbin and cannot be restored.",
+                        result.exceptionOrNull()?.message,
+                    )
+                    assertEquals(beforeSettings, stores.settings.settings.first())
+                    assertEquals(beforeBoards, stores.boards.subscribed.value)
+                    assertEquals(beforeFavorites, stores.boards.favorites.value)
+                    assertEquals(beforeBookmarks, stores.bookmarks.saved.value)
+                }
+            }
+        }
+
+    @Test
+    fun colorThemeMentionedInUserContentDoesNotRefuseACompatibleBackup() =
+        runTest {
+            val json =
+                """
+                {"bookmarks":[{"providerId":"site","boardId":"g","threadId":7,"title":"colorTheme"}]}
+                """.trimIndent()
+            val stores = Stores()
+
+            backup(stores).importFromJson(json).getOrThrow()
+
+            assertEquals(
+                "colorTheme",
+                stores.bookmarks
+                    .observeBookmarks()
+                    .first()
+                    .single()
+                    .title,
+            )
         }
 
     @Test

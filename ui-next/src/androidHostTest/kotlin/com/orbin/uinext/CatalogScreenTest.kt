@@ -1,13 +1,18 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -16,8 +21,10 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,7 +32,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.tokens.ReaderLightColors
 import com.orbin.uinext.tokens.ReaderSize
@@ -140,6 +149,86 @@ class CatalogScreenTest {
     }
 
     @Test
+    fun `sticky and closed titles carry their status icons`() {
+        composeRule.setContent {
+            NextTheme { Catalog(rows = listOf(ROWS.first().copy(sticky = true, closed = true))) }
+        }
+        composeRule.onNodeWithTag("catalog-sticky", true).assertExists()
+        composeRule.onNodeWithTag("catalog-closed", true).assertExists()
+    }
+
+    @Test
+    fun `a catalog spoiler takes the first thumbnail tap without composing media or opening its thread`() {
+        var mediaCompositions = 0
+        var opens = 0
+        composeRule.setContent {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = 1,
+                    rowAt = { ROWS.first().copy(id = "source/g/1", imageSpoiler = true) },
+                    onOpenRow = { opens++ },
+                    thumbnail = { _, modifier ->
+                        SideEffect { mediaCompositions++ }
+                        Box(modifier.testTag("requested-thumbnail"))
+                    },
+                )
+            }
+        }
+        composeRule.onAllNodesWithContentDescription("First thread, 23 replies, 2h").assertCountEquals(1)
+        composeRule.runOnIdle { assertEquals(0, mediaCompositions) }
+        composeRule.onNodeWithTag("requested-thumbnail", true).assertDoesNotExist()
+
+        composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, true).performTouchInput { click(center) }
+
+        composeRule.runOnIdle {
+            assertEquals(0, opens)
+            assertTrue("No provider thumbnail can be requested before this composition", mediaCompositions > 0)
+        }
+        composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, true).performTouchInput { click(center) }
+        composeRule.runOnIdle { assertEquals(1, opens) }
+    }
+
+    @Test
+    fun `a grid card exposes reveal as a custom row action while keeping one announcement`() {
+        var mediaCompositions = 0
+        var opens = 0
+        composeRule.setContent {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    mode = CatalogMode.GRID,
+                    itemCount = 1,
+                    rowAt = { ROWS.first().copy(id = "source/g/1", imageSpoiler = true) },
+                    onOpenRow = { opens++ },
+                    thumbnail = { _, modifier ->
+                        SideEffect { mediaCompositions++ }
+                        Box(modifier.testTag("requested-thumbnail"))
+                    },
+                )
+            }
+        }
+        val card = composeRule.onNodeWithTag(CatalogTags.CARD)
+        composeRule.onAllNodesWithContentDescription("First thread, 23 replies, 2h").assertCountEquals(1)
+        composeRule.runOnIdle { assertEquals(0, mediaCompositions) }
+        val reveal = card.fetchSemanticsNode().config[SemanticsActions.CustomActions].single()
+        assertEquals("Reveal spoiler", reveal.label)
+        composeRule.runOnIdle { assertTrue(reveal.action()) }
+
+        composeRule.runOnIdle {
+            assertEquals(0, opens)
+            assertTrue(mediaCompositions > 0)
+        }
+        card.assert(
+            SemanticsMatcher("no reveal action remains") { !it.config.contains(SemanticsActions.CustomActions) },
+        )
+        card.performClick()
+        composeRule.runOnIdle { assertEquals(1, opens) }
+    }
+
+    @Test
     fun `the open thread's row is announced as selected and no other row is`() {
         composeRule.setContent { NextTheme { Catalog(selectedRowId = "g/2") } }
 
@@ -200,6 +289,49 @@ class CatalogScreenTest {
         val pill =
             composeRule.onAllNodesWithTag(CatalogTags.PILL, useUnmergedTree = true).onFirst().getUnclippedBoundsInRoot()
         assertEquals((row.right - ReaderSpace.gutter).value, pill.right.value, 0.5f)
+    }
+
+    @Test
+    fun `a row without an image gives its full thumbnail width back to the text`() {
+        val rows =
+            listOf(
+                ROWS.first().copy(subject = "Image row", excerpt = "Preview"),
+                ROWS.first().copy(subject = "Text row", hasPreview = false, id = "other", excerpt = "Preview"),
+            )
+        composeRule.setContent { NextTheme { Catalog(rows = rows, thumbnail = true) } }
+        val imageText = composeRule.onNodeWithText("Image row", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val text = composeRule.onNodeWithText("Text row", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertEquals(ReaderSpace.gutter.value, text.left.value, 0.5f)
+        assertEquals((ReaderSize.thumbnail + ReaderSpace.gap).value, (imageText.left - text.left).value, 0.5f)
+        composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).assertCountEquals(1)
+    }
+
+    @Test
+    fun `rtl mirrors the catalog thumbnail and pill while retaining selected semantics`() {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                NextTheme { Catalog(rows = ROWS.take(1), thumbnail = true, selectedRowId = "g/1") }
+            }
+        }
+        val image = composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
+        val pill = composeRule.onNodeWithTag(CatalogTags.PILL, true).getUnclippedBoundsInRoot()
+        assertEquals(360f - ReaderSpace.gutter.value, image.right.value, 0.5f)
+        assertEquals(ReaderSpace.gutter.value, pill.left.value, 0.5f)
+        composeRule
+            .onNodeWithTag(CatalogTags.ROW)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
+    }
+
+    @Test
+    fun `font two puts the thumbnail above the preview and grows the pill to fit its text`() {
+        composeRule.setContent { Scaled(2f) { Catalog(rows = ROWS.take(1), thumbnail = true) } }
+        val image = composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
+        val title = composeRule.onNodeWithText("First thread", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val pill = composeRule.onNodeWithTag(CatalogTags.PILL, true).getUnclippedBoundsInRoot()
+        val label = composeRule.onNodeWithText("23", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue(title.top >= image.bottom + ReaderSpace.gapSmall)
+        assertEquals(title.left.value, pill.left.value, 0.5f)
+        assertTrue(label.top >= pill.top && label.bottom <= pill.bottom)
     }
 
     @Test

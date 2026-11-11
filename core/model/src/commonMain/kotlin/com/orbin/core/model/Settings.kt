@@ -10,8 +10,6 @@ enum class AppThemeMode {
     DARK,
 }
 
-/** App icon variant for home screen. */
-@Serializable
 private const val FEED_LIMIT_SIX = 6
 private const val FEED_LIMIT_TWELVE = 12
 private const val FEED_LIMIT_EIGHTEEN = 18
@@ -85,6 +83,15 @@ enum class ThumbnailSize(
     FILL("Fill", THUMBNAIL_SIZE_FILL_DP),
 }
 
+/** Device-wide board catalog presentation; the grid derives its columns from the pane width. */
+@Serializable
+enum class CatalogMode(
+    val label: String,
+) {
+    LIST("List"),
+    GRID("Grid"),
+}
+
 /**
  * User-configurable application settings, persisted via DataStore. Grouped by the settings screen
  * sections (appearance / media / network) and exposed as one immutable snapshot so the UI observes
@@ -106,7 +113,6 @@ data class AppSettings(
      */
     val deepMediaScan: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
-    val colorTheme: AppColorTheme = AppColorTheme.ORBIN,
     val amoled: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val screenPrivacyEnabled: Boolean = false,
@@ -120,8 +126,8 @@ data class AppSettings(
     val unfoldedFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
     /** Feed columns on a tablet, 1–4. */
     val tabletFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
-    /** Board catalog columns on a tablet, 2–8; everywhere else the catalog fits its tiles itself. */
-    val tabletCatalogColumns: Int = DEFAULT_TABLET_CATALOG_COLUMNS,
+    /** Catalog presentation is shared by every board and saved on this device. */
+    val catalogMode: CatalogMode = CatalogMode.LIST,
     val playbackPreferences: PlaybackPreferences = PlaybackPreferences(),
     /** Open comments from Home's chat button instead of the thread's videos. */
     val openThreadComments: Boolean = false,
@@ -133,9 +139,6 @@ data class AppSettings(
 
 /** Two columns until the reader picks otherwise: a wide screen's first step up from a phone. */
 const val DEFAULT_WIDE_FEED_COLUMNS = 2
-
-/** A tablet catalog's columns until the reader picks otherwise: tiles about a phone's half width. */
-const val DEFAULT_TABLET_CATALOG_COLUMNS = 4
 
 /**
  * How fast media preloading is allowed to hit the CDN. The throttled modes trade speed for

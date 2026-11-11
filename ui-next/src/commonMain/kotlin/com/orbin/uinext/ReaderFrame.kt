@@ -2,6 +2,7 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -81,6 +83,7 @@ object ReaderAppBarTags {
     const val BAR = "reader-app-bar"
     const val TITLE = "reader-app-bar-title"
     const val OVERFLOW = "reader-app-bar-overflow"
+    const val BOARD_PICKER = "reader-board-picker-button"
 }
 
 /**
@@ -96,49 +99,64 @@ fun ReaderAppBar(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     navigation: ReaderNavigation = ReaderNavigation.NONE,
-    onNavigation: () -> Unit = {},
+    onNavigation: (() -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
     titleClickLabel: String? = null,
     actions: List<ReaderAction> = emptyList(),
     overflow: List<ReaderMenuItem> = emptyList(),
 ) {
     val colors = reader
+    val leading = if (onNavigation != null) navigation else ReaderNavigation.NONE
     // An icon sits centered in its touch target, so the bar's edge padding is the gutter less
     // that inset: the icon itself then starts at the gutter.
     val iconInset = (ReaderSize.touchTarget - ReaderSize.icon) / 2
     val edge = ReaderSpace.gutter - iconInset
-    Box(
+    BoxWithConstraints(
         modifier =
             modifier
+                .testTag(ReaderAppBarTags.BAR)
                 .fillMaxWidth()
                 .background(colors.appBar)
                 .windowInsetsPadding(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                ).testTag(ReaderAppBarTags.BAR),
+                ),
     ) {
+        val titleStart = if (leading == ReaderNavigation.NONE) ZERO else TITLE_AFTER_NAVIGATION
+        val navigationWidth = if (leading == ReaderNavigation.NONE) iconInset else ReaderSize.touchTarget
+        val actionBudget =
+            (
+                (maxWidth - navigationWidth - titleStart - ReaderSize.touchTarget - edge * 2) /
+                    ReaderSize.touchTarget
+            ).toInt().coerceAtLeast(0)
+        val allActionsFit = actions.size + (if (overflow.isEmpty()) 0 else 1) <= actionBudget
+        val visibleActions = if (allActionsFit) actions else actions.take((actionBudget - 1).coerceAtLeast(0))
+        val menuItems =
+            overflow +
+                actions.drop(visibleActions.size).map { action ->
+                    ReaderMenuItem(action.label, onClick = action.onClick)
+                }
         Row(
             modifier = Modifier.fillMaxWidth().heightIn(min = ReaderSize.appBar).padding(horizontal = edge),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            when (navigation) {
+            when (leading) {
                 ReaderNavigation.MENU ->
                     NextIconAction(
                         imageVector = ReaderIcons.Menu,
                         contentDescription = stringResource(Res.string.reader_menu),
-                        onClick = onNavigation,
+                        onClick = { onNavigation?.invoke() },
                         tint = colors.onAppBar,
                     )
                 ReaderNavigation.BACK ->
                     NextIconAction(
                         imageVector = ReaderIcons.Back,
                         contentDescription = stringResource(Res.string.reader_back),
-                        onClick = onNavigation,
+                        onClick = { onNavigation?.invoke() },
                         tint = colors.onAppBar,
                     )
                 ReaderNavigation.NONE -> Spacer(Modifier.width(iconInset))
             }
             // With no leading control the spacer above already brings the title to the gutter.
-            val titleStart = if (navigation == ReaderNavigation.NONE) ZERO else TITLE_AFTER_NAVIGATION
             Column(modifier = Modifier.weight(1f).padding(start = titleStart)) {
                 val titleRow: @Composable () -> Unit = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -150,8 +168,8 @@ fun ReaderAppBar(
                             overflow = TextOverflow.Ellipsis,
                             modifier =
                                 Modifier
-                                    .weight(1f, fill = false)
                                     .testTag(ReaderAppBarTags.TITLE)
+                                    .weight(1f, fill = false)
                                     .semantics { heading() },
                         )
                         if (onTitleClick != null) {
@@ -168,7 +186,9 @@ fun ReaderAppBar(
                     Box(
                         modifier =
                             Modifier
-                                .heightIn(min = if (subtitle == null) ReaderSize.touchTarget else ReaderSize.icon)
+                                .testTag(ReaderAppBarTags.BOARD_PICKER)
+                                .widthIn(min = ReaderSize.touchTarget)
+                                .heightIn(min = ReaderSize.touchTarget)
                                 .nextClickable(
                                     role = Role.Button,
                                     onClickLabel = titleClickLabel,
@@ -189,7 +209,7 @@ fun ReaderAppBar(
                     )
                 }
             }
-            actions.forEach { action ->
+            visibleActions.forEach { action ->
                 NextIconAction(
                     imageVector = action.icon,
                     contentDescription = action.label,
@@ -197,7 +217,7 @@ fun ReaderAppBar(
                     tint = colors.onAppBar,
                 )
             }
-            if (overflow.isNotEmpty()) {
+            if (menuItems.isNotEmpty()) {
                 var open by remember { mutableStateOf(false) }
                 Box {
                     NextIconAction(
@@ -212,7 +232,7 @@ fun ReaderAppBar(
                         onDismissRequest = { open = false },
                         containerColor = colors.background,
                     ) {
-                        overflow.forEach { item ->
+                        menuItems.forEach { item ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
