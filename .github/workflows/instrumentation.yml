@@ -111,13 +111,18 @@ jobs:
            (out/'package.txt').write_text(adb('shell','dumpsys','package','org.floens.chan'))
            (out/'launch.log').write_text(adb('shell','am','start','-W','-n','org.floens.chan/.ui.activity.BoardActivity',timeout=90))
            xml=status_dialogs(capture('startup'))
-           if not click(xml,'Settings'):
-            if not click(xml,'More options','Menu','More'):
-             size=adb('shell','wm','size');numbers=re.findall(r'(\d+)x(\d+)',size);w,h=map(int,numbers[-1]);adb('shell','input','tap',str(w-24),'52')
-            xml=capture('main_overflow')
-            if not click(xml,'Settings'):
-             adb('shell','input','keyevent','KEYCODE_BACK');adb('shell','input','tap','24','52');xml=capture('main_drawer')
-             assert click(xml,'Settings'),'Settings entry not found in actual main UI'
+           adb('shell','input','tap','240','400');time.sleep(1)
+           opened=False
+           for attempt in range(3):
+            adb('shell','input','tap','28','52')
+            xml=capture('navigation_drawer_'+str(attempt+1))
+            if click(xml,'Settings'):
+             opened=True;break
+           if not opened:
+            adb('shell','input','swipe','1','300','350','300','350')
+            xml=capture('navigation_drawer_swipe')
+            opened=click(xml,'Settings')
+           assert opened,'Settings footer not found after dismissing startup hint and opening drawer'
            xml=capture('settings_root_light')
            result['settings_root_observed']=True
            (out/'root-labels.txt').write_text('\n'.join(n.get('text','') for n in nodes(xml) if n.get('text'))+'\n')
