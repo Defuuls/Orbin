@@ -86,6 +86,19 @@ final class StartupSmokeTests: XCTestCase {
         XCTAssertFalse(labeled("Welcome to Orbin").exists, "Persisted setup must not reopen onboarding")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch.exists)
 
+        // Home must use the actual reader list/grid even when live catalogs are unavailable.
+        // This check also runs after cold relaunch so returning users cannot enter the old feed.
+        let readerGrid = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@", "reader-feed-grid")
+        ).firstMatch
+        XCTAssertTrue(readerGrid.waitForExistence(timeout: 15), "Home must mount the shared reader catalog")
+        XCTAssertGreaterThan(readerGrid.frame.width, 0)
+        XCTAssertGreaterThan(readerGrid.frame.height, 0)
+        let legacyFeed = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@ OR identifier == %@", "tiktok_feed_pager", "tiktok_feed_actions")
+        )
+        XCTAssertEqual(legacyFeed.count, 0, "Home must not render the old full-screen video pager or action column")
+
         // Catalog loading, empty results and failures retain the app bar and feed controls.
         let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
         XCTAssertTrue(forYou.waitForExistence(timeout: 15), "Feed controls must remain available in every loading state")
@@ -98,14 +111,14 @@ final class StartupSmokeTests: XCTestCase {
         let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
         following.tap()
         assertFeedSelection(
-            selected: "tiktok_feed_following",
-            unselected: "tiktok_feed_for_you",
+            selected: "reader-feed-following",
+            unselected: "reader-feed-for-you",
             message: "Following must select its board-following feed even while catalogs are unavailable"
         )
         forYou.tap()
         assertFeedSelection(
-            selected: "tiktok_feed_for_you",
-            unselected: "tiktok_feed_following",
+            selected: "reader-feed-for-you",
+            unselected: "reader-feed-following",
             message: "For You must return to its independent discovery feed"
         )
     }

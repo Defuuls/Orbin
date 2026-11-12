@@ -14,7 +14,7 @@ links, and media but does not post, reply, or create threads.
 
 | | |
 | --- | --- |
-| Current release | **v199 — Komatsuna** (2026-11-11) |
+| Current release | **v200 — Shungiku** (2026-11-12) |
 | Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
 | Providers | 4chan/Vichan-compatible reference provider; BBW Chan/LynxChan |
 | UI | Adaptive grid-first Compose interface for phones, tablets and foldables |

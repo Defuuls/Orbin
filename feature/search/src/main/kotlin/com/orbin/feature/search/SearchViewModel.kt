@@ -99,7 +99,7 @@ class SearchViewModel
                     _state.value = SearchUiState.Loading
                     val boards = searchBoards.value
                     if (boards.isEmpty()) {
-                        _state.value = SearchUiState.Error("Favorite a few boards to search them")
+                        _state.value = SearchUiState.Error("Follow a few boards to search them")
                         return@launch
                     }
                     // Boards are searched a few at a time; one that fails leaves the others' results.

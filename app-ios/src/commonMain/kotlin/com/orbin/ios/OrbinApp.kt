@@ -92,7 +92,7 @@ fun OrbinApp(
         val stateHolder = rememberSaveableStateHolder()
         val routeStates = remember { RouteStates() }
         LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
-        val readerContent: @Composable (Boolean) -> Unit = { covered ->
+        val readerContent: @Composable (Boolean) -> Unit = { _ ->
             Box(Modifier.fillMaxSize()) {
                 if (!lockState.locked && !firstRun.initialized) {
                     NextLoading(Modifier.fillMaxSize())
@@ -114,7 +114,6 @@ fun OrbinApp(
                                 version,
                                 route,
                                 pages,
-                                playbackAllowed = !covered && !lockState.obscured,
                             )
                         }
                     }
@@ -200,10 +199,9 @@ private fun Destination(
     version: AppVersion,
     route: Route,
     pages: ThreadPages?,
-    playbackAllowed: Boolean = true,
 ) {
     when (route) {
-        Route.Feed -> FeedDestination(browser, formFactor, playbackAllowed)
+        Route.Feed -> FeedDestination(browser)
         Route.Boards -> BoardsDestination(browser)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Saved, Route.History, Route.Watched -> ThreadCollectionsDestination(browser, route)

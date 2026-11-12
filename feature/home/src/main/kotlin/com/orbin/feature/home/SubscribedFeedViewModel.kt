@@ -11,6 +11,7 @@ import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.HomeFeedMode
@@ -121,6 +122,11 @@ class SubscribedFeedViewModel
         private val providerFilter = MutableStateFlow<String?>(null)
         private val discoveryLimit = MutableStateFlow(DISCOVERY_PAGE_SIZE)
         private val indexResults = MutableStateFlow<Map<String, String?>>(emptyMap())
+
+        /** Home and board catalogs share the same persisted reader presentation. */
+        fun setCatalogMode(mode: CatalogMode) {
+            viewModelScope.launch { settingsRepository.setCatalogMode(mode) }
+        }
 
         fun setFeedMode(mode: HomeFeedMode) {
             if (_feedMode.value == mode) return

@@ -6,13 +6,15 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,21 +29,25 @@ class InterfaceSemanticsTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `the immersive feed offers no competing layout switcher`() {
+    fun `Home offers its other reader layout only through a wired callback`() {
+        val chosen = mutableListOf<CatalogMode>()
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS) }
+            NextTheme {
+                FeedScreen(rows = ROWS, onOpenBoards = {}, onModeChange = { chosen += it })
+            }
         }
-        composeRule.onNodeWithText("List").assertDoesNotExist()
-        composeRule.onNodeWithText("Grid").assertDoesNotExist()
-        composeRule.onNodeWithText("Images").assertDoesNotExist()
+        composeRule.onNodeWithText("Grid view").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Grid view").performClick()
+        assert(chosen == listOf(CatalogMode.GRID)) { "Home must expose its actual grid callback: $chosen" }
     }
 
     @Test
-    fun `the feed refreshes by pulling down, not from a header button`() {
+    fun `Home omits Reload when its refresh callback is not wired`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS) }
         }
-        composeRule.onNodeWithText("Refresh").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Reload").assertDoesNotExist()
     }
 
     @Test
@@ -82,39 +88,34 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `the feed caption opens the thread as an accessible button`() {
+    fun `the reader row opens the thread as an accessible button`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS) }
         }
         composeRule
-            .onNode(hasTestTag(TikTokFeedTags.CAPTION) and hasText(ROWS[0].subject, substring = true))
+            .onNodeWithTag(ReaderFeedTags.row(ROWS[0].id))
             .assertHasClickAction()
             .assert(hasRole(Role.Button))
     }
 
     @Test
-    fun `feed replies are a separate accessible action from the caption`() {
+    fun `feed replies remain a separate accessible row action`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenReplies = {}, repliesOpenComments = true) }
         }
-        composeRule
-            .onNodeWithContentDescription("View replies to ${ROWS[0].subject}")
-            .assertHasClickAction()
-        composeRule
-            .onNode(
-                hasTestTag(TikTokFeedTags.CAPTION) and hasText(ROWS[0].subject, substring = true),
-            ).assert(hasTextContaining(ROWS[0].subject))
+        composeRule.onNodeWithTag(ReaderFeedTags.more(ROWS[0].id)).performClick()
+        composeRule.onNodeWithText("View replies to ${ROWS[0].subject}").assertHasClickAction()
     }
 
     @Test
-    fun `the immersive feed retains the current board identity with legacy grouping requested`() {
+    fun `reader rows retain the current board identity with legacy grouping requested`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, groupByBoard = true) }
         }
         composeRule
-            .onNode(
-                hasTestTag(TikTokFeedTags.CAPTION) and hasText(ROWS[0].subject, substring = true),
-            ).assert(hasTextContaining(ROWS[0].board))
+            .onNodeWithTag(
+                ReaderFeedTags.row(ROWS[0].id),
+            ).assert(hasContentDescription(ROWS[0].board, substring = true))
     }
 
     @Test
@@ -195,24 +196,18 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `settings opens from the feed options menu`() {
+    fun `settings opens from the reader drawer`() {
         var opened = 0
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onSettings = { opened++ }) }
         }
-        composeRule.onNodeWithContentDescription("Feed options").performClick()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
         composeRule.onNodeWithText("Settings").performClick()
-        assert(opened == 1) { "expected the header button to open settings" }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { assertEquals(1, opened) }
     }
 
     private fun hasRole(role: Role) = SemanticsMatcher.expectValue(SemanticsProperties.Role, role)
-
-    private fun hasTextContaining(fragment: String) =
-        SemanticsMatcher("text contains '$fragment'") { node ->
-            node.config
-                .getOrElse(SemanticsProperties.Text) { emptyList() }
-                .any { it.text.contains(fragment) }
-        }
 
     private companion object {
         val ROWS =

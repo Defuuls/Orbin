@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [200-Shungiku] - 2026-11-12
+
+### Changed
+- Replaced Home's full-screen TikTok-style pager, overlaid tabs, and action rail with reader rows and grid cards on the normal Light, Dark, or AMOLED background.
+- Applied the remembered Catalog view to Home and kept For You, Following, and source selection in ordinary reader controls below the fixed app bar.
+- Used native platform fonts throughout the app instead of the previous TikTok font family.
+- Replaced the old custom settings switches and section headings with reader controls based on Clover.
+- Presented Saved as a compact library of real thread records with source-qualified navigation inspired by dedicated readers.
+- Added an explicit Home reload action and clarified that global search covers followed-board catalogs across all sites.
+- Kept Home thumbnails bounded and opened videos explicitly in the existing media viewer, preserving playback settings and thread actions.
+
+### Fixed
+- Made the default Home screen follow the new reader style after first-run setup, app updates, and cold relaunches.
+- Removed Home's immersive system-bar treatment while retaining full-screen media viewing.
+- Kept the selected iOS media attachment stable when live thread files are inserted, reordered, or removed.
+
+### Testing
+- Replaced old Home pager expectations with reader layout, feed/source continuity, explicit media opening, accessibility, and theme regressions.
+- Added deterministic Home visual coverage and an installed iOS startup assertion for the actual reader layout.
+
 ## [199-Komatsuna] - 2026-11-12
 
 ### Added
@@ -2996,7 +3016,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...HEAD
+[200-Shungiku]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...v200-Shungiku
 [199-Komatsuna]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...v199-Komatsuna
 [198-Celtuce]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...v198-Celtuce
 [197-Okahijiki]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...v197-Okahijiki

@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Feed tabs stay over the pager while catalog headers retain their own reading behavior. */
+/** Reader selectors stay above the list while catalog headers retain their own reading behavior. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class ScrollingHeaderTest {
@@ -26,29 +26,29 @@ class ScrollingHeaderTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `feed tabs remain visible after paging to the last thread`() {
+    fun `feed tabs remain visible after scrolling to the last thread`() {
         composeRule.setContent { NextTheme { FeedScreen(rows = rows(), showRail = false) } }
 
-        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
-        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(ROW_COUNT - 1)
+        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(ROW_COUNT - 1)
 
-        composeRule.onNodeWithText(LAST_SUBJECT).assertIsDisplayed()
-        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.row(rows().last().id)).assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     /** The grid is the harder case: a header there has to span every column rather than take a cell. */
     @Test
-    fun `feed tabs stay visible when the caller requests legacy grid defaults`() {
+    fun `feed tabs stay visible when the reader uses Grid mode`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = rows(), showRail = false) }
+            NextTheme { FeedScreen(rows = rows(), showRail = false, mode = CatalogMode.GRID) }
         }
 
-        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
-        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(ROW_COUNT - 1)
+        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(ROW_COUNT - 1)
 
-        composeRule.onNodeWithText(LAST_SUBJECT).assertIsDisplayed()
-        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.row(rows().last().id)).assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 

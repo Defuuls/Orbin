@@ -9,7 +9,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
@@ -21,7 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The fixed app bar keeps drawer navigation reachable while Home pages scroll. */
+/** The fixed app bar keeps drawer navigation reachable while Home rows scroll. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class RailHidesOnScrollTest {
@@ -30,13 +29,13 @@ class RailHidesOnScrollTest {
 
     /** Replaces `TikTok navigation remains reachable while paging even with legacy hide preference`. */
     @Test
-    fun `the drawer opens Saved after paging with the legacy hide preference enabled`() {
+    fun `the drawer opens Saved after scrolling with the legacy hide preference enabled`() {
         assertSavedDrawerReachableAfterPaging(hidePreference = true)
     }
 
     /** Replaces `TikTok navigation remains reachable when the legacy hide preference is off`. */
     @Test
-    fun `the drawer opens Saved after paging with the legacy hide preference disabled`() {
+    fun `the drawer opens Saved after scrolling with the legacy hide preference disabled`() {
         assertSavedDrawerReachableAfterPaging(hidePreference = false)
     }
 
@@ -91,14 +90,14 @@ class RailHidesOnScrollTest {
             .performClick()
         composeRule.waitForIdle()
         assertTrue("Saved must remain wired after Home scrolls", savedOpens == 1)
-        composeRule.onNodeWithText("Thread number 13").assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.row(ROWS[12].id)).assertIsDisplayed()
     }
 
     private fun scrollFeedDown() {
-        val grid = composeRule.onNodeWithTag(TikTokFeedTags.PAGER)
+        val grid = composeRule.onNodeWithTag(ReaderFeedTags.GRID)
         grid.performScrollToIndex(12)
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Thread number 13").assertIsDisplayed()
+        composeRule.onNodeWithTag(ReaderFeedTags.row(ROWS[12].id)).assertIsDisplayed()
         val offset = grid.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
         assertTrue("Expected the feed to move down, offset=$offset", offset > 0f)
     }

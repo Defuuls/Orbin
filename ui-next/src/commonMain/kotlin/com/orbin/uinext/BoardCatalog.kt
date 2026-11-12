@@ -314,39 +314,61 @@ private fun rowTitle(row: FeedRow): String = if (row.muted) stringResource(Res.s
  * text. Nothing shrinks.
  */
 @Composable
-private fun CatalogRow(
+internal fun CatalogRow(
     row: FeedRow,
     selected: Boolean,
     wideWindow: Boolean,
     onOpen: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+    modifier: Modifier = Modifier,
+    itemTag: String? = null,
+    thumbnailTag: String? = null,
+    metadata: String? = null,
+    onOpenThumbnail: ((FeedRow) -> Unit)? = null,
+    thumbnailClickLabel: String? = null,
+    spoilerRevealed: Boolean? = null,
+    onRevealSpoiler: (() -> Unit)? = null,
+    accessibilityActions: List<CustomAccessibilityAction> = emptyList(),
+    showDivider: Boolean = true,
 ) {
     val colors = reader
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
     var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
-    val covered = showThumbnail && row.imageSpoiler && !revealed
+    val covered = showThumbnail && row.imageSpoiler && !(spoilerRevealed ?: revealed)
+    val reveal = { if (onRevealSpoiler != null) onRevealSpoiler() else revealed = true }
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val title = rowTitle(row)
-    val summary = rowSummary(row, title)
+    val summary = listOfNotNull(rowSummary(row, title), metadata).joinToString(", ")
     // The tag leads the chain: clearAndSetSemantics clears the descendants after this node.
     Column(
-        Modifier
-            .testTag(CatalogTags.ROW)
+        modifier
+            .testTag(itemTag ?: CatalogTags.ROW)
             .fillMaxWidth()
             .background(if (selected) colors.selected else colors.background)
             .nextClickable(role = Role.Button) { onOpen(row) }
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
-                if (covered) {
-                    customActions =
-                        listOf(
-                            CustomAccessibilityAction(revealLabel) {
-                                revealed = true
-                                true
-                            },
-                        )
-                }
+                val actions =
+                    buildList {
+                        if (covered) {
+                            add(
+                                CustomAccessibilityAction(revealLabel) {
+                                    reveal()
+                                    true
+                                },
+                            )
+                        } else if (showThumbnail && onOpenThumbnail != null && thumbnailClickLabel != null) {
+                            add(
+                                CustomAccessibilityAction(thumbnailClickLabel) {
+                                    onOpenThumbnail(row)
+                                    true
+                                },
+                            )
+                        }
+                        addAll(accessibilityActions)
+                    }
+                if (actions.isNotEmpty()) customActions = actions
             },
     ) {
         ReaderCellLayout(
@@ -356,12 +378,13 @@ private fun CatalogRow(
                     { imageModifier ->
                         Box(
                             imageModifier
-                                .testTag(CatalogTags.THUMBNAIL)
+                                .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
                                 .clip(RoundedCornerShape(ReaderRadius.small))
-                                .background(colors.surfaceVariant),
+                                .background(colors.surfaceVariant)
+                                .then(catalogThumbnailAction(covered, row, onOpenThumbnail, thumbnailClickLabel)),
                         ) {
                             if (covered) {
-                                ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+                                ReaderSpoilerCover(onReveal = reveal, modifier = Modifier.fillMaxSize())
                             } else {
                                 thumbnail(row, Modifier.fillMaxSize())
                             }
@@ -376,7 +399,7 @@ private fun CatalogRow(
                 CatalogTitle(row, title, ReaderType.rowTitle)
                 Text(
                     text =
-                        if (row.threadNumber.isEmpty()) {
+                        metadata ?: if (row.threadNumber.isEmpty()) {
                             row.activity
                         } else {
                             stringResource(Res.string.reader_row_meta, row.threadNumber, row.activity)
@@ -396,7 +419,7 @@ private fun CatalogRow(
                 }
             }
         }
-        ReaderHairline()
+        if (showDivider) ReaderHairline()
     }
 }
 
@@ -428,23 +451,33 @@ private fun CountPill(row: FeedRow) {
 
 /** A thread as a grid card: a square image above a title and a reply count. */
 @Composable
-private fun CatalogCard(
+internal fun CatalogCard(
     row: FeedRow,
     selected: Boolean,
     onOpen: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+    modifier: Modifier = Modifier,
+    itemTag: String? = null,
+    thumbnailTag: String? = null,
+    metadata: String? = null,
+    onOpenThumbnail: ((FeedRow) -> Unit)? = null,
+    thumbnailClickLabel: String? = null,
+    spoilerRevealed: Boolean? = null,
+    onRevealSpoiler: (() -> Unit)? = null,
+    accessibilityActions: List<CustomAccessibilityAction> = emptyList(),
 ) {
     val colors = reader
     val shape = RoundedCornerShape(ReaderRadius.card)
     val title = rowTitle(row)
-    val summary = rowSummary(row, title)
+    val summary = listOfNotNull(rowSummary(row, title), metadata).joinToString(", ")
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
     var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
-    val covered = showThumbnail && row.imageSpoiler && !revealed
+    val covered = showThumbnail && row.imageSpoiler && !(spoilerRevealed ?: revealed)
+    val reveal = { if (onRevealSpoiler != null) onRevealSpoiler() else revealed = true }
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     Column(
-        Modifier
-            .testTag(CatalogTags.CARD)
+        modifier
+            .testTag(itemTag ?: CatalogTags.CARD)
             .fillMaxWidth()
             .clip(shape)
             .background(if (selected) colors.selected else colors.background)
@@ -453,22 +486,38 @@ private fun CatalogCard(
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
-                if (covered) {
-                    customActions =
-                        listOf(
-                            CustomAccessibilityAction(revealLabel) {
-                                revealed = true
-                                true
-                            },
-                        )
-                }
+                val actions =
+                    buildList {
+                        if (covered) {
+                            add(
+                                CustomAccessibilityAction(revealLabel) {
+                                    reveal()
+                                    true
+                                },
+                            )
+                        } else if (showThumbnail && onOpenThumbnail != null && thumbnailClickLabel != null) {
+                            add(
+                                CustomAccessibilityAction(thumbnailClickLabel) {
+                                    onOpenThumbnail(row)
+                                    true
+                                },
+                            )
+                        }
+                        addAll(accessibilityActions)
+                    }
+                if (actions.isNotEmpty()) customActions = actions
             },
     ) {
         ReaderCatalogCardLayout(
             image = { imageModifier ->
-                Box(imageModifier.testTag(CatalogTags.THUMBNAIL).background(colors.surfaceVariant)) {
+                Box(
+                    imageModifier
+                        .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
+                        .background(colors.surfaceVariant)
+                        .then(catalogThumbnailAction(covered, row, onOpenThumbnail, thumbnailClickLabel)),
+                ) {
                     if (covered) {
-                        ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
+                        ReaderSpoilerCover(onReveal = reveal, modifier = Modifier.fillMaxSize())
                     } else if (showThumbnail) {
                         thumbnail(row, Modifier.fillMaxSize())
                     }
@@ -477,6 +526,15 @@ private fun CatalogCard(
         ) { textModifier ->
             Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
                 CatalogTitle(row, title, ReaderType.cardTitle, minLines = 2)
+                if (metadata != null) {
+                    Text(
+                        metadata,
+                        style = ReaderType.meta,
+                        color = colors.inkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Text(
                     text =
                         if (row.unread > 0) {
@@ -608,3 +666,16 @@ internal fun PendingBar(
                 .background(next.hairline),
     )
 }
+
+@Composable
+private fun catalogThumbnailAction(
+    covered: Boolean,
+    row: FeedRow,
+    onOpen: ((FeedRow) -> Unit)?,
+    label: String?,
+): Modifier =
+    if (!covered && onOpen != null) {
+        Modifier.nextClickable(role = Role.Button, onClickLabel = label) { onOpen(row) }
+    } else {
+        Modifier
+    }

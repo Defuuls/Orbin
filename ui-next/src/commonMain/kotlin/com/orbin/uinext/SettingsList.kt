@@ -69,6 +69,7 @@ import com.orbin.uinext.resources.social_settings_search_options
 import com.orbin.uinext.resources.social_settings_title
 import com.orbin.uinext.resources.social_settings_view_history
 import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 data class SettingItem(
@@ -288,14 +289,8 @@ private fun SettingsNavigationBar(
 private fun SettingsSectionHeading(label: String) {
     Text(
         text = label,
-        style =
-            NextType.footnote.copy(
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.sp,
-            ),
-        color = next.muted,
+        style = ReaderType.stateBody,
+        color = reader.inkMuted,
         modifier = Modifier.padding(start = GUTTER, end = GUTTER, top = 16.dp, bottom = 8.dp).semantics { heading() },
     )
 }
@@ -480,7 +475,7 @@ private fun SettingRow(
                     )
                     if (item.kind == SettingKind.TOGGLE) {
                         Box(Modifier.height(32.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-                            TikTokSettingsSwitch(checked = item.isOn())
+                            ReaderSettingsSwitch(checked = item.isOn())
                         }
                     } else {
                         if (hasValue && !stackValue) {

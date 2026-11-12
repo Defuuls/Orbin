@@ -16,7 +16,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -85,19 +85,20 @@ class ReaderControlPaletteTest(
     }
 
     @Test
-    fun selectedHomeWatchUsesTheReadableDarkAccentOnBlackInEveryTheme() {
+    fun selectedHomeWatchUsesTheCurrentReaderAccentInEveryTheme() {
         val row = FeedRow("Palette fixture", "/g/", "1m", 2, 0, hasPreview = false, watched = true)
         compose.setContent {
             NextTheme(darkTheme = mode != "light", amoled = mode == "amoled") {
                 FeedScreen(rows = listOf(row), onToggleWatch = {})
             }
         }
+        compose.onNodeWithTag(ReaderFeedTags.more(row.id)).performClick()
         val painted =
             compose
-                .onNodeWithContentDescription("Stop watching Palette fixture")
+                .onNodeWithText("Stop watching Palette fixture")
                 .assertIsSelected()
                 .paintedColors()
-        assertTrue("Home's selected mark must stay readable on black", ReaderDarkColors.accent.toArgb() in painted)
+        assertTrue("Home's selected mark must use the current reader theme", colors.accent.toArgb() in painted)
         assertFalse("Home must not retain the former selected-action color", TikTokDesign.Pink.toArgb() in painted)
     }
 

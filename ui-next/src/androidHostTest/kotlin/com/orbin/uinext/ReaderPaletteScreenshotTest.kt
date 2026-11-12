@@ -1,5 +1,7 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -37,6 +39,12 @@ class ReaderPaletteScreenshotTest(
                         FeedRow("Reading list", "/lit/", "3h", 28, 4, hasPreview = false, id = "text"),
                     ),
                 subtitle = "4 threads across 4 boards",
+                onOpenBoards = {},
+                onOpenSearch = {},
+                onOpenSaved = {},
+                onOpenWatched = {},
+                onSettings = {},
+                thumbnail = { _, modifier -> Box(modifier.background(reader.surfaceVariant)) },
             )
         }
 

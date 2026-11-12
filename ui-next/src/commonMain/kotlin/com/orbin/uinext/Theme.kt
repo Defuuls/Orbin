@@ -14,11 +14,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Density
 import com.orbin.core.designsystem.theme.OrbinShapes
 import com.orbin.uinext.tokens.LocalNextFontFamily
 import com.orbin.uinext.tokens.NextType
-import com.orbin.uinext.tokens.rememberTikTokFontFamily
 
 /**
  * The palette the entire interface is drawn from.
@@ -114,7 +114,7 @@ fun NextTheme(
         return
     }
 
-    val fontFamily = rememberTikTokFontFamily()
+    val fontFamily = FontFamily.Default
     val dark = darkTheme ?: palette?.dark ?: inherited?.dark ?: isSystemInDarkTheme()
     val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale

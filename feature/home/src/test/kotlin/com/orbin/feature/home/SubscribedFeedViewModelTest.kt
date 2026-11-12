@@ -6,6 +6,7 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
@@ -36,6 +37,7 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -202,6 +204,33 @@ class SubscribedFeedViewModelTest {
                 cancelAndIgnoreRemainingEvents()
             }
             assertThat(catalogCalls.get()).isGreaterThan(callsAfterFirstLoad)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `reader mode is persisted for a later Home without fetching its catalogs again`() =
+        runTest {
+            val catalogCalls = AtomicInteger()
+            val registry = FakeProviderRegistry(catalogProvider(listOf(catalogThread(1L)), catalogCalls))
+            val settings = FakeSettingsRepository()
+            val model = createViewModel(registry, settings, subscribed = setOf(healthyBoard))
+
+            model.uiState.test {
+                var loaded = awaitItem()
+                while (loaded !is SubscribedFeedUiState.Success || loaded.isLoadingMore) loaded = awaitItem()
+                val callsAfterLoad = catalogCalls.get()
+
+                model.setCatalogMode(CatalogMode.GRID)
+                advanceUntilIdle()
+
+                assertThat(settings.settings.first().catalogMode).isEqualTo(CatalogMode.GRID)
+                assertThat(catalogCalls.get()).isEqualTo(callsAfterLoad)
+                assertThat(model.uiState.value).isSameInstanceAs(loaded)
+            }
+
+            val laterHome = createViewModel(registry, settings, subscribed = setOf(healthyBoard))
+            assertThat(laterHome.settings.first { it.catalogMode == CatalogMode.GRID }.catalogMode)
+                .isEqualTo(CatalogMode.GRID)
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
