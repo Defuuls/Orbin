@@ -25,7 +25,7 @@ const DIAGRAM_DIR = path.join(DESIGN_DIR, 'diagrams');
 const BASELINE_DIR = path.join(DESIGN_DIR, 'baselines');
 const FAILURE_DIR = path.join(ROOT, 'build', 'design-docs-visual');
 const FONT_DIR = path.join(ROOT, 'ui-next', 'src', 'commonMain', 'composeResources', 'font');
-const FONT_FILES = { 400: 'tiktok_sans_regular.ttf', 500: 'tiktok_sans_medium.ttf', 700: 'tiktok_sans_bold.ttf' };
+const FONT_FILES = { 400: 'reader_roboto_regular.ttf', 500: 'reader_roboto_medium.ttf', 700: 'reader_roboto_bold.ttf' };
 
 const SCHEMES = ['light', 'dark'];
 const WIDTHS = { phone: 390, desktop: 1280 };
@@ -102,7 +102,12 @@ async function renderDiagram(page, target, css) {
   await page.setContent(
     `<!doctype html><html><head><meta charset="utf-8"><style>${css}html,body{margin:0}svg{display:block;max-width:100%;height:auto}</style></head><body>${svg}</body></html>`,
   );
-  await settle(page);
+  try {
+    await settle(page);
+  } catch (error) {
+    error.message = target.file + ' (' + target.scheme + ', ' + target.width + 'px): ' + error.message;
+    throw error;
+  }
   return page.locator('svg').screenshot();
 }
 

@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertTouchWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -29,7 +30,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** The fixed app bar uses reader tokens, and Home's black content starts below it. */
+/** The fixed app bar uses reader tokens, and Home's themed content starts below it. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
@@ -39,8 +40,8 @@ class NavigationAppearanceTest {
 
     /** Replaces the immersive bottom-bar/offset-center-colors test with the approved Home frame. */
     @Test
-    fun `Home has a full width reader app bar above black content`() {
-        installNavigation(immersive = true)
+    fun `Home has a full width reader app bar above themed content`() {
+        installNavigation(immersive = false)
         val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR)
         bar.assertWidthIsEqualTo(390.dp).assertHeightIsEqualTo(ReaderSize.appBar)
         val pixels = bar.captureToImage().toPixelMap()
@@ -51,7 +52,7 @@ class NavigationAppearanceTest {
         val barBounds = bar.getUnclippedBoundsInRoot()
         assertThat(content.getUnclippedBoundsInRoot().top.value).isWithin(0.5f).of(barBounds.bottom.value)
         val contentPixels = content.captureToImage().toPixelMap()
-        assertThat(contentPixels[0, 0].toArgb()).isEqualTo(Color.Black.toArgb())
+        assertThat(contentPixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
     }
 
     /** Replaces the white secondary bottom-bar test with a token-based app bar and content ground. */
@@ -70,10 +71,63 @@ class NavigationAppearanceTest {
     }
 
     @Test
+    fun `toolbar retains Clover navigation action and overflow hit geometry`() {
+        composeRule.setContent {
+            NextTheme(darkTheme = false) {
+                ReaderAppBar(
+                    title = "Technology",
+                    navigation = ReaderNavigation.BACK,
+                    onNavigation = {},
+                    actions =
+                        listOf(
+                            ReaderAction(ReaderIcons.Refresh, "Reload", {}),
+                            ReaderAction(ReaderIcons.Search, "Search", {}),
+                        ),
+                    overflow = listOf(ReaderMenuItem("View as grid", onClick = {})),
+                )
+            }
+        }
+        composeRule.onNodeWithContentDescription("Back").assertWidthIsEqualTo(56.dp).assertHeightIsEqualTo(56.dp)
+        composeRule.onNodeWithContentDescription("Reload").assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(56.dp)
+        composeRule.onNodeWithContentDescription("Search").assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(56.dp)
+        composeRule
+            .onNodeWithContentDescription(
+                "More options",
+            ).assertWidthIsEqualTo(44.dp)
+            .assertTouchWidthIsEqualTo(ReaderSize.touchTarget)
+            .assertHeightIsEqualTo(56.dp)
+        assertThat(
+            composeRule
+                .onNodeWithTag(ReaderAppBarTags.TITLE)
+                .getUnclippedBoundsInRoot()
+                .left.value,
+        ).isWithin(0.5f)
+            .of(72f)
+    }
+
+    @Test
     fun `drawer is capped at the maximum token width`() {
-        installNavigation(immersive = false)
+        installNavigation(immersive = false, width = 411.dp)
         composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(ReaderSize.drawerMax)
+        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(336.dp)
+    }
+
+    @Test
+    fun `a phone drawer leaves the Clover 56dp strip when that is narrower than the cap`() {
+        installNavigation(immersive = false, width = 390.dp)
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(334.dp)
+    }
+
+    @Test
+    fun `drawer content starts with Clover eight dp vertical padding`() {
+        composeRule.setContent { NextTheme { ReaderDrawer(NextDestination.FEED, {}) } }
+        val home =
+            composeRule
+                .onNodeWithTag(
+                    ReaderDrawerTags.ENTRY + NextDestination.FEED.name,
+                ).getUnclippedBoundsInRoot()
+        assertThat(home.top.value).isWithin(0.5f).of(8f)
     }
 
     @Test

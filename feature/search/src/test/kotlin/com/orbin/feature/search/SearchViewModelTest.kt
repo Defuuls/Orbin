@@ -30,6 +30,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -71,6 +72,39 @@ class SearchViewModelTest {
             viewModel.state.test {
                 assertThat(awaitItem()).isEqualTo(SearchUiState.Idle)
             }
+        }
+
+    @Test
+    fun `an empty scope asks for followed boards rather than a separate favorites setup`() =
+        runTest {
+            val viewModel = createViewModel(FakeSearchRepository(), subscribed = emptySet())
+
+            viewModel.search("kotlin")
+
+            val state = viewModel.state.first { it is SearchUiState.Error } as SearchUiState.Error
+            assertThat(state.message).isEqualTo("Follow a few boards to search them")
+        }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `a favorite without a subscription is excluded and never queried`() =
+        runTest {
+            val queries = mutableListOf<SearchQuery>()
+            val repository =
+                object : SearchRepository by FakeSearchRepository() {
+                    override suspend fun search(query: SearchQuery): OrbinResult<List<SearchResult>> {
+                        queries += query
+                        return OrbinResult.Success(listOf(result))
+                    }
+                }
+            val model = createViewModel(repository, subscribed = emptySet(), favorites = setOf(BoardId("g")))
+            advanceUntilIdle()
+            assertThat(model.searchableBoards.value).isEmpty()
+
+            model.search("match")
+            val failed = model.state.first { it is SearchUiState.Error } as SearchUiState.Error
+            assertThat(failed.message).isEqualTo("Follow a few boards to search them")
+            assertThat(queries).isEmpty()
         }
 
     @Test
@@ -146,12 +180,13 @@ class SearchViewModelTest {
         }
 
     @Test
-    fun `favorite and subscribed matching board codes are searched on their own sites`() =
+    fun `matching subscribed boards retain their sites and a favorite only site is excluded`() =
         runTest {
             val firstId = ProviderId("fourchan")
             val secondId = ProviderId("bbwchan")
+            val favoriteOnly = ProviderId("favorite-only")
             val providers =
-                listOf(firstId, secondId).map { id ->
+                listOf(firstId, secondId, favoriteOnly).map { id ->
                     mockk<ImageBoardProvider> {
                         every { metadata } returns ProviderMetadata(id, id.value, "https://example.org")
                     }
@@ -167,10 +202,10 @@ class SearchViewModelTest {
             val preferences =
                 object : BoardPreferencesRepository by FakeBoardPreferencesRepository(emptySet()) {
                     override fun observeSubscribedBoards(provider: ProviderId): Flow<Set<BoardId>> =
-                        flowOf(if (provider == firstId) setOf(BoardId("g")) else emptySet())
+                        flowOf(if (provider != favoriteOnly) setOf(BoardId("g")) else emptySet())
 
                     override fun observeFavoriteBoards(provider: ProviderId): Flow<Set<BoardId>> =
-                        flowOf(if (provider == secondId) setOf(BoardId("g")) else emptySet())
+                        flowOf(if (provider == favoriteOnly) setOf(BoardId("g")) else emptySet())
                 }
             val queries = mutableListOf<SearchQuery>()
             val repository =

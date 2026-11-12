@@ -7,21 +7,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
-import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderLightColors
 import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Rule
@@ -31,13 +34,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/**
- * Media fills the edge-to-edge viewport while overlay controls and navigation respect safe areas.
- * These screens keep actions and captions out of the status bar and gesture handle. That went wrong
- * once already — every screen was cut off at both ends on a device with real insets — and the
- * screenshot goldens could not see it, because Robolectric renders with no system bars at all
- * unless a test puts them there. This is the test that puts them there.
- */
+/** Production Home rows, chrome and drawer must respect real system safe areas. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class WindowInsetsTest {
@@ -46,7 +43,7 @@ class WindowInsetsTest {
 
     /** Replaces `immersive media is edge to edge while captions and navigation clear system bars`. */
     @Test
-    fun `Home media starts below the app bar and captions clear the bottom system inset`() {
+    fun `Home rows and bounded thumbnails clear the app bar and bottom system inset`() {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
@@ -65,17 +62,48 @@ class WindowInsetsTest {
         applySystemBars()
 
         val root = composeRule.onRoot().getUnclippedBoundsInRoot()
-        val media = composeRule.onNodeWithTag("feed-media").getUnclippedBoundsInRoot()
+        val media = composeRule.onNodeWithTag("feed-media", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR).getUnclippedBoundsInRoot()
-        assertThat(media.top.value).isWithin(0.5f).of(bar.bottom.value)
+        val grid = composeRule.onNodeWithTag(ReaderFeedTags.GRID).getUnclippedBoundsInRoot()
+        assertThat(grid.top.value).isAtLeast(bar.bottom.value)
         assertThat((bar.bottom - bar.top).value).isWithin(0.5f).of((STATUS_BAR + ReaderSize.appBar).value)
-        assertThat(media.left.value).isWithin(0.5f).of(root.left.value)
-        assertThat(media.right.value).isWithin(0.5f).of(root.right.value)
-        // Media can extend behind the status bar; its caption must remain readable.
-        val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
-        assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
-        assertThat(media.bottom.value).isWithin(0.5f).of((root.bottom - NAVIGATION_BAR).value)
-        assertThat(firstRow.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
+        assertThat(media.top.value).isAtLeast(grid.top.value)
+        assertThat((media.right - media.left).value).isWithin(0.5f).of(ReaderSize.thumbnail.value)
+        assertThat((media.bottom - media.top).value).isWithin(0.5f).of(ReaderSize.thumbnail.value)
+        assertThat(media.left.value).isAtLeast(root.left.value)
+        assertThat(media.right.value).isAtMost(root.right.value)
+        assertThat(media.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
+    }
+
+    @Test
+    fun `the final Home row stops above the bottom system inset`() {
+        val rows = List(30) { FeedRow("Thread $it", "/g/", "now", it, 0, hasPreview = false, id = "row-$it") }
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = rows, onOpenBoards = {}) }
+        }
+        applySystemBars()
+        composeRule.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(rows.lastIndex)
+        val root = composeRule.onRoot().getUnclippedBoundsInRoot()
+        val last = composeRule.onNodeWithTag(ReaderFeedTags.row(rows.last().id)).getUnclippedBoundsInRoot()
+        assertThat(last.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value + 0.5f)
+    }
+
+    @Test
+    fun `empty Home grid keeps its Boards action above the bottom system inset without scrolling`() {
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(rows = emptyList(), mode = CatalogMode.GRID, onOpenBoards = {}, onRetry = {})
+            }
+        }
+        applySystemBars()
+        val root = composeRule.onRoot().getUnclippedBoundsInRoot()
+        val boards =
+            composeRule
+                .onNode(
+                    hasText("Boards") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button),
+                ).getUnclippedBoundsInRoot()
+        assertThat(boards.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value + 0.5f)
+        assertThat(boards.top.value).isAtLeast(STATUS_BAR.value + ReaderSize.appBar.value)
     }
 
     /** Replaces `navigation uses horizontal safe areas without adding capsule margins`. */
@@ -102,8 +130,7 @@ class WindowInsetsTest {
     fun `settings content clears the status bar`() {
         composeRule.setContent {
             NextTheme {
-                // Without the rail, "Settings" names only the title, so the assertion can be made
-                // against the title itself rather than against something further down the screen.
+                // The app bar title and the first preference category can share a label.
                 SettingsScreen(
                     groups = listOf("Content" to listOf(SettingItem("t", "Threads per board", "12"))),
                     showRail = false,
@@ -112,7 +139,7 @@ class WindowInsetsTest {
         }
         applySystemBars()
 
-        val title = composeRule.onNodeWithText("Settings and privacy").getUnclippedBoundsInRoot()
+        val title = composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).getUnclippedBoundsInRoot()
         assertThat(title.top.value).isAtLeast(STATUS_BAR.value)
     }
 
@@ -130,8 +157,8 @@ class WindowInsetsTest {
         drawer.assertWidthIsEqualTo(ReaderSize.drawerMax)
         val pixels = drawer.captureToImage().toPixelMap()
         val topInsetPx = with(composeRule.density) { STATUS_BAR.roundToPx() }
-        assertThat(pixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.appBar.toArgb())
-        assertThat(pixels[pixels.width - 1, topInsetPx - 1].toArgb()).isEqualTo(ReaderLightColors.appBar.toArgb())
+        assertThat(pixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.statusBar.toArgb())
+        assertThat(pixels[pixels.width - 1, topInsetPx - 1].toArgb()).isEqualTo(ReaderLightColors.statusBar.toArgb())
         // Top is consumed by the sheet; the first entry starts immediately below it.
         assertThat(pixels[0, topInsetPx + 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
         assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
@@ -139,17 +166,17 @@ class WindowInsetsTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `the Home drawer keeps a black bottom system inset behind light navigation icons`() {
+    fun `the Home drawer keeps the themed bottom system inset`() {
         composeRule.setContent {
             NextTheme(darkTheme = false) {
-                ReaderScaffold("Home", destination = NextDestination.FEED, onDestination = {}, immersive = true) {}
+                FeedScreen(rows = emptyList(), onOpenBoards = {}) {}
             }
         }
         applySystemBars()
         composeRule.onNodeWithContentDescription("Menu").performClick()
         val pixels = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).captureToImage().toPixelMap()
         val bottomInsetPx = with(composeRule.density) { NAVIGATION_BAR.roundToPx() }
-        assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderAmoledColors.background.toArgb())
+        assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
         assertThat(
             pixels[0, pixels.height - bottomInsetPx - 1].toArgb(),
         ).isEqualTo(ReaderLightColors.background.toArgb())

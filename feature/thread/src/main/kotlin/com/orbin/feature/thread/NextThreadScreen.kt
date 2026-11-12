@@ -237,7 +237,7 @@ private fun LoadedThread(
                             attachment = attachment.copy(isSpoiler = false),
                             fullResolution = false,
                             modifier = tileModifier,
-                            // The screen clips each tile's corners itself.
+                            // Clover album previews have square corners.
                             cornerRadius = 0.dp,
                             onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
                         )

@@ -109,7 +109,7 @@ private fun EmptyThreadPane() {
                 text = stringResource(Res.string.reader_select_thread),
                 modifier = Modifier.testTag(ReaderTwoPaneTags.EMPTY),
                 color = colors.inkMuted,
-                style = ReaderType.stateBody,
+                style = ReaderType.stateBody.withReaderFont(),
             )
         }
     }

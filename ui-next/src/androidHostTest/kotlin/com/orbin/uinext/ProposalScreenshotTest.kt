@@ -102,6 +102,7 @@ class ProposalScreenshotTest {
         capture("next_feed_grid") {
             FeedScreen(
                 rows = feedRows(),
+                mode = CatalogMode.GRID,
                 subtitle = SAMPLE_SUBTITLE,
                 onOpenBoards = {},
                 onOpenDownloads = {},

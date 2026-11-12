@@ -656,7 +656,9 @@ fun MessageScreen(
             if (LocalReaderFramePresent.current) {
                 Text(
                     subtitle,
-                    style = com.orbin.uinext.tokens.ReaderType.stateBody,
+                    style =
+                        com.orbin.uinext.tokens.ReaderType.stateBody
+                            .withReaderFont(),
                     color = reader.inkMuted,
                     modifier = Modifier.padding(com.orbin.uinext.tokens.ReaderSpace.gutter),
                 )

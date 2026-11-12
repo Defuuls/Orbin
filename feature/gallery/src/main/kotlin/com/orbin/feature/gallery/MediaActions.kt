@@ -6,41 +6,77 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
-import com.orbin.uinext.NextActionSheet
-import com.orbin.uinext.NextSheetAction
+import com.orbin.core.model.MediaType
+import com.orbin.uinext.next
+import com.orbin.uinext.reader
+import com.orbin.uinext.tokens.ReaderSize
 
-/**
- * What a long press on any piece of media offers: save it, share its link, or copy its link.
- *
- * The same three words wherever media is long-pressed, so nothing about them has to be learned
- * twice.
- */
+/** The viewer's ordinary overflow menu retains Orbin's file actions in Clover's popup form. */
 @Composable
-internal fun MediaActionsSheet(
+internal fun MediaActionsMenu(
     attachment: MediaAttachment,
     onSave: (MediaAttachment) -> Unit,
     onDismiss: () -> Unit,
+    onCopyImage: ((MediaAttachment) -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    NextActionSheet(
-        title = attachment.originalFileName,
-        actions =
-            listOf(
-                NextSheetAction(stringResource(R.string.gallery_download)) {
-                    onSave(attachment)
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                        Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
-                    }
-                },
-                NextSheetAction(stringResource(R.string.gallery_share)) { context.shareLink(attachment.sourceUrl) },
-                NextSheetAction(stringResource(R.string.gallery_copy_link)) { context.copyLink(attachment.sourceUrl) },
-            ),
-        onDismiss = onDismiss,
-    )
+    val actions =
+        listOf<Pair<String, () -> Unit>>(
+            stringResource(R.string.gallery_open_in_browser) to
+                { SafeExternalLinks.open(context, attachment.sourceUrl) },
+            stringResource(R.string.gallery_share) to { context.shareLink(attachment.sourceUrl) },
+            stringResource(R.string.gallery_copy_link) to { context.copyLink(attachment.sourceUrl) },
+            stringResource(R.string.gallery_download) to {
+                onSave(attachment)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
+                }
+            },
+        ) +
+            if (attachment.type == MediaType.IMAGE && onCopyImage != null) {
+                listOf(stringResource(R.string.gallery_copy_image) to { onCopyImage(attachment) })
+            } else {
+                emptyList()
+            }
+    Box(Modifier.fillMaxSize().safeDrawingPadding(), contentAlignment = Alignment.TopEnd) {
+        Box(Modifier.padding(top = ReaderSize.appBar, end = 4.dp)) {
+            DropdownMenu(
+                expanded = true,
+                onDismissRequest = onDismiss,
+                shape = RoundedCornerShape(2.dp),
+                containerColor = if (next.dark) reader.surfaceVariant else reader.background,
+                shadowElevation = 8.dp,
+            ) {
+                actions.forEach { (label, action) ->
+                    DropdownMenuItem(
+                        text = { Text(label, color = reader.ink) },
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        onClick = {
+                            onDismiss()
+                            action()
+                        },
+                    )
+                }
+            }
+        }
+    }
 }
 
 internal fun Context.shareLink(url: String) {

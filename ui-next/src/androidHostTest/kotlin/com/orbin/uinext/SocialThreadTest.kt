@@ -4,19 +4,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -26,9 +23,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.unit.Density
 import com.orbin.uinext.tokens.ReaderSize
-import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -62,11 +57,12 @@ class SocialThreadTest {
     }
 
     @Test
-    fun `back, reload and watch are app bar buttons and share is in the overflow`() {
+    fun `back album and watch are app bar buttons while reload and share are in the overflow`() {
         var backs = 0
         var shares = 0
         var watches = 0
         var reloads = 0
+        var requestedLayout: ThreadLayout? = null
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -78,19 +74,27 @@ class SocialThreadTest {
                     onShare = { shares++ },
                     onWatch = { watches++ },
                     onReload = { reloads++ },
+                    onLayoutChange = { requestedLayout = it },
                 )
             }
         }
+        val album = composeRule.onNodeWithContentDescription("Files").getUnclippedBoundsInRoot()
+        val watch = composeRule.onNodeWithContentDescription("Watch").getUnclippedBoundsInRoot()
+        assertTrue("Clover's album action precedes the bookmark action", album.left < watch.left)
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithContentDescription("Reload").performClick()
+        composeRule.onNodeWithContentDescription("Reload").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Files").performClick()
         composeRule.onNodeWithContentDescription("Watch").performClick()
         composeRule.onNodeWithText("Share thread").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Reload").performClick()
         composeRule.onNodeWithContentDescription("More options").performClick()
         composeRule.onNodeWithText("Share thread").performClick()
         assertEquals(1, backs)
         assertEquals(1, reloads)
         assertEquals(1, watches)
         assertEquals(1, shares)
+        assertEquals(ThreadLayout.FILES, requestedLayout)
     }
 
     @Test
@@ -103,7 +107,7 @@ class SocialThreadTest {
 
     @Test
     fun `collapsing an anonymous post removes its body without losing its identity`() {
-        val post = Post(number = "No. 42", time = "3m", body = "A small project")
+        val post = Post(number = "No. 42", time = "3m", body = "A small project", subject = "Opening subject")
         composeRule.setContent {
             var collapsed by remember { mutableStateOf(emptySet<String>()) }
             NextTheme {
@@ -116,11 +120,14 @@ class SocialThreadTest {
                 )
             }
         }
-        composeRule.onNodeWithText("Anonymous").performClick()
+        composeRule.onNodeWithText("Anonymous").assertDoesNotExist()
+        composeRule.onNodeWithText("Opening subject", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithText("No. 42").performClick()
         composeRule.onNodeWithText("A small project").assertDoesNotExist()
         composeRule.onNodeWithText("No. 42").assertExists()
         composeRule.onNodeWithText("3m").assertExists()
-        composeRule.onNodeWithText("Anonymous").performClick()
+        composeRule.onNodeWithText("Opening subject", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithText("No. 42").performClick()
         composeRule.onNodeWithText("A small project").assertIsDisplayed()
     }
 
@@ -194,66 +201,7 @@ class SocialThreadTest {
     }
 
     @Test
-    fun `a post's thumbnail is the specified square and holds the platform's media`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "Portrait images",
-                    board = "/wg/",
-                    posts = listOf(Post(number = "No. 1", time = "2m", body = "A portrait", hasMedia = true)),
-                    media = { _, modifier -> Box(modifier.testTag("platform-media")) },
-                )
-            }
-        }
-        composeRule
-            .onNodeWithTag(ThreadTags.THUMBNAIL, useUnmergedTree = true)
-            .assertWidthIsEqualTo(ReaderSize.thumbnail)
-            .assertHeightIsEqualTo(ReaderSize.thumbnail)
-        composeRule
-            .onNodeWithTag("platform-media", useUnmergedTree = true)
-            .assertWidthIsEqualTo(ReaderSize.thumbnail)
-            .assertHeightIsEqualTo(ReaderSize.thumbnail)
-    }
-
-    @Test
-    fun `a wide window uses the larger thumbnail`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts = listOf(Post(number = "No. 1", time = "2m", body = "A post", hasMedia = true)),
-                    wideWindow = true,
-                )
-            }
-        }
-        composeRule
-            .onNodeWithTag(ThreadTags.THUMBNAIL, useUnmergedTree = true)
-            .assertWidthIsEqualTo(ReaderSize.thumbnailWide)
-            .assertHeightIsEqualTo(ReaderSize.thumbnailWide)
-    }
-
-    @Test
-    fun `a post with several files shows how many more there are and one with a single file does not`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts =
-                        listOf(
-                            Post(number = "No. 1", time = "2m", body = "Three", hasMedia = true, mediaCount = 3),
-                            Post(number = "No. 2", time = "1m", body = "One", hasMedia = true),
-                        ),
-                )
-            }
-        }
-        composeRule.onNodeWithText("+2", useUnmergedTree = true).assertExists()
-        composeRule.onNodeWithText("+0", useUnmergedTree = true).assertDoesNotExist()
-    }
-
-    @Test
-    fun `files and posts switch from the overflow`() {
+    fun `files and posts switch from the album action while file downloads stay in overflow`() {
         composeRule.setContent {
             var layout by remember { mutableStateOf(ThreadLayout.POSTS) }
             NextTheme {
@@ -268,99 +216,18 @@ class SocialThreadTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Posts").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Posts").assertDoesNotExist()
         composeRule.onNodeWithText("Download all").assertDoesNotExist()
-        composeRule.onNodeWithText("Files").performClick()
+        composeRule.onNodeWithContentDescription("Files").performClick()
         composeRule.onNodeWithText("A post").assertDoesNotExist()
         composeRule.onAllNodesWithTag(ThreadTags.FILE).assertCountEquals(1)
 
         composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Files").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Files").assertDoesNotExist()
         composeRule.onNodeWithText("Download all").assertExists()
-        composeRule.onNodeWithText("Posts").performClick()
+        composeRule.onNodeWithText("Download all").performClick()
+        composeRule.onNodeWithContentDescription("Posts").performClick()
         composeRule.onNodeWithText("A post").assertIsDisplayed()
-    }
-
-    @Test
-    fun `files are laid out three across in a 411dp pane with a gap around each`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts = ONE_POST,
-                    layout = ThreadLayout.FILES,
-                    files = (1..4).map { MediaCell(id = "file-$it", board = "/g/") },
-                )
-            }
-        }
-        val tiles = composeRule.onAllNodesWithTag(ThreadTags.FILE)
-        val first = tiles[0].getUnclippedBoundsInRoot()
-        val third = tiles[2].getUnclippedBoundsInRoot()
-        val fourth = tiles[3].getUnclippedBoundsInRoot()
-        assertEquals(first.top.value, third.top.value, 0.5f)
-        assertTrue("the fourth file starts a new row", fourth.top > first.top)
-        assertEquals(ReaderSpace.gridGap.value, first.left.value, 0.5f)
-        // A short last row keeps the tile size of the full rows above it.
-        assertEquals((first.right - first.left).value, (fourth.right - fourth.left).value, 0.5f)
-        assertEquals((first.right - first.left).value, (first.bottom - first.top).value, 0.5f)
-    }
-
-    @Test
-    fun `post text starts at the gutter without media and after the thumbnail with it`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts =
-                        listOf(
-                            Post(number = "No. 1", time = "2m", body = "Original post", hasMedia = true),
-                            Post(number = "No. 2", time = "1m", body = "A new project", author = "skywatcher"),
-                        ),
-                )
-            }
-        }
-        val author = composeRule.onNodeWithText("skywatcher", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val body = composeRule.onNodeWithText("A new project", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val withMedia = composeRule.onNodeWithText("Original post", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(author.left.value, body.left.value, 0.5f)
-        assertEquals(ReaderSpace.gutter.value, body.left.value, 0.5f)
-        assertEquals(
-            (ReaderSpace.gutter + ReaderSize.thumbnail + ReaderSpace.gap).value,
-            withMedia.left.value,
-            0.5f,
-        )
-    }
-
-    @Test
-    fun `a reply is indented one gap per level and no further than three levels`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts =
-                        listOf(
-                            Post(number = "No. 1", time = "2m", body = "Level zero"),
-                            Post(number = "No. 2", time = "2m", body = "Level one", depth = 1),
-                            Post(number = "No. 3", time = "2m", body = "Level three", depth = 3),
-                            Post(number = "No. 4", time = "2m", body = "Level nine", depth = 9),
-                        ),
-                )
-            }
-        }
-        val left = { text: String ->
-            composeRule
-                .onNodeWithText(text, useUnmergedTree = true)
-                .getUnclippedBoundsInRoot()
-                .left.value
-        }
-        assertEquals(ReaderSpace.gutter.value, left("Level zero"), 0.5f)
-        assertEquals((ReaderSpace.gutter + ReaderSpace.gap).value, left("Level one"), 0.5f)
-        assertEquals((ReaderSpace.gutter + ReaderSpace.gap * 3).value, left("Level three"), 0.5f)
-        assertEquals(left("Level three"), left("Level nine"), 0.5f)
     }
 
     @Test
@@ -444,26 +311,6 @@ class SocialThreadTest {
     }
 
     @Test
-    fun `the footer counts replies and files`() {
-        composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts =
-                        listOf(
-                            Post(number = "No. 1", time = "2m", body = "One", hasMedia = true, mediaCount = 2),
-                            Post(number = "No. 2", time = "1m", body = "Two"),
-                            Post(number = "No. 3", time = "1m", body = "Three", hasMedia = true),
-                        ),
-                )
-            }
-        }
-        composeRule.onNodeWithTag(ThreadTags.STATUS).assertHeightIsEqualTo(ReaderSize.threadStatus)
-        composeRule.onNodeWithText("2 replies · 3 files").assertExists()
-    }
-
-    @Test
     fun `a spoiler post shows its text only after it is revealed`() {
         composeRule.setContent {
             NextTheme {
@@ -477,28 +324,6 @@ class SocialThreadTest {
         composeRule.onNodeWithText("The ending", useUnmergedTree = true).assertDoesNotExist()
         composeRule.onNodeWithText("Spoiler — press to reveal", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("The ending", useUnmergedTree = true).assertExists()
-    }
-
-    @Test
-    fun `at font two a post puts the square thumbnail above its body`() {
-        composeRule.setContent {
-            val density = LocalDensity.current
-            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
-                NextTheme {
-                    ThreadScreen(
-                        subject = "A thread",
-                        board = "/g/",
-                        posts = listOf(Post(number = "1", time = "2m", body = "Large text", hasMedia = true)),
-                    )
-                }
-            }
-        }
-        val thumbnail = composeRule.onNodeWithTag(ThreadTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
-        val body = composeRule.onNodeWithText("Large text", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(ReaderSize.thumbnail.value, (thumbnail.right - thumbnail.left).value, 0.5f)
-        assertEquals((thumbnail.right - thumbnail.left).value, (thumbnail.bottom - thumbnail.top).value, 0.5f)
-        assertTrue(body.top > thumbnail.bottom)
-        assertEquals(ReaderSpace.gutter.value, body.left.value, 0.5f)
     }
 
     @Test

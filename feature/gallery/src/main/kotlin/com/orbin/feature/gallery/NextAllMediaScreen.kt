@@ -1,17 +1,17 @@
 package com.orbin.feature.gallery
 
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.attachmentDetails
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.AllMediaUiState
 import com.orbin.media.image.MediaThumbnail
@@ -20,7 +20,6 @@ import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.tokens.NextRadius
 
 /**
  * The redesigned media wall, wired to the same [AllMediaViewModel] the current one uses.
@@ -79,7 +78,7 @@ fun NextAllMediaContent(
     val wallTitle = title ?: stringResource(R.string.next_media_title)
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
     var actionsFor by remember { mutableStateOf<AllMediaItem?>(null) }
-    val byId = remember(uiState.items) { uiState.items.associateBy { it.id } }
+    val byId = remember(uiState.items) { uiState.items.associateBy { it.toCell().id } }
 
     NextTheme {
         // Nothing swept yet and nothing to show: the sweep itself is the content, so the progress
@@ -137,8 +136,9 @@ fun NextAllMediaContent(
                 tile = { cell, tileModifier ->
                     byId[cell.id]?.let { item ->
                         MediaThumbnail(
-                            attachment = item.attachment,
-                            modifier = tileModifier.clip(RoundedCornerShape(NextRadius.tile)),
+                            attachment = item.attachment.copy(isSpoiler = false),
+                            modifier = tileModifier,
+                            cornerRadius = 0.dp,
                         )
                     }
                 },
@@ -146,7 +146,7 @@ fun NextAllMediaContent(
         }
         val pressed = actionsFor
         if (pressed != null && onSave != null) {
-            MediaActionsSheet(
+            MediaActionsMenu(
                 attachment = pressed.attachment,
                 onSave = { onSave(pressed) },
                 onDismiss = { actionsFor = null },
@@ -155,4 +155,10 @@ fun NextAllMediaContent(
     }
 }
 
-private fun AllMediaItem.toCell() = MediaCell(id = id, board = "/${key.board.value}/")
+internal fun AllMediaItem.toCell() =
+    MediaCell(
+        id = "${key.provider.value}/$id",
+        board = "${key.provider.value} /${key.board.value}/",
+        spoiler = attachment.isSpoiler,
+        details = attachment.attachmentDetails(),
+    )

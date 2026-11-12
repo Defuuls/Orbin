@@ -1,39 +1,37 @@
-# Orbin 199 - Komatsuna
+# Orbin 201 - Huauzontle
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 199
-codename     = "Komatsuna"
-version_code = 217
+number       = 201
+codename     = "Huauzontle"
+version_code = 219
 
-highlight = "Shared green reader layouts, drawer navigation, remembered List/Grid catalogs, and resilient refresh across Android and iOS."
+highlight = "Clover reader layouts and Settings with Orbin green branding, correct subscriptions, and improved video preparation."
 
 summary = [
-  "bump Orbin to 199-Komatsuna / versionCode 217",
-  "ship the shared Android and iOS catalog and thread reader",
-  "preserve navigation, reading position, media ownership, and refresh recovery",
-  "synchronize release notes and version documentation",
+  "bump Orbin to 201-Huauzontle / versionCode 219",
+  "match Clover layouts, typography, Settings, and media controls with Orbin green branding",
+  "remove social feed selectors and scope Home to explicit board subscriptions",
+  "keep favorites and subscriptions independent across sites and first-run setup",
+  "avoid browser-fallback flashes and repeated native video metadata work during playback",
 ]
 
 [changelog]
-Added = [
-  "Remembered List and Grid catalogs with a site-grouped board picker, search within the loaded catalog, sorting, and source-aware actions.",
-  "Nested and collapsible thread replies, unread markers, and shared Files grids on Android and iOS.",
-  "Reader loading skeletons, centered empty states, cause-specific errors, and refresh progress with Retry feedback.",
-  "A shared reader design guide with layout and theme rules, diagrams, and an implementation and verification record.",
-]
 Changed = [
-  "Applied the green reader palette in Light, Dark, and AMOLED, with shared catalog and post cells that adapt to larger text and right-to-left layouts.",
-  "Replaced bottom navigation tabs with fixed app bars and a drawer for Home, Watched, Boards, Search, Saved, and Settings. Child screens use Back, and Home keeps its black media feed below the app bar.",
-  "Kept catalogs and threads side by side on wide screens while preserving catalog selection and separate reading positions.",
-  "Simplified Appearance to System, Light, or Dark with optional AMOLED and an app-wide Catalog view. Retired color-theme and tablet-column preferences; backups containing the removed color-theme format are refused before any data is restored.",
+  "Matched the supplied Clover 3.0.2 layout, compact post typography, catalog proportions, toolbar icons, drawer and album cells while retaining Orbin branding and features.",
+  "Rebuilt Settings with Clover preference groups, summaries below labels, compact switches and anchored choice popups.",
+  "Used verified Roboto font resources consistently across Android and iOS reader controls and text.",
+  "Aligned standalone media toolbars and playback controls with the source-verified Clover layout.",
+
+  "Removed Following and For You selectors from reader Home and scoped its video threads to explicitly subscribed boards.",
 ]
 Fixed = [
-  "Stopped obsolete catalog and thread loads when leaving a screen or hiding its pane; returning reuses loaded content, and refreshes retain loaded rows and the correct reading position.",
-  "Kept permanently filtered content out of reused thread data and prevented stale board or thread results from replacing the current selection.",
-  "Back closes an open drawer before leaving the reader, hidden drawers no longer expose controls to accessibility, and refresh-failure actions stay clear of system insets.",
-  "Reserved attachment preview space, requested thumbnails at their drawn size, and kept revealing spoilers separate from opening media.",
+  "Kept matching media identifiers from different sites distinct in All media and preserved spoiler covers and real file details.",
+  "Stopped favorite-only boards from appearing subscribed, entering Home, or satisfying mandatory board setup.",
+  "Kept subscription markers associated with the correct site while switching board directories.",
+  "Stopped playable video pages from flashing the browser fallback while preparing or paging into view.",
+  "Avoided repeatedly reading native video duration on the UI thread during playback preparation.",
 ]
 Testing = [
-  "Added reader navigation, layout, refresh retention, shared presentation, thumbnail, and accessibility regressions, plus populated catalog, thread, Files, and two-pane performance and profile journeys.",
-  "Added specification, token, and diagram checks and an iPhone/iPad reader checklist; shared logic tests run on the host while native UIKit and media tests remain on the iOS simulator.",
+  "Added regressions for independent favorites, subscription scope, cross-site board membership, reader Home controls and video-page preparation.",
+  "Updated installed-app startup coverage to reject the obsolete social feed selectors after setup and cold relaunch.",
 ]

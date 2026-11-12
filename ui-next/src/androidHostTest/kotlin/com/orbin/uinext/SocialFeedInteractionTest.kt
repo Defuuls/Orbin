@@ -4,17 +4,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertHasNoClickAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToIndex
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -46,31 +48,30 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithText("Weekly discussion").assertExists()
+        composeRule.onNodeWithTag(ReaderFeedTags.row("fourchan/g/1")).assertExists()
         composeRule.runOnIdle { assertTrue(!previewRequested) }
     }
 
     @Test
-    fun `paging keeps same board codes on different sites distinct`() {
+    fun `reader rows keep same board codes on different sites distinct`() {
         val rows = listOf(row("fourchan", "4chan"), row("bbwchan", "BBWChan").copy(subject = "Another source"))
         val opened = mutableListOf<String>()
         composeRule.setContent {
             NextTheme { FeedScreen(rows = rows, onOpenRow = { opened += it.id }) }
         }
         composeRule
-            .onNode(
-                hasTestTag(TikTokFeedTags.CAPTION) and hasText("4chan · /g/", substring = true),
-            ).performClick()
-        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).performScrollToIndex(1)
+            .onNodeWithTag(ReaderFeedTags.row(rows[0].id))
+            .assert(hasContentDescription("4chan · /g/", substring = true))
+            .performClick()
         composeRule
-            .onNode(
-                hasTestTag(TikTokFeedTags.CAPTION) and hasText("BBWChan · /g/", substring = true),
-            ).performClick()
+            .onNodeWithTag(ReaderFeedTags.row(rows[1].id))
+            .assert(hasContentDescription("BBWChan · /g/", substring = true))
+            .performClick()
         composeRule.runOnIdle { assertEquals(listOf("fourchan/g/1", "bbwchan/g/1"), opened) }
     }
 
     @Test
-    fun `favorite and board navigation invoke distinct callbacks`() {
+    fun `following and board navigation invoke distinct callbacks`() {
         var opened = false
         var favorited = false
         composeRule.setContent {
@@ -82,7 +83,7 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Add 4chan · /g/ to favorite boards").performClick()
+        composeRule.onNodeWithContentDescription("Follow 4chan · /g/").performClick()
         composeRule.runOnIdle {
             assertTrue(favorited)
             assertTrue(!opened)
@@ -108,16 +109,19 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Watch Weekly discussion").performClick()
-        composeRule.onNodeWithContentDescription("Save Weekly discussion").performClick()
-        composeRule.onNodeWithContentDescription("Share Weekly discussion").performClick()
+        openActions()
+        composeRule.onNodeWithText("Watch Weekly discussion").performClick()
+        openActions()
+        composeRule.onNodeWithText("Save Weekly discussion").performClick()
+        openActions()
+        composeRule.onNodeWithText("Share Weekly discussion").performClick()
         composeRule.runOnIdle {
             assertEquals(1, watched)
             assertEquals(1, saved)
             assertEquals(1, shared)
             assertEquals(0, opened)
         }
-        composeRule.onNodeWithContentDescription("View replies to Weekly discussion").performClick()
+        composeRule.onNodeWithTag(ReaderFeedTags.row("fourchan/g/1")).performClick()
         composeRule.runOnIdle { assertEquals(1, opened) }
     }
 
@@ -132,12 +136,12 @@ class SocialFeedInteractionTest {
                 )
             }
         }
+        openActions()
         composeRule
-            .onNodeWithContentDescription(
+            .onNodeWithText(
                 "Saved while watching. Turn off Watch to remove Weekly discussion.",
             ).assertIsSelected()
             .assertIsNotEnabled()
-            .assertHasNoClickAction()
     }
 
     @Test
@@ -157,18 +161,19 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Feed options").performClick()
-        composeRule.onNodeWithText("Choose source").performClick()
-        composeRule.onNodeWithText("All sites").assertIsSelected()
-        composeRule.onNodeWithText("BBWChan").performClick()
+        composeRule.onNodeWithContentDescription("Choose source").performClick()
+        composeRule.onNode(hasText("All sites") and radioButton()).assertIsSelected()
+        composeRule.onNode(hasText("BBWChan") and radioButton()).performClick()
         composeRule.runOnIdle { assertEquals(2, choice) }
-        composeRule.onNodeWithContentDescription("Feed options").performClick()
-        composeRule.onNodeWithText("Choose source").performClick()
-        composeRule.onNodeWithText("BBWChan").assertIsSelected()
+        composeRule.onNodeWithContentDescription("Choose source").performClick()
+        composeRule
+            .onNode(
+                hasText("BBWChan") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton),
+            ).assertIsSelected()
     }
 
     @Test
-    fun `routine feed counts stay out of overlays while real status messages remain visible`() {
+    fun `reader status remains visible without immersive overlay chrome`() {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
@@ -178,8 +183,9 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithText("1 thread · 1 board").assertDoesNotExist()
-        composeRule.onNodeWithText("Showing previously loaded threads").assertExists()
+        composeRule.onNodeWithText("Showing previously loaded threads", substring = true).assertExists()
+        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertDoesNotExist()
+        composeRule.onNodeWithTag(TikTokFeedTags.CAPTION).assertDoesNotExist()
     }
 
     @Test
@@ -192,15 +198,22 @@ class SocialFeedInteractionTest {
                     rows = listOf(row("fourchan", "4chan")),
                     onOpenRow = { opened++ },
                     onSettings = { settings++ },
+                    onOpenBoards = {},
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Feed options").performClick()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
         composeRule.onNodeWithText("Settings").performClick()
         composeRule.runOnIdle {
             assertEquals(1, settings)
             assertEquals(0, opened)
         }
+    }
+
+    private fun radioButton() = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
+
+    private fun openActions() {
+        composeRule.onNodeWithTag(ReaderFeedTags.more("fourchan/g/1")).performClick()
     }
 
     private fun row(

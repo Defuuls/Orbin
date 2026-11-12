@@ -41,6 +41,7 @@ import com.orbin.uinext.ReaderScaffold
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.ReaderSpace
 import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.withReaderFont
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -90,7 +91,7 @@ internal fun DownloadsScreen(
                         if (records.isEmpty()) Res.string.ios_downloads_empty else Res.string.ios_downloads_where
                     Text(
                         stringResource(subtitle),
-                        style = ReaderType.stateBody,
+                        style = ReaderType.stateBody.withReaderFont(),
                         color = reader.inkMuted,
                         modifier = Modifier.padding(ReaderSpace.gutter),
                     )

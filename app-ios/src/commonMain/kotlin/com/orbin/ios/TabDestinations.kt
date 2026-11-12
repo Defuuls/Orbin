@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,10 +25,10 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
-import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.feedColumns
+import com.orbin.core.model.isWideWindow
+import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_boards_no_visible
 import com.orbin.ios.resources.ios_boards_source_unavailable
@@ -60,22 +58,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
+import com.orbin.uinext.CatalogMode as ReaderCatalogMode
 
 private const val CLEAR_ARMED_MS = 4_000L
 
 // Home, Boards, Watched, Search and Saved drawer destinations, plus their detail pages.
 
 @Composable
-internal fun FeedDestination(
-    browser: Browser,
-    formFactor: FormFactor,
-    playbackAllowed: Boolean = true,
-) {
+internal fun FeedDestination(browser: Browser) {
     val feed by browser.feed.collectAsState()
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val site by browser.feedSite.collectAsState()
-    val mode by browser.feedMode.collectAsState()
     val loadingMore by browser.feedLoadingMore.collectAsState()
     val canLoadMore by browser.feedCanLoadMore.collectAsState()
     val discoveryProgress by browser.feedDiscoveryProgress.collectAsState()
@@ -93,22 +87,6 @@ internal fun FeedDestination(
                 emptyList()
             }
         }
-    // Empty video batches advance only after their catalogs finish, never while mapping old rows.
-    LaunchedEffect(
-        threads.isEmpty(),
-        loadingMore,
-        canLoadMore,
-        mode,
-        discoveryProgress,
-        feed is Load.Ready,
-        policyMatches,
-    ) {
-        val successfulEmptyPage = feed is Load.Ready && policyMatches && threads.isEmpty()
-        val discoveryCanAdvance = mode == HomeFeedMode.FOR_YOU && !loadingMore && canLoadMore
-        if (successfulEmptyPage && discoveryCanAdvance) {
-            browser.loadMoreFeed()
-        }
-    }
     val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
     // Caption text and activity belong to the content snapshot; local membership only changes flags.
     val baseRows = remember(threads) { threads.map { it.thread.key to it.toFeedRow(now, read = false) } }
@@ -124,40 +102,21 @@ internal fun FeedDestination(
             }
         }
     val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
-    var activePreviewId by remember { mutableStateOf<String?>(null) }
-    var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
-    val preloader = remember { createNativeMediaPreloader() }
-    DisposableEffect(preloader) { onDispose { preloader.close() } }
-    val preloadTarget =
-        if (playbackAllowed) {
-            feedPreloadTarget(
-                byRow[activePreviewId],
-                byRow[upcomingPreviewId],
-                settings.playbackPreferences,
-                supportsWebM,
-            )
-        } else {
-            null
-        }
-    val foreground = FeedPreloadLifecycle(preloader, preloadTarget)
-    val uriHandler = LocalUriHandler.current
     NextPullToRefresh(
         isRefreshing = feed is Load.Loading,
         onRefresh = browser::retry,
         modifier = Modifier.fillMaxSize(),
     ) {
         BoxWithConstraints {
-            if (preloadTarget != null && foreground && playbackAllowed) {
-                NativeMediaPreloadHost(preloader)
-            }
             FeedScreen(
                 rows = rows,
-                following = mode == HomeFeedMode.FOLLOWING,
-                onFollowingChange = {
-                    browser.selectFeedMode(
-                        if (it) HomeFeedMode.FOLLOWING else HomeFeedMode.FOR_YOU,
+                mode = if (settings.catalogMode == CatalogMode.GRID) ReaderCatalogMode.GRID else ReaderCatalogMode.LIST,
+                onModeChange = { selected ->
+                    browser.settings.setCatalogMode(
+                        if (selected == ReaderCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST,
                     )
                 },
+                wideWindow = isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
                 isLoading = !policyMatches || feed is Load.Loading || loadingMore && rows.isEmpty(),
                 errorMessage = (feed as? Load.Failed)?.message,
                 onRetry = browser::retry,
@@ -170,8 +129,8 @@ internal fun FeedDestination(
                     },
                 loadMoreKey = discoveryProgress,
                 hideRailOnScroll = false,
-                columns = feedColumns(formFactor, maxWidth.value.toInt(), maxHeight.value.toInt(), settings),
                 onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
+                onOpenMedia = { row -> byRow[row.id]?.let { browser.openThreadVideos(it.thread.key) } },
                 onOpenReplies = { row ->
                     byRow[row.id]?.let {
                         if (settings.openThreadComments) {
@@ -189,19 +148,10 @@ internal fun FeedDestination(
                 onShareRow = { row ->
                     byRow[row.id]?.let { shareContent(row.subject, browser.threadWebUrl(it.thread.key)) }
                 },
-                onActivePreviewChanged = { activePreviewId = it },
-                onUpcomingPreviewChanged = { upcomingPreviewId = it },
-                mediaContent = { row, modifier, active ->
-                    byRow[row.id]?.let { entry ->
-                        FeedMedia(
-                            feed = entry,
-                            playback = settings.playbackPreferences.resolve(entry.provider, entry.thread.key.board),
-                            active = active && foreground && playbackAllowed,
-                            modifier = modifier,
-                            preloader = preloader,
-                            onLike = { browser.watchFeed(entry) },
-                            onOpenExternal = uriHandler::openUri,
-                        )
+                thumbnail = { row, modifier ->
+                    byRow[row.id]?.thread?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
+                        // The reader cell reveals spoilers before requesting this bounded preview.
+                        ReaderThumbnail(attachment.copy(isSpoiler = false), modifier)
                     }
                 },
                 onOpenBoard = { row ->
@@ -588,6 +538,11 @@ internal fun ThreadCollectionsDestination(
                             it.key.toString(),
                             it.title,
                             "${browser.siteName(it.key.provider)} · /${it.key.board.value}/",
+                            time = formatPostDateTime(it.createdAtMillis).orEmpty(),
+                            threadNumber =
+                                it.key.thread.value
+                                    .toString(),
+                            unread = it.unreadCount,
                         )
                 }
         }

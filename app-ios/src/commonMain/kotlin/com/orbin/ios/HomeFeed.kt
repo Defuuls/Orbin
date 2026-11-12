@@ -63,7 +63,7 @@ internal class HomeFeed(
     private val catalogDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val isActive: () -> Boolean,
 ) {
-    private val _mode = MutableStateFlow(HomeFeedMode.FOR_YOU)
+    private val _mode = MutableStateFlow(HomeFeedMode.FOLLOWING)
     val mode: StateFlow<HomeFeedMode> = _mode.asStateFlow()
     private val _content = MutableStateFlow<Load<List<FeedThread>>>(Load.Loading)
     val content: StateFlow<Load<List<FeedThread>>> = _content.asStateFlow()
@@ -118,11 +118,10 @@ internal class HomeFeed(
         }
     }
 
-    fun selectMode(value: HomeFeedMode) {
-        if (_mode.value == value) return
-        _mode.value = value
-        load()
-    }
+    /** Retained for older callers; discovery is no longer a Home content source. */
+    fun selectMode(
+        @Suppress("UNUSED_PARAMETER") value: HomeFeedMode,
+    ) = Unit
 
     fun loadMore() {
         if (_mode.value != HomeFeedMode.FOR_YOU || !_canLoadMore.value || catalogLoading) return

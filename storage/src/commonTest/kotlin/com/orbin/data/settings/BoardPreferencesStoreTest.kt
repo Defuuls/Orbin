@@ -52,6 +52,25 @@ class BoardPreferencesStoreTest {
         }
 
     @Test
+    fun favoritesRemainIndependentFromSubscriptionsOnEachSite() =
+        runTest {
+            val store = BoardPreferencesStore(backgroundScope.dataStore())
+            val board = BoardId("g")
+            store.setFavoriteBoard(site, board, favorite = true)
+
+            assertEquals(setOf(board), store.observeFavoriteBoards(site).first())
+            assertEquals(emptySet(), store.observeSubscribedBoards(site).first())
+            store.setSubscribedBoard(site, board, subscribed = true)
+            store.setSubscribedBoard(other, board, subscribed = true)
+            store.setSubscribedBoard(site, board, subscribed = false)
+
+            assertEquals(emptySet(), store.observeSubscribedBoards(site).first())
+            assertEquals(setOf(board), store.observeFavoriteBoards(site).first())
+            assertEquals(setOf(board), store.observeSubscribedBoards(other).first())
+            assertEquals(emptySet(), store.observeFavoriteBoards(other).first())
+        }
+
+    @Test
     fun feedLimitsAreSetClearedAndIgnoredWhenUnreadable() =
         runTest {
             val dataStore = backgroundScope.dataStore()

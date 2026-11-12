@@ -1,0 +1,5 @@
+<resources>
+    <string name="reader_feed_done">Done</string>
+    <string name="reader_feed_open_media">Open media in %1$s</string>
+    <string name="reader_feed_empty_discovery">No videos are available from this source. Try again or choose another source.</string>
+</resources>

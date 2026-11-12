@@ -53,3 +53,25 @@ data class MediaAttachment(
                 else -> 0f
             }
 }
+
+/** Actual format, dimensions and byte size for compact attachment metadata. */
+fun MediaAttachment.attachmentDetails(): String =
+    buildList {
+        extension
+            .trim()
+            .removePrefix(".")
+            .takeIf(String::isNotBlank)
+            ?.let { add(it.uppercase()) }
+        if (width > 0 && height > 0) add("${width}x$height")
+        if (sizeBytes > 0) add(readableFileSize(sizeBytes))
+    }.joinToString(" ")
+
+private fun readableFileSize(bytes: Long): String =
+    when {
+        bytes < BYTES_PER_KIB -> "$bytes B"
+        bytes < BYTES_PER_MIB -> "${bytes / BYTES_PER_KIB} KB"
+        else -> "${bytes / BYTES_PER_MIB} MB"
+    }
+
+private const val BYTES_PER_KIB = 1_024L
+private const val BYTES_PER_MIB = 1_048_576L

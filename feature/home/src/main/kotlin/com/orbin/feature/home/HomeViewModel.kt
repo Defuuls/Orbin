@@ -26,11 +26,23 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+
+/** Membership always names its source so a pending source switch cannot reuse another site's flags. */
+internal data class BoardFollowState(
+    val providerId: String? = null,
+    val boardIds: Set<String> = emptySet(),
+) {
+    fun contains(
+        provider: String,
+        board: String,
+    ): Boolean = providerId == provider && board in boardIds
+}
 
 /**
  * Loads the board list for the active provider. Errors surface as a retryable [HomeUiState.Error]
@@ -64,16 +76,21 @@ class HomeViewModel
             viewModelScope.launch { settingsRepository.setActiveProviderId(ProviderId(id)) }
         }
 
-        /** First-run subscriptions and older favorites are the same Following choice in Boards. */
-        val followedBoardIds: StateFlow<Set<String>> =
+        /** Only explicit subscriptions select Follow; favorites remain an independent preference. */
+        internal val followedBoards: StateFlow<BoardFollowState> =
             activeProvider
                 .flatMapLatest { provider ->
-                    combine(
-                        boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
-                        boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                    ) { favorites, subscriptions -> favorites + subscriptions }
-                }.map { boards -> boards.map { it.value }.toSet() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+                    boardPreferencesRepository
+                        .observeSubscribedBoards(provider.metadata.id)
+                        .map { boards ->
+                            BoardFollowState(provider.metadata.id.value, boards.map { it.value }.toSet())
+                        }.onStart { emit(BoardFollowState(provider.metadata.id.value)) }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), BoardFollowState())
+
+        val followedBoardIds: StateFlow<Set<String>> =
+            combine(activeProvider, followedBoards) { provider, followed ->
+                if (followed.providerId == provider.metadata.id.value) followed.boardIds else emptySet()
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         private val followWrites = Mutex()
 
@@ -87,7 +104,6 @@ class HomeViewModel
             viewModelScope.launch {
                 followWrites.withLock {
                     boardPreferencesRepository.setSubscribedBoard(provider, board, followed)
-                    if (!followed) boardPreferencesRepository.setFavoriteBoard(provider, board, false)
                 }
             }
         }
@@ -101,11 +117,7 @@ class HomeViewModel
         private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
         val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-        val subscribedBoardIds: StateFlow<Set<String>> =
-            activeProvider
-                .flatMapLatest { provider -> boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id) }
-                .map { boards -> boards.map { it.value }.toSet() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
+        val subscribedBoardIds: StateFlow<Set<String>> = followedBoardIds
 
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
@@ -140,13 +152,7 @@ class HomeViewModel
             boardId: String,
             subscribed: Boolean,
         ) {
-            viewModelScope.launch {
-                boardPreferencesRepository.setSubscribedBoard(
-                    provider = activeProvider.value.metadata.id,
-                    board = BoardId(boardId),
-                    subscribed = subscribed,
-                )
-            }
+            setFollowed(boardId, subscribed, activeProvider.value.metadata.id.value)
         }
 
         private companion object {

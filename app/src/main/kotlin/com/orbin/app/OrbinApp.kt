@@ -68,10 +68,9 @@ fun OrbinApp(
     val currentEntry by navController.currentBackStackEntryAsState()
     val immersive =
         currentEntry?.destination?.let {
-            it.hasRoute(Route.NextFeed::class) ||
-                it.hasRoute(Route.Gallery::class) ||
+            it.hasRoute(Route.Gallery::class) ||
                 it.hasRoute(Route.ThreadVideos::class)
-        } ?: !startWithOnboarding
+        } ?: false
     val readerBarVisible =
         currentEntry?.destination?.let { destination ->
             !destination.hasRoute(Route.Onboarding::class) &&
@@ -188,7 +187,7 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
     )
 }
 
-/** Match native system icons to the actual surface, including a black Home in a light app. */
+/** Match native system icons to the reader surface or the dedicated full-screen media viewer. */
 @Composable
 internal fun SystemBarAppearance(
     immersive: Boolean = false,

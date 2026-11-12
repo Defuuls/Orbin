@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.InlineStyle
@@ -21,6 +22,7 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.ThreadScreen
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
@@ -41,7 +43,7 @@ class ReaderPostCommentStyleTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun preparedRichBodiesUseReaderBodyTypographyAndInk() {
+    fun preparedRichBodiesUseCloverPhoneAndWidePostTypographyAndReaderInk() {
         val key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(1))
         val thread =
             Thread(
@@ -56,9 +58,16 @@ class ReaderPostCommentStyleTest {
                 ),
             )
         val presentation = runBlocking { thread.preparePresentation() }
+        var wide by mutableStateOf(false)
         composeRule.setContent {
             NextTheme(darkTheme = false) {
-                ReaderPostComment(presentation.rows.single())
+                ThreadScreen(
+                    subject = "Thread",
+                    board = "/g/",
+                    posts = presentation.rowModels,
+                    wideWindow = wide,
+                    body = { ReaderPostComment(presentation.rows.single()) },
+                )
             }
         }
 
@@ -67,8 +76,8 @@ class ReaderPostCommentStyleTest {
             .onNodeWithText("Plain body", substring = true, useUnmergedTree = true)
             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         val style = layouts.single().layoutInput.style
-        assertEquals(15.sp, style.fontSize)
-        assertEquals(22.sp, style.lineHeight)
+        assertEquals(14.sp, style.fontSize)
+        assertEquals(TextUnit.Unspecified, style.lineHeight)
         assertEquals(ReaderLightColors.ink, style.color)
         val text = layouts.single().layoutInput.text
         val linkStyle =
@@ -79,6 +88,25 @@ class ReaderPostCommentStyleTest {
                 ?.style
         assertEquals(ReaderLightColors.quoteLink, linkStyle?.color)
         assertEquals(TextDecoration.Underline, linkStyle?.textDecoration)
+
+        composeRule.runOnIdle { wide = true }
+        composeRule.waitForIdle()
+        val wideLayouts = mutableListOf<TextLayoutResult>()
+        composeRule
+            .onNodeWithText("Plain body", substring = true, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(wideLayouts) }
+        assertEquals(
+            16.sp,
+            wideLayouts
+                .single()
+                .layoutInput.style.fontSize,
+        )
+        assertEquals(
+            TextUnit.Unspecified,
+            wideLayouts
+                .single()
+                .layoutInput.style.lineHeight,
+        )
     }
 
     @Test

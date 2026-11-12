@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -48,6 +49,7 @@ class SettingsInteractionAccessibilityTest {
                 )
             }
         }
+        composeRule.onNodeWithContentDescription("Search settings").performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput("lock")
         composeRule.onAllNodes(isSwitch).assertCountEquals(1)
         composeRule

@@ -1,8 +1,8 @@
 # Orbin reader design
 
-This is the normative design for Orbin's board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
+This is the normative design for Orbin's Home, board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
-The design comes from a set of catalog and thread mockups and from the resources of the Clover 3.0.2 Android app they imitate. Where those sources disagreed, this document records the choice and the reason under [Source record](#source-record).
+Clover 3.0.2 is the sole visual specification for Orbin's layouts, typography, spacing, navigation and controls. Orbin retains its name, icon and green brand accent, together with its board subscriptions, sources, saved/watch tools and video playback. Orbin-specific functions use the same visual structures; unavailable Clover posting functions are not synthesized. [Source record](#source-record) identifies the exact APK and the verified design evidence.
 
 A visual companion, [schematic.html](schematic.html), shows the same diagrams and tokens on one page. If the page and this document ever differ, this document is correct.
 
@@ -10,6 +10,7 @@ A visual companion, [schematic.html](schematic.html), shows the same diagrams an
 
 Covered here:
 
+- Home in list mode and grid mode, including source selection;
 - the board catalog in list mode and grid mode;
 - the thread reader;
 - the two-pane layout that shows both;
@@ -18,43 +19,48 @@ Covered here:
 
 Orbin is read-only. This design has no compose button, no reply box and no per-post reply control, and none may be added under it.
 
-Home, Watched, Saved, Search and Settings take this design's frame and colors and keep their own content layout; [Other screens](#other-screens) says how. The media viewer is not covered and keeps its shipped behavior.
+Home uses the same reader cells, List/Grid modes and theme colors as the board catalog. Saved uses a compact reader list of real stored records. Watched, Search and Settings take this design's frame and colors; [Other screens](#other-screens) says how. The media viewer keeps its dedicated playback experience.
 
 ## Tokens
 
-Tokens are the only source of values. Layout rules and diagrams refer to tokens by name. This set is independent of the tokens in `ui-next` and `core/designsystem`; it does not reuse or alias them.
-
-Units: `dp` for layout, `sp` for type so text follows the reader's font scale.
+The shared ReaderTokens implementation records the values below. Clover's verified geometry and neutral Light/Dark/Black surfaces define the reader; Orbin's green brand and contrast-safe action/link colors are intentional adaptations. Layout uses dp and type uses sp. Eight-digit colors use Android ARGB order (#AARRGGBB); SVG/CSS equivalents preserve the same alpha.
 
 ### Color
 
+App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-bar ground uses `color.statusBar`.
+
 | Token | Light | Dark | AMOLED | Use |
 | --- | --- | --- | --- | --- |
-| `color.appBar` | `#2E7D32` | `#1E1E1E` | `#000000` | App bar and status bar ground |
-| `color.onAppBar` | `#FFFFFF` | `#E8EAED` | `#E8EAED` | App bar title and icons |
-| `color.background` | `#FFFFFF` | `#121212` | `#000000` | Screen, row, post, and card ground |
-| `color.surfaceVariant` | `#F1F3F4` | `#2A2A2A` | `#1A1A1A` | Thumbnail placeholder, count pill, skeleton bars |
-| `color.selected` | `#E8F5E9` | `#1B3A1F` | `#12261A` | Open thread's row in the two-pane catalog |
-| `color.ink` | `#1F1F1F` | `#E8EAED` | `#E8EAED` | Titles, post bodies, pill count |
-| `color.inkMuted` | `#5F6368` | `#BDC1C6` | `#BDC1C6` | Post numbers, dates, file details, helper text |
-| `color.hairline` | `#DADCE0` | `#3C4043` | `#2A2A2A` | Row, post, and pane dividers; card outline |
-| `color.accent` | `#00796B` | `#80CBC4` | `#80CBC4` | Progress bar and text buttons |
+| `color.appBar` | `#2E7D32` | `#212121` | `#000000` | App bar ground |
+| `color.statusBar` | `#1B5E20` | `#000000` | `#000000` | Status bar ground |
+| `color.onAppBar` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | App bar labels and icons |
+| `color.background` | `#FFFFFF` | `#232323` | `#000000` | Screen, row, post and card ground |
+| `color.surfaceVariant` | `#F5F5F5` | `#303030` | `#212121` | Secondary ground, placeholders and skeletons |
+| `color.selected` | `#E8F5E9` | `#444444` | `#444444` | Open row in two panes |
+| `color.ink` | `#DE000000` | `#FFFFFF` | `#FFFFFF` | Primary body text |
+| `color.inkSecondary` | `#89000000` | `#B2FFFFFF` | `#B2FFFFFF` | Generic secondary UI text |
+| `color.inkMuted` | `#646464` | `#C5C8C6` | `#C5C8C6` | Post numbers, dates and attachment details |
+| `color.hairline` | `#1E000000` | `#1EFFFFFF` | `#1EFFFFFF` | Decorative row and post dividers |
+| `color.accent` | `#00796B` | `#80CBC4` | `#80CBC4` | Orbin progress and actions |
 | `color.onAccent` | `#FFFFFF` | `#003731` | `#003731` | Text on an accent-filled control |
-| `color.quote` | `#2E7D32` | `#81C784` | `#81C784` | Quoted (greentext) lines |
+| `color.quote` | `#2E7D32` | `#81C784` | `#81C784` | Quoted lines |
 | `color.author` | `#117743` | `#81C784` | `#81C784` | Post author name |
-| `color.quoteLink` | `#0B57D0` | `#A8C7FA` | `#A8C7FA` | Post reference links and backlinks |
-| `color.error` | `#B3261E` | `#F2B8B5` | `#F2B8B5` | Error state title |
+| `color.subject` | `#0F0C5D` | `#ABA7FF` | `#ABA7FF` | Post and catalog subjects |
+| `color.quoteLink` | `#0B57D0` | `#A8C7FA` | `#A8C7FA` | Post references and backlinks |
+| `color.error` | `#B3261E` | `#F2B8B5` | `#F2B8B5` | Error titles |
 
-The app bar green is darker than the source app's `#4CAF50`. White text on `#4CAF50` has a contrast ratio of about 2.8:1; on `color.appBar` it is above 5:1. In the dark and AMOLED themes the app bar takes the ground color and the green moves to quoted text and author names.
+The light toolbar uses Orbin green. Its darker color.statusBar preserves Clover's separate status tone. Dark uses a #212121 toolbar and black status bar; AMOLED uses black for both. Generic color.inkSecondary is distinct from color.inkMuted post metadata. Orbin keeps green #E8F5E9 for the selected light row and lightens the reference dark subject indigo #625CFF to #ABA7FF; these are deliberate brand/readability adaptations. The latter is the first rounded color on the linear white blend from the reference indigo that reaches 4.5:1 over both #232323 and #444444 (about 4.5003:1 on the selected ground). The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
 
 ### Contrast
 
-Every pair below must meet its minimum ratio in all three themes. 4.5 is the WCAG AA minimum for text; 3.0 applies to non-text marks.
+The following pairs are checked after compositing alpha over the stated ground. Decorative color.hairline has no text-contrast minimum.
 
 | Foreground | Background | Minimum ratio |
 | --- | --- | --- |
 | `color.onAppBar` | `color.appBar` | 4.5 |
+| `color.onAppBar` | `color.statusBar` | 4.5 |
 | `color.ink` | `color.background` | 4.5 |
+| `color.inkSecondary` | `color.background` | 4.5 |
 | `color.inkMuted` | `color.background` | 4.5 |
 | `color.ink` | `color.surfaceVariant` | 4.5 |
 | `color.inkMuted` | `color.surfaceVariant` | 4.5 |
@@ -62,122 +68,133 @@ Every pair below must meet its minimum ratio in all three themes. 4.5 is the WCA
 | `color.inkMuted` | `color.selected` | 4.5 |
 | `color.quote` | `color.background` | 4.5 |
 | `color.quote` | `color.selected` | 4.5 |
+| `color.subject` | `color.background` | 4.5 |
+| `color.subject` | `color.selected` | 4.5 |
 | `color.author` | `color.background` | 4.5 |
 | `color.quoteLink` | `color.background` | 4.5 |
 | `color.error` | `color.background` | 4.5 |
 | `color.accent` | `color.background` | 3.0 |
 | `color.onAccent` | `color.accent` | 4.5 |
 
-`color.hairline` is decorative and has no minimum.
-
 ### Type
 
-The family is the platform's default sans serif: Roboto on Android, San Francisco on iOS.
+Both platforms use bundled Roboto for the reader and shared default-family text. The exact open-source Medium, Medium Italic and Condensed Regular faces from the reference are retained; Regular/Bold/Italic variants are pinned to the actual API31 reference-runtime system Roboto because Clover delegates those faces to Android's system sans. See the packaged font provenance and Apache 2.0 notice in ui-next/src/commonMain/composeResources/files/licenses/. Natural line height means the font's metrics, with no invented fixed sp line height. Platform TextView/Compose baseline differences remain subject to native screenshot verification. The SVG diagrams embed diagram-only glyph subsets with the same original outlines and metrics; the application font assets remain complete and unmodified.
 
 | Token | Size | Line height | Weight | Use |
 | --- | --- | --- | --- | --- |
-| `type.appBarTitle` | 20sp | 28sp | 500 | App bar title |
-| `type.appBarSubtitle` | 14sp | 20sp | 400 | Board line under a thread title |
-| `type.rowTitle` | 16sp | 22sp | 700 | Catalog row title |
-| `type.meta` | 12sp | 16sp | 400 | Post number, date, file details, backlinks |
-| `type.preview` | 14sp | 20sp | 400 | Catalog row preview line |
-| `type.body` | 15sp | 22sp | 400 | Post body |
-| `type.cardTitle` | 14sp | 20sp | 700 | Grid card title |
-| `type.postAuthor` | 12sp | 16sp | 700 | Post author name |
-| `type.pill` | 14sp | 20sp | 500 | Reply count in the pill |
-| `type.stateTitle` | 24sp | 32sp | 400 | Empty and error state title |
-| `type.stateBody` | 16sp | 24sp | 400 | State helper text and the empty detail pane message |
-| `type.label` | 14sp | 20sp | 500 | Text buttons |
+| `type.appBarTitle` | 20sp | 28sp | 500 | App bar title. |
+| `type.appBarSubtitle` | 14sp | 20sp | 400 | Board line under a thread title. |
+| `type.rowTitle` | 16sp | 22sp | 700 | Saved-record title; compatibility helper |
+| `type.meta` | 12sp | 16sp | 400 | Shared helper and saved-record metadata |
+| `type.preview` | 14sp | 20sp | 400 | Compatibility preview helper |
+| `type.body` | 15sp | 22sp | 400 | Compatibility body helper; posts use postBody |
+| `type.cardTitle` | 14sp | 20sp | 700 | Loading skeleton helper; cards use postBody |
+| `type.postAuthor` | 12sp | 16sp | 700 | Compatibility author helper |
+| `type.postBody` | 14sp | natural | 400 | Clover's default post size; natural Roboto metrics supply its line spacing. |
+| `type.postBodyWide` | 16sp | natural | 400 | The sw600dp post size from Clover's tablet resource configuration. |
+| `type.postDetails` | 10sp | natural | 400 | Post number, time and attachment metadata are four sp smaller than the body. |
+| `type.postDetailsWide` | 12sp | natural | 400 | Wide-window post metadata |
+| `type.pill` | 14sp | 20sp | 500 | Compatibility control helper; catalog counters are plain text |
+| `type.stateTitle` | 24sp | 32sp | 400 | Empty and error state title. |
+| `type.stateBody` | 16sp | 24sp | 400 | State helper text and the empty detail pane message. |
+| `type.label` | 14sp | 20sp | 500 | Text buttons. |
 
 ### Spacing
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `space.gutter` | 16dp | Left and right screen edge inset |
-| `space.rowPadY` | 12dp | Top and bottom padding of a catalog row |
-| `space.postPadY` | 12dp | Top and bottom padding of a post |
-| `space.cardPad` | 8dp | Padding around the text block of a grid card |
-| `space.gridGap` | 4dp | Between grid cards and around the grid |
-| `space.gap` | 12dp | Thumbnail to text column |
-| `space.gapSmall` | 8dp | Text to pill, and between blocks inside a post |
-| `space.line` | 4dp | Between title, meta line, and preview in a row |
+| `space.gutter` | 16dp | Left and right screen edge inset. |
+| `space.rowPadY` | 12dp | Legacy shared-cell and skeleton vertical padding |
+| `space.postPadY` | 12dp | Legacy shared-cell vertical padding |
+| `space.postInset` | 8dp | Clover post text inset: the configured text size minus six dp. |
+| `space.postInsetWide` | 10dp | Post text inset in wide windows |
+| `space.albumPadding` | 1dp | Clover's album container padding and individual cell margin. |
+| `space.albumCellMargin` | 1dp | Individual album cell margin |
+| `space.cardPad` | 8dp | Padding around the text block of a grid card. |
+| `space.gridGap` | 4dp | Between grid cards: the two adjacent 2dp card margins. |
+| `space.gridOuter` | 2dp | Outside margin of catalog grid cards, matching Clover v3.0.2 on API 21+. |
+| `space.gap` | 12dp | Reply nesting and generic control spacing |
+| `space.gapSmall` | 8dp | Generic block and drawer padding |
+| `space.line` | 4dp | Between title, meta line, and preview in a row. |
 
 ### Size
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `size.appBar` | 56dp | App bar height |
-| `size.touchTarget` | 48dp | Minimum size of anything that can be tapped |
-| `size.icon` | 24dp | App bar icon |
-| `size.thumbnail` | 72dp | Cell thumbnail width and height in a window that is not wide |
-| `size.thumbnailWide` | 100dp | Cell thumbnail width and height in a wide window |
-| `size.cellMin` | 96dp | Minimum height of a cell that has a thumbnail |
-| `size.cellMinWide` | 124dp | The same minimum in a wide window |
-| `size.gridCardMin` | 120dp | Grid column count is the pane width divided by this, rounded down |
-| `size.gridCardText` | 76dp | Height of the text block under a grid card image |
-| `size.threadStatus` | 88dp | Thread footer that reports reply and image counts |
-| `size.pillHeight` | 36dp | Reply count pill height |
-| `size.pillMinWidth` | 48dp | Reply count pill minimum width |
-| `size.hairline` | 1dp | Row and post divider thickness |
-| `size.progress` | 4dp | Refresh progress bar height |
-| `size.readingMax` | 640dp | Maximum post text width in a wide pane |
-| `size.drawerMax` | 320dp | Maximum navigation drawer width |
-| `size.wideMin` | 600dp | Both window sides must reach this to count as wide |
-| `size.twoPaneMinWidth` | 800dp | Wide windows at least this wide show two panes |
-| `size.listPaneMax` | 420dp | Maximum catalog pane width in two panes |
-| `size.paneDivider` | 1dp | Divider between the two panes |
+| `size.appBar` | 56dp | App bar height. |
+| `size.appBarNavigation` | 56dp | Clover toolbar leading navigation control width. |
+| `size.appBarAction` | 50dp | Clover toolbar regular action width. |
+| `size.appBarOverflow` | 44dp | Clover toolbar overflow control width. |
+| `size.touchTarget` | 48dp | Minimum size of anything that can be tapped. |
+| `size.icon` | 24dp | App bar icon. |
+| `size.thumbnail` | 72dp | Cell thumbnail width and height in a window that is not wide. |
+| `size.thumbnailWide` | 100dp | Cell thumbnail width and height in a wide window. |
+| `size.cellMin` | 96dp | Legacy shared-cell and loading minimum |
+| `size.cellMinWide` | 124dp | Legacy shared-cell and loading minimum, wide |
+| `size.gridCardMin` | 120dp | Grid column count is the pane width divided by this, rounded down. |
+| `size.gridCardText` | 76dp | Compatibility value; active card height comes from ratio.gridCard |
+| `size.cardElevation` | 2dp | Catalog card elevation, matching Clover v3.0.2. |
+| `size.threadStatus` | 88dp | Thread footer that reports reply and image counts. |
+| `size.albumDetails` | 32dp | The album cell adds this metadata strip to its width to determine its height. |
+| `size.pillHeight` | 36dp | Compatibility control height; no catalog count pill |
+| `size.pillMinWidth` | 48dp | Compatibility control and skeleton width |
+| `size.hairline` | 1dp | Row and post divider thickness. |
+| `size.progress` | 4dp | Refresh progress bar height. |
+| `size.readingMax` | 640dp | Maximum post text width in a wide pane. |
+| `size.drawerMax` | 336dp | Maximum navigation drawer width. |
+| `size.wideMin` | 600dp | Both window sides must reach this to count as wide. |
+| `size.twoPaneMinWidth` | 800dp | Wide windows at least this wide show two panes. |
+| `size.listPaneMax` | 420dp | Maximum catalog pane width in two panes. |
+| `size.paneDivider` | 1dp | Divider between the two panes. |
 
 ### Radius
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `radius.small` | 4dp | Thumbnails and skeleton bars |
-| `radius.card` | 2dp | Grid card |
-| `radius.pill` | 18dp | Reply count pill |
+| `radius.small` | 4dp | Generic skeleton/helper corners; reader thumbnails use radius.card |
+| `radius.card` | 2dp | Grid card. |
+| `radius.pill` | 18dp | Compatibility control radius; no catalog count pill |
+
+### Ratios
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `ratio.gridCard` | 0.5 | Card width / minimum height (9:18) |
+| `ratio.gridThumbnail` | 1.230769 | Image width / height (16:13; exact fraction in code) |
+
+Compatibility helpers remain public: type.rowTitle, type.meta, type.preview, type.body, type.cardTitle, type.postAuthor and type.pill; space.rowPadY and space.postPadY; size.cellMin, size.cellMinWide, size.gridCardText, size.pillHeight and size.pillMinWidth; radius.small and radius.pill. These values do not restore the removed trailing count pill or the old square catalog-card image. Generic controls and loading fallbacks may still use them. The general space.gutter (16dp) aligns drawer/control edges; space.line (4dp) separates inline helper content.
+
 
 ## Shared cell
 
-A catalog row in list mode and a post in a thread are the same cell: gutter, optional thumbnail, gap, text column. A catalog row adds a reply count pill at the trailing edge.
+Catalog rows and thread posts use the same compact ReaderPostLayout: a leading thumbnail and an inset text column. Orbin's cross-site metadata, unread state, subscription controls and read-only actions are retained additions.
 
 ![Shared cell: catalog row and post](diagrams/cell-anatomy.svg)
 
-Rules for both:
-
-- The thumbnail is square: `size.thumbnail` in a window that is not wide, `size.thumbnailWide` in a wide window. Its corners use `radius.small`. The image is center-cropped to fill.
-- The thumbnail sits `space.gutter` from the leading edge and its top is one vertical padding below the top of the cell.
-- The text column starts `space.gap` after the thumbnail. With no thumbnail the text column starts at the gutter and takes the freed width.
-- A `size.hairline` line in `color.hairline` closes the cell across its full width.
-- A cell with a thumbnail is never shorter than `size.cellMin`, or `size.cellMinWide` in a wide window. It grows when the text is taller than the thumbnail.
+- The optional thumbnail starts at the leading edge with no outer gutter. It is size.thumbnail (72dp), or size.thumbnailWide (100dp) in a wide window, with radius.card (2dp) corners. Provider thumbnail crop preferences remain functional.
+- Text begins space.postInset (8dp) after the thumbnail, or at that inset from the edge when there is no image. Wide windows use space.postInsetWide (10dp).
+- Text uses the same inset above, below and between major blocks. A cell grows to fit the larger of its thumbnail and text; the old size.cellMin rule does not govern real posts/catalog rows.
+- The closing size.hairline divider in color.hairline is inset by the text inset at each screen edge, plus any reply indent.
+- At 2x font scale the image moves above the text. Text and counts expand; RTL mirrors the leading thumbnail and text column.
 
 ### Catalog row
 
-Top to bottom in the text column, `space.line` apart:
+The subject uses type.postBody (14sp), or type.postBodyWide (16sp), regular weight, in color.subject; catalog list titles use at most two lines. Source/thread/date metadata uses type.postDetails (10sp) or type.postDetailsWide (12sp), color.inkMuted. The opening excerpt uses the body style, up to two lines; quotes use color.quote and normal text color.ink.
 
-1. Title in `type.rowTitle`, `color.ink`, two lines at most, then an ellipsis. A thread with no subject uses the first line of its opening post.
-2. Post number and date in `type.meta`, `color.inkMuted`, one line.
-3. Preview of the opening post in `type.preview`, two lines at most. Quoted lines use `color.quote`; other lines use `color.ink`.
-
-The reply count pill is `size.pillHeight` tall and at least `size.pillMinWidth` wide, with `radius.pill` corners on a `color.surfaceVariant` ground. The count uses `type.pill` in `color.ink`. The pill is centered vertically in the row and sits `space.gapSmall` after the text column. It is a label and has no action of its own; the whole row opens the thread.
-
-Vertical padding is `space.rowPadY` above and below.
+Reply and file totals are plain text below the excerpt, using the body style in color.inkMuted, such as “23 replies, 4 files”. There is no trailing badge and no reserved badge column. Watched unread counts remain a separate color.accent label. The row opens its thread; optional media and context actions retain their callbacks and accessible labels.
 
 ### Post
 
-Top to bottom in the text column:
+The subject appears first in color.subject using the natural body style. The compact header then shows a non-anonymous author in color.author and post number/time in the details style; the opening post retains its OP marker. Attachment details follow in the same smaller type. Anonymous metadata remains available to accessibility without an extra visible author line.
 
-1. Author in `type.postAuthor`, `color.author`, then the post number in `type.meta`, `color.inkMuted`. The opening post adds `OP` after its number.
-2. `space.line` below: date and time, then file name and size when the post has media, in `type.meta`, `color.inkMuted`, one line. A long file name is shortened in the middle.
-3. `space.gapSmall` below: the body in `type.body`. References to other posts use `color.quoteLink` and are underlined. Quoted lines use `color.quote`. Other text uses `color.ink`.
-4. `space.gapSmall` below, when other posts reply to this one: their numbers in `type.meta`, `color.quoteLink`, underlined.
+The comment uses type.postBody/type.postBodyWide. References use color.quoteLink and quoted lines use color.quote; remaining text uses color.ink. Referencing post numbers follow the body as underlined links. Each block is separated by the 8/10dp text inset. The type.postDetails/type.postDetailsWide styles carry numbers, dates and attachment metadata. The compatibility size.readingMax helper remains available to constrained callers; compact posts use the available pane width.
 
-Vertical padding is `space.postPadY` above and below. Body text is never wider than `size.readingMax`.
-
-A thread ends with a footer `size.threadStatus` tall that reports reply count, image count and the last update time in `type.meta`, `color.inkMuted`, centered.
+A thread ends with size.threadStatus (88dp minimum), space.postInset (8dp) padding, and real reply/file/update metadata. Its centered label uses type.postBody at Medium 500 in color.inkMuted, matching the verified 14sp footer.
 
 ### Reading state in the catalog
 
 - A thread the reader has opened shows its title in `color.inkMuted`.
-- A watched thread with unread replies shows the unread count, not the reply count, in a pill with a `color.accent` ground and `color.onAccent` text.
+- A watched thread retains reply/file totals and adds the unread count as plain color.accent text.
 - A muted thread shows the word "Muted" as its title in `color.inkMuted`, with no thumbnail and no preview.
 
 ### Reply nesting
@@ -194,9 +211,9 @@ A thread ends with a footer `size.threadStatus` tall that reports reply count, i
 
 ### Files view
 
-- The thread overflow switches between Posts and Files. Files shows every file in the thread as a grid that follows the catalog grid's column rule: pane width divided by `size.gridCardMin`, rounded down, with `space.gridGap` between and around the tiles.
-- Tiles are square with `radius.card` corners. A tile opens the media viewer at that file.
-- In Files, the overflow adds Download all and Save page.
+The thread toolbar's Files action opens Clover-style album cells. The album container uses space.albumPadding (1dp); each cell uses space.albumCellMargin (1dp), yielding a 2dp outside inset and 2dp between cells. Images have square corners. Cell height is its width plus size.albumDetails (32dp), which reserves the filename/size strip.
+
+Column count still uses the shared size.gridCardMin rule. Files opens the viewer at the selected attachment and retains Download all and Save page in overflow. These read-only Orbin actions preserve their real file identities.
 
 ## Phone catalog
 
@@ -208,34 +225,32 @@ Horizontal budget of a row in a 360dp window:
 
 | Part | Token | Width |
 | --- | --- | --- |
-| Gutter | `space.gutter` | 16dp |
 | Thumbnail | `size.thumbnail` | 72dp |
-| Gap | `space.gap` | 12dp |
-| Text column | remainder | 188dp |
-| Gap | `space.gapSmall` | 8dp |
-| Count pill | `size.pillMinWidth` | 48dp |
-| Gutter | `space.gutter` | 16dp |
+| Text start inset | `space.postInset` | 8dp |
+| Text column | remainder | 272dp |
+| Text end inset | `space.postInset` | 8dp |
 
-The text column takes whatever width remains, so it widens with the window.
+There is one 288dp content column after the image, including both text insets; no width is reserved for a count badge.
 
 ### Grid mode
 
 ![Phone catalog, grid mode](diagrams/phone-catalog-grid.svg)
 
-- Column count is the pane width divided by `size.gridCardMin`, rounded down, and never less than one.
-- `space.gridGap` separates cards and surrounds the grid. Card width is the pane width, minus one gap more than the column count, divided by the column count.
-- A card is a square image the width of the card above a text block `size.gridCardText` tall. Card height is therefore card width plus `size.gridCardText`.
-- The text block has `space.cardPad` on all sides and holds a title in `type.cardTitle`, `color.ink`, two lines at most, then `space.line`, then the reply count in `type.meta`, `color.inkMuted`.
-- The card has a `size.hairline` outline in `color.hairline` and `radius.card` corners on a `color.background` ground.
+- Columns are max(1, floor(pane width / size.gridCardMin)).
+- space.gridOuter (2dp) surrounds the grid. Adjacent cards are separated by space.gridGap (4dp).
+- Card width = (pane width − 2 × gridOuter − (columns − 1) × gridGap) / columns.
+- ratio.gridCard is 9:18: normal card height is twice card width. ratio.gridThumbnail is 16:13: image height is 13/16 of card width. The text area takes the remaining 19/16 of card width.
+- The text area uses space.cardPad (8dp). Subject text uses the regular 14/16sp body style with at most three lines, followed by the opening excerpt and any real source metadata. Plain counters at the foot read, for example, “23R 4I”. Accessibility announces complete reply/file counts and unread metadata.
+- Cards use radius.card (2dp) and size.cardElevation (2dp), with no stroked outline. Text can expand beyond the normal ratio at large font scales.
 
 | Pane width | Columns | Card width |
 | --- | --- | --- |
-| 360dp | 3 | 114.67dp |
-| 399dp | 3 | 127.67dp |
-| 420dp | 3 | 134.67dp |
-| 600dp | 5 | 115.20dp |
+| 360dp | 3 | 116dp |
+| 399dp | 3 | 129dp |
+| 420dp | 3 | 136dp |
+| 600dp | 5 | 116dp |
 
-The reader chooses list or grid in the catalog's overflow menu. The choice is remembered per device, not per board.
+The List/Grid choice is remembered per device and shared by Home and board catalogs.
 
 ## Two panes
 
@@ -259,35 +274,33 @@ Horizontal budget of a list row in the 399dp catalog pane:
 
 | Part | Token | Width |
 | --- | --- | --- |
-| Gutter | `space.gutter` | 16dp |
 | Thumbnail | `size.thumbnailWide` | 100dp |
-| Gap | `space.gap` | 12dp |
-| Text column | remainder | 199dp |
-| Gap | `space.gapSmall` | 8dp |
-| Count pill | `size.pillMinWidth` | 48dp |
-| Gutter | `space.gutter` | 16dp |
+| Text start inset | `space.postInsetWide` | 10dp |
+| Text column | remainder | 279dp |
+| Text end inset | `space.postInsetWide` | 10dp |
 
 The width conditions and the pane-width calculation live in `core/model/FeedLayout.kt`. Both platforms use the shared `ui-next/ReaderTwoPane.kt` component for the panes, the 1dp divider and the empty detail message.
 
 ## Navigation
 
-The app bar is `size.appBar` tall on `color.appBar`, with content in `color.onAppBar`. Icons are `size.icon` inside a `size.touchTarget` target. The title uses `type.appBarTitle`; a thread adds its board in `type.appBarSubtitle` beneath.
+The app bar is size.appBar (56dp) tall on color.appBar; the system inset uses color.statusBar. Icons are size.icon (24dp). Navigation occupies size.appBarNavigation (56dp), normal actions size.appBarAction (50dp), and overflow size.appBarOverflow (44dp), all 56dp tall. The title starts 72dp from the leading edge when navigation is present. The title uses `type.appBarTitle`; a thread adds its board in `type.appBarSubtitle` beneath.
 
 | Control | Where | Action in Orbin |
 | --- | --- | --- |
 | Menu | Catalog app bar, leading | Opens the navigation drawer |
 | Drawer entries | Drawer | Home, Watched, Boards, Search, Saved, then Settings below a divider |
 | Board title with arrow | Catalog app bar | Opens the board picker, grouped by site |
-| Reload | Catalog and thread app bars | Reloads the catalog or the thread |
+| Reload | Home/catalog app bar; thread overflow | Reloads retained content in place |
 | Search | Catalog app bar | Filters the loaded catalog by title and text |
 | Overflow | Catalog app bar | List or grid mode, sort order, board media, open in a browser |
 | Back | Thread app bar, leading | Returns to the catalog, or closes the thread pane |
-| Bookmark | Thread app bar | Adds the thread to Watched, or removes it |
-| Overflow | Thread app bar | Posts or Files, save thread, share, open in a browser, top, first new post, bottom; in Files also download all and save page |
+| Files/Posts | Thread app bar, first action | Switches between the thread and its attachment album |
+| Bookmark | Thread app bar, second action | Adds the thread to Watched, or removes it |
+| Overflow | Thread app bar | Save thread, share, reload, open in browser, top, first new post, bottom; Files also offers download all and save page |
 | Thumbnail | Post | Opens the media viewer at that file |
 | Post reference | Post body and reply list | Scrolls to that post, or shows it inline |
 
-The drawer is as wide as the window less `size.appBar`, and never wider than `size.drawerMax`.
+The drawer width is min(window width − size.appBar, size.drawerMax): at most 336dp, with 8dp top and bottom content padding from space.gapSmall.
 
 - The drawer's ground is `color.background`. Each entry is `size.touchTarget` tall with a `size.icon` icon at the gutter and its label in `type.stateBody`, `color.ink`, `space.gap` after the icon.
 - The entry for the screen in view has a `color.selected` ground and is announced as selected.
@@ -301,16 +314,35 @@ Controls in the source material that Orbin does not have: the compose button, th
 
 Home, Watched, Boards, Search and Saved are the drawer's entries. Each takes the frame above: the app bar with Menu, the screen's name as its title, and the drawer. The five-tab bar is gone.
 
-- A screen's own title header is removed, because the app bar now carries the title. Everything under that header keeps its layout.
+- The app bar replaces each screen's own title header. Watched, Boards and Search keep the remaining content layout. Home and Saved follow the reader layouts below.
 - Actions that sat in a screen's header move to the app bar: at most two as icons, the rest in the overflow.
 - Every color on these screens comes from the color table. No screen has a palette of its own.
-- Home keeps its full-screen feed on a black ground in every theme. The app bar sits above the feed, not over it. The feed's Following and For You tabs and its action column stay drawn over the media.
 - Settings and Downloads show Back, not Menu.
 - Content scrolls under nothing: the list starts below the app bar and ends at the bottom system inset.
 
+### Home
+
+Home uses the catalog's List and Grid cells, on `color.background` in the current theme. It defaults to List and follows the remembered device-wide Catalog view setting. A fresh installation, cold launch and update all reach this reader layout after any required board setup.
+
+- The fixed app bar is titled Home. Reload and Search appear when their callbacks are available, with at most two primary actions. Available source controls sit below the bar on the themed screen. Their labels use `type.label`; selected controls announce their selection and use the reader colors. Home has no Following or For You selector. Source controls do not cover a thumbnail or row.
+- Home shows video threads only from explicitly subscribed boards. Favorites do not imply subscriptions, and a stored legacy discovery selection cannot include unsubscribed boards. Site and board identities stay source-qualified.
+- List uses the catalog's compact row geometry, regular typography, plain totals, thumbnail sizes and large-text rules. Grid uses its 9:18 card and 16:13 image ratios, 2dp margins/elevation and regular subject type.
+- Rows use bounded provider thumbnails. No Home row mounts a full-screen player or starts inline playback. A separate media action explicitly opens the existing media viewer; tapping the row opens its thread. Spoiler covers still reveal before media can open.
+- A row's context menu offers the wired Watch, Save, Share and board actions, plus its thread videos or comments action. The videos/comments choice follows the existing setting. Missing callbacks omit the unavailable actions. There is no floating media action rail.
+- Each source keeps its own first-visible thread and scroll offset when the reader switches away and returns. Changing List/Grid preserves the reading position for that source. Refresh keeps existing content and follows the retained-content progress and retry rules.
+- Home follows the reader loading, empty and error rules. Its app bar and source controls stay usable in each state.
+
+The previous exception retaining a black, full-screen Home pager and over-media controls is retired. Full-screen playback remains an explicit media-viewer destination. Live attachment updates retain the selected file by identity where it still exists.
+
+### Saved and board discovery
+
+- Saved is a keyed reader list of actual stored thread records. Titles use `type.rowTitle`; source, thread number, saved time and available unread metadata use `type.meta` and the reader colors. Each row opens its stored source-qualified thread. No profile header, social statistics or decorative media covers are synthesized.
+- The existing board picker groups boards by site and keeps source-qualified selection. Boards retains search, Orbin board icons and explicit follow controls in compact 14sp/12sp rows with source metadata.
+- Global Search describes its existing scope accurately: catalogs of followed boards across all sites. Favorites and subscriptions remain independent; only explicit subscriptions contribute to Home and satisfy mandatory first-run setup.
+
 ## Settings
 
-Appearance has three choices and no others:
+The following Orbin Appearance settings retain their persisted behavior inside Clover-style preference rows:
 
 | Setting | Choices | Default |
 | --- | --- | --- |
@@ -318,7 +350,7 @@ Appearance has three choices and no others:
 | AMOLED black | On, Off | Off |
 | Catalog view | List, Grid | List |
 
-There is no color theme choice; the color table is the only palette. There is no catalog column count; the grid rule sets it.
+The selected palette is Orbin green with Clover neutral surfaces, as requested. There is no new color-theme chooser or catalog column-count setting. Preference categories use a secondary ground, simple dividers, compact title/summary rows, trailing values or switches, and modal choices. Orbin-only preferences retain their IDs, callbacks and storage behavior.
 
 A stored color theme or column count from an earlier version is ignored. A backup file that contains a color theme is refused whole, with the message "This backup was made by an older version of Orbin and cannot be restored." Nothing from a refused backup is applied.
 
@@ -334,7 +366,7 @@ Light, dark and AMOLED differ only in the color table. Sizes, spacing and type d
 
 | State | What shows |
 | --- | --- |
-| First load | Skeleton cells in `color.surfaceVariant` with `radius.small` corners, at the size of real cells, and a `size.progress` bar in `color.accent` under the app bar |
+| First load | Skeletons reserve thumbnail/text space in color.surfaceVariant with radius.small helper corners; grid skeletons share the card ratios. A size.progress bar in color.accent appears below the app bar |
 | Reload | The loaded content stays; only the progress bar shows |
 | Empty | A title in `type.stateTitle`, `color.ink`; a helper line in `type.stateBody`, `color.inkMuted`; a Reload text button in `type.label`, `color.accent` |
 | Error | The cause as the title in `type.stateTitle`, `color.error`; a helper line in `type.stateBody`, `color.inkMuted`; a Retry text button in `type.label`, `color.accent` |
@@ -345,27 +377,27 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ## Edge cases
 
-- **Long titles.** Two lines, then an ellipsis. The cell grows to fit.
-- **No image.** The cell has no thumbnail and no placeholder; text starts at the gutter.
+- **Long titles.** Catalog lists use two lines and cards three, then an ellipsis. Text areas grow at larger scales.
+- **No image.** The cell has no thumbnail and no placeholder; text starts at its 8/10dp inset.
 - **Spoiler image.** The thumbnail shows a `color.surfaceVariant` cover with the word "Spoiler" until the reader taps it. A tap reveals the image and does not open the viewer.
 - **Several files in one post.** The thumbnail shows the first file with a count badge; the viewer pages through them.
-- **Large text.** At a font scale of 1.3 or more the count pill moves under the preview, aligned to the start of the text column. At 2.0 the thumbnail moves above the text. Nothing shrinks and nothing is clipped.
-- **Large counts.** The pill widens to fit; counts of 1000 or more are abbreviated, as in "1.2k".
+- **Large text.** Plain totals stay in the text column at every font scale. At 2.0 the thumbnail moves above it. Card text areas expand rather than clipping complete counts.
+- **Large counts.** Catalog totals remain exact, wrap when necessary, and are announced in full.
 - **Sticky and closed threads.** A pin or lock icon follows the title, in `color.inkMuted`.
-- **Right-to-left.** The cell mirrors: thumbnail at the right, pill at the left.
+- **Right-to-left.** The cell mirrors: thumbnail at the right, inset text and counts on its leading-aligned text column.
 - **Short wide windows.** A phone in landscape is wide in one direction only, so it stays single-pane and uses `size.thumbnail`.
 
 ## Accessibility
 
-- Every control that can be tapped is at least `size.touchTarget` in both directions, whatever its drawn size.
-- A catalog row is one item to a screen reader: title, then reply count, then date. The pill is not announced separately.
+- General controls preserve size.touchTarget (48dp). The source-verified toolbar overflow uses a 44 × 56dp target; normal toolbar actions use 50 × 56dp and navigation 56 × 56dp.
+- A catalog row is one screen-reader item: title, total replies, files, optional unread count, then date/source metadata. Plain counters are not repeated as a second announcement.
 - A post announces author, number, date, then the body. References are separate links.
 - Selection in two panes is announced as selected and does not rely on `color.selected` alone.
 - Icons in the app bar have text labels for screen readers.
 
 ## Performance contract
 
-- Lists request the provider's thumbnail, never the full file, and decode it at the drawn size for the screen density.
+- Lists, including Home, request the provider's thumbnail, never the full file, and decode it at the drawn size for the screen density. Home does not preload full media or own inline players; explicit media opening transfers playback to the existing viewer.
 - The thumbnail's space is reserved before the image arrives, so cells do not change height when images load.
 - List items have stable keys made of provider, board and post number, so two sites with the same board code never collide.
 - Catalog rows and grid cards in one mode all have the same structure, so the list can reuse them.
@@ -375,6 +407,14 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ## Source record
 
+### Visual reference
+
+**Clover 3.0.2** is the sole visual reference. Its actual installed Settings root, Appearance page, choice popup and navigation drawer were captured on an accelerated API 31 emulator in [the reference inspection](https://github.com/Defuuls/Orbin/actions/runs/43237685017). The downloaded APK was verified against the supplied file's SHA-256 before installation; package inspection confirmed `org.floens.chan`, `v3.0.2`, code `30002`.
+
+The observed fresh-install theme is **Yotsuba**, with a red toolbar and peach preference surfaces. Orbin deliberately retains its green brand accent and uses Clover's neutral Light, Dark and Black surfaces. The reference controls, row structures and interactions remain the design target; Orbin-specific settings and read-only features retain their real IDs, callbacks and persisted values.
+
+The application is implemented independently. Standard open-source Roboto font resources retain their license and provenance. Clover's name, logo and application code are not shipped as Orbin assets.
+
 ### Values taken from the app
 
 | Item | App value | This design |
@@ -383,35 +423,29 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 | Thumbnail, default | 72dp | `size.thumbnail` |
 | Thumbnail, larger-screen variant | 100dp | `size.thumbnailWide` |
 | Grid card width | 120dp | `size.gridCardMin` |
-| Grid card corner, larger-screen variant | 2dp | `radius.card` |
+| Grid card corner / elevation / margin, API 21+ | 2dp each | radius.card, size.cardElevation, space.gridOuter |
+| Grid card / image width:height | 9:18 / 16:13 | ratio.gridCard / ratio.gridThumbnail |
+| Post body, phone / wide | 14sp / 16sp | type.postBody / type.postBodyWide |
+| Post details, phone / wide | 10sp / 12sp | type.postDetails / type.postDetailsWide |
+| Post text inset, phone / wide | 8dp / 10dp | space.postInset / space.postInsetWide |
+| Drawer maximum width | 336dp | size.drawerMax |
 | Divider | 1dp | `size.hairline` |
 | Thread footer | 88dp | `size.threadStatus` |
 | Error title | 24sp | `type.stateTitle` |
 | Empty pane message | 16sp | `type.stateBody` |
-| Primary green | `#4CAF50` | Darkened for contrast; see [Color](#color) |
+| Primary color, fresh Yotsuba | #F44336, status #D32F2F | Orbin green #2E7D32, status #1B5E20 by user choice |
 | Teal accent | `#009688` | Darkened to `color.accent` so text buttons reach 4.5:1 |
 | Post layout | Thumbnail left of text | Same |
 
-Dark theme colors and pane widths could not be read from the app's resources. The dark and AMOLED palettes here are derived, and the pane rules follow Orbin's existing code.
+The supplied reference APK is `org.floens.chan`, version `v3.0.2` (version code `30002`), SHA-256 `3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300`.
 
-### Corrections to the wireframes
+Its dark theme colors are readable in the style resources. `Chan.Theme.Dark` defines `backcolor` as `#232323` and `backcolor_secondary` as `#303030`. `Chan.Theme.Black` inherits Dark and overrides those values with `#000000` and `#212121`. Orbin uses those verified neutral grounds. The green toolbar/selection and contrast-safe action, quote, link and subject colors are explicit Orbin brand/readability adaptations documented in the color table.
 
-| Wireframe | As drawn | Problem | Here |
-| --- | --- | --- | --- |
-| Phone | Thumbnail labelled 344dp wide under an 80 × 80dp box | The two labels contradict each other | 72dp square |
-| Phone | Board title drawn above the app bar | The title belongs inside the bar | Inside the bar |
-| Tablet | Panes 384dp and 576dp with an 8dp divider in a 960dp window | The three add up to 968dp | 399dp, 1dp, 560dp |
-| Tablet | 150dp thumbnail inside a 104dp row | The thumbnail is taller than its row | 100dp in a 124dp row |
-| Tablet | 600dp image inside a 576dp pane | The image is wider than its pane | Thumbnail, opened in the viewer |
+Pane widths were not established from the APK resources. The pane rules follow Orbin's existing code.
 
-### Alternatives not adopted
+### Retained Orbin features
 
-- **80dp thumbnail** from the phone wireframe. The app uses 72dp and 100dp.
-- **Media above the post text** from the tablet wireframe. The app puts the thumbnail beside the text, which lets a row and a post share one cell.
-- **Equal pane widths** from the two tablet renders. They leave the thread, the screen being read, less room than Orbin's current ratio.
-- **8dp pane divider** from the tablet wireframe. A gap that wide costs content width and separates nothing a hairline does not.
-- **"N replies" text chips** and a bottom "Catalog" bar from two of the phone renders. Each appeared in one render only.
-- **Poster ID line on grid cards** from one tablet render. Most boards do not have poster IDs.
+Multi-site source selection, explicit board subscriptions and first-run setup, board icons, source-qualified saved/watch records, unread markers, accessible large-text expansion, two-pane arithmetic and dedicated video playback are Orbin features. They keep their real behavior inside the verified Clover structures. They are not represented as features observed in the reference APK.
 
 ## Verification
 
@@ -425,3 +459,6 @@ The unit test reads the tables in this document. It checks that the arithmetic h
 The visual check renders every diagram and the companion page in light and dark at phone and desktop widths and compares them with the images in `baselines/`. After an intended change, regenerate them with `node scripts/design_docs_visual.cjs --update` and review the difference. It needs Playwright 1.63.0 and its Chromium build; the `Design docs` workflow installs both and runs only when these files change.
 
 Neither check renders the app. `scripts/tests/test_design_spec.py` also compares `ui-next`'s `ReaderTokens.kt` with the tables here in both directions. App layout, behavior, screenshot, performance and iOS device evidence are separate checks listed in [Implementation and verification](IMPLEMENTATION.md); passing the document checks alone does not establish that the app follows every rule.
+
+
+Pinned source evidence: [PostCell.java](https://github.com/chandevel/Clover/blob/7cbf5cd2929bac7fa5fe25dc7e7ec81d781cc4f8/Clover/app/src/main/java/org/floens/chan/ui/cell/PostCell.java), [CardPostCell.java](https://github.com/chandevel/Clover/blob/7cbf5cd2929bac7fa5fe25dc7e7ec81d781cc4f8/Clover/app/src/main/java/org/floens/chan/ui/cell/CardPostCell.java), and [DrawerWidthAdjustingLayout.java](https://github.com/chandevel/Clover/blob/7cbf5cd2929bac7fa5fe25dc7e7ec81d781cc4f8/Clover/app/src/main/java/org/floens/chan/ui/layout/DrawerWidthAdjustingLayout.java). The APK's resource/XML/DEX audit independently verifies the corresponding dimensions and text defaults. Layout measurements are implemented independently; reference source and branded image assets are not copied into Orbin.

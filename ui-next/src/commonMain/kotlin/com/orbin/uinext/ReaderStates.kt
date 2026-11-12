@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -174,7 +175,7 @@ private fun ReaderSkeleton(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 userScrollEnabled = false,
-                contentPadding = if (grid) PaddingValues(ReaderSpace.gridGap) else PaddingValues(),
+                contentPadding = if (grid) PaddingValues(ReaderSpace.gridOuter) else PaddingValues(),
                 horizontalArrangement = if (grid) Arrangement.spacedBy(ReaderSpace.gridGap) else Arrangement.Start,
                 verticalArrangement = if (grid) Arrangement.spacedBy(ReaderSpace.gridGap) else Arrangement.Top,
             ) {
@@ -184,17 +185,14 @@ private fun ReaderSkeleton(
                             modifier =
                                 Modifier
                                     .testTag(ReaderStateTags.SKELETON_CELL)
+                                    .shadow(ReaderSize.cardElevation, RoundedCornerShape(ReaderRadius.card))
                                     .clip(RoundedCornerShape(ReaderRadius.card))
-                                    .border(
-                                        ReaderSize.hairline,
-                                        colors.hairline,
-                                        RoundedCornerShape(ReaderRadius.card),
-                                    ),
+                                    .background(colors.background),
                             image = { imageModifier -> SkeletonBlock(imageModifier) },
                         ) { textModifier ->
                             Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
-                                SkeletonLine(ReaderType.cardTitle, lines = 2)
-                                SkeletonLine(ReaderType.meta, Modifier.width(ReaderSize.pillMinWidth))
+                                SkeletonLine(ReaderType.cardTitle.withReaderFont(), lines = 2)
+                                SkeletonLine(ReaderType.meta.withReaderFont(), Modifier.width(ReaderSize.pillMinWidth))
                             }
                         }
                     } else {
@@ -243,19 +241,19 @@ private fun ReaderSkeletonCell(
                             ).padding(bottom = ReaderSpace.gapSmall),
                         verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
                     ) {
-                        SkeletonLine(ReaderType.postAuthor)
-                        SkeletonLine(ReaderType.meta)
+                        SkeletonLine(ReaderType.postAuthor.withReaderFont())
+                        SkeletonLine(ReaderType.meta.withReaderFont())
                     }
-                    SkeletonLine(ReaderType.body, lines = 2)
+                    SkeletonLine(ReaderType.body.withReaderFont(), lines = 2)
                 }
             } else {
                 Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
-                    SkeletonLine(ReaderType.rowTitle)
+                    SkeletonLine(ReaderType.rowTitle.withReaderFont())
                     SkeletonLine(
-                        ReaderType.meta,
+                        ReaderType.meta.withReaderFont(),
                         Modifier.width(if (wideWindow) ReaderSize.thumbnailWide else ReaderSize.thumbnail),
                     )
-                    SkeletonLine(ReaderType.preview, lines = 2)
+                    SkeletonLine(ReaderType.preview.withReaderFont(), lines = 2)
                 }
             }
         }
@@ -323,14 +321,14 @@ private fun ReaderCenteredState(
             Text(
                 title,
                 color = if (error) colors.error else colors.ink,
-                style = ReaderType.stateTitle,
+                style = ReaderType.stateTitle.withReaderFont(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ReaderStateTags.TITLE).semantics { heading() },
             )
             Text(
                 message,
                 color = colors.inkMuted,
-                style = ReaderType.stateBody,
+                style = ReaderType.stateBody.withReaderFont(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ReaderStateTags.MESSAGE),
             )
@@ -374,7 +372,7 @@ fun ReaderRefreshFailure(
     ) {
         Text(
             message ?: stringResource(Res.string.reader_refresh_failure, readerFailureTitle(cause)),
-            style = ReaderType.stateBody,
+            style = ReaderType.stateBody.withReaderFont(),
         )
     }
 }
@@ -392,7 +390,7 @@ private fun ReaderStateAction(
                 .heightIn(min = ReaderSize.touchTarget)
                 .widthIn(min = ReaderSize.touchTarget),
         contentPadding = PaddingValues(horizontal = ReaderSpace.gapSmall, vertical = ReaderSpace.line),
-    ) { Text(label, color = reader.accent, style = ReaderType.label) }
+    ) { Text(label, color = reader.accent, style = ReaderType.label.withReaderFont()) }
 }
 
 @Composable

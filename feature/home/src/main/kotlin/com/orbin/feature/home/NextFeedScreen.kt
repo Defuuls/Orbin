@@ -17,10 +17,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedSort
@@ -30,10 +28,10 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
-import com.orbin.core.model.feedColumns
+import com.orbin.core.model.isWideWindow
 import com.orbin.core.ui.date.formatRelativeTime
-import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.media.image.MediaThumbnail
+import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.NextPullToRefresh
@@ -42,6 +40,7 @@ import com.orbin.uinext.sourceLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 private const val RELATIVE_TIME_TICK_MS = 60_000L
 
@@ -77,27 +76,13 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val formFactor = rememberFormFactor()
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var foreground by remember(lifecycleOwner) {
-        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
-    }
-    DisposableEffect(lifecycleOwner, viewModel) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                when (event) {
-                    Lifecycle.Event.ON_RESUME -> foreground = true
-                    Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
-                        foreground = false
-                        viewModel.clearFeedImagePrefetch()
-                        viewModel.clearFeedVideoPrefetch()
-                    }
-                    else -> Unit
-                }
-            }
-        lifecycleOwner.lifecycle.addObserver(observer)
+    val configuration = LocalConfiguration.current
+    // Home now draws bounded catalog thumbnails. Only the dedicated media viewer owns a
+    // player; a retained feed model must not keep the former inline preview prefetch alive.
+    DisposableEffect(viewModel) {
+        viewModel.clearFeedImagePrefetch()
+        viewModel.clearFeedVideoPrefetch()
         onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.clearFeedImagePrefetch()
             viewModel.clearFeedVideoPrefetch()
         }
@@ -128,8 +113,8 @@ fun NextFeedScreen(
             }
         mapped = MappedFeed(presentationScope, current.boards, entries)
     }
-    // Keep a settled clip alive while an incremental batch is mapped, but never keep rows from
-    // another tab/source or a newly excluded thread through a scope change.
+    // Retain rows through incremental mapping, while immediately excluding another tab/source
+    // and threads removed by a newly applied visibility policy.
     val eligibleKeys =
         remember(state?.boards) {
             state
@@ -145,46 +130,6 @@ fun NextFeedScreen(
             .orEmpty()
             .filter { it.key in eligibleKeys }
     val mappingCurrent = state != null && mapped?.scope == presentationScope && mapped?.boards === state.boards
-    LaunchedEffect(state, mappingCurrent, entries.isEmpty()) {
-        val successfulEmptyPage = mappingCurrent && entries.isEmpty()
-        val batchCanAdvance = state?.let { !it.isLoadingMore && it.errorMessage == null && it.canLoadMore } == true
-        if (mode == HomeFeedMode.FOR_YOU && successfulEmptyPage && batchCanAdvance) {
-            viewModel.loadMoreDiscovery()
-        }
-    }
-    var activePreviewId by remember { mutableStateOf<String?>(null) }
-    var upcomingPreviewId by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(entries, activePreviewId, upcomingPreviewId, settings.playbackPreferences, foreground) {
-        val current = entries.firstOrNull { it.row.id == activePreviewId }
-        val upcoming = entries.firstOrNull { it.row.id == upcomingPreviewId }
-        val currentPlayback = current?.let { settings.playbackPreferences.resolve(it.key.provider, it.key.board) }
-        val nextPlayback = upcoming?.let { settings.playbackPreferences.resolve(it.key.provider, it.key.board) }
-        if (!foreground || currentPlayback?.preloadNextClip != true || nextPlayback?.preloadNextClip == false) {
-            viewModel.clearFeedVideoPrefetch()
-        } else {
-            viewModel.prefetchFeedVideo(
-                upcoming?.attachment?.takeIf { !it.isSpoiler && it.sourceUrl.isNotBlank() }?.sourceUrl,
-            )
-        }
-    }
-    LaunchedEffect(entries, activePreviewId, foreground) {
-        if (!foreground || entries.isEmpty()) {
-            viewModel.clearFeedImagePrefetch()
-        } else {
-            val focus = entries.indexOfFirst { it.row.id == activePreviewId }.let { if (it < 0) 0 else it }
-            viewModel.prefetchFeedThumbs(
-                entries
-                    .subList((focus - 2).coerceAtLeast(0), (focus + 6).coerceAtMost(entries.size))
-                    .mapNotNull {
-                        it.attachment
-                            ?.takeUnless { attachment ->
-                                attachment.isSpoiler
-                            }?.thumbnailUrl
-                            ?.takeIf(String::isNotBlank)
-                    },
-            )
-        }
-    }
     val nowMillis by produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
             delay(RELATIVE_TIME_TICK_MS)
@@ -228,8 +173,6 @@ fun NextFeedScreen(
         ) {
             FeedScreen(
                 rows = rows,
-                following = mode == HomeFeedMode.FOLLOWING,
-                onFollowingChange = { viewModel.setFeedMode(if (it) HomeFeedMode.FOLLOWING else HomeFeedMode.FOR_YOU) },
                 isLoading = loading,
                 errorMessage = (uiState as? SubscribedFeedUiState.Error)?.message ?: emptyError,
                 onRetry = viewModel::refresh,
@@ -250,13 +193,13 @@ fun NextFeedScreen(
                 onSelectSource = onSelectSource,
                 query = localQuery,
                 onQueryChange = { localQuery = it },
-                columns =
-                    feedColumns(
-                        formFactor,
-                        LocalConfiguration.current.screenWidthDp,
-                        LocalConfiguration.current.screenHeightDp,
-                        settings,
-                    ),
+                mode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST,
+                onModeChange = { selected ->
+                    viewModel.setCatalogMode(
+                        if (selected == CatalogMode.GRID) StoredCatalogMode.GRID else StoredCatalogMode.LIST,
+                    )
+                },
+                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onCompactTitleVisibleChange = onCompactTitleVisibleChange,
@@ -284,8 +227,6 @@ fun NextFeedScreen(
                         )
                     }
                 },
-                onActivePreviewChanged = { activePreviewId = it },
-                onUpcomingPreviewChanged = { upcomingPreviewId = it },
                 activityText = { row ->
                     byId[row.id]?.let { formatRelativeTime(it.activityMillis, nowMillis).orEmpty() }
                         ?: row.activity
@@ -306,24 +247,24 @@ fun NextFeedScreen(
                         open(it.key.provider.value, it.key.board.value, it.key.thread.value, it.title)
                     }
                 },
+                onOpenMedia = { row ->
+                    byId[row.id]?.let {
+                        onOpenThreadVideos(it.key.provider.value, it.key.board.value, it.key.thread.value, it.title)
+                    }
+                },
                 repliesOpenComments = settings.openThreadComments,
                 onOpenBoard =
                     onOpenBoard?.let { open ->
                         { row -> byId[row.id]?.let { open(it.key.provider.value, it.key.board.value, row.boardTitle) } }
                     },
-                mediaContent = { row, mediaModifier, active ->
-                    byId[row.id]?.let { entry ->
-                        FeedMedia(entry, settings.playbackPreferences, active && foreground, mediaModifier, onLike = {
-                            actionsViewModel.watch(entry)
-                        })
-                    }
-                },
                 thumbnail = { row, tileModifier ->
                     byId[row.id]?.attachment?.let { attachment ->
                         MediaThumbnail(
-                            attachment,
+                            // The shared reader owns spoiler reveal before composing the image.
+                            attachment.copy(isSpoiler = false),
                             fullResolution = false,
-                            contentScale = ContentScale.Fit,
+                            contentScale = ContentScale.Crop,
+                            cornerRadius = 0.dp,
                             modifier = tileModifier,
                         )
                     }

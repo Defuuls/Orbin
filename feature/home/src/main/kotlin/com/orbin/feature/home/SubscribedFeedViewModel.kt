@@ -11,6 +11,7 @@ import com.orbin.core.common.lock.AppLockController
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.HomeFeedMode
@@ -70,7 +71,7 @@ sealed interface SubscribedFeedUiState {
         val stale: Boolean = false,
         val isLoadingMore: Boolean = false,
         val canLoadMore: Boolean = false,
-        val mode: HomeFeedMode = HomeFeedMode.FOR_YOU,
+        val mode: HomeFeedMode = HomeFeedMode.FOLLOWING,
         val providerFilter: String? = null,
         /** The published request token coalesces repeated end-of-page callbacks. */
         val discoveryLimit: Int = 0,
@@ -116,18 +117,21 @@ class SubscribedFeedViewModel
         private val feedLoader = SubscribedFeedLoader()
         private val providers = registry.all()
         private val catalogs = HomeFeedCatalogLoader(workDispatcher)
-        private val _feedMode = MutableStateFlow(HomeFeedMode.FOR_YOU)
+        private val _feedMode = MutableStateFlow(HomeFeedMode.FOLLOWING)
         val feedMode: StateFlow<HomeFeedMode> = _feedMode.asStateFlow()
         private val providerFilter = MutableStateFlow<String?>(null)
         private val discoveryLimit = MutableStateFlow(DISCOVERY_PAGE_SIZE)
         private val indexResults = MutableStateFlow<Map<String, String?>>(emptyMap())
 
-        fun setFeedMode(mode: HomeFeedMode) {
-            if (_feedMode.value == mode) return
-            clearFeedImagePrefetch()
-            clearFeedVideoPrefetch()
-            _feedMode.value = mode
+        /** Home and board catalogs share the same persisted reader presentation. */
+        fun setCatalogMode(mode: CatalogMode) {
+            viewModelScope.launch { settingsRepository.setCatalogMode(mode) }
         }
+
+        /** Older callers cannot revive discovery; Home always contains explicit subscriptions. */
+        fun setFeedMode(
+            @Suppress("UNUSED_PARAMETER") mode: HomeFeedMode,
+        ) = Unit
 
         fun setProviderFilter(id: String?) {
             if (id != null && providers.none { it.metadata.id.value == id }) return
@@ -299,11 +303,10 @@ class SubscribedFeedViewModel
             combine(
                 boardRepository.observeBoards(provider.metadata.id),
                 boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
                 indexResults,
-            ) { boards, subscribed, favorites, indexes ->
+            ) { boards, subscribed, indexes ->
                 val settings = selection.settings
-                val followed = subscribed + favorites
+                val followed = subscribed
                 val ids =
                     if (selection.mode ==
                         HomeFeedMode.FOLLOWING

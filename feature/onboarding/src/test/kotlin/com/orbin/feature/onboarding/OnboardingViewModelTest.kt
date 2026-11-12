@@ -263,14 +263,19 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun `legacy favorites initialize setup and overlapping follows count only once`() =
+    fun `favorites do not select boards or finish setup without an explicit subscription`() =
         runTest {
             preferences.favorites.value = mapOf(provider.metadata.id to setOf(BoardId("g")))
             val viewModel = viewModel()
             advanceUntilIdle()
 
-            assertThat(viewModel.subscribedBoardIds.value).containsExactly("g")
-            assertThat(viewModel.totalFollowing.value).isEqualTo(1)
+            assertThat(viewModel.subscribedBoardIds.value).isEmpty()
+            assertThat(viewModel.totalFollowing.value).isEqualTo(0)
+            viewModel.complete()
+            advanceUntilIdle()
+            assertThat(viewModel.setupState.value.completed).isFalse()
+            assertThat(settings.current.onboardingCompleted).isFalse()
+            assertThat(preferences.subscribed.value).isEmpty()
 
             viewModel.setSubscribed("g", true)
             advanceUntilIdle()
@@ -297,7 +302,7 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun `unfollowing a legacy favorite clears both stores before setup can complete`() =
+    fun `unsubscribing preserves an independent favorite without allowing setup to complete`() =
         runTest {
             preferences.favorites.value = mapOf(provider.metadata.id to setOf(BoardId("g")))
             preferences.subscribed.value = mapOf(provider.metadata.id to setOf(BoardId("g")))
@@ -310,7 +315,7 @@ class OnboardingViewModelTest {
             viewModel.complete()
             advanceUntilIdle()
 
-            assertThat(preferences.favorites.value[provider.metadata.id]).isEmpty()
+            assertThat(preferences.favorites.value[provider.metadata.id]).containsExactly(BoardId("g"))
             assertThat(preferences.subscribed.value[provider.metadata.id]).isEmpty()
             assertThat(viewModel.totalFollowing.value).isEqualTo(0)
             assertThat(settings.current.onboardingCompleted).isFalse()

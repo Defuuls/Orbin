@@ -1,8 +1,8 @@
 package com.orbin.uinext
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -18,7 +18,7 @@ class ThreadChatActionTest {
     val compose = createComposeRule()
 
     @Test
-    fun chatOpensVideosWithoutOpeningTheCaptionDestination() {
+    fun rowMenuOpensVideosWithoutOpeningTheThreadDestination() {
         var captions = 0
         var videos = 0
         compose.setContent {
@@ -32,12 +32,13 @@ class ThreadChatActionTest {
             }
         }
 
-        compose.onNodeWithContentDescription("View videos in Original artwork").performClick()
+        compose.onNodeWithTag(ReaderFeedTags.more(row().id)).performClick()
+        compose.onNodeWithText("View videos in Original artwork").performClick()
         compose.runOnIdle {
             assertEquals(1, videos)
             assertEquals(0, captions)
         }
-        compose.onNodeWithTag(TikTokFeedTags.CAPTION).performClick()
+        compose.onNodeWithTag(ReaderFeedTags.row(row().id)).performClick()
         compose.runOnIdle {
             assertEquals(1, videos)
             assertEquals(1, captions)
@@ -57,7 +58,8 @@ class ThreadChatActionTest {
             }
         }
 
-        compose.onNodeWithContentDescription("View replies to Original artwork").performClick()
+        compose.onNodeWithTag(ReaderFeedTags.more(row().id)).performClick()
+        compose.onNodeWithText("View replies to Original artwork").performClick()
         compose.runOnIdle { assertEquals(1, comments) }
     }
 

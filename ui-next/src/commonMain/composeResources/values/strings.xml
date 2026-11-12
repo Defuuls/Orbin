@@ -18,7 +18,7 @@
     <string name="next_search_threads">Search threads ›</string>
     <string name="next_search_title">Search</string>
     <string name="next_search_query_label">Search the boards you follow</string>
-    <string name="next_search_idle_hint">Type a word and press search.</string>
+    <string name="next_search_idle_hint">Search the catalogs of followed boards across all sites.</string>
     <string name="next_search_no_matches">No matches</string>
     <string name="next_lock_title">Orbin is locked</string>
     <string name="next_lock_hint">Authenticate to continue.</string>
@@ -56,6 +56,8 @@
     </plurals>
     <string name="next_row_counts">%1$s · %2$s</string>
     <string name="next_row_counts_unread">%1$s · +%2$d</string>
+    <string name="reader_catalog_counts">%1$s, %2$s</string>
+    <string name="reader_catalog_stats">%1$dR %2$dI</string>
     <plurals name="next_feed_thread_count">
         <item quantity="one">%1$d thread</item>
         <item quantity="other">%1$d threads</item>

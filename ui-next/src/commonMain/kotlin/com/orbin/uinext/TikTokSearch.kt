@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,9 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_search_idle_hint
@@ -53,7 +51,7 @@ import com.orbin.uinext.resources.tiktok_search_submit
 import com.orbin.uinext.tokens.NextType
 import org.jetbrains.compose.resources.stringResource
 
-/** Compact TikTok-style search chrome over the reader's real cross-site catalog search. */
+/** Compact reader search over the actual source-qualified cross-site catalog results. */
 @Composable
 internal fun TikTokSearchScreen(
     query: String,
@@ -158,7 +156,6 @@ private fun SearchSubmit(onSearch: () -> Unit) {
         Text(
             stringResource(Res.string.tiktok_search_submit),
             style = NextType.body.copy(fontWeight = FontWeight.SemiBold),
-            // The brand pink remains on non-text controls; this shade keeps small text AA on white.
             color = reader.accent,
         )
     }
@@ -216,56 +213,41 @@ private fun SearchResults(
             if (state.rows.isEmpty()) {
                 NextEmpty(stringResource(Res.string.next_search_no_matches))
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
-                ) {
-                    items(state.rows, key = { it.id }) { row ->
-                        SearchResultRow(row, onClick = { onOpenRow(row) })
+                Box(Modifier.fillMaxSize()) {
+                    val wideWindow = readerRecordUsesWideText()
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().testTag(ReaderSearchTags.LIST),
+                        contentPadding = PaddingValues(bottom = bottomInset()),
+                    ) {
+                        items(state.rows, key = { it.id }) { row ->
+                            SearchResultRow(row, wideWindow, onClick = { onOpenRow(row) })
+                        }
                     }
                 }
             }
     }
 }
 
+object ReaderSearchTags {
+    const val LIST = "reader-search-results"
+
+    fun row(id: String): String = "reader-search-row:$id"
+}
+
 @Composable
 private fun SearchResultRow(
     row: SearchRow,
+    wideWindow: Boolean,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = MIN_TOUCH_TARGET)
-                .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        val source = row.searchSource
-        if (source != null) {
-            BoardIcon(source, row.id.split('/')[1], Modifier.size(40.dp))
-        } else {
-            Icon(
-                ReaderIcons.Search,
-                contentDescription = null,
-                tint = next.muted,
-                modifier = Modifier.padding(top = 4.dp).size(24.dp),
-            )
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                row.title,
-                style = NextType.body.copy(fontWeight = FontWeight.SemiBold),
-                color = next.ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(row.board, style = NextType.bodyDense, color = next.muted)
-            if (row.snippet.isNotBlank()) MetaLine(row.snippet, maxLines = 2)
-        }
-    }
+    ReaderRecordRow(
+        title = row.title,
+        source = row.board,
+        detail = row.snippet,
+        wideWindow = wideWindow,
+        onOpen = onClick,
+        modifier = Modifier.testTag(ReaderSearchTags.row(row.id)),
+    )
 }
 
 /** A source tab filters complete qualified identities without coalescing equal thread numbers. */

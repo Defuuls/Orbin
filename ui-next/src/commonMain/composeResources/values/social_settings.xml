@@ -1,5 +1,5 @@
 <resources>
-    <string name="social_settings_title">Settings and privacy</string>
+    <string name="social_settings_title">Settings</string>
     <string name="social_settings_back">Back</string>
     <string name="social_settings_sites">Sites and boards</string>
     <string name="social_settings_browsing">How you browse</string>
@@ -7,7 +7,7 @@
     <string name="social_settings_more">More info and support</string>
     <string name="social_settings_enabled_sites">Enabled sites</string>
     <string name="social_settings_board_preferences">Board preferences</string>
-    <string name="social_settings_favorite_boards">Favorite boards</string>
+    <string name="social_settings_favorite_boards">Followed boards</string>
     <string name="social_settings_history">History</string>
     <string name="social_settings_view_history">View browsing history</string>
     <string name="social_settings_watched">Watched threads</string>

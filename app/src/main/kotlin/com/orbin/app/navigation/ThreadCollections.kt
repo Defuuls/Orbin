@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.uinext.NextDestination
@@ -24,6 +25,8 @@ internal data class CollectionEntry(
     val key: ThreadKey,
     val title: String,
     val detail: String = "",
+    val time: String = "",
+    val unread: Int = 0,
 ) {
     val row: ThreadCollectionRow
         get() =
@@ -32,6 +35,9 @@ internal data class CollectionEntry(
                 title = title,
                 source = "${siteName(key.provider.value)} · /${key.board.value}/",
                 detail = detail,
+                time = time,
+                threadNumber = key.thread.value.toString(),
+                unread = unread,
             )
 }
 
@@ -46,7 +52,14 @@ internal class ThreadCollectionsViewModel
             combine(bookmarks.observeBookmarks(), history.observeHistory()) { saved, visited ->
                 mapOf(
                     CollectionKind.SAVED to
-                        saved.sortedByDescending { it.createdAtMillis }.map { CollectionEntry(it.key, it.title) },
+                        saved.sortedByDescending { it.createdAtMillis }.map {
+                            CollectionEntry(
+                                it.key,
+                                it.title,
+                                time = formatPostDateTime(it.createdAtMillis).orEmpty(),
+                                unread = it.unreadCount,
+                            )
+                        },
                     CollectionKind.WATCHED to
                         saved
                             .filter { it.isWatched }

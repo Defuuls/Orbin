@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Drives one query across favorite and followed boards on every registered source.
+ * Drives one query across explicitly subscribed boards on every registered source.
  *
  * There is nothing to configure. NSFW boards are skipped when Settings hides them, the same as the
  * feed does, and nothing about a search is stored.
@@ -59,11 +59,10 @@ class SearchViewModel
                     combine(
                         boardRepository.observeBoards(provider.metadata.id),
                         boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                        boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
                         settingsRepository.settings,
-                    ) { boards, subscribed, favorites, settings ->
+                    ) { boards, subscribed, settings ->
                         boards
-                            .filter { it.id in subscribed || it.id in favorites }
+                            .filter { it.id in subscribed }
                             .filterNot { settings.hideNsfwBoards && it.isNsfw }
                             .filterNot { it.isPermanentlyFiltered() }
                             .sortedBy { it.id.value }
@@ -73,7 +72,7 @@ class SearchViewModel
             ) { perSite -> perSite.flatMap { it } }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-        /** Favorites and existing subscriptions across all sites, with the same safety filters as Home. */
+        /** Explicit subscriptions across sites, with the same safety filters as Home. */
         val searchableBoards: StateFlow<ImmutableList<Board>> =
             searchBoards
                 .map { entries -> entries.map { it.board }.toImmutableList() }
@@ -99,7 +98,7 @@ class SearchViewModel
                     _state.value = SearchUiState.Loading
                     val boards = searchBoards.value
                     if (boards.isEmpty()) {
-                        _state.value = SearchUiState.Error("Favorite a few boards to search them")
+                        _state.value = SearchUiState.Error("Follow a few boards to search them")
                         return@launch
                     }
                     // Boards are searched a few at a time; one that fails leaves the others' results.

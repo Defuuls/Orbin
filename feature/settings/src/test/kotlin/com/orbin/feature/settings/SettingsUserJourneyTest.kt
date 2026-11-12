@@ -1,6 +1,7 @@
 package com.orbin.feature.settings
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -9,11 +10,14 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -254,25 +258,34 @@ class SettingsUserJourneyTest {
     ) {
         row(label).performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(isOption(option))
+        if (composeRule.onAllNodes(hasTestTag("reader-settings-choice-popup")).fetchSemanticsNodes().isNotEmpty()) {
+            composeRule.onNode(isOption(option)).performScrollTo()
+        } else {
+            // Long scope choices retain their searchable page instead of the short floating menu.
+            composeRule.onNodeWithTag("settings-list").performScrollToNode(isOption(option))
+        }
         composeRule.onNode(isOption(option)).performClick()
         composeRule.waitForIdle()
+        composeRule.onNodeWithTag("reader-settings-choice-popup").assertDoesNotExist()
         row(label).assertTextContains(option)
     }
 
     /** A row, scrolled into composition first: the list is lazy. */
     private fun row(label: String): SemanticsNodeInteraction {
+        if (composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isEmpty()) {
+            composeRule.onNodeWithContentDescription("Search settings").performClick()
+        }
         composeRule.onNode(hasSetTextAction()).performTextClearance()
         composeRule.onNode(hasSetTextAction()).performTextInput(label)
         composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(label))
         return composeRule.onNode(hasText(label) and hasClickAction() and !hasSetTextAction())
     }
 
-    /** An option chip: its whole text is the option, unlike a row that merely shows it as a value. */
+    /** A plain selectable option, distinct from the preference row underneath the floating menu. */
     private fun isOption(option: String) =
         SemanticsMatcher("is the option '$option'") { node ->
             node.config.getOrElse(SemanticsProperties.Text) { emptyList() }.map { it.text } == listOf(option)
-        }
+        } and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
 
     private fun SemanticsNodeInteraction.assertTextContains(value: String) = assert(hasText(value, substring = true))
 

@@ -19,6 +19,46 @@ All notable changes to Orbin are documented here. The format is based on
 ### Testing
 - Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
 
+## [201-Huauzontle] - 2026-11-12
+
+### Changed
+- Matched the supplied Clover 3.0.2 layout, compact post typography, catalog proportions, toolbar icons, drawer and album cells while retaining Orbin branding and features.
+- Rebuilt Settings with Clover preference groups, summaries below labels, compact switches and anchored choice popups.
+- Used verified Roboto font resources consistently across Android and iOS reader controls and text.
+- Aligned standalone media toolbars and playback controls with the source-verified Clover layout.
+- Removed Following and For You selectors from reader Home and scoped its video threads to explicitly subscribed boards.
+
+### Fixed
+- Kept matching media identifiers from different sites distinct in All media and preserved spoiler covers and real file details.
+- Stopped favorite-only boards from appearing subscribed, entering Home, or satisfying mandatory board setup.
+- Kept subscription markers associated with the correct site while switching board directories.
+- Stopped playable video pages from flashing the browser fallback while preparing or paging into view.
+- Avoided repeatedly reading native video duration on the UI thread during playback preparation.
+
+### Testing
+- Added regressions for independent favorites, subscription scope, cross-site board membership, reader Home controls and video-page preparation.
+- Updated installed-app startup coverage to reject the obsolete social feed selectors after setup and cold relaunch.
+
+## [200-Shungiku] - 2026-11-12
+
+### Changed
+- Replaced Home's full-screen TikTok-style pager, overlaid tabs, and action rail with reader rows and grid cards on the normal Light, Dark, or AMOLED background.
+- Applied the remembered Catalog view to Home and kept For You, Following, and source selection in ordinary reader controls below the fixed app bar.
+- Used native platform fonts throughout the app instead of the previous TikTok font family.
+- Replaced the old custom settings switches and section headings with reader controls based on Clover.
+- Presented Saved as a compact library of real thread records with source-qualified navigation inspired by dedicated readers.
+- Added an explicit Home reload action and clarified that global search covers followed-board catalogs across all sites.
+- Kept Home thumbnails bounded and opened videos explicitly in the existing media viewer, preserving playback settings and thread actions.
+
+### Fixed
+- Made the default Home screen follow the new reader style after first-run setup, app updates, and cold relaunches.
+- Removed Home's immersive system-bar treatment while retaining full-screen media viewing.
+- Kept the selected iOS media attachment stable when live thread files are inserted, reordered, or removed.
+
+### Testing
+- Replaced old Home pager expectations with reader layout, feed/source continuity, explicit media opening, accessibility, and theme regressions.
+- Added deterministic Home visual coverage and an installed iOS startup assertion for the actual reader layout.
+
 ## [199-Komatsuna] - 2026-11-12
 
 ### Added
@@ -3009,7 +3049,9 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...HEAD
+[201-Huauzontle]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...v201-Huauzontle
+[200-Shungiku]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...v200-Shungiku
 [199-Komatsuna]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...v199-Komatsuna
 [198-Celtuce]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...v198-Celtuce
 [197-Okahijiki]: https://github.com/Defuuls/Orbin/compare/v196-Kai-Lan...v197-Okahijiki
