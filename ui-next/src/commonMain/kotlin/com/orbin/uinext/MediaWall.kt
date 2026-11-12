@@ -1,18 +1,17 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -29,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -37,23 +35,24 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_all_media_subtitle
 import com.orbin.uinext.resources.next_all_media_title
 import com.orbin.uinext.resources.next_board_media_subtitle
-import com.orbin.uinext.resources.next_media_actions
 import com.orbin.uinext.resources.next_media_cell_description
 import com.orbin.uinext.resources.next_media_saved
 import com.orbin.uinext.resources.next_media_size_control
 import com.orbin.uinext.resources.next_media_size_large
 import com.orbin.uinext.resources.next_media_size_small
-import com.orbin.uinext.resources.next_open_file
 import com.orbin.uinext.resources.next_sweep_progress
 import com.orbin.uinext.resources.next_sweep_reading
 import com.orbin.uinext.resources.next_sweep_unreachable
 import com.orbin.uinext.tokens.NextRadius
+import com.orbin.uinext.tokens.ReaderSpace
 import org.jetbrains.compose.resources.stringResource
 
 data class MediaCell(
     val id: String,
     val board: String,
     val spoiler: Boolean = false,
+    /** Actual attachment format, dimensions and size, when supplied by the host. */
+    val details: String = "",
 )
 
 @Composable
@@ -82,7 +81,6 @@ fun MediaWallScreen(
     val gridState = rememberLazyGridState()
     var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
     val imageCellMinSize = imageCellSize.dp
-    val imageHeight = if (showSizeControl) (imageCellSize * MEDIA_TILE_HEIGHT_RATIO).dp else 156.dp
     val imageSizeDescription = stringResource(Res.string.next_media_size_control)
     val hasScanStatus = scanning || deepScanning || failed > 0
     val railVisible =
@@ -110,7 +108,13 @@ fun MediaWallScreen(
                 columns = GridCells.Adaptive(imageCellMinSize),
                 state = gridState,
                 modifier = Modifier.fillMaxSize().contentInsets(),
-                contentPadding = gridPadding(bottomPad, top = 0.dp),
+                contentPadding =
+                    PaddingValues(
+                        start = ReaderSpace.albumPadding,
+                        end = ReaderSpace.albumPadding,
+                        top = ReaderSpace.albumPadding,
+                        bottom = bottomPad.calculateBottomPadding() + ReaderSpace.albumPadding,
+                    ),
             ) {
                 fullWidthItem {
                     Column {
@@ -129,29 +133,18 @@ fun MediaWallScreen(
                             inset = 0.dp,
                         )
                         if (onOpenSaved != null) {
-                            val savedShape = RoundedCornerShape(NextRadius.control)
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .clip(savedShape)
-                                        .background(next.raised)
-                                        .border(1.dp, next.hairline, savedShape)
-                                        .padding(horizontal = 6.dp),
-                            ) {
+                            Box(Modifier.padding(horizontal = 16.dp)) {
                                 InlineAction(stringResource(Res.string.next_media_saved), onClick = onOpenSaved)
                             }
                             Gap(8)
                         }
                         if (showSizeControl || hasScanStatus) {
-                            val panelShape = RoundedCornerShape(NextRadius.card)
                             Column(
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .clip(panelShape)
-                                        .background(next.raised)
-                                        .border(1.dp, next.hairline, panelShape)
-                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        .background(reader.surfaceVariant)
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
                             ) {
                                 if (showSizeControl) {
                                     Row(
@@ -216,31 +209,23 @@ fun MediaWallScreen(
                 itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
                     val description =
                         stringResource(Res.string.next_media_cell_description, cell.board)
-                    Box(
+                    ReaderAlbumCell(
+                        cell = cell,
                         modifier =
                             Modifier
-                                .padding(4.dp)
-                                .clip(RoundedCornerShape(NextRadius.tile))
-                                .nextClickable(
-                                    role = Role.Button,
-                                    onClickLabel = stringResource(Res.string.next_open_file),
-                                    onLongClick = onLongPress?.let { handler -> { handler(cell) } },
-                                    onLongClickLabel = stringResource(Res.string.next_media_actions),
-                                    onClick = { onOpen(cell) },
-                                ).semantics { contentDescription = description },
-                        contentAlignment = Alignment.BottomStart,
-                    ) {
-                        val shape = Modifier.fillMaxWidth().height(imageHeight)
-                        if (tile != null) {
-                            tile(cell, shape)
-                        } else {
-                            MediaTile(modifier = shape, seed = index, radius = NextRadius.tile)
-                        }
-                        MediaBadge(
-                            text = cell.board,
-                            modifier = Modifier.padding(6.dp).widthIn(max = 104.dp),
-                        )
-                    }
+                                .padding(ReaderSpace.albumCellMargin)
+                                .semantics { contentDescription = description },
+                        onOpen = onOpen,
+                        onLongPress = onLongPress,
+                        details = listOf(cell.board, cell.details).filter(String::isNotBlank).joinToString("\n"),
+                        tile = { item, shape ->
+                            if (tile != null) {
+                                tile(item, shape)
+                            } else {
+                                MediaTile(modifier = shape, seed = index, radius = 0.dp)
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -280,4 +265,3 @@ internal fun SweepBar(
 private const val MEDIA_CELL_MIN_DP = MEDIA_SIZE_MIN_DP
 private const val MEDIA_CELL_MAX_DP = MEDIA_SIZE_MAX_DP
 private const val MEDIA_CELL_STEPS = MEDIA_SIZE_STEPS
-private const val MEDIA_TILE_HEIGHT_RATIO = 0.74f

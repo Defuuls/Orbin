@@ -12,8 +12,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +23,11 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,7 +52,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -67,10 +69,15 @@ import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.ReaderMediaAction
+import com.orbin.uinext.ReaderMediaBack
+import com.orbin.uinext.ReaderMediaTitle
+import com.orbin.uinext.ReaderMediaToolbar
 import com.orbin.uinext.next
 import com.orbin.uinext.nextElevatedSurface
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.ReaderSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -78,9 +85,8 @@ import kotlin.math.abs
 
 /**
  * Full-screen, vertically swipeable media gallery for a thread. Images support pinch-zoom; videos
- * play with Media3. Chrome is Orbin Next matte overlay actions — Close / Copy / Download — rather
- * than a Material TopAppBar. The download action is provided by the host (wired to the download
- * manager).
+ * play with Media3. Close, Copy and Download sit in the shared, flat media toolbar; the download
+ * action is provided by the host and wired to the download manager.
  */
 @Composable
 fun GalleryScreen(
@@ -95,6 +101,9 @@ fun GalleryScreen(
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val playback = remember(settings) { viewModel.playbackSettings() }
+    var viewerMuted by remember(playback.startMuted) {
+        mutableStateOf(playback.startMuted && SessionAudio.muted)
+    }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val mediaPageChanged by rememberUpdatedState(onMediaPageChanged)
@@ -154,7 +163,6 @@ fun GalleryScreen(
         }
 
         val closeLabel = stringResource(R.string.gallery_close)
-        val copyLabel = stringResource(R.string.gallery_copy_image)
         val downloadLabel = stringResource(R.string.gallery_download)
         val imageCopiedMessage = stringResource(R.string.gallery_image_copied)
         val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
@@ -226,7 +234,7 @@ fun GalleryScreen(
                                 url = item.sourceUrl,
                                 modifier = Modifier.fillMaxSize(),
                                 autoPlay = playback.autoplay,
-                                muted = playback.startMuted && SessionAudio.muted,
+                                muted = viewerMuted,
                                 loop = playback.loopVideos,
                                 active = true,
                                 onFullscreenChange = { videoFullscreen = it },
@@ -260,68 +268,63 @@ fun GalleryScreen(
                 exit = slideOutVertically { -it } + fadeOut(),
                 modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
             ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .windowInsetsPadding(
-                                WindowInsets.safeDrawing.only(
-                                    WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-                                ),
-                            ).padding(horizontal = NextSpace.gutter, vertical = 8.dp)
-                            .nextElevatedSurface(RoundedCornerShape(14.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    InlineAction(
-                        label = closeLabel,
-                        onClick = close,
-                        modifier = Modifier.semantics { contentDescription = closeLabel },
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    val currentIndex = pagerState.currentPage.coerceIn(0, media.lastIndex)
-                    Text(
-                        text = "${currentIndex + 1} / ${media.size}",
-                        style = NextType.footnote,
-                        color = next.muted,
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
+                ReaderMediaToolbar {
+                    ReaderMediaBack(closeLabel, close)
+                    val currentIndex = pagerState.settledPage.coerceIn(0, media.lastIndex)
                     val currentItem = media[currentIndex]
-                    val isImage = currentItem.type == MediaType.IMAGE
-                    if (isImage) {
-                        InlineAction(
-                            label = copyLabel,
+                    ReaderMediaTitle(
+                        filename = currentItem.originalFileName,
+                        position = "${currentIndex + 1}/${media.size}",
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (currentItem.type == MediaType.VIDEO || currentItem.type == MediaType.AUDIO) {
+                        ReaderMediaAction(
+                            imageVector =
+                                if (viewerMuted) {
+                                    Icons.AutoMirrored.Filled.VolumeOff
+                                } else {
+                                    Icons.AutoMirrored.Filled.VolumeUp
+                                },
+                            label = stringResource(if (viewerMuted) R.string.gallery_unmute else R.string.gallery_mute),
                             onClick = {
-                                scope.launch {
-                                    val result = viewModel.copyImage(currentItem.sourceUrl)
-                                    haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                        val message =
-                                            when (result) {
-                                                ImageCopyResult.IMAGE -> imageCopiedMessage
-                                                ImageCopyResult.URL -> urlCopiedMessage
-                                            }
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                                viewerMuted = !viewerMuted
+                                SessionAudio.muted = viewerMuted
                             },
-                            modifier = Modifier.semantics { contentDescription = copyLabel },
                         )
                     }
-                    InlineAction(
+                    ReaderMediaAction(
+                        imageVector = Icons.Filled.FileDownload,
                         label = downloadLabel,
-                        accent = true,
                         onClick = { save(currentItem) },
-                        modifier = Modifier.semantics { contentDescription = downloadLabel },
+                    )
+                    ReaderMediaAction(
+                        imageVector = Icons.Filled.MoreVert,
+                        label = stringResource(R.string.gallery_more_options),
+                        onClick = { actionsFor = currentItem },
+                        overflow = true,
                     )
                 }
             }
 
             actionsFor?.let { attachment ->
-                MediaActionsSheet(
+                MediaActionsMenu(
                     attachment = attachment,
                     onSave = viewModel::download,
                     onDismiss = { actionsFor = null },
+                    onCopyImage = { attachment ->
+                        scope.launch {
+                            val result = viewModel.copyImage(attachment.sourceUrl)
+                            haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                val message =
+                                    when (result) {
+                                        ImageCopyResult.IMAGE -> imageCopiedMessage
+                                        ImageCopyResult.URL -> urlCopiedMessage
+                                    }
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                 )
             }
 
@@ -330,7 +333,9 @@ fun GalleryScreen(
                     modifier =
                         Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 72.dp)
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                            ).padding(top = ReaderSize.appBar + 8.dp)
                             .fillMaxWidth(0.92f)
                             .nextElevatedSurface(RoundedCornerShape(12.dp))
                             .padding(12.dp),

@@ -14,7 +14,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Density
 import com.orbin.core.designsystem.theme.OrbinShapes
 import com.orbin.uinext.tokens.LocalNextFontFamily
@@ -114,7 +113,7 @@ fun NextTheme(
         return
     }
 
-    val fontFamily = FontFamily.Default
+    val fontFamily = rememberReaderRobotoFontFamily()
     val dark = darkTheme ?: palette?.dark ?: inherited?.dark ?: isSystemInDarkTheme()
     val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale

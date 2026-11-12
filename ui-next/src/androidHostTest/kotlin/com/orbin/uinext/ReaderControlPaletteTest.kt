@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.SemanticsNodeInteraction
@@ -16,6 +17,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -64,10 +66,19 @@ class ReaderControlPaletteTest(
                 )
             }
         }
+        compose.onNodeWithContentDescription("Search settings").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("lock")
         val painted = compose.onNodeWithText("App lock").assertIsOn().paintedColors()
         assertTrue("$mode switch track must use reader accent", colors.accent.toArgb() in painted)
-        assertTrue("$mode switch thumb must use onAccent", colors.onAccent.toArgb() in painted)
+        val track =
+            colors.accent
+                .copy(alpha = 0.3f)
+                .compositeOver(colors.background)
+                .toArgb()
+        assertTrue(
+            "$mode compact switch track must use a 30 percent reader accent",
+            painted.any { closeColor(it, track) },
+        )
         assertFalse("A settings control must not retain the former palette", TikTokDesign.Pink.toArgb() in painted)
     }
 
@@ -121,6 +132,14 @@ class ReaderControlPaletteTest(
         assertTrue("$mode search ground must use surfaceVariant", colors.surfaceVariant.toArgb() in painted)
         assertFalse("Search must not retain the former cursor color", TikTokDesign.Pink.toArgb() in painted)
     }
+
+    private fun closeColor(
+        actual: Int,
+        expected: Int,
+    ): Boolean =
+        listOf(0, 8, 16).all { shift ->
+            kotlin.math.abs((actual shr shift and 255) - (expected shr shift and 255)) <= 1
+        }
 
     private fun SemanticsNodeInteraction.paintedColors(): Set<Int> {
         val pixels = captureToImage().toPixelMap()

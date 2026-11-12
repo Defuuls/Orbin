@@ -1,5 +1,5 @@
 <resources>
-    <string name="tiktok_secondary_settings">Settings and privacy</string>
+    <string name="tiktok_secondary_settings">Settings</string>
     <string name="tiktok_boards_title">Discover boards</string>
     <string name="tiktok_board_follow">Follow</string>
     <string name="tiktok_board_following">Following</string>

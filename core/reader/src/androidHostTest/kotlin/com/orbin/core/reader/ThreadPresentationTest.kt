@@ -36,9 +36,10 @@ class ThreadPresentationTest {
         runTest {
             val op =
                 post(1).copy(
+                    subject = "Actual opening subject",
                     poster = PosterInfo("Name", "!trip", "abc", "Mod", "GB", "United Kingdom"),
                     createdAtMillis = 1_000L,
-                    attachments = persistentListOf(file("first")),
+                    attachments = persistentListOf(file("first").copy(width = 640, height = 480)),
                 )
             val reply = post(2).copy(repliesTo = persistentListOf(PostId(1), PostId(1), PostId(99)))
             val nested = post(3).copy(repliesTo = persistentListOf(PostId(2)))
@@ -47,6 +48,8 @@ class ThreadPresentationTest {
             val index = thread.preparePresentation(nowMillis = 5_000L, fromSavedCopy = true)
 
             assertSame(op, index.rows.first().post)
+            assertEquals("Actual opening subject", index.rowModels.first().subject)
+            assertEquals("", index.rowModels[1].subject)
             assertEquals("Name · !trip · ID: abc · Mod · United Kingdom", index.rowModels.first().author)
             assertTrue(
                 index.rowModels
@@ -55,6 +58,7 @@ class ThreadPresentationTest {
                     .isNotBlank(),
             )
             assertEquals("first.jpg (2 KB)", index.rowModels.first().fileLabel)
+            assertEquals("JPG 640x480 2 KB", index.fileCells.single().details)
             assertEquals(listOf(0, 0, 1), index.rowModels.map { it.depth })
             assertEquals(listOf(1, 1, 0), index.rowModels.map { it.replies })
             assertEquals(listOf("2"), index.rowModels.first().replyNumbers)
@@ -110,6 +114,7 @@ class ThreadPresentationTest {
             assertFalse(row.spoiler)
             assertTrue(row.imageSpoiler)
             assertTrue(index.fileCells.single().spoiler)
+            assertEquals("JPG", index.fileCells.single().details)
             assertEquals("", index.lastUpdateText)
             assertEquals(0, index.replyCount)
         }

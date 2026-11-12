@@ -56,6 +56,8 @@
     </plurals>
     <string name="next_row_counts">%1$s · %2$s</string>
     <string name="next_row_counts_unread">%1$s · +%2$d</string>
+    <string name="reader_catalog_counts">%1$s, %2$s</string>
+    <string name="reader_catalog_stats">%1$dR %2$dI</string>
     <plurals name="next_feed_thread_count">
         <item quantity="one">%1$d thread</item>
         <item quantity="other">%1$d threads</item>

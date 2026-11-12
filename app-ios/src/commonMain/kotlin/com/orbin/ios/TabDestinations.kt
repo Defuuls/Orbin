@@ -25,7 +25,6 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
-import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.isWideWindow
@@ -71,7 +70,6 @@ internal fun FeedDestination(browser: Browser) {
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val site by browser.feedSite.collectAsState()
-    val mode by browser.feedMode.collectAsState()
     val loadingMore by browser.feedLoadingMore.collectAsState()
     val canLoadMore by browser.feedCanLoadMore.collectAsState()
     val discoveryProgress by browser.feedDiscoveryProgress.collectAsState()
@@ -89,22 +87,6 @@ internal fun FeedDestination(browser: Browser) {
                 emptyList()
             }
         }
-    // Empty video batches advance only after their catalogs finish, never while mapping old rows.
-    LaunchedEffect(
-        threads.isEmpty(),
-        loadingMore,
-        canLoadMore,
-        mode,
-        discoveryProgress,
-        feed is Load.Ready,
-        policyMatches,
-    ) {
-        val successfulEmptyPage = feed is Load.Ready && policyMatches && threads.isEmpty()
-        val discoveryCanAdvance = mode == HomeFeedMode.FOR_YOU && !loadingMore && canLoadMore
-        if (successfulEmptyPage && discoveryCanAdvance) {
-            browser.loadMoreFeed()
-        }
-    }
     val now = remember(threads) { Clock.System.now().toEpochMilliseconds() }
     // Caption text and activity belong to the content snapshot; local membership only changes flags.
     val baseRows = remember(threads) { threads.map { it.thread.key to it.toFeedRow(now, read = false) } }
@@ -135,12 +117,6 @@ internal fun FeedDestination(browser: Browser) {
                     )
                 },
                 wideWindow = isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
-                following = mode == HomeFeedMode.FOLLOWING,
-                onFollowingChange = {
-                    browser.selectFeedMode(
-                        if (it) HomeFeedMode.FOLLOWING else HomeFeedMode.FOR_YOU,
-                    )
-                },
                 isLoading = !policyMatches || feed is Load.Loading || loadingMore && rows.isEmpty(),
                 errorMessage = (feed as? Load.Failed)?.message,
                 onRetry = browser::retry,

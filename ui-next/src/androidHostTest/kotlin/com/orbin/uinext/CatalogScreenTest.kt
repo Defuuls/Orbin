@@ -18,9 +18,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
-import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -106,39 +104,50 @@ class CatalogScreenTest {
         val opened = mutableListOf<String>()
         composeRule.setContent { NextTheme { Catalog(onOpenRow = { opened += it.id }) } }
 
-        composeRule.onNodeWithContentDescription("First thread, 23 replies, 2h").assertIsDisplayed().performClick()
+        composeRule
+            .onNodeWithContentDescription(
+                "First thread, 23 replies, 4 files, 2h",
+            ).assertIsDisplayed()
+            .performClick()
 
         assertEquals(listOf("g/1"), opened)
     }
 
     @Test
-    fun `a list row with a thumbnail is at least the minimum cell height`() {
+    fun `a list row keeps the full 72dp thumbnail without an outer inset`() {
         composeRule.setContent { NextTheme { Catalog(thumbnail = true) } }
 
-        composeRule.onAllNodesWithTag(CatalogTags.ROW).onFirst().assertHeightIsAtLeast(ReaderSize.cellMin)
+        val thumbnail = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).onFirst()
+        thumbnail.assertHeightIsAtLeast(72.dp)
+        assertEquals(0f, thumbnail.getUnclippedBoundsInRoot().left.value, 0.5f)
     }
 
     @Test
-    fun `a wide window uses the larger minimum cell height`() {
+    fun `a wide window uses the full 100dp thumbnail without an outer inset`() {
         composeRule.setContent { NextTheme { Catalog(thumbnail = true, wideWindow = true) } }
 
-        composeRule.onAllNodesWithTag(CatalogTags.ROW).onFirst().assertHeightIsAtLeast(ReaderSize.cellMinWide)
+        val thumbnail = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).onFirst()
+        thumbnail.assertHeightIsAtLeast(100.dp)
+        assertEquals(0f, thumbnail.getUnclippedBoundsInRoot().left.value, 0.5f)
     }
 
     @Test
-    fun `the count pill is the specified height and at least the specified width`() {
+    fun `catalog counters are plain reply and file metadata without a trailing pill`() {
         composeRule.setContent { NextTheme { Catalog() } }
 
-        val pill = composeRule.onAllNodesWithTag(CatalogTags.PILL, useUnmergedTree = true).onFirst()
-        pill.assertHeightIsEqualTo(ReaderSize.pillHeight)
-        pill.assertWidthIsAtLeast(ReaderSize.pillMinWidth)
+        composeRule.onNodeWithTag(CatalogTags.PILL, useUnmergedTree = true).assertDoesNotExist()
+        composeRule.onNodeWithText("23 replies, 4 files", useUnmergedTree = true).assertExists()
+        composeRule.onNodeWithText("3 new replies", useUnmergedTree = true).assertExists()
     }
 
     @Test
     fun `a watched thread with unread replies is announced by its unread count`() {
         composeRule.setContent { NextTheme { Catalog() } }
 
-        composeRule.onNodeWithContentDescription("Watched thread, 3 new replies, 5m").assertIsDisplayed()
+        composeRule
+            .onNodeWithContentDescription(
+                "Watched thread, 40 replies, 1 file, 3 new replies, 5m",
+            ).assertIsDisplayed()
     }
 
     @Test
@@ -176,7 +185,7 @@ class CatalogScreenTest {
                 )
             }
         }
-        composeRule.onAllNodesWithContentDescription("First thread, 23 replies, 2h").assertCountEquals(1)
+        composeRule.onAllNodesWithContentDescription("First thread, 23 replies, 4 files, 2h").assertCountEquals(1)
         composeRule.runOnIdle { assertEquals(0, mediaCompositions) }
         composeRule.onNodeWithTag("requested-thumbnail", true).assertDoesNotExist()
 
@@ -211,7 +220,7 @@ class CatalogScreenTest {
             }
         }
         val card = composeRule.onNodeWithTag(CatalogTags.CARD)
-        composeRule.onAllNodesWithContentDescription("First thread, 23 replies, 2h").assertCountEquals(1)
+        composeRule.onAllNodesWithContentDescription("First thread, 23 replies, 4 files, 2h").assertCountEquals(1)
         composeRule.runOnIdle { assertEquals(0, mediaCompositions) }
         val reveal = card.fetchSemanticsNode().config[SemanticsActions.CustomActions].single()
         assertEquals("Reveal spoiler", reveal.label)
@@ -250,9 +259,10 @@ class CatalogScreenTest {
         val fourth = cards[3].getUnclippedBoundsInRoot()
         assertEquals("the first three cards share a row", first.top.value, third.top.value, 0.5f)
         assertTrue("the fourth card starts a new row", fourth.top > first.top)
-        assertEquals("the grid starts one gap in", ReaderSpace.gridGap.value, first.left.value, 0.5f)
-        // (360 - 4 gaps of 4) / 3 columns
-        assertEquals(114.67f, (first.right - first.left).value, 0.5f)
+        assertEquals("Clover's card margin leaves 2dp at the outer edge", 2f, first.left.value, 0.5f)
+        // (360 - two outer margins of 2 - two internal gaps of 4) / 3 columns
+        assertEquals(116f, (first.right - first.left).value, 0.5f)
+        composeRule.onNodeWithText("23R 4I", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -272,23 +282,33 @@ class CatalogScreenTest {
     }
 
     @Test
-    fun `at a font scale of 1_3 the pill moves below the text`() {
+    fun `at a font scale of 1_3 plain counts remain below the title`() {
         composeRule.setContent { Scaled(1.3f) { Catalog(thumbnail = true) } }
 
-        val row = composeRule.onAllNodesWithTag(CatalogTags.ROW).onFirst().getUnclippedBoundsInRoot()
-        val pill =
-            composeRule.onAllNodesWithTag(CatalogTags.PILL, useUnmergedTree = true).onFirst().getUnclippedBoundsInRoot()
-        assertTrue("the pill is in the lower half of the row", pill.top > row.top + (row.bottom - row.top) / 2)
+        val title = composeRule.onNodeWithText("First thread", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val counts =
+            composeRule
+                .onNodeWithText(
+                    "23 replies, 4 files",
+                    useUnmergedTree = true,
+                ).getUnclippedBoundsInRoot()
+        assertTrue(counts.top >= title.bottom)
+        assertEquals(title.left.value, counts.left.value, 0.5f)
     }
 
     @Test
-    fun `at normal text size the pill sits at the trailing edge of the row`() {
+    fun `at normal text size counts share the title column instead of reserving a trailing badge`() {
         composeRule.setContent { NextTheme { Catalog(thumbnail = true) } }
 
-        val row = composeRule.onAllNodesWithTag(CatalogTags.ROW).onFirst().getUnclippedBoundsInRoot()
-        val pill =
-            composeRule.onAllNodesWithTag(CatalogTags.PILL, useUnmergedTree = true).onFirst().getUnclippedBoundsInRoot()
-        assertEquals((row.right - ReaderSpace.gutter).value, pill.right.value, 0.5f)
+        val title = composeRule.onNodeWithText("First thread", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val counts =
+            composeRule
+                .onNodeWithText(
+                    "23 replies, 4 files",
+                    useUnmergedTree = true,
+                ).getUnclippedBoundsInRoot()
+        assertEquals(title.left.value, counts.left.value, 0.5f)
+        assertTrue(counts.top >= title.bottom)
     }
 
     @Test
@@ -301,37 +321,47 @@ class CatalogScreenTest {
         composeRule.setContent { NextTheme { Catalog(rows = rows, thumbnail = true) } }
         val imageText = composeRule.onNodeWithText("Image row", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val text = composeRule.onNodeWithText("Text row", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(ReaderSpace.gutter.value, text.left.value, 0.5f)
-        assertEquals((ReaderSize.thumbnail + ReaderSpace.gap).value, (imageText.left - text.left).value, 0.5f)
+        assertEquals(8f, text.left.value, 0.5f)
+        assertEquals(ReaderSize.thumbnail.value, (imageText.left - text.left).value, 0.5f)
         composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).assertCountEquals(1)
     }
 
     @Test
-    fun `rtl mirrors the catalog thumbnail and pill while retaining selected semantics`() {
+    fun `rtl mirrors the catalog thumbnail and count column while retaining selected semantics`() {
         composeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 NextTheme { Catalog(rows = ROWS.take(1), thumbnail = true, selectedRowId = "g/1") }
             }
         }
         val image = composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
-        val pill = composeRule.onNodeWithTag(CatalogTags.PILL, true).getUnclippedBoundsInRoot()
-        assertEquals(360f - ReaderSpace.gutter.value, image.right.value, 0.5f)
-        assertEquals(ReaderSpace.gutter.value, pill.left.value, 0.5f)
+        val title = composeRule.onNodeWithText("First thread", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val counts =
+            composeRule
+                .onNodeWithText(
+                    "23 replies, 4 files",
+                    useUnmergedTree = true,
+                ).getUnclippedBoundsInRoot()
+        assertEquals(360f, image.right.value, 0.5f)
+        assertEquals(title.right.value, counts.right.value, 0.5f)
         composeRule
             .onNodeWithTag(CatalogTags.ROW)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
     }
 
     @Test
-    fun `font two puts the thumbnail above the preview and grows the pill to fit its text`() {
+    fun `font two puts the thumbnail above the preview and keeps complete counts in the text column`() {
         composeRule.setContent { Scaled(2f) { Catalog(rows = ROWS.take(1), thumbnail = true) } }
         val image = composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
         val title = composeRule.onNodeWithText("First thread", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val pill = composeRule.onNodeWithTag(CatalogTags.PILL, true).getUnclippedBoundsInRoot()
-        val label = composeRule.onNodeWithText("23", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val counts =
+            composeRule
+                .onNodeWithText(
+                    "23 replies, 4 files",
+                    useUnmergedTree = true,
+                ).getUnclippedBoundsInRoot()
         assertTrue(title.top >= image.bottom + ReaderSpace.gapSmall)
-        assertEquals(title.left.value, pill.left.value, 0.5f)
-        assertTrue(label.top >= pill.top && label.bottom <= pill.bottom)
+        assertEquals(title.left.value, counts.left.value, 0.5f)
+        assertTrue(counts.top >= title.bottom)
     }
 
     @Test

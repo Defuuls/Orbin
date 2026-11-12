@@ -1,0 +1,15 @@
+<resources>
+    <string name="reader_settings_sites_summary">Available sites and boards</string>
+    <string name="reader_settings_board_summary">Playback defaults for sites and boards</string>
+    <string name="reader_settings_followed_summary">Choose boards for Home</string>
+    <string name="reader_settings_history_summary">Browsing and search history</string>
+    <string name="reader_settings_watched_summary">Threads you are watching</string>
+    <string name="reader_settings_hidden_summary">Board and media visibility</string>
+    <string name="reader_settings_playback_summary">Video playback and media controls</string>
+    <string name="reader_settings_appearance_summary">Theme and catalog layout</string>
+    <string name="reader_settings_privacy_summary">App lock, privacy and network</string>
+    <string name="reader_settings_storage_summary">Downloads, cache and backups</string>
+    <string name="reader_settings_help_summary">Help and documentation</string>
+    <string name="reader_settings_about_summary">Version, updates and contact</string>
+    <string name="reader_settings_other_summary">Other app preferences</string>
+</resources>

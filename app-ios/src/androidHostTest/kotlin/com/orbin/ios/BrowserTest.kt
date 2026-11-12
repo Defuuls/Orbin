@@ -541,13 +541,31 @@ class BrowserTest {
         }
 
     @Test
-    fun anExistingFavoriteOnAnotherSiteInitializesHomeWithoutRepeatingSetup() =
+    fun anExistingFavoriteOnAnotherSiteDoesNotCompleteSetupOrInitializeHome() =
         runTest {
             settings.settings.value = settings.settings.value.copy(onboardingCompleted = false)
             val otherSite = ProviderId("bbwchan")
             boardPreferences.setFavoriteBoard(otherSite, BoardId("b"), true)
             val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
             browser.selectFeedMode(HomeFeedMode.FOLLOWING)
+            val state = browser.firstRun.state.first { it.initialized }
+
+            assertTrue(state.needed)
+            assertFalse(state.canStart)
+            assertFalse(settings.settings.value.onboardingCompleted)
+            assertEquals(setOf(FollowedBoard(otherSite, BoardId("b"))), browser.favorites.first { it.isNotEmpty() })
+            assertTrue(browser.followed.value.isEmpty())
+            assertEquals(Load.Ready(emptyList()), browser.feed.settled())
+            assertTrue(requested.none { "/catalog.json" in it })
+        }
+
+    @Test
+    fun anExistingSubscriptionOnAnotherSiteInitializesHomeWithoutRepeatingSetup() =
+        runTest {
+            settings.settings.value = settings.settings.value.copy(onboardingCompleted = false)
+            val otherSite = ProviderId("bbwchan")
+            boardPreferences.setSubscribedBoard(otherSite, BoardId("b"), true)
+            val browser = browser(backgroundScope, BOTH_SITES + LYNXCHAN_CATALOG)
             val state = browser.firstRun.state.first { it.initialized }
 
             assertFalse(state.needed)

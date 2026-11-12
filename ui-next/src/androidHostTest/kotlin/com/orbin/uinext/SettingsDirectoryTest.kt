@@ -8,11 +8,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -56,7 +58,7 @@ class SettingsDirectoryTest {
         composeRule.onNodeWithText("AMOLED black").assertIsOff()
         composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Settings and privacy").assertExists()
+        composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Settings")
         assertEquals(0, exits)
         composeRule.onNodeWithContentDescription("Back").performClick()
         assertEquals(1, exits)
@@ -89,7 +91,7 @@ class SettingsDirectoryTest {
         composeRule.waitForIdle()
         composeRule.runOnUiThread { input.backCompleted() }
         assertEquals("The settings handler should receive back before its host", 0, hostBacks)
-        composeRule.onNodeWithText("Settings and privacy").assertExists()
+        composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Settings")
         composeRule.waitForIdle()
         composeRule.runOnUiThread { input.backCompleted() }
         composeRule.waitForIdle()
@@ -122,10 +124,10 @@ class SettingsDirectoryTest {
         }
         composeRule.onNodeWithText("Catalog view").assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Appearance").assertExists()
+        composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Appearance")
         composeRule.onNodeWithText("Catalog view").assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
-        composeRule.onNodeWithText("Settings and privacy").assertExists()
+        composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Settings")
         composeRule.onNodeWithText("Catalog view").assertDoesNotExist()
     }
 
@@ -160,7 +162,7 @@ class SettingsDirectoryTest {
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun settingsValuesMoveBelowLabelsAtLargeTextWithoutTruncation() {
+    fun preferenceSummariesRemainBelowLabelsAtDefaultAndLargeTextWithoutTruncation() {
         var scale by mutableStateOf(1f)
         composeRule.setContent {
             NextTheme(fontScale = scale) {
@@ -184,8 +186,8 @@ class SettingsDirectoryTest {
         }
         var label = composeRule.onNodeWithText("Playback defaults").getUnclippedBoundsInRoot()
         var value = composeRule.onNodeWithText("App defaults").getUnclippedBoundsInRoot()
-        assertTrue(value.left > label.left)
-        assertTrue(value.top < label.bottom)
+        assertTrue(value.left == label.left)
+        assertTrue("Preference summaries start below the label at default size", value.top >= label.bottom)
         composeRule.runOnIdle { scale = 2f }
         composeRule.waitForIdle()
         label = composeRule.onNodeWithText("Playback defaults").getUnclippedBoundsInRoot()
@@ -197,7 +199,7 @@ class SettingsDirectoryTest {
     }
 
     @Test
-    fun enabledSitesReportsTheConfiguredCountAndOpensItsDirectory() {
+    fun enabledSitesAndFollowedBoardsOpenTheirActualDirectories() {
         var destination = ""
         composeRule.setContent {
             NextTheme {
@@ -206,5 +208,8 @@ class SettingsDirectoryTest {
         }
         composeRule.onNodeWithText("Enabled sites").assert(hasText("2")).performClick()
         assertEquals("boards", destination)
+        composeRule.onNodeWithText("Followed boards").assert(hasText("Choose boards for Home")).performClick()
+        assertEquals("favorites", destination)
+        composeRule.onNodeWithText("Choose boards for Following").assertDoesNotExist()
     }
 }

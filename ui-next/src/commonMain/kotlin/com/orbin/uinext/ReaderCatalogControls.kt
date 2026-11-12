@@ -69,7 +69,7 @@ fun ReaderCatalogSearch(
             value = query,
             onValueChange = onQueryChange,
             singleLine = true,
-            textStyle = ReaderType.stateBody.copy(color = reader.ink),
+            textStyle = ReaderType.stateBody.withReaderFont().copy(color = reader.ink),
             cursorBrush = SolidColor(reader.accent),
             modifier =
                 Modifier
@@ -87,7 +87,13 @@ fun ReaderCatalogSearch(
                         .padding(horizontal = ReaderSpace.gapSmall, vertical = ReaderSpace.line),
                     contentAlignment = Alignment.CenterStart,
                 ) {
-                    if (query.isEmpty()) Text(label, style = ReaderType.stateBody, color = reader.inkMuted)
+                    if (query.isEmpty()) {
+                        Text(
+                            label,
+                            style = ReaderType.stateBody.withReaderFont(),
+                            color = reader.inkMuted,
+                        )
+                    }
                     inner()
                 }
             },
@@ -113,14 +119,14 @@ fun ReaderBoardPicker(
         containerColor = reader.background,
         titleContentColor = reader.ink,
         textContentColor = reader.ink,
-        title = { Text(stringResource(Res.string.reader_pick_board), style = ReaderType.appBarTitle) },
+        title = { Text(stringResource(Res.string.reader_pick_board), style = ReaderType.appBarTitle.withReaderFont()) },
         text = {
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = ReaderSize.readingMax)) {
                 if (boards.isEmpty()) {
                     item {
                         Text(
                             stringResource(Res.string.reader_picker_empty),
-                            style = ReaderType.stateBody,
+                            style = ReaderType.stateBody.withReaderFont(),
                             color = reader.inkMuted,
                         )
                     }
@@ -129,7 +135,7 @@ fun ReaderBoardPicker(
                     item(key = "site-${siteBoards.first().providerId}") {
                         Text(
                             siteBoards.first().siteLabel,
-                            style = ReaderType.label,
+                            style = ReaderType.label.withReaderFont(),
                             color = reader.inkMuted,
                             modifier = Modifier.padding(vertical = ReaderSpace.gapSmall).semantics { heading() },
                         )
@@ -146,8 +152,8 @@ fun ReaderBoardPicker(
                                     onClick = { onSelect(board) },
                                 ).padding(vertical = ReaderSpace.line),
                         ) {
-                            Text("/${board.boardId}/", style = ReaderType.rowTitle, color = reader.ink)
-                            Text(board.title, style = ReaderType.preview, color = reader.inkMuted)
+                            Text("/${board.boardId}/", style = ReaderType.rowTitle.withReaderFont(), color = reader.ink)
+                            Text(board.title, style = ReaderType.preview.withReaderFont(), color = reader.inkMuted)
                         }
                     }
                 }
@@ -155,7 +161,11 @@ fun ReaderBoardPicker(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(Res.string.reader_dismiss_picker), style = ReaderType.label, color = reader.accent)
+                Text(
+                    stringResource(Res.string.reader_dismiss_picker),
+                    style = ReaderType.label.withReaderFont(),
+                    color = reader.accent,
+                )
             }
         },
     )

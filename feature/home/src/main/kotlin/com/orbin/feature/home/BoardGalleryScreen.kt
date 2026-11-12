@@ -35,7 +35,7 @@ fun BoardGalleryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
-    val followed by viewModel.followedBoardIds.collectAsStateWithLifecycle()
+    val followed by viewModel.followedBoards.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val loadedSource = (uiState as? HomeUiState.Success)?.providerId
     val openBoard: (Board) -> Unit = { board ->
@@ -61,7 +61,7 @@ fun BoardGalleryScreen(
                     path = "/${board.id.value}/",
                     title = board.title,
                     nsfw = board.isNsfw,
-                    followed = board.id.value in followed,
+                    followed = followed.contains(providerId, board.id.value),
                     site = providerId,
                 )
             }

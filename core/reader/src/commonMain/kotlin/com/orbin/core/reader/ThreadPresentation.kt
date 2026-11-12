@@ -1,11 +1,14 @@
 package com.orbin.core.reader
 
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
+import com.orbin.core.model.attachmentDetails
 import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.core.ui.post.CommentColors
 import com.orbin.core.ui.post.PreparedPostComment
@@ -15,13 +18,14 @@ import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.thread.replyCounts
 import com.orbin.domain.thread.replyDepths
 import com.orbin.provider.api.UriParts
+import com.orbin.uinext.LocalReaderPostBodyStyle
 import com.orbin.uinext.MediaCell
 import com.orbin.uinext.next
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.withReaderFont
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -151,7 +155,14 @@ private fun Thread.mapThreadPresentation(
             mediaIndex[fileKey] = attachments.size
             attachmentsById[fileKey] = attachment
             attachments.add(attachment)
-            cells.add(MediaCell(id = fileKey, board = "/${key.board.value}/", spoiler = attachment.isSpoiler))
+            cells.add(
+                MediaCell(
+                    id = fileKey,
+                    board = "/${key.board.value}/",
+                    spoiler = attachment.isSpoiler,
+                    details = attachment.attachmentDetails(),
+                ),
+            )
             owners.add(post.id)
         }
     }
@@ -190,6 +201,7 @@ private fun Thread.mapRows(posts: List<Post>): List<ThreadRow> {
                     hasMedia = post.attachments.isNotEmpty(),
                     mediaCount = post.attachments.size,
                     imageSpoiler = post.attachments.firstOrNull()?.isSpoiler == true,
+                    subject = post.subject.orEmpty(),
                     fileLabel =
                         post.attachments
                             .firstOrNull()
@@ -225,15 +237,20 @@ fun ReaderPostComment(
         } else {
             0
         }
-    PreparedPostCommentText(
-        prepared = row.comment,
-        palette = palette,
-        modifier = modifier,
-        selectable = true,
-        style = ReaderType.body.copy(color = reader.ink),
-        onQuoteClick = onQuoteClick,
-        onLinkClick = { safeExternalLink(it)?.let(onLinkClick) },
-    )
+    val style = LocalReaderPostBodyStyle.current.withReaderFont().copy(color = reader.ink)
+    // Replace the surrounding Material line height as well as its size: Clover uses natural
+    // font metrics, including when a rich comment is rendered outside a ThreadScreen.
+    CompositionLocalProvider(LocalTextStyle provides style) {
+        PreparedPostCommentText(
+            prepared = row.comment,
+            palette = palette,
+            modifier = modifier,
+            selectable = true,
+            style = style,
+            onQuoteClick = onQuoteClick,
+            onLinkClick = { safeExternalLink(it)?.let(onLinkClick) },
+        )
+    }
 }
 
 /** The common HTTPS grammar is also checked against java.net.URI in provider SPI tests. */
@@ -278,14 +295,15 @@ private fun Post.authorLabel(): String =
 private fun MediaAttachment.fileLabel(): String {
     val name = originalFileName.ifBlank { id }
     if (sizeBytes <= 0) return name
-    val size =
-        when {
-            sizeBytes < BYTES_PER_KIB -> "$sizeBytes B"
-            sizeBytes < BYTES_PER_MIB -> "${sizeBytes / BYTES_PER_KIB} KB"
-            else -> "${sizeBytes / BYTES_PER_MIB} MB"
-        }
-    return "$name ($size)"
+    return "$name (${readableFileSize(sizeBytes)})"
 }
+
+private fun readableFileSize(bytes: Long): String =
+    when {
+        bytes < BYTES_PER_KIB -> "$bytes B"
+        bytes < BYTES_PER_MIB -> "${bytes / BYTES_PER_KIB} KB"
+        else -> "${bytes / BYTES_PER_MIB} MB"
+    }
 
 private const val BYTES_PER_KIB = 1_024L
 private const val BYTES_PER_MIB = 1_048_576L

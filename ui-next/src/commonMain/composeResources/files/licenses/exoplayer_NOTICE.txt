@@ -1,0 +1,12 @@
+ExoPlayer transport icon path data
+Copyright (C) 2017 The Android Open Source Project
+Licensed under the Apache License, Version 2.0 (see exoplayer_APACHE2.txt).
+
+The six 32dp transport vectors in ReaderMediaControls.kt use the unmodified
+path data from ExoPlayer 2.9.0's Apache-licensed exo_icon_play, pause, previous,
+next, rewind and fastforward resources, also distributed by Clover v3.0.2.
+https://github.com/google/ExoPlayer/tree/r2.9.0/library/ui/src/main/res/drawable-anydpi-v21
+
+Layout measurements were independently implemented in Compose from the
+matching Clover 3.0.2 XML and source bindings. No Clover application source,
+branding, logos or proprietary assets are included.

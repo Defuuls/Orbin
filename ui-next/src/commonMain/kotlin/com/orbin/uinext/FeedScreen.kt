@@ -36,9 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_downloads_tab
 import com.orbin.uinext.resources.next_feed_title
-import com.orbin.uinext.resources.next_nothing_here_yet
 import com.orbin.uinext.resources.next_search_title
-import com.orbin.uinext.resources.reader_feed_empty_discovery
 import com.orbin.uinext.resources.reader_nav_boards
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_view_grid
@@ -132,8 +130,6 @@ fun FeedScreen(
     wideWindow: Boolean = false,
     onOpenMedia: ((FeedRow) -> Unit)? = null,
 ) {
-    var localFollowing by rememberSaveable { mutableStateOf(false) }
-    val showingFollowing = following ?: localFollowing
     val previewCallback by rememberUpdatedState(onActivePreviewChanged)
     val upcomingCallback by rememberUpdatedState(onUpcomingPreviewChanged)
     val chromeCallback by rememberUpdatedState(onChromeVisibleChange)
@@ -224,11 +220,6 @@ fun FeedScreen(
     ) { bottomPadding ->
         Column(Modifier.fillMaxSize().background(reader.background).testTag(ReaderFeedTags.ROOT)) {
             ReaderFeedControls(
-                following = showingFollowing,
-                onFollowingChange = {
-                    localFollowing = it
-                    onFollowingChange(it)
-                },
                 sourceLabels = sourceLabels,
                 selectedSource = selectedSource,
                 onSelectSource = onSelectSource,
@@ -240,12 +231,11 @@ fun FeedScreen(
             ReaderRefreshProgress(refreshing = isLoading && rows.isNotEmpty())
             val positions = rememberSaveableStateHolder()
             Box(Modifier.weight(1f)) {
-                positions.SaveableStateProvider("$selectedSource:$showingFollowing") {
+                positions.SaveableStateProvider("$selectedSource:subscriptions") {
                     ReaderFeedGrid(
                         rows = rows,
                         mode = mode,
                         wideWindow = wideWindow,
-                        following = showingFollowing,
                         isLoading = isLoading,
                         errorMessage = errorMessage,
                         onRetry = onRetry,
@@ -287,7 +277,6 @@ private fun ReaderFeedGrid(
     rows: List<FeedRow>,
     mode: CatalogMode,
     wideWindow: Boolean,
-    following: Boolean,
     isLoading: Boolean,
     errorMessage: String?,
     onRetry: (() -> Unit)?,
@@ -313,18 +302,19 @@ private fun ReaderFeedGrid(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val grid = mode == CatalogMode.GRID
         val gap = if (grid) ReaderSpace.gridGap else 0.dp
-        val stateHeight = (maxHeight - gap * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
+        val outer = if (grid) ReaderSpace.gridOuter else 0.dp
+        val stateHeight = (maxHeight - outer * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         LazyVerticalGrid(
             columns = GridCells.Fixed(if (grid) catalogGridColumns(maxWidth) else 1),
             state = state,
             modifier = Modifier.fillMaxSize().testTag(ReaderFeedTags.GRID),
             contentPadding =
                 PaddingValues(
-                    start = gap,
-                    top = gap,
-                    end = gap,
+                    start = outer,
+                    top = outer,
+                    end = outer,
                     bottom =
-                        gap + bottomPadding.calculateBottomPadding(),
+                        outer + bottomPadding.calculateBottomPadding(),
                 ),
             horizontalArrangement = Arrangement.spacedBy(gap),
             verticalArrangement = Arrangement.spacedBy(gap),
@@ -332,7 +322,7 @@ private fun ReaderFeedGrid(
             if (rows.isEmpty()) {
                 item(key = "reader-feed-state", span = { GridItemSpan(maxLineSpan) }) {
                     Box(Modifier.fillMaxWidth().height(stateHeight)) {
-                        ReaderFeedEmpty(following, isLoading, errorMessage, onRetry, onOpenBoards, mode, wideWindow)
+                        ReaderFeedEmpty(isLoading, errorMessage, onRetry, onOpenBoards, mode, wideWindow)
                     }
                 }
             } else {
@@ -395,7 +385,6 @@ private data class ReaderFeedPosition(
 
 @Composable
 private fun ReaderFeedEmpty(
-    following: Boolean,
     isLoading: Boolean,
     errorMessage: String?,
     onRetry: (() -> Unit)?,
@@ -408,16 +397,9 @@ private fun ReaderFeedEmpty(
         errorMessage != null -> ReaderErrorState(ReaderFailureCause.UNKNOWN, onRetry = onRetry, message = errorMessage)
         else ->
             Column(Modifier.fillMaxSize()) {
-                val title = if (following) Res.string.tiktok_feed_following_empty else Res.string.next_nothing_here_yet
-                val message =
-                    if (following) {
-                        Res.string.tiktok_feed_following_hint
-                    } else {
-                        Res.string.reader_feed_empty_discovery
-                    }
                 ReaderEmptyState(
-                    title = stringResource(title),
-                    message = stringResource(message),
+                    title = stringResource(Res.string.tiktok_feed_following_empty),
+                    message = stringResource(Res.string.tiktok_feed_following_hint),
                     onReload = onRetry,
                     modifier = Modifier.weight(1f),
                 )
@@ -428,7 +410,7 @@ private fun ReaderFeedEmpty(
                     ) {
                         Text(
                             stringResource(Res.string.reader_nav_boards),
-                            style = ReaderType.label,
+                            style = ReaderType.label.withReaderFont(),
                             color = reader.accent,
                         )
                     }

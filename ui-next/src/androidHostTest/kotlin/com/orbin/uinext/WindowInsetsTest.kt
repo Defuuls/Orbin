@@ -17,7 +17,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
@@ -131,8 +130,7 @@ class WindowInsetsTest {
     fun `settings content clears the status bar`() {
         composeRule.setContent {
             NextTheme {
-                // Without the rail, "Settings" names only the title, so the assertion can be made
-                // against the title itself rather than against something further down the screen.
+                // The app bar title and the first preference category can share a label.
                 SettingsScreen(
                     groups = listOf("Content" to listOf(SettingItem("t", "Threads per board", "12"))),
                     showRail = false,
@@ -141,7 +139,7 @@ class WindowInsetsTest {
         }
         applySystemBars()
 
-        val title = composeRule.onNodeWithText("Settings and privacy").getUnclippedBoundsInRoot()
+        val title = composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).getUnclippedBoundsInRoot()
         assertThat(title.top.value).isAtLeast(STATUS_BAR.value)
     }
 
@@ -159,8 +157,8 @@ class WindowInsetsTest {
         drawer.assertWidthIsEqualTo(ReaderSize.drawerMax)
         val pixels = drawer.captureToImage().toPixelMap()
         val topInsetPx = with(composeRule.density) { STATUS_BAR.roundToPx() }
-        assertThat(pixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.appBar.toArgb())
-        assertThat(pixels[pixels.width - 1, topInsetPx - 1].toArgb()).isEqualTo(ReaderLightColors.appBar.toArgb())
+        assertThat(pixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.statusBar.toArgb())
+        assertThat(pixels[pixels.width - 1, topInsetPx - 1].toArgb()).isEqualTo(ReaderLightColors.statusBar.toArgb())
         // Top is consumed by the sheet; the first entry starts immediately below it.
         assertThat(pixels[0, topInsetPx + 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
         assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())

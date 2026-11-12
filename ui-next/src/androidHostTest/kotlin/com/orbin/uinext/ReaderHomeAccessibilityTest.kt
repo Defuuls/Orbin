@@ -2,15 +2,23 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -34,27 +42,42 @@ class ReaderHomeAccessibilityTest {
     val compose = createComposeRule()
 
     @Test
-    fun narrowMaximumTextKeepsSelectorsAndRowActionsAccessible() {
+    fun narrowMaximumTextKeepsSourceChoiceAndRowActionsAccessible() {
+        var source by mutableIntStateOf(0)
         compose.setContent {
             NextTheme(fontScale = 2f) {
                 Box(Modifier.size(248.dp, 700.dp)) {
-                    FeedScreen(rows = listOf(ROW), onOpenBoards = {}, onToggleWatch = {}, onToggleSaved = {})
+                    FeedScreen(
+                        rows = listOf(ROW),
+                        sourceLabels = listOf("All followed sites", "4chan", "BBWChan"),
+                        selectedSource = source,
+                        onSelectSource = { source = it },
+                        onOpenBoards = {},
+                        onToggleWatch = {},
+                        onToggleSaved = {},
+                    )
                 }
             }
         }
-        listOf(ReaderFeedTags.FOLLOWING, ReaderFeedTags.FOR_YOU).forEach { tag ->
-            compose
-                .onNodeWithTag(tag)
-                .assertIsDisplayed()
-                .assertWidthIsAtLeast(48.dp)
-                .assertHeightIsAtLeast(48.dp)
-        }
-        listOf("Following", "For You").forEach(::assertCompleteLabel)
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).performClick().assertIsSelected()
-        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).performClick().assertIsSelected()
+        compose
+            .onNodeWithContentDescription("Choose source")
+            .assertIsDisplayed()
+            .assertWidthIsAtLeast(48.dp)
+            .assertHeightIsAtLeast(48.dp)
+        assertCompleteLabel("All followed sites")
+        compose.onNodeWithContentDescription("Choose source").performClick()
+        compose
+            .onNode(
+                hasText("BBWChan") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton),
+            ).performClick()
+        compose
+            .onNodeWithContentDescription("Choose source")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "BBWChan"))
         val bar = compose.onNodeWithTag(ReaderAppBarTags.BAR).getUnclippedBoundsInRoot()
-        val selectors = compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).getUnclippedBoundsInRoot()
-        assertTrue("Reader selectors must stay below the fixed app bar", selectors.top >= bar.bottom)
+        val sourceBounds = compose.onNodeWithContentDescription("Choose source").getUnclippedBoundsInRoot()
+        assertTrue("Source choice must stay below the fixed app bar", sourceBounds.top >= bar.bottom)
+        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertDoesNotExist()
+        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
         compose
             .onNodeWithTag(ReaderFeedTags.more(ROW.id))
             .assertIsDisplayed()

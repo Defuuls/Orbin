@@ -11,7 +11,6 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
@@ -56,8 +55,7 @@ class ReaderHomePresentationTest {
         compose.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
         compose.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
         compose.onNodeWithTag(TikTokFeedTags.HEADER).assertDoesNotExist()
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertIsDisplayed()
-        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsSelected()
+        assertNoFeedSelectors()
     }
 
     @Test
@@ -91,17 +89,18 @@ class ReaderHomePresentationTest {
     }
 
     @Test
-    fun modeAndFeedTabsRetainIndependentPositions() {
-        var following by mutableStateOf(false)
+    fun readerModesRetainIndependentSourcePositions() {
+        var source by mutableIntStateOf(0)
         var mode by mutableStateOf(CatalogMode.LIST)
-        val discovery = rows("discovery")
-        val followed = rows("followed")
+        val first = rows("fourchan")
+        val second = rows("bbwchan")
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = if (following) followed else discovery,
-                    following = following,
-                    onFollowingChange = { following = it },
+                    rows = if (source == 0) first else second,
+                    sourceLabels = listOf("4chan", "BBWChan"),
+                    selectedSource = source,
+                    onSelectSource = { source = it },
                     mode = mode,
                     onModeChange = { mode = it },
                     onOpenBoards = {},
@@ -111,14 +110,14 @@ class ReaderHomePresentationTest {
         compose.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(18)
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Grid view").performClick()
-        compose.onNodeWithTag(ReaderFeedTags.row(discovery[18].id)).assertIsDisplayed()
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).performClick().assertIsSelected()
-        compose.onNodeWithTag(ReaderFeedTags.row(followed[0].id)).assertIsDisplayed()
+        compose.onNodeWithTag(ReaderFeedTags.row(first[18].id)).assertIsDisplayed()
+        selectSource("BBWChan")
+        compose.onNodeWithTag(ReaderFeedTags.row(second[0].id)).assertIsDisplayed()
         compose.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(9)
-        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).performClick().assertIsSelected()
-        compose.onNodeWithTag(ReaderFeedTags.row(discovery[18].id)).assertIsDisplayed()
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).performClick()
-        compose.onNodeWithTag(ReaderFeedTags.row(followed[9].id)).assertIsDisplayed()
+        selectSource("4chan")
+        compose.onNodeWithTag(ReaderFeedTags.row(first[18].id)).assertIsDisplayed()
+        selectSource("BBWChan")
+        compose.onNodeWithTag(ReaderFeedTags.row(second[9].id)).assertIsDisplayed()
         compose.runOnIdle { assertEquals(CatalogMode.GRID, mode) }
     }
 
@@ -165,32 +164,31 @@ class ReaderHomePresentationTest {
     }
 
     @Test
-    fun hiddenFeedReorderingRetainsTheThreadAndPixelOffsetOnReturn() {
-        var following by mutableStateOf(false)
-        var discovery by mutableStateOf(rows("discovery"))
-        val followed = rows("followed")
+    fun hiddenSourceReorderingRetainsTheThreadAndPixelOffsetOnReturn() {
+        var source by mutableIntStateOf(0)
+        var first by mutableStateOf(rows("fourchan"))
+        val second = rows("bbwchan")
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = if (following) followed else discovery,
-                    following = following,
-                    onFollowingChange = { following = it },
+                    rows = if (source == 0) first else second,
+                    sourceLabels = listOf("4chan", "BBWChan"),
+                    selectedSource = source,
+                    onSelectSource = { source = it },
                 )
             }
         }
         compose.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(18)
-        compose
-            .onNodeWithTag(ReaderFeedTags.GRID)
-            .performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 17f) }
+        compose.onNodeWithTag(ReaderFeedTags.GRID).performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, 17f) }
         compose.waitForIdle()
-        val retained = ReaderFeedTags.row(discovery[18].id)
+        val retained = ReaderFeedTags.row(first[18].id)
         val before = compose.onNodeWithTag(retained).getUnclippedBoundsInRoot()
         val grid = compose.onNodeWithTag(ReaderFeedTags.GRID).getUnclippedBoundsInRoot()
         assertTrue("The fixture must retain a nonzero pixel offset", before.top < grid.top)
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).performClick()
-        compose.onNodeWithTag(ReaderFeedTags.row(followed[0].id)).assertIsDisplayed()
-        compose.runOnIdle { discovery = listOf(row("new-source", 100)) + discovery }
-        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).performClick()
+        selectSource("BBWChan")
+        compose.onNodeWithTag(ReaderFeedTags.row(second[0].id)).assertIsDisplayed()
+        compose.runOnIdle { first = listOf(row("new-subscribed-board", 100)) + first }
+        selectSource("4chan")
         val after = compose.onNodeWithTag(retained).assertIsDisplayed().getUnclippedBoundsInRoot()
         assertEquals(
             "Returning must restore thread identity instead of the obsolete index",
@@ -251,38 +249,39 @@ class ReaderHomePresentationTest {
     }
 
     @Test
-    fun asynchronousReturnToForYouRetainsReadingAnchor() {
-        var following by mutableStateOf(false)
-        var discoveryReady by mutableStateOf(true)
-        val discovery = rows("discovery")
-        val followed = rows("followed")
+    fun asynchronousReturnToSourceRetainsReadingAnchor() {
+        var source by mutableIntStateOf(0)
+        var firstReady by mutableStateOf(true)
+        val first = rows("fourchan")
+        val second = rows("bbwchan")
         compose.setContent {
             NextTheme {
                 FeedScreen(
                     rows =
                         when {
-                            following -> followed
-                            discoveryReady -> discovery
+                            source == 1 -> second
+                            firstReady -> first
                             else -> emptyList()
                         },
-                    following = following,
-                    onFollowingChange = {
-                        if (!it) discoveryReady = false
-                        following = it
+                    sourceLabels = listOf("4chan", "BBWChan"),
+                    selectedSource = source,
+                    onSelectSource = {
+                        if (it == 0) firstReady = false
+                        source = it
                     },
-                    isLoading = !following && !discoveryReady,
+                    isLoading = source == 0 && !firstReady,
                 )
             }
         }
         compose.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(20)
-        val retained = ReaderFeedTags.row(discovery[20].id)
+        val retained = ReaderFeedTags.row(first[20].id)
         val before = compose.onNodeWithTag(retained).getUnclippedBoundsInRoot()
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).performClick()
-        compose.onNodeWithTag(ReaderFeedTags.row(followed[0].id)).assertIsDisplayed()
-        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).performClick()
+        selectSource("BBWChan")
+        compose.onNodeWithTag(ReaderFeedTags.row(second[0].id)).assertIsDisplayed()
+        selectSource("4chan")
         compose.onNodeWithTag(retained).assertDoesNotExist()
         compose.waitForIdle()
-        compose.runOnIdle { discoveryReady = true }
+        compose.runOnIdle { firstReady = true }
         compose.waitForIdle()
         val after = compose.onNodeWithTag(retained).assertIsDisplayed().getUnclippedBoundsInRoot()
         assertEquals(
@@ -294,23 +293,28 @@ class ReaderHomePresentationTest {
     }
 
     @Test
-    fun filtersRemainReachableDuringLoadingAndSourceFailure() {
-        var following by mutableStateOf(false)
+    fun sourceChoiceRemainsReachableDuringLoadingAndSourceFailure() {
+        var source by mutableIntStateOf(0)
         compose.setContent {
             NextTheme {
                 FeedScreen(
                     rows = emptyList(),
-                    following = following,
-                    onFollowingChange = { following = it },
-                    isLoading = !following,
-                    errorMessage = if (following) "The source is temporarily unavailable" else null,
+                    sourceLabels = listOf("4chan", "BBWChan"),
+                    selectedSource = source,
+                    onSelectSource = { source = it },
+                    isLoading = source == 0,
+                    errorMessage = if (source == 1) "The source is temporarily unavailable" else null,
                     onRetry = {},
                 )
             }
         }
-        compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).performClick().assertIsSelected()
+        selectSource("BBWChan")
         compose.onNodeWithText("The source is temporarily unavailable").assertIsDisplayed()
-        compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).performClick().assertIsSelected()
+        compose.onNodeWithContentDescription("Choose source").assertIsDisplayed()
+        selectSource("4chan")
+        compose.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
+        compose.onNodeWithText("The source is temporarily unavailable").assertDoesNotExist()
+        assertNoFeedSelectors()
     }
 
     @Test
@@ -359,7 +363,6 @@ class ReaderHomePresentationTest {
             NextTheme {
                 FeedScreen(
                     rows = emptyList(),
-                    following = true,
                     onRetry = if (canRetry) ({ retries++ }) else null,
                     onOpenBoards = { boards++ },
                 )
@@ -413,6 +416,55 @@ class ReaderHomePresentationTest {
             assertEquals(1, retries)
             assertEquals(0, boards)
         }
+    }
+
+    @Test
+    fun legacyFeedModeArgumentsCannotRestoreSelectorsOrResetTheReader() {
+        var legacyFollowing by mutableStateOf(false)
+        var modeChanges = 0
+        val subscribedRows = rows("subscribed-source")
+        compose.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = subscribedRows,
+                    following = legacyFollowing,
+                    onFollowingChange = { modeChanges++ },
+                )
+            }
+        }
+        compose.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(18)
+        val retained = ReaderFeedTags.row(subscribedRows[18].id)
+        val before = compose.onNodeWithTag(retained).getUnclippedBoundsInRoot()
+        listOf(false, true, false).forEach { obsoleteValue ->
+            compose.runOnIdle { legacyFollowing = obsoleteValue }
+            assertNoFeedSelectors()
+            val after = compose.onNodeWithTag(retained).assertIsDisplayed().getUnclippedBoundsInRoot()
+            assertEquals(
+                "Obsolete feed mode arguments must not change the subscribed reader scope",
+                before.top.value,
+                after.top.value,
+                0.5f,
+            )
+        }
+        compose.runOnIdle { assertEquals(0, modeChanges) }
+    }
+
+    private fun assertNoFeedSelectors() {
+        listOf(
+            ReaderFeedTags.FOLLOWING,
+            ReaderFeedTags.FOR_YOU,
+            TikTokFeedTags.FOLLOWING,
+            TikTokFeedTags.FOR_YOU,
+        ).forEach { tag ->
+            compose.onNodeWithTag(tag).assertDoesNotExist()
+        }
+        compose.onNodeWithText("Following").assertDoesNotExist()
+        compose.onNodeWithText("For You").assertDoesNotExist()
+    }
+
+    private fun selectSource(label: String) {
+        compose.onNodeWithContentDescription("Choose source").performClick()
+        compose.onNode(hasText(label) and radioButton()).performClick()
     }
 
     private fun radioButton() = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)

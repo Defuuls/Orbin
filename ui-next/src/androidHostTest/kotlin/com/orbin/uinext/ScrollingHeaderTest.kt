@@ -18,7 +18,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Reader selectors stay above the list while catalog headers retain their own reading behavior. */
+/** Reader source choice stays above the list while catalog headers retain their own reading behavior. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class ScrollingHeaderTest {
@@ -26,29 +26,44 @@ class ScrollingHeaderTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `feed tabs remain visible after scrolling to the last thread`() {
-        composeRule.setContent { NextTheme { FeedScreen(rows = rows(), showRail = false) } }
+    fun `source choice remains visible after scrolling to the last thread`() {
+        composeRule.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = rows(),
+                    showRail = false,
+                    sourceLabels = listOf("All followed sites", "4chan"),
+                )
+            }
+        }
 
-        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Choose source").assertIsDisplayed()
         composeRule.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(ROW_COUNT - 1)
 
         composeRule.onNodeWithTag(ReaderFeedTags.row(rows().last().id)).assertIsDisplayed()
-        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Choose source").assertIsDisplayed()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     /** The grid is the harder case: a header there has to span every column rather than take a cell. */
     @Test
-    fun `feed tabs stay visible when the reader uses Grid mode`() {
+    fun `source choice stays visible when the reader uses Grid mode`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = rows(), showRail = false, mode = CatalogMode.GRID) }
+            NextTheme {
+                FeedScreen(
+                    rows = rows(),
+                    showRail = false,
+                    mode = CatalogMode.GRID,
+                    sourceLabels = listOf("All followed sites", "4chan"),
+                )
+            }
         }
 
-        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Choose source").assertIsDisplayed()
         composeRule.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(ROW_COUNT - 1)
 
         composeRule.onNodeWithTag(ReaderFeedTags.row(rows().last().id)).assertIsDisplayed()
-        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Choose source").assertIsDisplayed()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 

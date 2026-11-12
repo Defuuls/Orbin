@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,9 +25,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,9 +45,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
-import androidx.compose.ui.text.style.TextOverflow
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed
@@ -71,11 +73,9 @@ import com.orbin.uinext.resources.reader_new
 import com.orbin.uinext.resources.reader_open_browser
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_reply_link
-import com.orbin.uinext.resources.reader_reveal_spoiler
 import com.orbin.uinext.resources.social_feed_save
 import com.orbin.uinext.resources.social_feed_saved_while_watching
 import com.orbin.uinext.resources.social_feed_unsave
-import com.orbin.uinext.resources.social_thread_anonymous
 import com.orbin.uinext.resources.social_thread_op
 import com.orbin.uinext.resources.social_thread_share
 import com.orbin.uinext.tokens.ReaderRadius
@@ -114,6 +114,7 @@ data class Post(
     val replyNumbers: List<String> = emptyList(),
     val stableKey: String = id,
     val imageSpoiler: Boolean = false,
+    val subject: String = "",
 )
 
 object ThreadTags {
@@ -123,12 +124,12 @@ object ThreadTags {
     const val UNREAD = "thread-unread-marker"
     const val STATUS = "thread-status"
     const val FILE = "thread-file"
+    const val FILE_DETAILS = "thread-file-details"
     const val PROGRESS = "thread-progress"
 }
 
 /**
- * A thread, as docs/design-system specifies it: a fixed app bar over posts drawn with the cell
- * the catalog's rows use.
+ * A fixed app bar over Clover's compact post geometry, retaining Orbin's reader controls.
  *
  * The list always starts with one header item (the [subtitle] line, or nothing), so the post at
  * index n of [posts] is list item n + 1. Hosts that save and restore the reading position rely
@@ -212,12 +213,12 @@ fun ThreadScreen(
             subtitle = listOf(sourceLabel(siteName), board).filter(String::isNotBlank).joinToString(" · "),
             navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
             onNavigation = onBack ?: {},
-            actions = threadActions(watching, onWatch, onReload),
+            actions = threadActions(watching, showingPosts, onWatch, onLayoutChange),
             overflow =
                 threadOverflow(
                     subject = subject,
                     showingPosts = showingPosts,
-                    onLayoutChange = onLayoutChange,
+                    onReload = onReload,
                     saved = saved,
                     watching = watching,
                     onToggleSaved = onToggleSaved,
@@ -256,13 +257,23 @@ fun ThreadScreen(
             LazyColumn(
                 state = if (showingPosts) state else filesState,
                 modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
-                contentPadding = PaddingValues(bottom = bottomInset()),
+                contentPadding =
+                    if (showingPosts) {
+                        PaddingValues(bottom = bottomInset())
+                    } else {
+                        PaddingValues(
+                            start = ReaderSpace.albumPadding,
+                            end = ReaderSpace.albumPadding,
+                            top = ReaderSpace.albumPadding,
+                            bottom = bottomInset() + ReaderSpace.albumPadding,
+                        )
+                    },
             ) {
                 item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
                     if (!subtitle.isNullOrBlank()) {
                         Text(
                             text = subtitle,
-                            style = ReaderType.meta,
+                            style = ReaderType.meta.withReaderFont(),
                             color = colors.inkMuted,
                             modifier =
                                 Modifier.fillMaxWidth().padding(
@@ -323,11 +334,23 @@ const val MAX_REPLY_DEPTH = 3
 @Composable
 private fun threadActions(
     watching: Boolean,
+    showingPosts: Boolean,
     onWatch: (() -> Unit)?,
-    onReload: (() -> Unit)?,
+    onLayoutChange: ((ThreadLayout) -> Unit)?,
 ): List<ReaderAction> =
     buildList {
-        if (onReload != null) add(ReaderAction(ReaderIcons.Refresh, stringResource(Res.string.reader_reload), onReload))
+        if (onLayoutChange != null) {
+            add(
+                ReaderAction(
+                    icon = ReaderIcons.Album,
+                    label =
+                        stringResource(
+                            if (showingPosts) Res.string.next_thread_files else Res.string.next_thread_posts,
+                        ),
+                    onClick = { onLayoutChange(if (showingPosts) ThreadLayout.FILES else ThreadLayout.POSTS) },
+                ),
+            )
+        }
         if (onWatch != null) {
             add(
                 ReaderAction(
@@ -346,7 +369,7 @@ private fun threadActions(
 private fun threadOverflow(
     subject: String,
     showingPosts: Boolean,
-    onLayoutChange: ((ThreadLayout) -> Unit)?,
+    onReload: (() -> Unit)?,
     saved: Boolean,
     watching: Boolean,
     onToggleSaved: (() -> Unit)?,
@@ -360,13 +383,6 @@ private fun threadOverflow(
     onOpenBrowser: (() -> Unit)?,
 ): List<ReaderMenuItem> =
     buildList {
-        if (onLayoutChange != null) {
-            if (showingPosts) {
-                add(ReaderMenuItem(stringResource(Res.string.next_thread_files)) { onLayoutChange(ThreadLayout.FILES) })
-            } else {
-                add(ReaderMenuItem(stringResource(Res.string.next_thread_posts)) { onLayoutChange(ThreadLayout.POSTS) })
-            }
-        }
         if (onToggleSaved != null) {
             when {
                 // A watched thread stays saved: say why rather than offer a control that does nothing.
@@ -389,6 +405,7 @@ private fun threadOverflow(
             }
         }
         if (onShare != null) add(ReaderMenuItem(stringResource(Res.string.social_thread_share), onClick = onShare))
+        if (onReload != null) add(ReaderMenuItem(stringResource(Res.string.reader_reload), onClick = onReload))
         if (onOpenBrowser != null) {
             add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
         }
@@ -430,6 +447,15 @@ private fun PostCell(
     val colors = reader
     val indent = ReaderSpace.gap * post.depth.coerceIn(0, MAX_REPLY_DEPTH)
     val showThumbnail = post.hasMedia && !collapsed
+    val inset = readerPostInset(wideWindow)
+    val bodyStyle = if (wideWindow) ReaderType.postBodyWide.withReaderFont() else ReaderType.postBody.withReaderFont()
+    val detailStyle =
+        if (wideWindow) {
+            ReaderType.postDetailsWide.withReaderFont()
+        } else {
+            ReaderType.postDetails
+                .withReaderFont()
+        }
     Column(
         Modifier
             .testTag(ThreadTags.POST)
@@ -438,27 +464,35 @@ private fun PostCell(
             .then(if (onClick != null) Modifier.nextClickable(role = null) { onClick(post) } else Modifier)
             .semantics(mergeDescendants = true) {},
     ) {
-        ReaderCellLayout(
-            wideWindow = wideWindow,
-            verticalPadding = ReaderSpace.postPadY,
-            indent = indent,
-            contentMaxWidth = ReaderSize.readingMax,
-            thumbnail =
-                if (showThumbnail) {
-                    { thumbnailModifier -> PostThumbnail(post, media, thumbnailModifier) }
-                } else {
-                    null
-                },
-        ) { contentModifier ->
-            Column(contentModifier) {
-                PostHeader(post, original, collapsed, onToggleCollapse)
-                if (!collapsed) {
-                    PostBody(post, body)
-                    PostReplies(post, onReference)
+        CompositionLocalProvider(
+            LocalReaderPostBodyStyle provides bodyStyle,
+            LocalTextStyle provides bodyStyle,
+        ) {
+            ReaderPostLayout(
+                wideWindow = wideWindow,
+                indent = indent,
+                thumbnail =
+                    if (showThumbnail) {
+                        { thumbnailModifier -> PostThumbnail(post, media, thumbnailModifier) }
+                    } else {
+                        null
+                    },
+            ) { contentModifier ->
+                Column(contentModifier) {
+                    Box(Modifier.padding(start = inset, end = inset, top = inset)) {
+                        PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                    }
+                    if (!collapsed) {
+                        Box(Modifier.padding(start = inset, end = inset, top = inset)) {
+                            PostBody(post, body)
+                        }
+                        PostReplies(post, onReference, Modifier.padding(start = inset, end = inset, top = inset))
+                    }
+                    Box(Modifier.height(inset))
                 }
             }
         }
-        ReaderHairline(Modifier.padding(start = indent))
+        ReaderHairline(Modifier.padding(start = indent + inset, end = inset))
     }
 }
 
@@ -474,7 +508,7 @@ private fun PostThumbnail(
     Box(
         modifier
             .testTag(ThreadTags.THUMBNAIL)
-            .clip(RoundedCornerShape(ReaderRadius.small))
+            .clip(RoundedCornerShape(ReaderRadius.card))
             .background(colors.surfaceVariant),
     ) {
         if (covered) {
@@ -485,7 +519,7 @@ private fun PostThumbnail(
         if (post.mediaCount > 1) {
             Text(
                 text = stringResource(Res.string.reader_media_more, post.mediaCount - 1),
-                style = ReaderType.meta.copy(textDirection = TextDirection.Ltr),
+                style = ReaderType.meta.withReaderFont().copy(textDirection = TextDirection.Ltr),
                 color = colors.ink,
                 modifier =
                     Modifier
@@ -503,6 +537,7 @@ private fun PostHeader(
     original: Boolean,
     collapsed: Boolean,
     onToggleCollapse: ((Post) -> Unit)?,
+    detailStyle: TextStyle,
 ) {
     val colors = reader
     val expandLabel = stringResource(Res.string.next_post_expand)
@@ -513,7 +548,6 @@ private fun PostHeader(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = ReaderSize.touchTarget)
                 .then(
                     if (onToggleCollapse != null) {
                         Modifier
@@ -524,38 +558,38 @@ private fun PostHeader(
                     } else {
                         Modifier
                     },
-                ).padding(bottom = ReaderSpace.gapSmall),
-        verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
+                ),
     ) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall)) {
-            Text(
-                text = post.author.ifBlank { stringResource(Res.string.social_thread_anonymous) },
-                style = ReaderType.postAuthor,
-                color = colors.author,
-            )
-            Text(text = post.number, style = ReaderType.meta, color = colors.inkMuted)
+        if (post.subject.isNotBlank()) {
+            Text(post.subject, style = LocalReaderPostBodyStyle.current, color = colors.subject)
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.line), verticalArrangement = Arrangement.Top) {
+            if (post.author.isNotBlank() && post.author != "Anonymous") {
+                Text(text = post.author, style = LocalReaderPostBodyStyle.current, color = colors.author)
+            }
+            Text(text = post.number, style = detailStyle, color = colors.inkMuted)
+            if (post.time.isNotBlank()) {
+                Text(text = post.time, style = detailStyle, color = colors.inkMuted)
+            }
             if (original) {
                 Text(
                     text = stringResource(Res.string.social_thread_op),
-                    style = ReaderType.meta,
+                    style = detailStyle,
                     color = colors.inkMuted,
                 )
             }
         }
-        val details = listOf(post.time, post.fileLabel).filter(String::isNotBlank).joinToString(" · ")
-        if (details.isNotEmpty()) {
+        if (post.fileLabel.isNotBlank()) {
             Text(
-                text = details,
-                style = ReaderType.meta,
+                text = post.fileLabel,
+                style = detailStyle,
                 color = colors.inkMuted,
-                maxLines = 1,
-                overflow = TextOverflow.MiddleEllipsis,
             )
         }
         if (collapsed) {
             Text(
                 text = stringResource(Res.string.next_post_collapsed),
-                style = ReaderType.meta,
+                style = detailStyle,
                 color = colors.inkMuted,
             )
         }
@@ -582,12 +616,12 @@ private fun PostBody(
                     .padding(horizontal = ReaderSpace.gap),
             contentAlignment = Alignment.CenterStart,
         ) {
-            Text(text = revealLabel, style = ReaderType.label, color = colors.ink)
+            Text(text = revealLabel, style = ReaderType.label.withReaderFont(), color = colors.ink)
         }
     } else if (body != null) {
-        ProvideTextStyle(ReaderType.body.copy(color = colors.ink)) { body(post) }
+        ProvideTextStyle(LocalReaderPostBodyStyle.current.copy(color = colors.ink)) { body(post) }
     } else {
-        Text(text = post.body, style = ReaderType.body, color = colors.ink)
+        Text(text = post.body, style = LocalReaderPostBodyStyle.current, color = colors.ink)
     }
 }
 
@@ -596,10 +630,11 @@ private fun PostBody(
 private fun PostReplies(
     post: Post,
     onReference: ((String) -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
     val colors = reader
     if (post.replyNumbers.isNotEmpty() && onReference != null) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall)) {
+        FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall)) {
             post.replyNumbers.forEach { number ->
                 Box(
                     modifier =
@@ -612,7 +647,7 @@ private fun PostReplies(
                     Text(
                         text = stringResource(Res.string.reader_reply_link, number),
                         style =
-                            ReaderType.meta.copy(
+                            LocalReaderPostBodyStyle.current.copy(
                                 textDecoration = TextDecoration.Underline,
                                 textDirection = TextDirection.Ltr,
                             ),
@@ -624,9 +659,9 @@ private fun PostReplies(
     } else if (post.replies > 0) {
         Text(
             text = pluralStringResource(Res.plurals.next_row_replies, post.replies, post.replies),
-            style = ReaderType.meta,
+            style = LocalReaderPostBodyStyle.current,
             color = colors.inkMuted,
-            modifier = Modifier.padding(top = ReaderSpace.gapSmall),
+            modifier = modifier,
         )
     }
 }
@@ -638,7 +673,7 @@ private fun UnreadMarker() {
     Column(Modifier.fillMaxWidth().testTag(ThreadTags.UNREAD)) {
         Text(
             text = stringResource(Res.string.reader_new),
-            style = ReaderType.meta,
+            style = ReaderType.meta.withReaderFont(),
             color = colors.accent,
             modifier = Modifier.padding(start = ReaderSpace.gutter, top = ReaderSpace.line, bottom = ReaderSpace.line),
         )
@@ -653,24 +688,32 @@ private fun ThreadStatus(
     fileCount: Int,
     statusText: String?,
 ) {
+    val style = ReaderType.postBody.withReaderFont().copy(fontWeight = FontWeight.Medium)
     Box(
-        modifier = Modifier.fillMaxWidth().heightIn(min = ReaderSize.threadStatus).testTag(ThreadTags.STATUS),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = ReaderSize.threadStatus)
+                .testTag(ThreadTags.STATUS)
+                .padding(ReaderSpace.postInset),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text =
-                statusText ?: stringResource(
-                    Res.string.next_row_counts,
-                    pluralStringResource(Res.plurals.next_row_replies, replies, replies),
-                    pluralStringResource(Res.plurals.next_row_files, fileCount, fileCount),
-                ),
-            style = ReaderType.meta,
-            color = reader.inkMuted,
-        )
+        CompositionLocalProvider(LocalTextStyle provides style) {
+            Text(
+                text =
+                    statusText ?: stringResource(
+                        Res.string.next_row_counts,
+                        pluralStringResource(Res.plurals.next_row_replies, replies, replies),
+                        pluralStringResource(Res.plurals.next_row_files, fileCount, fileCount),
+                    ),
+                style = style,
+                color = reader.inkMuted,
+            )
+        }
     }
 }
 
-/** One row of the Files grid: square tiles in the catalog grid's column count. */
+/** Clover's album cells: width plus a 32dp metadata strip, with one-dp cell margins. */
 @Composable
 private fun FileRow(
     cells: List<MediaCell>,
@@ -680,39 +723,18 @@ private fun FileRow(
 ) {
     Row(
         modifier =
-            Modifier.fillMaxWidth().padding(
-                start = ReaderSpace.gridGap,
-                top = ReaderSpace.gridGap,
-                end = ReaderSpace.gridGap,
-            ),
-        horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gridGap),
+            Modifier.fillMaxWidth().padding(ReaderSpace.albumCellMargin),
+        horizontalArrangement = Arrangement.spacedBy(ReaderSpace.albumCellMargin * 2),
     ) {
         cells.forEach { cell ->
-            var revealed by rememberSaveable(cell.id) { mutableStateOf(false) }
-            val covered = cell.spoiler && !revealed
-            val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
-            Box(
-                modifier =
-                    Modifier
-                        .testTag(ThreadTags.FILE)
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(ReaderRadius.card))
-                        .background(reader.surfaceVariant)
-                        .then(
-                            when {
-                                covered -> Modifier.nextClickable(onClickLabel = revealLabel) { revealed = true }
-                                onOpenFile != null -> Modifier.nextClickable(onClick = { onOpenFile(cell) })
-                                else -> Modifier
-                            },
-                        ),
-            ) {
-                if (covered) {
-                    ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
-                } else {
-                    fileTile?.invoke(cell, Modifier.fillMaxSize())
-                }
-            }
+            ReaderAlbumCell(
+                cell = cell,
+                modifier = Modifier.weight(1f),
+                onOpen = onOpenFile,
+                tile = fileTile,
+                cellTag = ThreadTags.FILE,
+                detailsTag = ThreadTags.FILE_DETAILS,
+            )
         }
         // Empty cells keep a short last row's tiles the same size as the rows above.
         repeat(columns - cells.size) { Box(Modifier.weight(1f)) }

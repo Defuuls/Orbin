@@ -112,9 +112,8 @@ fun ReaderScaffold(
                                 .width(drawerWidth)
                                 .then(if (drawerVisible) Modifier else Modifier.clearAndSetSemantics {}),
                         drawerShape = RectangleShape,
-                        // Native status icons stay light over the reader frame. Paint the same
-                        // app-bar ground behind the drawer's consumed top system inset.
-                        drawerContainerColor = colors.appBar,
+                        // Match Clover's darker primary color behind the consumed status inset.
+                        drawerContainerColor = colors.statusBar,
                         drawerContentColor = colors.ink,
                         windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
                     ) {
@@ -186,6 +185,7 @@ fun ReaderDrawer(
             .background(reader.background)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical))
             .verticalScroll(rememberScrollState())
+            .padding(vertical = ReaderSpace.gapSmall)
             .semantics { paneTitle = drawerTitle },
     ) {
         readerDrawerEntries().filter { destinations == null || it.destination in destinations }.forEach { entry ->
@@ -212,7 +212,7 @@ fun ReaderDrawer(
                     tint = reader.ink,
                     modifier = Modifier.size(ReaderSize.icon),
                 )
-                Text(entry.label, style = ReaderType.stateBody, color = reader.ink)
+                Text(entry.label, style = ReaderType.stateBody.withReaderFont(), color = reader.ink)
             }
         }
     }

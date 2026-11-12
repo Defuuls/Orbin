@@ -130,13 +130,6 @@ fun NextFeedScreen(
             .orEmpty()
             .filter { it.key in eligibleKeys }
     val mappingCurrent = state != null && mapped?.scope == presentationScope && mapped?.boards === state.boards
-    LaunchedEffect(state, mappingCurrent, entries.isEmpty()) {
-        val successfulEmptyPage = mappingCurrent && entries.isEmpty()
-        val batchCanAdvance = state?.let { !it.isLoadingMore && it.errorMessage == null && it.canLoadMore } == true
-        if (mode == HomeFeedMode.FOR_YOU && successfulEmptyPage && batchCanAdvance) {
-            viewModel.loadMoreDiscovery()
-        }
-    }
     val nowMillis by produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
             delay(RELATIVE_TIME_TICK_MS)
@@ -180,8 +173,6 @@ fun NextFeedScreen(
         ) {
             FeedScreen(
                 rows = rows,
-                following = mode == HomeFeedMode.FOLLOWING,
-                onFollowingChange = { viewModel.setFeedMode(if (it) HomeFeedMode.FOLLOWING else HomeFeedMode.FOR_YOU) },
                 isLoading = loading,
                 errorMessage = (uiState as? SubscribedFeedUiState.Error)?.message ?: emptyError,
                 onRetry = viewModel::refresh,

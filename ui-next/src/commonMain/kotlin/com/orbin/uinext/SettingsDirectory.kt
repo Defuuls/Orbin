@@ -1,8 +1,20 @@
 package com.orbin.uinext
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.vector.ImageVector
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_settings_about_summary
+import com.orbin.uinext.resources.reader_settings_appearance_summary
+import com.orbin.uinext.resources.reader_settings_board_summary
+import com.orbin.uinext.resources.reader_settings_followed_summary
+import com.orbin.uinext.resources.reader_settings_help_summary
+import com.orbin.uinext.resources.reader_settings_hidden_summary
+import com.orbin.uinext.resources.reader_settings_history_summary
+import com.orbin.uinext.resources.reader_settings_other_summary
+import com.orbin.uinext.resources.reader_settings_playback_summary
+import com.orbin.uinext.resources.reader_settings_privacy_summary
+import com.orbin.uinext.resources.reader_settings_sites_summary
+import com.orbin.uinext.resources.reader_settings_storage_summary
+import com.orbin.uinext.resources.reader_settings_watched_summary
 import com.orbin.uinext.resources.social_settings_about
 import com.orbin.uinext.resources.social_settings_appearance
 import com.orbin.uinext.resources.social_settings_board_preferences
@@ -16,11 +28,8 @@ import com.orbin.uinext.resources.social_settings_other
 import com.orbin.uinext.resources.social_settings_playback
 import com.orbin.uinext.resources.social_settings_privacy
 import com.orbin.uinext.resources.social_settings_storage
+import com.orbin.uinext.resources.social_settings_title
 import com.orbin.uinext.resources.social_settings_watched
-import com.orbin.uinext.resources.tiktok_settings_browsing
-import com.orbin.uinext.resources.tiktok_settings_cache
-import com.orbin.uinext.resources.tiktok_settings_content
-import com.orbin.uinext.resources.tiktok_settings_support
 import org.jetbrains.compose.resources.stringResource
 
 internal val EXTERNAL_SETTINGS_DESTINATIONS = setOf("boards", "favorites", "watched", "help")
@@ -47,24 +56,24 @@ internal fun settingsDirectory(
     navigationAvailable: Boolean,
 ): List<Pair<String, List<String>>> =
     listOf(
-        "browsing" to
+        "settings" to
             listOfNotNull(
+                "watched".takeIf { navigationAvailable },
                 "boards".takeIf { navigationAvailable },
+                "appearance".takeIf { it in pages },
                 "boardPreferences".takeIf { navigationAvailable && "playback" in pages },
+                "playback".takeIf { it in pages },
+                "hidden".takeIf { it in pages },
+                "privacy".takeIf { it in pages },
                 "favorites".takeIf { navigationAvailable },
                 "history".takeIf { it in pages },
-                "watched".takeIf { navigationAvailable },
+                "storage".takeIf { it in pages },
             ),
-        "content" to listOf("playback", "appearance", "hidden", "privacy").filter { it in pages },
-        "cache" to listOf("storage").filter { it in pages },
-        "more" to
+        "about" to
             listOfNotNull(
                 "help".takeIf { navigationAvailable },
                 "about".takeIf { it in pages },
-                "other".takeIf {
-                    it in
-                        pages
-                },
+                "other".takeIf { it in pages },
             ),
     ).filter { it.second.isNotEmpty() }
 
@@ -89,29 +98,30 @@ internal fun settingsPageLabels(): Map<String, String> =
 
 @Composable
 internal fun directorySectionLabel(id: String): String =
+    if (id ==
+        "settings"
+    ) {
+        stringResource(Res.string.social_settings_title)
+    } else {
+        stringResource(Res.string.social_settings_about)
+    }
+
+@Composable
+internal fun settingsDirectorySummary(id: String): String =
     stringResource(
         when (id) {
-            "browsing" -> Res.string.tiktok_settings_browsing
-            "content" -> Res.string.tiktok_settings_content
-            "cache" -> Res.string.tiktok_settings_cache
-            else -> Res.string.tiktok_settings_support
+            "boards" -> Res.string.reader_settings_sites_summary
+            "boardPreferences" -> Res.string.reader_settings_board_summary
+            "favorites" -> Res.string.reader_settings_followed_summary
+            "history" -> Res.string.reader_settings_history_summary
+            "watched" -> Res.string.reader_settings_watched_summary
+            "hidden" -> Res.string.reader_settings_hidden_summary
+            "playback" -> Res.string.reader_settings_playback_summary
+            "appearance" -> Res.string.reader_settings_appearance_summary
+            "privacy" -> Res.string.reader_settings_privacy_summary
+            "storage", "downloads" -> Res.string.reader_settings_storage_summary
+            "help" -> Res.string.reader_settings_help_summary
+            "about" -> Res.string.reader_settings_about_summary
+            else -> Res.string.reader_settings_other_summary
         },
     )
-
-internal fun settingsIcon(id: String): ImageVector =
-    when (id) {
-        "boards" -> ReaderIcons.Globe
-        "boardPreferences" -> ReaderIcons.Settings
-        "favorites" -> ReaderIcons.Star
-        "history" -> ReaderIcons.Clock
-        "watched" -> ReaderIcons.Watched
-        "hidden" -> ReaderIcons.Hide
-        "playback" -> ReaderIcons.Play
-        "appearance" -> ReaderIcons.Palette
-        "privacy" -> ReaderIcons.Shield
-        "storage" -> ReaderIcons.Storage
-        "downloads" -> ReaderIcons.Download
-        "help" -> ReaderIcons.Help
-        "about" -> ReaderIcons.Info
-        else -> ReaderIcons.Saved
-    }

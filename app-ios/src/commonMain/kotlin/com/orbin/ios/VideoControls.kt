@@ -1,34 +1,32 @@
 package com.orbin.ios
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.orbin.ios.resources.Res
-import com.orbin.ios.resources.ios_media_mute
+import com.orbin.ios.resources.ios_media_forward_video
+import com.orbin.ios.resources.ios_media_loading_video
+import com.orbin.ios.resources.ios_media_next_video
+import com.orbin.ios.resources.ios_media_pause_video
 import com.orbin.ios.resources.ios_media_play_video
-import com.orbin.ios.resources.ios_media_unmute
+import com.orbin.ios.resources.ios_media_restart_video
+import com.orbin.ios.resources.ios_media_rewind_video
+import com.orbin.uinext.ReaderMediaControls
+import com.orbin.uinext.reader
 import org.jetbrains.compose.resources.stringResource
 
 /** What the video on screen is doing, for [VideoControls]. Times are in seconds; 0 while unknown. */
@@ -37,6 +35,7 @@ internal data class VideoState(
     val muted: Boolean = true,
     val position: Double = 0.0,
     val duration: Double = 0.0,
+    val loading: Boolean = false,
 )
 
 /**
@@ -48,7 +47,6 @@ internal data class VideoState(
 internal fun VideoControls(
     state: VideoState,
     onTogglePlay: () -> Unit,
-    onToggleMute: () -> Unit,
     onSeekTo: (Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -67,58 +65,36 @@ internal fun VideoControls(
             )
         },
     ) {
-        if (!state.playing) {
-            Icon(
-                imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(Res.string.ios_media_play_video),
-                tint = Color.White,
+        if (state.loading) {
+            val loadingLabel = stringResource(Res.string.ios_media_loading_video)
+            LinearProgressIndicator(
+                color = reader.accent,
+                trackColor = Color.Transparent,
+                strokeCap = StrokeCap.Butt,
                 modifier =
                     Modifier
-                        .align(Alignment.Center)
-                        .size(PLAY_SIZE)
-                        .background(Color.Black.copy(alpha = SCRIM), CircleShape)
-                        .padding(12.dp),
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .testTag("ios-video-loading")
+                        .semantics { contentDescription = loadingLabel },
             )
         }
-        IconButton(
-            onClick = onToggleMute,
-            modifier =
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 12.dp, bottom = 56.dp)
-                    .size(48.dp)
-                    .background(Color.Black.copy(alpha = SCRIM), CircleShape),
-        ) {
-            Icon(
-                imageVector =
-                    if (state.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
-                contentDescription =
-                    stringResource(
-                        if (state.muted) Res.string.ios_media_unmute else Res.string.ios_media_mute,
-                    ),
-                tint = Color.White,
-            )
-        }
-        if (state.duration > 0.0) {
-            Row(
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(clock(state.position), color = Color.White)
-                Slider(
-                    value = (state.position / state.duration).toFloat().coerceIn(0f, 1f),
-                    onValueChange = { fraction -> onSeekTo(fraction * state.duration) },
-                    colors =
-                        SliderDefaults.colors(
-                            thumbColor = Color.White,
-                            activeTrackColor = Color.White,
-                            inactiveTrackColor = Color.White.copy(alpha = SCRIM),
-                        ),
-                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-                )
-                Text(clock(state.duration), color = Color.White)
-            }
-        }
+        ReaderMediaControls(
+            playing = state.playing,
+            loading = state.loading,
+            positionSeconds = state.position,
+            durationSeconds = state.duration,
+            onPlayPause = onTogglePlay,
+            onSeek = onSeekTo,
+            playLabel = stringResource(Res.string.ios_media_play_video),
+            pauseLabel = stringResource(Res.string.ios_media_pause_video),
+            restartLabel = stringResource(Res.string.ios_media_restart_video),
+            rewindLabel = stringResource(Res.string.ios_media_rewind_video),
+            fastForwardLabel = stringResource(Res.string.ios_media_forward_video),
+            nextLabel = stringResource(Res.string.ios_media_next_video),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
@@ -162,5 +138,3 @@ internal fun webMStateScript(muted: Boolean): String =
 private const val WEBM_STATE_FIELDS = 4
 private const val SKIP_SECONDS = 10.0
 private const val SECONDS_PER_MINUTE = 60
-private const val SCRIM = 0.4f
-private val PLAY_SIZE = 64.dp

@@ -6,6 +6,26 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [201-Huauzontle] - 2026-11-12
+
+### Changed
+- Matched the supplied Clover 3.0.2 layout, compact post typography, catalog proportions, toolbar icons, drawer and album cells while retaining Orbin branding and features.
+- Rebuilt Settings with Clover preference groups, summaries below labels, compact switches and anchored choice popups.
+- Used verified Roboto font resources consistently across Android and iOS reader controls and text.
+- Aligned standalone media toolbars and playback controls with the source-verified Clover layout.
+- Removed Following and For You selectors from reader Home and scoped its video threads to explicitly subscribed boards.
+
+### Fixed
+- Kept matching media identifiers from different sites distinct in All media and preserved spoiler covers and real file details.
+- Stopped favorite-only boards from appearing subscribed, entering Home, or satisfying mandatory board setup.
+- Kept subscription markers associated with the correct site while switching board directories.
+- Stopped playable video pages from flashing the browser fallback while preparing or paging into view.
+- Avoided repeatedly reading native video duration on the UI thread during playback preparation.
+
+### Testing
+- Added regressions for independent favorites, subscription scope, cross-site board membership, reader Home controls and video-page preparation.
+- Updated installed-app startup coverage to reject the obsolete social feed selectors after setup and cold relaunch.
+
 ## [200-Shungiku] - 2026-11-12
 
 ### Changed
@@ -3016,7 +3036,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...HEAD
+[201-Huauzontle]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...v201-Huauzontle
 [200-Shungiku]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...v200-Shungiku
 [199-Komatsuna]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...v199-Komatsuna
 [198-Celtuce]: https://github.com/Defuuls/Orbin/compare/v197-Okahijiki...v198-Celtuce

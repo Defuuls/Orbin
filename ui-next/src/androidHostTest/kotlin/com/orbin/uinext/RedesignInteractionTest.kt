@@ -1,6 +1,6 @@
 package com.orbin.uinext
 
-import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertTouchHeightIsEqualTo
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -56,7 +56,7 @@ class RedesignInteractionTest {
         }
         composeRule
             .onNode(hasText("No. 1", substring = true) and hasClickAction())
-            .assertHeightIsAtLeast(MIN_TOUCH_TARGET)
+            .assertTouchHeightIsEqualTo(MIN_TOUCH_TARGET)
             .performClick()
         assertEquals(1, collapsed)
         assertEquals(0, opened)

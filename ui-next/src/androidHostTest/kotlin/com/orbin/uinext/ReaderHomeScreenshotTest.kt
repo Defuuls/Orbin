@@ -95,6 +95,8 @@ class ReaderHomeScreenshotTest(
         composeRule.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
         composeRule.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
         composeRule.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
+        composeRule.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertDoesNotExist()
+        composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
         composeRule.onRoot().captureRoboImage("src/androidHostTest/screenshots/reader_home_${theme}_$name.png")
     }
 
@@ -115,8 +117,6 @@ private fun HomeReaderFixture(
         mode = mode,
         onModeChange = {},
         wideWindow = wideWindow,
-        following = false,
-        onFollowingChange = {},
         sourceLabels = listOf("All sites", "4chan", "BBWChan"),
         onSelectSource = {},
         thumbnail = { row, modifier -> HomeReaderArtwork(row.threadNumber.lastOrNull() == '1', modifier) },

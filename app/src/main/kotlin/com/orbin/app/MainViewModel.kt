@@ -55,12 +55,9 @@ class MainViewModel
                     providers.isNotEmpty() &&
                         combine(
                             providers.map { provider ->
-                                combine(
-                                    boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                                    boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
-                                ) { followed, favorite -> followed.isNotEmpty() || favorite.isNotEmpty() }
+                                boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id)
                             },
-                        ) { it.any { hasBoards -> hasBoards } }.first()
+                        ) { it.any { boards -> boards.isNotEmpty() } }.first()
                 if (initialSettings.onboardingCompleted != hasFeedBoards) {
                     try {
                         settingsRepository.setOnboardingCompleted(hasFeedBoards)

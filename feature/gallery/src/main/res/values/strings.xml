@@ -25,6 +25,10 @@
     <string name="next_media_sweeping">Sweeping %1$d boards for files…</string>
     <string name="next_media_empty">No files found on the boards you follow.</string>
     <string name="next_media_rescan">Sweep again</string>
+    <string name="gallery_mute">Mute</string>
+    <string name="gallery_unmute">Unmute</string>
+    <string name="gallery_more_options">More options</string>
+    <string name="gallery_open_in_browser">Open in browser</string>
     <string name="gallery_close">Close</string>
     <string name="gallery_download">Download</string>
     <string name="gallery_copy_image">Copy image</string>

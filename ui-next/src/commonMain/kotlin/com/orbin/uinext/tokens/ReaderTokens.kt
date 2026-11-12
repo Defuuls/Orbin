@@ -20,21 +20,25 @@ import androidx.compose.ui.unit.sp
 /** One theme's colors. The three instances below are the document's Light, Dark and AMOLED columns. */
 @Immutable
 data class ReaderColors(
-    /** App bar and status bar ground. */
+    /** App bar ground. */
     val appBar: Color,
+    /** Status bar ground, distinct from the app bar in Clover's default palette. */
+    val statusBar: Color,
     /** App bar title and icons. */
     val onAppBar: Color,
     /** Screen, row, post, and card ground. */
     val background: Color,
-    /** Thumbnail placeholder, count pill, skeleton bars. */
+    /** Secondary screen ground, thumbnail placeholder and skeleton bars. */
     val surfaceVariant: Color,
     /** Open thread's row in the two-pane catalog. */
     val selected: Color,
-    /** Titles, post bodies, pill count. */
+    /** Titles and post bodies. */
     val ink: Color,
+    /** Generic secondary UI text, distinct from post details. */
+    val inkSecondary: Color,
     /** Post numbers, dates, file details, helper text. */
     val inkMuted: Color,
-    /** Row, post, and pane dividers; card outline. */
+    /** Row and post dividers. */
     val hairline: Color,
     /** Progress bar and text buttons. */
     val accent: Color,
@@ -44,6 +48,8 @@ data class ReaderColors(
     val quote: Color,
     /** Post author name. */
     val author: Color,
+    /** Post and catalog subject text. */
+    val subject: Color,
     /** Post reference links and backlinks. */
     val quoteLink: Color,
     /** Error state title. */
@@ -53,35 +59,41 @@ data class ReaderColors(
 val ReaderLightColors =
     ReaderColors(
         appBar = Color(0xFF2E7D32),
+        statusBar = Color(0xFF1B5E20),
         onAppBar = Color(0xFFFFFFFF),
         background = Color(0xFFFFFFFF),
-        surfaceVariant = Color(0xFFF1F3F4),
+        surfaceVariant = Color(0xFFF5F5F5),
         selected = Color(0xFFE8F5E9),
-        ink = Color(0xFF1F1F1F),
-        inkMuted = Color(0xFF5F6368),
-        hairline = Color(0xFFDADCE0),
+        ink = Color(0xDE000000),
+        inkSecondary = Color(0x89000000),
+        inkMuted = Color(0xFF646464),
+        hairline = Color(0x1E000000),
         accent = Color(0xFF00796B),
         onAccent = Color(0xFFFFFFFF),
         quote = Color(0xFF2E7D32),
         author = Color(0xFF117743),
+        subject = Color(0xFF0F0C5D),
         quoteLink = Color(0xFF0B57D0),
         error = Color(0xFFB3261E),
     )
 
 val ReaderDarkColors =
     ReaderColors(
-        appBar = Color(0xFF1E1E1E),
-        onAppBar = Color(0xFFE8EAED),
-        background = Color(0xFF121212),
-        surfaceVariant = Color(0xFF2A2A2A),
-        selected = Color(0xFF1B3A1F),
-        ink = Color(0xFFE8EAED),
-        inkMuted = Color(0xFFBDC1C6),
-        hairline = Color(0xFF3C4043),
+        appBar = Color(0xFF212121),
+        statusBar = Color(0xFF000000),
+        onAppBar = Color(0xFFFFFFFF),
+        background = Color(0xFF232323),
+        surfaceVariant = Color(0xFF303030),
+        selected = Color(0xFF444444),
+        ink = Color(0xFFFFFFFF),
+        inkSecondary = Color(0xB2FFFFFF),
+        inkMuted = Color(0xFFC5C8C6),
+        hairline = Color(0x1EFFFFFF),
         accent = Color(0xFF80CBC4),
         onAccent = Color(0xFF003731),
         quote = Color(0xFF81C784),
         author = Color(0xFF81C784),
+        subject = Color(0xFFABA7FF),
         quoteLink = Color(0xFFA8C7FA),
         error = Color(0xFFF2B8B5),
     )
@@ -89,17 +101,20 @@ val ReaderDarkColors =
 val ReaderAmoledColors =
     ReaderColors(
         appBar = Color(0xFF000000),
-        onAppBar = Color(0xFFE8EAED),
+        statusBar = Color(0xFF000000),
+        onAppBar = Color(0xFFFFFFFF),
         background = Color(0xFF000000),
-        surfaceVariant = Color(0xFF1A1A1A),
-        selected = Color(0xFF12261A),
-        ink = Color(0xFFE8EAED),
-        inkMuted = Color(0xFFBDC1C6),
-        hairline = Color(0xFF2A2A2A),
+        surfaceVariant = Color(0xFF212121),
+        selected = Color(0xFF444444),
+        ink = Color(0xFFFFFFFF),
+        inkSecondary = Color(0xB2FFFFFF),
+        inkMuted = Color(0xFFC5C8C6),
+        hairline = Color(0x1EFFFFFF),
         accent = Color(0xFF80CBC4),
         onAccent = Color(0xFF003731),
         quote = Color(0xFF81C784),
         author = Color(0xFF81C784),
+        subject = Color(0xFFABA7FF),
         quoteLink = Color(0xFFA8C7FA),
         error = Color(0xFFF2B8B5),
     )
@@ -153,6 +168,21 @@ object ReaderType {
     /** Post author name. */
     val postAuthor: TextStyle = readerType(12, 16, 700)
 
+    /** Clover's default post size; natural Roboto metrics supply its line spacing. */
+    val postBody: TextStyle =
+        TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, fontWeight = FontWeight.Normal)
+
+    /** The sw600dp post size from Clover's tablet resource configuration. */
+    val postBodyWide: TextStyle =
+        TextStyle(fontFamily = FontFamily.Default, fontSize = 16.sp, fontWeight = FontWeight.Normal)
+
+    /** Post number, time and attachment metadata are four sp smaller than the body. */
+    val postDetails: TextStyle =
+        TextStyle(fontFamily = FontFamily.Default, fontSize = 10.sp, fontWeight = FontWeight.Normal)
+
+    val postDetailsWide: TextStyle =
+        TextStyle(fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Normal)
+
     /** Reply count in the pill. */
     val pill: TextStyle = readerType(14, 20, 500)
 
@@ -176,11 +206,24 @@ object ReaderSpace {
     /** Top and bottom padding of a post. */
     val postPadY: Dp = 12.dp
 
+    /** Clover post text inset: the configured text size minus six dp. */
+    val postInset: Dp = 8.dp
+
+    val postInsetWide: Dp = 10.dp
+
+    /** Clover's album container padding and individual cell margin. */
+    val albumPadding: Dp = 1.dp
+
+    val albumCellMargin: Dp = 1.dp
+
     /** Padding around the text block of a grid card. */
     val cardPad: Dp = 8.dp
 
-    /** Between grid cards and around the grid. */
+    /** Between grid cards: the two adjacent 2dp card margins. */
     val gridGap: Dp = 4.dp
+
+    /** Outside margin of catalog grid cards, matching Clover v3.0.2 on API 21+. */
+    val gridOuter: Dp = 2.dp
 
     /** Thumbnail to text column. */
     val gap: Dp = 12.dp
@@ -195,6 +238,15 @@ object ReaderSpace {
 object ReaderSize {
     /** App bar height. */
     val appBar: Dp = 56.dp
+
+    /** Clover toolbar leading navigation control width. */
+    val appBarNavigation: Dp = 56.dp
+
+    /** Clover toolbar regular action width. */
+    val appBarAction: Dp = 50.dp
+
+    /** Clover toolbar overflow control width. */
+    val appBarOverflow: Dp = 44.dp
 
     /** Minimum size of anything that can be tapped. */
     val touchTarget: Dp = 48.dp
@@ -217,11 +269,17 @@ object ReaderSize {
     /** Grid column count is the pane width divided by this, rounded down. */
     val gridCardMin: Dp = 120.dp
 
-    /** Height of the text block under a grid card image. */
+    /** Legacy minimum retained for API compatibility; catalog cards now use [ReaderRatio]. */
     val gridCardText: Dp = 76.dp
+
+    /** Catalog card elevation, matching Clover v3.0.2. */
+    val cardElevation: Dp = 2.dp
 
     /** Thread footer that reports reply and image counts. */
     val threadStatus: Dp = 88.dp
+
+    /** The album cell adds this metadata strip to its width to determine its height. */
+    val albumDetails: Dp = 32.dp
 
     /** Reply count pill height. */
     val pillHeight: Dp = 36.dp
@@ -239,7 +297,7 @@ object ReaderSize {
     val readingMax: Dp = 640.dp
 
     /** Maximum navigation drawer width. */
-    val drawerMax: Dp = 320.dp
+    val drawerMax: Dp = 336.dp
 
     /** Both window sides must reach this to count as wide. */
     val wideMin: Dp = 600.dp
@@ -263,4 +321,10 @@ object ReaderRadius {
 
     /** Reply count pill. */
     val pill: Dp = 18.dp
+}
+
+/** Width divided by height, as bound by Clover v3.0.2's CardPostCell. */
+object ReaderRatio {
+    val gridCard: Float get() = 9f / 18f
+    val gridThumbnail: Float get() = 16f / 13f
 }
