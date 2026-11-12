@@ -1,37 +1,22 @@
-# Orbin 201 - Huauzontle
+# Orbin 202 - Arracacha
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 201
-codename     = "Huauzontle"
-version_code = 219
+number       = 202
+codename     = "Arracacha"
+version_code = 220
 
-highlight = "Clover reader layouts and Settings with Orbin green branding, correct subscriptions, and improved video preparation."
+highlight = "Long-press Home threads for options, with uncluttered list rows and grid previews."
 
 summary = [
-  "bump Orbin to 201-Huauzontle / versionCode 219",
-  "match Clover layouts, typography, Settings, and media controls with Orbin green branding",
-  "remove social feed selectors and scope Home to explicit board subscriptions",
-  "keep favorites and subscriptions independent across sites and first-run setup",
-  "avoid browser-fallback flashes and repeated native video metadata work during playback",
+  "bump Orbin to 202-Arracacha / versionCode 220",
+  "open Home thread options with a long press instead of a three-dot button",
+  "retain direct thread/media taps, spoiler protection, and screen-reader actions",
 ]
 
 [changelog]
 Changed = [
-  "Matched the supplied Clover 3.0.2 layout, compact post typography, catalog proportions, toolbar icons, drawer and album cells while retaining Orbin branding and features.",
-  "Rebuilt Settings with Clover preference groups, summaries below labels, compact switches and anchored choice popups.",
-  "Used verified Roboto font resources consistently across Android and iOS reader controls and text.",
-  "Aligned standalone media toolbars and playback controls with the source-verified Clover layout.",
-
-  "Removed Following and For You selectors from reader Home and scoped its video threads to explicitly subscribed boards.",
-]
-Fixed = [
-  "Kept matching media identifiers from different sites distinct in All media and preserved spoiler covers and real file details.",
-  "Stopped favorite-only boards from appearing subscribed, entering Home, or satisfying mandatory board setup.",
-  "Kept subscription markers associated with the correct site while switching board directories.",
-  "Stopped playable video pages from flashing the browser fallback while preparing or paging into view.",
-  "Avoided repeatedly reading native video duration on the UI thread during playback preparation.",
+  "Removed Home's per-thread three-dot button and its box in List and Grid views; long-press a thread or its preview to open the same options.",
 ]
 Testing = [
-  "Added regressions for independent favorites, subscription scope, cross-site board membership, reader Home controls and video-page preparation.",
-  "Updated installed-app startup coverage to reject the obsolete social feed selectors after setup and cold relaunch.",
+  "Covered long-press menus, direct taps, spoiler previews, source-qualified callbacks and accessible actions in List and Grid views.",
 ]
