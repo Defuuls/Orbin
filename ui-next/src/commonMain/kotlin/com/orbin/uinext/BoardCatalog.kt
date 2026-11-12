@@ -320,6 +320,8 @@ internal fun CatalogRow(
     onRevealSpoiler: (() -> Unit)? = null,
     accessibilityActions: List<CustomAccessibilityAction> = emptyList(),
     showDivider: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
 ) {
     val colors = reader
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
@@ -344,7 +346,11 @@ internal fun CatalogRow(
             .testTag(itemTag ?: CatalogTags.ROW)
             .fillMaxWidth()
             .background(if (selected) colors.selected else colors.background)
-            .nextClickable(role = Role.Button) { onOpen(row) }
+            .nextClickable(
+                role = Role.Button,
+                onLongClick = onLongClick,
+                onLongClickLabel = onLongClickLabel,
+            ) { onOpen(row) }
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
@@ -380,10 +386,24 @@ internal fun CatalogRow(
                                 .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
                                 .clip(RoundedCornerShape(ReaderRadius.card))
                                 .background(colors.surfaceVariant)
-                                .then(catalogThumbnailAction(covered, row, onOpenThumbnail, thumbnailClickLabel)),
+                                .then(
+                                    catalogThumbnailAction(
+                                        covered,
+                                        row,
+                                        onOpenThumbnail,
+                                        thumbnailClickLabel,
+                                        onLongClick,
+                                        onLongClickLabel,
+                                    ),
+                                ),
                         ) {
                             if (covered) {
-                                ReaderSpoilerCover(onReveal = reveal, modifier = Modifier.fillMaxSize())
+                                ReaderSpoilerCover(
+                                    onReveal = reveal,
+                                    modifier = Modifier.fillMaxSize(),
+                                    onLongClick = onLongClick,
+                                    onLongClickLabel = onLongClickLabel,
+                                )
                             } else {
                                 thumbnail(row, Modifier.fillMaxSize())
                             }
@@ -478,6 +498,8 @@ internal fun CatalogCard(
     onRevealSpoiler: (() -> Unit)? = null,
     accessibilityActions: List<CustomAccessibilityAction> = emptyList(),
     wideWindow: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
 ) {
     val colors = reader
     val shape = RoundedCornerShape(ReaderRadius.card)
@@ -496,7 +518,11 @@ internal fun CatalogCard(
             .shadow(ReaderSize.cardElevation, shape)
             .clip(shape)
             .background(if (selected) colors.selected else colors.background)
-            .nextClickable(role = Role.Button) { onOpen(row) }
+            .nextClickable(
+                role = Role.Button,
+                onLongClick = onLongClick,
+                onLongClickLabel = onLongClickLabel,
+            ) { onOpen(row) }
             .clearAndSetSemantics {
                 contentDescription = summary
                 this.selected = selected
@@ -528,10 +554,24 @@ internal fun CatalogCard(
                     imageModifier
                         .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
                         .background(colors.surfaceVariant)
-                        .then(catalogThumbnailAction(covered, row, onOpenThumbnail, thumbnailClickLabel)),
+                        .then(
+                            catalogThumbnailAction(
+                                covered,
+                                row,
+                                onOpenThumbnail,
+                                thumbnailClickLabel,
+                                onLongClick,
+                                onLongClickLabel,
+                            ),
+                        ),
                 ) {
                     if (covered) {
-                        ReaderSpoilerCover(onReveal = reveal, modifier = Modifier.fillMaxSize())
+                        ReaderSpoilerCover(
+                            onReveal = reveal,
+                            modifier = Modifier.fillMaxSize(),
+                            onLongClick = onLongClick,
+                            onLongClickLabel = onLongClickLabel,
+                        )
                     } else if (showThumbnail) {
                         thumbnail(row, Modifier.fillMaxSize())
                     }
@@ -690,9 +730,18 @@ private fun catalogThumbnailAction(
     row: FeedRow,
     onOpen: ((FeedRow) -> Unit)?,
     label: String?,
+    onLongClick: (() -> Unit)?,
+    onLongClickLabel: String?,
 ): Modifier =
     if (!covered && onOpen != null) {
-        Modifier.nextClickable(role = Role.Button, onClickLabel = label) { onOpen(row) }
+        Modifier.nextClickable(
+            role = Role.Button,
+            onClickLabel = label,
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+        ) {
+            onOpen(row)
+        }
     } else {
         Modifier
     }

@@ -100,12 +100,19 @@ internal const val READER_STACKED_FONT_SCALE = 2f
 fun ReaderSpoilerCover(
     onReveal: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
 ) {
     val colors = reader
     Box(
         modifier
             .background(colors.surfaceVariant)
-            .nextClickable(onClickLabel = stringResource(Res.string.next_spoiler_reveal), onClick = onReveal),
+            .nextClickable(
+                onClickLabel = stringResource(Res.string.next_spoiler_reveal),
+                onLongClick = onLongClick,
+                onLongClickLabel = onLongClickLabel,
+                onClick = onReveal,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
