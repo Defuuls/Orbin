@@ -64,9 +64,12 @@ jobs:
           # macrobenchmark tooling needs to read the compiled profile back off the device.
           target: google_apis
           arch: x86_64
+          # 37.2.13 has a reported process-exit graphics cleanup regression.
+          # https://github.com/zeroc-ice/ice/issues/6984
+          emulator-build: '16428233' # 37.2.12
           force-avd-creation: false
           # Use the same software renderer and fresh boot as the populated performance run.
-          emulator-options: -no-snapshot -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-snapshot -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none -show-kernel -logcat *:E
           disable-animations: true
           # One line: the action runs each line of `script:` as its own `sh -c`.
           #

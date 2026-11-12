@@ -49,15 +49,15 @@ class HomeSourceIdentityTest {
                             },
                         )
                 }
-            val favorites = mutableListOf<ProviderId>()
+            val subscriptions = mutableListOf<ProviderId>()
             val preferences =
                 object : BoardPreferencesRepository by FakeBoardPreferencesRepository() {
-                    override suspend fun setFavoriteBoard(
+                    override suspend fun setSubscribedBoard(
                         provider: ProviderId,
                         board: BoardId,
-                        favorite: Boolean,
+                        subscribed: Boolean,
                     ) {
-                        favorites += provider
+                        subscriptions += provider
                     }
                 }
             val settings = FakeSettingsRepository()
@@ -72,7 +72,7 @@ class HomeSourceIdentityTest {
             assertThat(model.uiState.value).isEqualTo(HomeUiState.Loading)
             model.setFollowed("g", true, sourceId = initial.providerId)
             runCurrent()
-            assertThat(favorites).containsExactly(ProviderId("fourchan"))
+            assertThat(subscriptions).containsExactly(ProviderId("fourchan"))
 
             pendingBoards.complete(listOf(Board(BoardId("g"), "General Discussion")))
             val loaded = model.uiState.first { it is HomeUiState.Success } as HomeUiState.Success

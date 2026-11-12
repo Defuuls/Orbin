@@ -57,6 +57,33 @@ class HomeBoardFollowingTest {
         }
 
     @Test
+    fun `a new board follow persists as a subscription without creating a favorite`() =
+        runTest {
+            val provider = ProviderId("fourchan")
+            val preferences = Preferences()
+            val settings = FakeSettingsRepository()
+            val model = createModel(preferences, settings)
+            backgroundScope.launch { model.followedBoardIds.collect {} }
+            runCurrent()
+
+            model.setFollowed("g", true, sourceId = "fourchan")
+            runCurrent()
+
+            assertThat(preferences.subscribed.value[provider]).containsExactly(BoardId("g"))
+            assertThat(preferences.favorites.value).isEmpty()
+            assertThat(preferences.writes).containsExactly("subscription:true")
+            assertThat(model.followedBoardIds.value).containsExactly("g")
+            model.viewModelScope.cancel()
+
+            val relaunched = createModel(preferences, settings)
+            backgroundScope.launch { relaunched.followedBoardIds.collect {} }
+            runCurrent()
+            assertThat(relaunched.followedBoardIds.value).containsExactly("g")
+            assertThat(preferences.favorites.value).isEmpty()
+            relaunched.viewModelScope.cancel()
+        }
+
+    @Test
     fun `overlapping follows count once and source qualified unfollow leaves other sites alone`() =
         runTest {
             val fourchan = ProviderId("fourchan")
@@ -89,7 +116,7 @@ class HomeBoardFollowingTest {
             val preferences = Preferences(subscribed = existing, favorites = existing)
             val saving = CompletableDeferred<Unit>()
             preferences.beforeWrite = { store, followed ->
-                if (store == "favorite" && !followed) saving.await()
+                if (store == "subscription" && !followed) saving.await()
             }
             val model = createModel(preferences, FakeSettingsRepository())
             backgroundScope.launch { model.followedBoardIds.collect {} }
@@ -103,10 +130,10 @@ class HomeBoardFollowingTest {
             saving.complete(Unit)
             runCurrent()
             assertThat(preferences.writes)
-                .containsExactly("favorite:false", "subscription:false", "favorite:true")
+                .containsExactly("subscription:false", "favorite:false", "subscription:true")
                 .inOrder()
-            assertThat(preferences.subscribed.value[provider]).isEmpty()
-            assertThat(preferences.favorites.value[provider]).containsExactly(BoardId("g"))
+            assertThat(preferences.subscribed.value[provider]).containsExactly(BoardId("g"))
+            assertThat(preferences.favorites.value[provider]).isEmpty()
             assertThat(model.followedBoardIds.value).containsExactly("g")
             model.viewModelScope.cancel()
         }

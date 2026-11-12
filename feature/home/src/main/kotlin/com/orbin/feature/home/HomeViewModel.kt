@@ -86,8 +86,8 @@ class HomeViewModel
             val board = BoardId(boardId)
             viewModelScope.launch {
                 followWrites.withLock {
-                    boardPreferencesRepository.setFavoriteBoard(provider, board, followed)
-                    if (!followed) boardPreferencesRepository.setSubscribedBoard(provider, board, false)
+                    boardPreferencesRepository.setSubscribedBoard(provider, board, followed)
+                    if (!followed) boardPreferencesRepository.setFavoriteBoard(provider, board, false)
                 }
             }
         }

@@ -23,6 +23,7 @@ All notable changes to Orbin are documented here. The format is based on
 ### Fixed
 - Kept boards chosen during setup marked as followed in Boards; unfollowing now removes them from Following on both platforms and survives relaunches.
 - Applied restored board-visibility choices during setup and let iOS show an available site's boards while another site loads or fails.
+- New board follows now produce consistent backup restore counts on Android and iOS.
 - Stopped obsolete catalog and thread loads when leaving a screen or hiding its pane; returning reuses loaded content, and refreshes retain loaded rows and the correct reading position.
 - Kept permanently filtered content out of reused thread data and prevented stale board or thread results from replacing the current selection.
 - Back closes an open drawer before leaving the reader, hidden drawers no longer expose controls to accessibility, and refresh-failure actions stay clear of system insets.

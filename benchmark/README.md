@@ -49,8 +49,13 @@ regions, cases, iterations, metrics and journey assertions unchanged. The change
 transport loss after display reset in a profile attempt and a later performance run; the latter
 completed six cases before thread startup returned status -1 without complete benchmark JSON.
 The earlier f1 run's complete seven-case measurements remain valid historical evidence. Both
-benchmark APK variants and strict formatting/static checks passed locally; a fresh CI run is
-required to establish the hardening's runtime outcome.
+benchmark APK variants and strict formatting/static checks passed locally. A subsequent profile
+run still lost transport after startup and the teardown guard passed without reset writes, so
+display reset is not established as the primary cause. Both long workflows now pin emulator
+build `16428233` (37.2.12), a controlled rollback from 37.2.13, whose process-exit GLES cleanup
+regression is [reported upstream](https://github.com/zeroc-ice/ice/issues/6984). API 35, system
+image, guards, cases, iterations and assertions remain unchanged; kernel/error-log capture is
+added. This version pin awaits fresh runtime evidence and is not a proven diagnosis.
 
 Run all frame/startup benchmarks on a connected device:
 

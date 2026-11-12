@@ -103,7 +103,10 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none
+          # Match profile collection while 37.2.13's process-exit regression is investigated.
+          # https://github.com/zeroc-ice/ice/issues/6984
+          emulator-build: '16428233' # 37.2.12
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -show-kernel -logcat *:E
           disable-animations: true
           # Real MainActivity cold/warm startup and all five populated production-reader journeys.
           # HOT stays available for physical-device runs: a hosted HOT start can relaunch no
