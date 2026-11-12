@@ -54,8 +54,8 @@ an older backup containing a color theme. If a case cannot be produced, record i
 - [ ] Change Catalog view between List and Grid, return to Home and cold relaunch. Home follows
   the remembered choice without losing its current reading position.
 - [ ] A row opens its thread; the separate media action opens the existing viewer explicitly.
-  Watch, Save, Share, board and thread videos/comments actions work through each row's context
-  menu; the videos/comments setting retains its effect. Spoilers reveal before opening media.
+  Long-press a row/card or its preview to open Watch, Save, Share, board and thread videos/comments
+  actions without a per-item three-dot box. A normal tap retains its thread/media action; the videos/comments setting retains its effect. Spoilers reveal before opening media.
 
 - [ ] Home's Reload action and pull refresh retain the selected source and return to the
   same thread when loaded content updates. Retry remains reachable after a refresh failure.

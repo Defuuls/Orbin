@@ -3,9 +3,7 @@ package com.orbin.uinext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
@@ -15,9 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -36,7 +32,6 @@ import com.orbin.uinext.resources.social_feed_view_replies
 import com.orbin.uinext.resources.social_feed_view_videos
 import com.orbin.uinext.resources.social_feed_watch
 import com.orbin.uinext.resources.tiktok_feed_open_board
-import com.orbin.uinext.tokens.ReaderSpace
 import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
@@ -68,6 +63,9 @@ internal fun ReaderFeedItem(
     val mediaLabel = stringResource(Res.string.reader_feed_open_media, row.subject)
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val menu = readerFeedRowMenu(row, actions, covered) { revealed = true }
+    var expanded by rememberSaveable(row.id, menu.isNotEmpty()) { mutableStateOf(false) }
+    val optionsLabel = stringResource(Res.string.social_feed_more, row.subject)
+    val openOptions: (() -> Unit)? = if (menu.isEmpty()) null else ({ expanded = true })
     val customActions =
         menu.filter { it.enabled && it.label != mediaLabel && it.label != revealLabel }.map { item ->
             CustomAccessibilityAction(item.label) {
@@ -99,25 +97,20 @@ internal fun ReaderFeedItem(
                 onRevealSpoiler = { revealed = true },
                 accessibilityActions = customActions,
                 wideWindow = wideWindow,
+                onLongClick = openOptions,
+                onLongClickLabel = optionsLabel,
             )
-            if (menu.isNotEmpty()) {
-                ReaderFeedMore(
-                    row,
-                    menu,
-                    Modifier.align(Alignment.TopEnd).padding(ReaderSpace.line).background(reader.background),
-                )
-            }
+            ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
         }
     } else {
         Column(Modifier.fillMaxWidth().background(reader.background)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.fillMaxWidth()) {
                 CatalogRow(
                     row = row,
                     selected = false,
                     wideWindow = wideWindow,
                     onOpen = actions.onOpenRow,
                     thumbnail = thumbnail,
-                    modifier = Modifier.weight(1f),
                     itemTag = ReaderFeedTags.row(row.id),
                     thumbnailTag = ReaderFeedTags.thumbnail(row.id),
                     metadata = metadata,
@@ -127,8 +120,10 @@ internal fun ReaderFeedItem(
                     onRevealSpoiler = { revealed = true },
                     accessibilityActions = customActions,
                     showDivider = false,
+                    onLongClick = openOptions,
+                    onLongClickLabel = optionsLabel,
                 )
-                if (menu.isNotEmpty()) ReaderFeedMore(row, menu, Modifier.padding(end = ReaderSpace.line))
+                ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
             }
             ReaderHairline()
         }
@@ -183,48 +178,43 @@ private fun readerFeedRowMenu(
     }
 
 @Composable
-private fun ReaderFeedMore(
+private fun ReaderFeedMenu(
     row: FeedRow,
     items: List<ReaderMenuItem>,
-    modifier: Modifier = Modifier,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
 ) {
-    var expanded by rememberSaveable(row.id) { mutableStateOf(false) }
     val watchingLabel = stringResource(Res.string.social_feed_unwatch, row.subject)
     val savedLabel = stringResource(Res.string.social_feed_unsave, row.subject)
     val lockedSavedLabel = stringResource(Res.string.social_feed_saved_while_watching, row.subject)
-    Box(modifier) {
-        NextIconAction(
-            ReaderIcons.MoreVertical,
-            stringResource(Res.string.social_feed_more, row.subject),
-            onClick = { expanded = true },
-            tint = reader.ink,
-            modifier = Modifier.testTag(ReaderFeedTags.more(row.id)),
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, containerColor = reader.background) {
-            items.forEach { item ->
-                val savedSelected = row.bookmarked && (item.label == savedLabel || item.label == lockedSavedLabel)
-                val selected = row.watched && item.label == watchingLabel || savedSelected
-                DropdownMenuItem(
-                    modifier = Modifier.semantics { this.selected = selected },
-                    text = {
-                        Text(
-                            item.label,
-                            style = ReaderType.stateBody.withReaderFont(),
-                            color =
-                                when {
-                                    !item.enabled -> reader.inkMuted
-                                    selected -> reader.accent
-                                    else -> reader.ink
-                                },
-                        )
-                    },
-                    enabled = item.enabled,
-                    onClick = {
-                        expanded = false
-                        item.onClick()
-                    },
-                )
-            }
+    DropdownMenu(
+        expanded = expanded && items.isNotEmpty(),
+        onDismissRequest = onDismiss,
+        containerColor = reader.background,
+    ) {
+        items.forEach { item ->
+            val savedSelected = row.bookmarked && (item.label == savedLabel || item.label == lockedSavedLabel)
+            val selected = row.watched && item.label == watchingLabel || savedSelected
+            DropdownMenuItem(
+                modifier = Modifier.semantics { this.selected = selected },
+                text = {
+                    Text(
+                        item.label,
+                        style = ReaderType.stateBody.withReaderFont(),
+                        color =
+                            when {
+                                !item.enabled -> reader.inkMuted
+                                selected -> reader.accent
+                                else -> reader.ink
+                            },
+                    )
+                },
+                enabled = item.enabled,
+                onClick = {
+                    onDismiss()
+                    item.onClick()
+                },
+            )
         }
     }
 }

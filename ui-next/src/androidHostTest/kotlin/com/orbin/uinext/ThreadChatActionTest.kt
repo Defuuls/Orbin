@@ -1,9 +1,11 @@
 package com.orbin.uinext
 
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -32,7 +34,8 @@ class ThreadChatActionTest {
             }
         }
 
-        compose.onNodeWithTag(ReaderFeedTags.more(row().id)).performClick()
+        compose.onNodeWithTag(ReaderFeedTags.more(row().id)).assertDoesNotExist()
+        compose.onNodeWithTag(ReaderFeedTags.row(row().id)).performTouchInput { longClick() }
         compose.onNodeWithText("View videos in Original artwork").performClick()
         compose.runOnIdle {
             assertEquals(1, videos)
@@ -58,7 +61,8 @@ class ThreadChatActionTest {
             }
         }
 
-        compose.onNodeWithTag(ReaderFeedTags.more(row().id)).performClick()
+        compose.onNodeWithTag(ReaderFeedTags.more(row().id)).assertDoesNotExist()
+        compose.onNodeWithTag(ReaderFeedTags.row(row().id)).performTouchInput { longClick() }
         compose.onNodeWithText("View replies to Original artwork").performClick()
         compose.runOnIdle { assertEquals(1, comments) }
     }

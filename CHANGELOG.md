@@ -13,6 +13,15 @@ All notable changes to Orbin are documented here. The format is based on
 ### Testing
 - Added regressions for the grid sizing rule across portrait, landscape, tablet, short and unmeasured windows, for catalog, Home and loading-grid layouts, and for sharp grid image requests on iOS.
 
+## [202-Arracacha] - 2026-11-12
+
+### Changed
+- Removed Home's per-thread three-dot button and its box in List and Grid views; long-press a thread or its preview to open the same options.
+
+### Testing
+- Covered long-press menus, direct taps, spoiler previews, source-qualified callbacks and accessible actions in List and Grid views.
+
+
 ## [201-Huauzontle] - 2026-11-12
 
 ### Changed
@@ -3043,7 +3052,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v202-Arracacha...HEAD
+[202-Arracacha]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...v202-Arracacha
 [201-Huauzontle]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...v201-Huauzontle
 [200-Shungiku]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...v200-Shungiku
 [199-Komatsuna]: https://github.com/Defuuls/Orbin/compare/v198-Celtuce...v199-Komatsuna
