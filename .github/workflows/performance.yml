@@ -40,11 +40,25 @@ jobs:
       - name: Verify benchmark report validator
         run: python -m unittest discover -s benchmark/tests
 
-  macrobenchmark:
-    name: Macrobenchmark metrics
+  measure:
+    name: Measure ${{ matrix.case }}
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Keep artifact transfer and the next method's ART reset on different emulators.
+    # Every existing method and measured iteration still runs; the aggregate requires all seven.
+    strategy:
+      fail-fast: false
+      max-parallel: 7
+      matrix:
+        case:
+          - coldStartup
+          - warmStartup
+          - catalogListScrollFrames
+          - catalogGridScrollFrames
+          - threadScrollFrames
+          - filesScrollFrames
+          - twoPaneScrollRetentionFrames
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -108,24 +122,64 @@ jobs:
           emulator-build: '16428233' # 37.2.12
           emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -show-kernel
           disable-animations: true
-          # Real MainActivity cold/warm startup and all five populated production-reader journeys.
+          # One unchanged method per fresh emulator: real MainActivity startup or a populated
+          # production-reader journey. Separate workers retain every measured iteration.
           # HOT stays available for physical-device runs: a hosted HOT start can relaunch no
           # Activity and produce no startup sample. Run one target variant, rather than both
           # benchmarkRelease and nonMinifiedRelease through connectedCheck.
           script: >-
             ./gradlew :benchmark:connectedBenchmarkReleaseAndroidTest
             -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR,DEBUGGABLE,NOT-PROFILEABLE
-            -Pandroid.testInstrumentationRunnerArguments.class=com.orbin.benchmark.AppPerformanceBenchmark#coldStartup,com.orbin.benchmark.AppPerformanceBenchmark#warmStartup,com.orbin.benchmark.AppPerformanceBenchmark#catalogListScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#catalogGridScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#threadScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#filesScrollFrames,com.orbin.benchmark.AppPerformanceBenchmark#twoPaneScrollRetentionFrames
-      - name: Validate populated journeys and finite frame samples
-        if: always()
-        run: python benchmark/validate_reports.py benchmark/build
-      - name: Upload benchmark reports
-        if: always()
+            '-Pandroid.testInstrumentationRunnerArguments.class=com.orbin.benchmark.AppPerformanceBenchmark#${{ matrix.case }}'
+      - name: Upload the measured case
+        if: success()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: macrobenchmark-results
+          name: macrobenchmark-case-${{ matrix.case }}
           path: |
             benchmark/build/outputs/connected_android_test_additional_output/**
             benchmark/build/reports/androidTests/**
             benchmark/build/outputs/androidTest-results/**
           if-no-files-found: error
+          overwrite: true
+      - name: Upload case diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macrobenchmark-diagnostics-${{ matrix.case }}
+          path: |
+            benchmark/build/reports/androidTests/**
+            benchmark/build/outputs/androidTest-results/**
+          if-no-files-found: warn
+          overwrite: true
+
+  macrobenchmark:
+    name: Macrobenchmark metrics
+    if: always()
+    needs: measure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require all seven measurement jobs
+        env:
+          MEASUREMENT_RESULT: ${{ needs.measure.result }}
+        run: test "$MEASUREMENT_RESULT" = success
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download this run's original case reports
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: macrobenchmark-case-*
+          path: downloaded-metrics
+          # Each case has the same report basenames. Preserve its directory and original bytes.
+          merge-multiple: false
+      - name: Validate all populated journeys and finite frame samples
+        run: python benchmark/validate_reports.py downloaded-metrics
+      - name: Upload validated original benchmark reports
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macrobenchmark-results
+          path: downloaded-metrics/**
+          if-no-files-found: error
+          overwrite: true

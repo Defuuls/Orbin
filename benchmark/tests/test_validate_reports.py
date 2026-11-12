@@ -49,8 +49,34 @@ class ValidateReportsTest(unittest.TestCase):
                 ET.SubElement(case, "skipped")
         ET.ElementTree(suite).write(self.root / "TEST-reader.xml")
 
+    def write_distributed_reports(self, *, omitted_case=None):
+        (self.root / "app-benchmarkData.json").unlink()
+        (self.root / "TEST-reader.xml").unlink()
+        for result in self.records:
+            name = result["name"]
+            if name == omitted_case:
+                continue
+            directory = self.root / f"macrobenchmark-case-{name}"
+            directory.mkdir()
+            (directory / "app-benchmarkData.json").write_text(json.dumps({"benchmarks": [result]}))
+            suite = ET.Element("testsuite", tests="1", failures="0", errors="0")
+            ET.SubElement(suite, "testcase", name=name, classname=BENCHMARK_CLASS)
+            ET.ElementTree(suite).write(directory / "TEST-reader.xml")
+
     def test_accepts_all_seven_measured_cases_and_signed_frame_overruns(self):
         self.assertEqual(7, validate_reports(self.root)["required_cases"])
+
+    def test_accepts_seven_original_case_directories_with_matching_report_basenames(self):
+        self.write_distributed_reports()
+        self.assertEqual(
+            {"required_cases": 7, "json_reports": 7, "xml_reports": 7},
+            validate_reports(self.root),
+        )
+
+    def test_missing_case_directory_cannot_pass_the_aggregate(self):
+        self.write_distributed_reports(omitted_case="threadScrollFrames")
+        with self.assertRaisesRegex(ReportError, "Missing benchmark metrics.*threadScrollFrames"):
+            validate_reports(self.root)
 
     def test_missing_case_fails(self):
         self.records.pop()

@@ -59,10 +59,39 @@ image, guards, cases, iterations and assertions remain unchanged. The first pinn
 no tests executed and no measurement/profile artifact was produced. Both workflows now keep only
 `-show-kernel`. A permanent repository guard rejects conflicting console flags; its five regression
 cases bring the passing script suite to 48 tests, with repository validation passed. The baseline
-job budget rises from 60 to 90 minutes to allow all six convergence cases without reducing
+shared-emulator job budget rose from 60 to 90 minutes to allow all six collection cases without reducing
 iterations. The corrected configuration completed all seven 0bc metric cases; that successful run
 exercises the pin without proving the cause of earlier failures. Complete profile generation is
 recorded below; reviewed files were copied and unsigned-release packaging passed locally.
+
+The later `9482cc6` shared-emulator attempts still lost ADB transport on this pin. The
+[metrics attempt](https://github.com/Defuuls/Orbin/actions/runs/43143896065/attempts/1)
+passed six methods, then the next thread method returned status -1 after 0.003s while the host
+pulled warm-startup traces. Guest output continued and the action subsequently stopped QEMU
+successfully, so this is not evidence of a QEMU crash. The separate
+[profile attempt](https://github.com/Defuuls/Orbin/actions/runs/43143896226/attempts/1)
+passed five collectors before Files returned status -1 after 0.004s. No complete replacement
+profile came from that attempt. These failures do not establish a renderer assertion, OOM or
+the cause of the ADB-session loss; the reviewed 0bc shipping files and unsigned packaging proof
+remain unchanged.
+
+CI now runs each of the seven metric methods and each of the six profile collectors on a fresh
+emulator. Cases, measured iterations, collection limits, API 35, emulator build, flags and journey
+guards are unchanged. All matrix cells must succeed before their stable aggregate gate can pass.
+The metrics aggregate downloads the current run's original case reports into separate directories
+and applies the existing seven-case sample validator without synthesizing JSON or XML. Profile
+workers clear old generated output; [their helper](profile_artifacts.py) verifies the exact successful case, fresh raw
+files, source/run/configuration identity and file hashes before the aggregate invokes the official
+AndroidX merge. Only the startup collector supplies startup rules. This is an isolation mitigation
+whose runtime result must be checked on the commit containing it at
+[PR 813 checks](https://github.com/Defuuls/Orbin/pull/813/checks); source and local validator checks
+do not establish a passing matrix run or physical-device smoothness.
+
+The separate `9482cc6` application checkpoint passed 1,230 unit cases, 25 device cases on each of
+API 31 and API 35, 32 native iOS cases and the installed-app Startup test (1/1, 231.208s).
+[The implementation record](../docs/design-system/IMPLEMENTATION.md#verification-record) retains
+the exact report formats, artifact provenance and physical-device limits. Those successes do not
+replace the required complete metric/profile aggregate results.
 
 Run all frame/startup benchmarks on a connected device:
 

@@ -36,73 +36,157 @@ permissions:
   contents: read
 
 jobs:
-  generate:
-    name: Generate baseline profile
+  collect:
+    name: Record profile (${{ matrix.case }})
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        case: [startup, catalogList, catalogGrid, thread, files, twoPane]
+    env:
+      PROFILE_CASE: ${{ matrix.case }}
+      PROFILE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
-
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-
-      - name: Record profile
+      - name: Prepare a fresh isolated case
+        run: |
+          set -euo pipefail
+          rm -rf benchmark/build/intermediates/baselineprofiles/nonMinifiedRelease \
+            benchmark/build/outputs/connected_android_test_additional_output/nonMinifiedRelease \
+            benchmark/build/outputs/androidTest-results/connected/nonMinifiedRelease \
+            app/src/release/generated/baselineProfiles
+          echo "PROFILE_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Record one profile case
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 35
-          # google_apis, not google_apis_playstore: only the former allows `adb root`, which the
-          # macrobenchmark tooling needs to read the compiled profile back off the device.
           target: google_apis
           arch: x86_64
-          # 37.2.13 has a reported process-exit graphics cleanup regression.
-          # https://github.com/zeroc-ice/ice/issues/6984
           emulator-build: '16428233' # 37.2.12
           force-avd-creation: false
-          # Use the same software renderer and fresh boot as the populated performance run.
           emulator-options: -no-snapshot -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none -show-kernel
           disable-animations: true
-          # One line: the action runs each line of `script:` as its own `sh -c`.
-          #
-          # `assembleDebug` first because profile generation builds the release-shaped
-          # `nonMinifiedRelease` variant, whose signing config borrows the debug key when no release
-          # secrets are present — and AGP only creates `debug.keystore` when it actually signs a
-          # debug build. On a fresh runner nothing has, so validateSigning fails on a missing file.
-          script: adb root; ./gradlew :app:assembleDebug && ./gradlew :app:generateReleaseBaselineProfile
-
-      - name: Show what was generated
+          # One folded line: the action executes each script line in a separate shell.
+          script: >-
+            adb root && timeout 60s adb wait-for-device &&
+            ./gradlew :app:assembleDebug &&
+            ./gradlew :app:generateReleaseBaselineProfile
+            '-Pandroid.testInstrumentationRunnerArguments.class=com.orbin.benchmark.BaselineProfileGenerator#${{ matrix.case }}'
+      - name: Validate and export the recorded case
         run: |
-          find app/src/release/generated -name '*.txt' -print -exec wc -l {} \; || true
+          python3 benchmark/profile_artifacts.py export \
+            --case "$PROFILE_CASE" \
+            --producer-dir benchmark/build/intermediates/baselineprofiles/nonMinifiedRelease \
+            --xml-dir benchmark/build/outputs/androidTest-results/connected/nonMinifiedRelease \
+            --output-dir "$RUNNER_TEMP/profile-case" \
+            --started-at "$PROFILE_STARTED_AT" \
+            --head-sha "$PROFILE_HEAD_SHA" \
+            --checkout-sha "$(git rev-parse HEAD)" \
+            --tree-sha "$(git rev-parse 'HEAD^{tree}')" \
+            --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
+            --api-level 35 --emulator-build 16428233
+      - name: Upload the validated case
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: baseline-profile-case-${{ matrix.case }}
+          path: ${{ runner.temp }}/profile-case/**
+          if-no-files-found: error
+          overwrite: true
+      - name: Upload case diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: baseline-profile-diagnostics-${{ matrix.case }}
+          path: |
+            benchmark/build/outputs/connected_android_test_additional_output/**
+            benchmark/build/reports/androidTests/**
+            benchmark/build/outputs/androidTest-results/**
+          if-no-files-found: warn
+          overwrite: true
 
-      # Uploaded before the pull request is attempted, not after. Every run of this workflow so far
-      # recorded a profile successfully and then discarded it, because opening the PR is the step
-      # that fails and it was the only thing carrying the result off the runner.
+  generate:
+    name: Generate baseline profile
+    needs: collect
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PROFILE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Require every case to pass
+        env:
+          COLLECTION_RESULT: ${{ needs.collect.result }}
+        run: |
+          if [ "$COLLECTION_RESULT" != success ]; then
+            echo '::error::All six isolated profile cases must pass before merging.'
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-jdk-gradle
+      - name: Download the six validated cases
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: baseline-profile-case-*
+          path: ${{ runner.temp }}/profile-cases
+          merge-multiple: false
+      - name: Validate provenance and restore genuine inputs
+        run: |
+          set -euo pipefail
+          rm -rf benchmark/build/intermediates/baselineprofiles/nonMinifiedRelease \
+            app/src/release/generated/baselineProfiles
+          python3 benchmark/profile_artifacts.py aggregate \
+            --artifacts-dir "$RUNNER_TEMP/profile-cases" \
+            --producer-dir benchmark/build/intermediates/baselineprofiles/nonMinifiedRelease \
+            --manifest "$RUNNER_TEMP/profile-aggregate.json" \
+            --head-sha "$PROFILE_HEAD_SHA" \
+            --checkout-sha "$(git rev-parse HEAD)" \
+            --tree-sha "$(git rev-parse 'HEAD^{tree}')" \
+            --run-id "$GITHUB_RUN_ID" --api-level 35 --emulator-build 16428233
+      - name: Merge with the official profile plugin
+        # Seed the debug key on this fresh worker too. The supported skip property disables
+        # connected/collection actions while retaining the verified producer inputs and merge.
+        run: >-
+          ./gradlew :app:assembleDebug &&
+          ./gradlew :app:generateReleaseBaselineProfile -Pandroidx.baselineprofile.skipgeneration=true
+      - name: Verify the merged shipping profile
+        run: |
+          python3 benchmark/profile_artifacts.py verify-generated \
+            --aggregate-manifest "$RUNNER_TEMP/profile-aggregate.json" \
+            --producer-dir benchmark/build/intermediates/baselineprofiles/nonMinifiedRelease \
+            --generated-dir app/src/release/generated/baselineProfiles \
+            --manifest "$RUNNER_TEMP/profile-provenance.json"
       - name: Upload the recorded profile
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: baseline-profile
           path: app/src/release/generated/**
           if-no-files-found: error
-
-      - name: Upload profile generation reports
+          overwrite: true
+      - name: Upload merged provenance
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: baseline-profile-reports
+          name: baseline-profile-provenance
           path: |
-            benchmark/build/outputs/connected_android_test_additional_output/**
-            benchmark/build/reports/androidTests/**
-            benchmark/build/outputs/androidTest-results/**
-          if-no-files-found: error
+            ${{ runner.temp }}/profile-aggregate.json
+            ${{ runner.temp }}/profile-provenance.json
+          if-no-files-found: warn
+          overwrite: true
 
   publish:
     name: Propose the generated profile
