@@ -38,9 +38,19 @@ Missing rows or stationary gestures fail the journey; no empty-data path skips a
 Fixture setup selects a 1080×1920 / 420dpi phone or 1280×800 / 160dpi wide window before launching
 an explicit Activity intent. Tests verify window-manager readback and actual measured pixel/dp
 dimensions, density, text scale, and pane widths. The wide catalog must be 420px, its divider 1px,
-and the detail pane 859px. Both tests restore display overrides afterward. The wide fixture checks
+and the detail pane 859px. Each case restores display overrides afterward. The wide fixture checks
 the same `showsTwoPanes` and `readerPaneWidths` rules as production. Use an English device
 locale when comparing user-visible fixture captures; the journey selectors use resource tags.
+
+Teardown resets size or density only when an override exists, then waits within a fixed bound for
+the physical `UiDevice` width/height and target-context density to settle, waits for idle, and
+asserts both overrides are cleared. This occurs outside collection and leaves startup, measured
+regions, cases, iterations, metrics and journey assertions unchanged. The change follows ADB
+transport loss after display reset in a profile attempt and a later performance run; the latter
+completed six cases before thread startup returned status -1 without complete benchmark JSON.
+The earlier f1 run's complete seven-case measurements remain valid historical evidence. Both
+benchmark APK variants and strict formatting/static checks passed locally; a fresh CI run is
+required to establish the hardening's runtime outcome.
 
 Run all frame/startup benchmarks on a connected device:
 

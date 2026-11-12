@@ -296,6 +296,57 @@ class OnboardingViewModelTest {
             assertThat(settings.current.onboardingCompleted).isFalse()
         }
 
+    @Test
+    fun `unfollowing a legacy favorite clears both stores before setup can complete`() =
+        runTest {
+            preferences.favorites.value = mapOf(provider.metadata.id to setOf(BoardId("g")))
+            preferences.subscribed.value = mapOf(provider.metadata.id to setOf(BoardId("g")))
+            val viewModel = viewModel()
+            advanceUntilIdle()
+            assertThat(viewModel.totalFollowing.value).isEqualTo(1)
+
+            viewModel.setSubscribed("g", false)
+            advanceUntilIdle()
+            viewModel.complete()
+            advanceUntilIdle()
+
+            assertThat(preferences.favorites.value[provider.metadata.id]).isEmpty()
+            assertThat(preferences.subscribed.value[provider.metadata.id]).isEmpty()
+            assertThat(viewModel.totalFollowing.value).isEqualTo(0)
+            assertThat(settings.current.onboardingCompleted).isFalse()
+        }
+
+    @Test
+    fun `restored hidden adult follows cannot unlock setup and visible choices remain available`() =
+        runTest {
+            settings.setHideNsfwBoards(true)
+            preferences.subscribed.value = mapOf(provider.metadata.id to setOf(BoardId("adult")))
+            val viewModel =
+                viewModel(
+                    FakeBoardRepository(
+                        listOf(
+                            Board(BoardId("g"), "Technology"),
+                            Board(BoardId("adult"), "Adult", isNsfw = true),
+                        ),
+                    ),
+                )
+            advanceUntilIdle()
+
+            val loaded = viewModel.boards.value as OnboardingBoardsState.Success
+            assertThat(loaded.boards.map { it.id.value }).containsExactly("g")
+            assertThat(viewModel.totalFollowing.value).isEqualTo(0)
+            viewModel.complete()
+            advanceUntilIdle()
+            assertThat(settings.current.onboardingCompleted).isFalse()
+
+            viewModel.setSubscribed("g", true)
+            advanceUntilIdle()
+            assertThat(viewModel.totalFollowing.value).isEqualTo(1)
+            viewModel.complete()
+            advanceUntilIdle()
+            assertThat(settings.current.onboardingCompleted).isTrue()
+        }
+
     private fun registry(vararg providers: ImageBoardProvider): ProviderRegistry =
         object : ProviderRegistry {
             override fun all(): List<ImageBoardProvider> = providers.toList()
@@ -334,7 +385,13 @@ class OnboardingViewModelTest {
             provider: ProviderId,
             board: BoardId,
             favorite: Boolean,
-        ) = Unit
+        ) {
+            beforeWrite()
+            favorites.update { all ->
+                val current = all[provider].orEmpty()
+                all + (provider to if (favorite) current + board else current - board)
+            }
+        }
 
         override suspend fun setSubscribedBoard(
             provider: ProviderId,

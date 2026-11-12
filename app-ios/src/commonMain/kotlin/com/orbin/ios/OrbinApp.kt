@@ -140,12 +140,18 @@ fun OrbinApp(
 @Composable
 private fun OnboardingDestination(browser: Browser) {
     val setup by browser.firstRun.state.collectAsState()
-    val boards by browser.boards.collectAsState()
+    val directory by browser.boardDirectory.collectAsState()
+    val settings by browser.settings.current.collectAsState()
     val followed by browser.followed.collectAsState()
     val site by browser.activeSite.collectAsState()
+    val boards = remember(directory, site) { directory.boardsOnSite(site) }
     val onSite =
-        remember(boards, site) {
-            (boards as? Load.Ready)?.value.orEmpty().filter { it.provider == site }
+        remember(boards, settings.hideNsfwBoards) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        }
+    val eligible =
+        remember(directory, followed, settings.hideNsfwBoards) {
+            directory.eligibleFollowing(followed, settings.hideNsfwBoards)
         }
     val byId = remember(onSite) { onSite.associateBy { it.board.id.value } }
     OnboardingScreen(
@@ -168,8 +174,8 @@ private fun OnboardingDestination(browser: Browser) {
                 }
             },
         following =
-            remember(followed, site) {
-                followed.filter { it.provider == site }.mapTo(mutableSetOf()) { it.board.value }
+            remember(eligible, site) {
+                eligible.filter { it.provider == site }.mapTo(mutableSetOf()) { it.board.value }
             },
         sites = remember { browser.sites.map { it.name } },
         selectedSite = browser.sites.indexOfFirst { it.id == site },
@@ -177,10 +183,10 @@ private fun OnboardingDestination(browser: Browser) {
         onFollow = { id, follow -> byId[id]?.let { browser.setFollowed(it, follow) } },
         onRetry = browser::retry,
         onStart = { browser.completeFirstRun() },
-        totalFollowing = followed.size,
+        totalFollowing = eligible.size,
         isSaving = setup.isSaving,
         errorMessage = setup.errorMessage,
-        canStart = setup.canStart,
+        canStart = setup.canStart && eligible.isNotEmpty(),
     )
 }
 

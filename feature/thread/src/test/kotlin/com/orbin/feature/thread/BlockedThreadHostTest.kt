@@ -29,9 +29,13 @@ import com.orbin.domain.usecase.ObserveThreadUseCase
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderAppBarTags
 import com.orbin.uinext.tokens.ReaderLightColors
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -40,6 +44,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.CoroutineContext
 
 /** Exercises the actual Android route host after policy blocks its opening post. */
 @RunWith(RobolectricTestRunner::class)
@@ -56,8 +62,23 @@ class BlockedThreadHostTest {
         viewModel?.viewModelScope?.cancel()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun aBlockedThreadKeepsItsGreenAppBarAndWorkingBackAction() {
+        val presentationScheduler = TestCoroutineScheduler()
+        val presentationQueued = AtomicBoolean()
+        val presentationDispatcher =
+            object : CoroutineDispatcher() {
+                private val worker = StandardTestDispatcher(presentationScheduler)
+
+                override fun dispatch(
+                    context: CoroutineContext,
+                    block: Runnable,
+                ) {
+                    presentationQueued.set(true)
+                    worker.dispatch(context, block)
+                }
+            }
         val key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(1))
         val blocked = Thread(key, Post(PostId(1), key.board, key.thread, isOriginalPost = true, subject = "gore"))
         val reader =
@@ -77,6 +98,7 @@ class BlockedThreadHostTest {
                 historyRepository = FakeHistoryRepository(),
                 settingsRepository = FakeSettingsRepository(),
                 savedThreadRepository = FakeSavedThreadRepository(),
+                presentationDispatcher = presentationDispatcher,
             )
         viewModel = reader
         var backs = 0
@@ -85,7 +107,12 @@ class BlockedThreadHostTest {
                 NextThreadScreen(onOpenMedia = {}, viewModel = reader, onBack = { backs++ })
             }
         }
-        composeRule.waitUntil { reader.uiState.value == ThreadUiState.Blocked }
+        // Compose starts the real host's subscription; explicitly drain its separate worker before
+        // waiting for the resulting Main publication and frame. Wall-clock polling cannot synchronize it.
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { assertEquals(true, presentationQueued.get()) }
+        presentationScheduler.runCurrent()
+        composeRule.runOnIdle { assertEquals(ThreadUiState.Blocked, reader.uiState.value) }
         composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Filtered thread")
         composeRule.onNodeWithText("This thread is caught by the built-in content filter.").assertIsDisplayed()
         composeRule.onNodeWithText("Retry").assertDoesNotExist()

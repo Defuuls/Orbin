@@ -6,7 +6,7 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-## [199-Komatsuna] - 2026-11-11
+## [199-Komatsuna] - 2026-11-12
 
 ### Added
 - Remembered List and Grid catalogs with a site-grouped board picker, search within the loaded catalog, sorting, and source-aware actions.
@@ -21,12 +21,15 @@ All notable changes to Orbin are documented here. The format is based on
 - Simplified Appearance to System, Light, or Dark with optional AMOLED and an app-wide Catalog view. Retired color-theme and tablet-column preferences; backups containing the removed color-theme format are refused before any data is restored.
 
 ### Fixed
+- Kept boards chosen during setup marked as followed in Boards; unfollowing now removes them from Following on both platforms and survives relaunches.
+- Applied restored board-visibility choices during setup and let iOS show an available site's boards while another site loads or fails.
 - Stopped obsolete catalog and thread loads when leaving a screen or hiding its pane; returning reuses loaded content, and refreshes retain loaded rows and the correct reading position.
 - Kept permanently filtered content out of reused thread data and prevented stale board or thread results from replacing the current selection.
 - Back closes an open drawer before leaving the reader, hidden drawers no longer expose controls to accessibility, and refresh-failure actions stay clear of system insets.
 - Reserved attachment preview space, requested thumbnails at their drawn size, and kept revealing spoilers separate from opening media.
 
 ### Testing
+- Verified setup and followed boards through site switching, relaunches, queued changes, and unavailable providers on Android and iOS.
 - Added reader navigation, layout, refresh retention, shared presentation, thumbnail, and accessibility regressions, plus populated catalog, thread, Files, and two-pane performance and profile journeys.
 - Added specification, token, and diagram checks and an iPhone/iPad reader checklist; shared logic tests run on the host while native UIKit and media tests remain on the iOS simulator.
 

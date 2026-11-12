@@ -70,7 +70,7 @@ class HomeSourceIdentityTest {
             runCurrent()
             assertThat(model.providerId.value).isEqualTo("bbwchan")
             assertThat(model.uiState.value).isEqualTo(HomeUiState.Loading)
-            model.setFavorite("g", true, sourceId = initial.providerId)
+            model.setFollowed("g", true, sourceId = initial.providerId)
             runCurrent()
             assertThat(favorites).containsExactly(ProviderId("fourchan"))
 

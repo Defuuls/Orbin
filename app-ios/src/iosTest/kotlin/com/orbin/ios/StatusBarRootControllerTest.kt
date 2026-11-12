@@ -2,6 +2,7 @@
 
 package com.orbin.ios
 
+import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
@@ -26,23 +27,45 @@ class StatusBarRootControllerTest {
         val root = StatusBarRootController(content, appearance)
         val unlocked = LockState(obscured = false)
         val media = Route.Media(ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(1)), 0)
+        val board = SiteBoard(media.thread.provider, "4chan", Board(media.thread.board, "Technology"))
+        val routes =
+            listOf(
+                Route.Feed,
+                Route.Boards,
+                Route.Watched,
+                Route.Saved,
+                Route.Search,
+                Route.Settings,
+                Route.Downloads,
+                Route.History,
+                Route.Catalog(board),
+                Route.BoardMedia(board),
+                Route.ThreadPage(media.thread),
+                media,
+                Route.ThreadVideos(media.thread),
+            )
 
-        appearance.setLightIcons(lightStatusBarIcons(Route.Feed, false, false, unlocked))
-        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
-        // Settings sits under the reader app bar like every other route, so its icons are light
-        // in the light theme too: the bar's ground is the app bar green, not the page.
-        appearance.setLightIcons(lightStatusBarIcons(Route.Settings, false, false, unlocked))
-        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
-        appearance.setLightIcons(lightStatusBarIcons(media, false, false, unlocked))
-        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
-        appearance.setLightIcons(lightStatusBarIcons(Route.ThreadVideos(media.thread), false, false, unlocked))
-        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
-        appearance.setLightIcons(lightStatusBarIcons(media, false, false, LockState(obscured = true)))
-        assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle())
-        appearance.setLightIcons(lightStatusBarIcons(Route.Feed, false, true, unlocked))
-        assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle())
-        appearance.setLightIcons(lightStatusBarIcons(Route.Settings, true, false, unlocked))
-        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
+        routes.forEach { route ->
+            // The reader app bar extends its green/dark ground beneath the status bar.
+            appearance.setLightIcons(lightStatusBarIcons(route, false, false, unlocked))
+            assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle(), "$route reader bar")
+            appearance.setLightIcons(lightStatusBarIcons(route, false, true, unlocked))
+            assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle(), "$route light setup")
+            listOf(LockState(locked = true, obscured = false), LockState(obscured = true)).forEach { cover ->
+                appearance.setLightIcons(lightStatusBarIcons(route, false, false, cover))
+                assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle(), "$route light $cover")
+            }
+            listOf(unlocked, LockState(locked = true, obscured = false), LockState(obscured = true)).forEach { cover ->
+                listOf(false, true).forEach { setup ->
+                    appearance.setLightIcons(lightStatusBarIcons(route, true, setup, cover))
+                    assertEquals(
+                        UIStatusBarStyleLightContent,
+                        root.preferredStatusBarStyle(),
+                        "$route dark $cover setup=$setup",
+                    )
+                }
+            }
+        }
         assertEquals(UIUserInterfaceStyle.UIUserInterfaceStyleUnspecified, root.overrideUserInterfaceStyle)
         assertEquals(UIUserInterfaceStyle.UIUserInterfaceStyleUnspecified, content.overrideUserInterfaceStyle)
     }

@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Condition
 import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
@@ -43,10 +44,41 @@ internal enum class ReaderJourney(
 }
 
 internal fun resetReaderWindow() {
-    val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
+    val device = UiDevice.getInstance(instrumentation)
     device.executeShellCommand("am force-stop $READER_PACKAGE")
-    device.executeShellCommand("wm size reset")
-    device.executeShellCommand("wm density reset")
+    val size = device.executeShellCommand("wm size")
+    val density = device.executeShellCommand("wm density")
+    val physicalSize = checkNotNull(PHYSICAL_WINDOW_SIZE.find(size)) { "Missing physical display size: $size" }
+    val widthPx = physicalSize.groupValues[1].toInt()
+    val heightPx = physicalSize.groupValues[2].toInt()
+    val densityDpi =
+        checkNotNull(PHYSICAL_WINDOW_DENSITY.find(density)) { "Missing physical display density: $density" }
+            .groupValues[1]
+            .toInt()
+    // Startup does not override the display. Avoid sending redundant configuration broadcasts.
+    if (size.contains("Override size:")) device.executeShellCommand("wm size reset")
+    if (density.contains("Override density:")) device.executeShellCommand("wm density reset")
+    val settled =
+        device.wait(
+            Condition<UiDevice, Boolean> { current ->
+                current.displayWidth == widthPx &&
+                    current.displayHeight == heightPx &&
+                    instrumentation.targetContext.resources.displayMetrics.densityDpi == densityDpi
+            },
+            WAIT_TIMEOUT_MS,
+        )
+    assertTrue("Physical display did not settle at ${widthPx}x$heightPx / ${densityDpi}dpi", settled == true)
+    // A shell reset returns before Launcher, System UI and the test process finish reconfiguration.
+    // Wait outside collection before the next test starts compiling or pulling its output.
+    device.waitForIdle(WAIT_TIMEOUT_MS)
+    val restoredSize = device.executeShellCommand("wm size")
+    val restoredDensity = device.executeShellCommand("wm density")
+    assertFalse("Window-size override remains after teardown: $restoredSize", restoredSize.contains("Override size:"))
+    assertFalse(
+        "Window-density override remains after teardown: $restoredDensity",
+        restoredDensity.contains("Override density:"),
+    )
 }
 
 /** Window overrides are outside the measured region and restored by each test's teardown. */
@@ -250,6 +282,8 @@ private fun MacrobenchmarkScope.fixtureStatus(): Map<String, String> =
 
 private val WINDOW_SIZE = Regex("(?:Physical|Override) size:\\s*(\\d+x\\d+)")
 private val WINDOW_DENSITY = Regex("(?:Physical|Override) density:\\s*(\\d+)")
+private val PHYSICAL_WINDOW_SIZE = Regex("Physical size:\\s*(\\d+)x(\\d+)")
+private val PHYSICAL_WINDOW_DENSITY = Regex("Physical density:\\s*(\\d+)")
 private const val DENSITY_BASE = 160.0
 private const val DP_PRECISION = 0.001
 private const val WIDE_CATALOG_PX = 420

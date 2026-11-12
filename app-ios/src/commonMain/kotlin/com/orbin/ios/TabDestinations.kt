@@ -38,13 +38,10 @@ import com.orbin.ios.resources.ios_collection_all_sites
 import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
-import com.orbin.ios.resources.ios_primary_boards
 import com.orbin.ios.resources.ios_primary_loading
-import com.orbin.ios.resources.ios_primary_retry
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
-import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextScaffold
@@ -242,44 +239,42 @@ internal fun FeedDestination(
 
 @Composable
 internal fun BoardsDestination(browser: Browser) {
-    val boards by browser.boards.collectAsState()
-    val favorites by browser.favorites.collectAsState()
+    val directory by browser.boardDirectory.collectAsState()
+    val followed by browser.followed.collectAsState()
     val unreachable by browser.unreachableSites.collectAsState()
     val site by browser.activeSite.collectAsState()
-    val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
-    PrimaryLoaded(browser, boards, stringResource(Res.string.ios_primary_boards), NextDestination.BOARDS) { all ->
-        // One site at a time, as Android's boards list; hidden NSFW boards leave it, as there.
-        val list =
-            remember(all, site, hideNsfw) {
-                all.filter { it.provider == site && !(hideNsfw && it.board.isNsfw) }
-            }
-        val byTile = remember(list) { list.associateBy { it.tileId } }
-        val sourceUnavailable = all.none { it.provider == site }
-        BoardsScreen(
-            hideRailOnScroll = false,
-            subtitle = boardsSubtitle(list.size, unreachable),
-            emptyMessage =
-                if (sourceUnavailable) {
-                    stringResource(Res.string.ios_boards_source_unavailable, browser.siteName(site))
-                } else {
-                    stringResource(Res.string.ios_boards_no_visible)
-                },
-            onRetry = if (sourceUnavailable) browser::retry else null,
-            boards =
-                remember(list, favorites) {
-                    list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in favorites) }
-                },
-            onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
-            onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFavorite(it, follow) } },
-            onOpenFeed = { browser.openTab(Route.Feed) },
-            onOpenDownloads = { browser.open(Route.Downloads) },
-            onOpenSaved = { browser.openTab(Route.Saved) },
-            onOpenWatched = { browser.openTab(Route.Watched) },
-            onOpenSearch = { browser.openTab(Route.Search) },
-            onOpenSettings = { browser.open(Route.Settings) },
-            headerContent = { SiteSwitcher(browser, site, gapAfter = ReaderSpace.gap) },
-        )
-    }
+    val settings by browser.settings.current.collectAsState()
+    val boards = remember(directory, site) { directory.boardsOnSite(site) }
+    // The selector remains available while the selected source loads or fails.
+    val list =
+        remember(boards, settings.hideNsfwBoards) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        }
+    val byTile = remember(list) { list.associateBy { it.tileId } }
+    BoardsScreen(
+        hideRailOnScroll = false,
+        subtitle = boardsSubtitle(list.size, unreachable),
+        emptyMessage =
+            when (boards) {
+                Load.Loading -> stringResource(Res.string.ios_primary_loading)
+                is Load.Failed -> stringResource(Res.string.ios_boards_source_unavailable, browser.siteName(site))
+                is Load.Ready -> stringResource(Res.string.ios_boards_no_visible)
+            },
+        onRetry = if (site in directory.failures) browser::retry else null,
+        boards =
+            remember(list, followed) {
+                list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in followed) }
+            },
+        onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
+        onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
+        onOpenFeed = { browser.openTab(Route.Feed) },
+        onOpenDownloads = { browser.open(Route.Downloads) },
+        onOpenSaved = { browser.openTab(Route.Saved) },
+        onOpenWatched = { browser.openTab(Route.Watched) },
+        onOpenSearch = { browser.openTab(Route.Search) },
+        onOpenSettings = { browser.open(Route.Settings) },
+        headerContent = { SiteSwitcher(browser, site, gapAfter = ReaderSpace.gap) },
+    )
 }
 
 /** Board directory source selector. Home adds an All sites choice separately. */
@@ -625,28 +620,4 @@ internal fun ThreadCollectionsDestination(
         onDestination = if (isTab) browser::openDestination else null,
         selectedDestination = if (route == Route.Watched) NextDestination.WATCHED else NextDestination.SAVED,
     )
-}
-
-/** A network failure keeps the root frame and its Menu available. */
-@Composable
-private fun <T> PrimaryLoaded(
-    browser: Browser,
-    load: Load<T>,
-    title: String,
-    destination: NextDestination,
-    content: @Composable (T) -> Unit,
-) {
-    when (load) {
-        is Load.Ready -> content(load.value)
-        else ->
-            MessageScreen(
-                title = title,
-                subtitle = if (load is Load.Failed) load.message else stringResource(Res.string.ios_primary_loading),
-                skeleton = load is Load.Loading,
-                actionLabel = if (load is Load.Failed) stringResource(Res.string.ios_primary_retry) else null,
-                onAction = browser::retry,
-                destination = destination,
-                onDestination = browser::openDestination,
-            )
-    }
 }

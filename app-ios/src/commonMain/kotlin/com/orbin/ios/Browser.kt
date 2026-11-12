@@ -260,6 +260,9 @@ class Browser(
     private val _unreachableSites = MutableStateFlow<List<String>>(emptyList())
     private val feedDirectory =
         MutableStateFlow(HomeFeedDirectory(loading = providers.mapTo(mutableSetOf()) { it.metadata.id }))
+
+    /** Per-source directory progress lets a ready source remain usable while another loads. */
+    internal val boardDirectory: StateFlow<HomeFeedDirectory> = feedDirectory.asStateFlow()
     private var boardLoadJob: Job? = null
     private var boardLoadGeneration = 0
     private val boardPublication = Mutex()
@@ -393,17 +396,27 @@ class Browser(
         follow: Boolean,
     ) {
         Haptics.light()
-        firstRun.updateFollow { boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow) }
+        firstRun.updateFollow {
+            boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow)
+            if (!follow) boardPreferences.setFavoriteBoard(board.provider, board.board.id, false)
+        }
     }
 
     /** Starts the initialized feed across all sites after setup's last board edit has persisted. */
     fun completeFirstRun(): Job =
-        firstRun.complete {
-            followed.first { it.isNotEmpty() }
-            _feedSite.value = null
-            _backStack.value = listOf(Route.Feed)
-            cancelHiddenPages()
-            loadFeed(force = true)
+        scope.launch {
+            val savedFollows = followedBoards.first()
+            if (feedDirectory.value.eligibleFollowing(savedFollows, settings.current.value.hideNsfwBoards).isEmpty()) {
+                return@launch
+            }
+            firstRun
+                .complete {
+                    followed.first { it.isNotEmpty() }
+                    _feedSite.value = null
+                    _backStack.value = listOf(Route.Feed)
+                    cancelHiddenPages()
+                    loadFeed(force = true)
+                }.join()
         }
 
     /** Every thread the reader has opened, on any board, for the feed's read state. */
