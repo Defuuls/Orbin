@@ -23,6 +23,8 @@ on:
       - 'media/**'
       - 'ui-next/**'
       - '.github/workflows/baseline-profile.yml'
+      - 'scripts/ensure_rooted_emulator.sh'
+      - 'scripts/tests/test_rooted_emulator.py'
   workflow_dispatch:
   schedule:
     # 10:17 UTC on the 1st — odd minute to miss the top-of-hour rush.
