@@ -1,0 +1,93 @@
+name: Retry TestFlight notes
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: Release name from the changelog, such as 202-Arracacha.
+        type: string
+        required: true
+      marketing:
+        description: Uploaded TestFlight version, such as 202.
+        type: string
+        required: true
+      build:
+        description: Existing uploaded build, such as 220.202611121516.
+        type: string
+        required: true
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  notes:
+    name: Update an uploaded build's testing notes
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      VERSION_NAME: ${{ inputs.version_name }}
+      MARKETING_VERSION: ${{ inputs.marketing }}
+      BUILD_NUMBER: ${{ inputs.build }}
+      BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'io.github.defuuls.orbin' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate the release and uploaded build
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import re
+
+          version = os.environ["VERSION_NAME"]
+          marketing = os.environ["MARKETING_VERSION"]
+          build = os.environ["BUILD_NUMBER"]
+          if not re.fullmatch(r"[1-9][0-9]*", marketing) or not version.startswith(marketing + "-"):
+              raise SystemExit("The release name and marketing version must agree.")
+          if not re.fullmatch(r"[1-9][0-9]*\.[0-9]{12}", build):
+              raise SystemExit("Provide the full existing Orbin build number.")
+          header = "## [" + version + "]"
+          lines = Path("CHANGELOG.md").read_text(encoding="utf-8").splitlines()
+          if not any(line == header or line.startswith(header + " ") for line in lines):
+              raise SystemExit("The exact release must have a changelog section.")
+          print(f"Retry notes for {version} ({marketing}/{build}).")
+          PY
+          python3 scripts/testflight_notes.py --version-name "$VERSION_NAME" --print
+
+      # Dependency installation runs before the App Store Connect key is available.
+      - name: Install the notes script's dependencies
+        run: |
+          python3 -m venv "$RUNNER_TEMP/notes-venv"
+          "$RUNNER_TEMP/notes-venv/bin/pip" install --quiet "pyjwt[crypto]==2.10.1"
+
+      - name: Set What to Test for the uploaded build
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$KEY_ID" || -z "$ISSUER_ID" || -z "$API_KEY" ]]; then
+            echo "App Store Connect API credentials are required." >&2
+            exit 1
+          fi
+          export API_KEY_PATH="$RUNNER_TEMP/AuthKey_${KEY_ID}.p8"
+          trap 'rm -f "$API_KEY_PATH"' EXIT
+          (umask 077 && printf '%s\n' "$API_KEY" > "$API_KEY_PATH")
+          "$RUNNER_TEMP/notes-venv/bin/python" scripts/testflight_notes.py \
+            --version-name "$VERSION_NAME" \
+            --marketing "$MARKETING_VERSION" \
+            --build "$BUILD_NUMBER" \
+            --bundle-id "$BUNDLE_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8
