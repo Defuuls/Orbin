@@ -60,7 +60,9 @@ no tests executed and no measurement/profile artifact was produced. Both workflo
 `-show-kernel`. A permanent repository guard rejects conflicting console flags; its five regression
 cases bring the passing script suite to 48 tests, with repository validation passed. The baseline
 job budget rises from 60 to 90 minutes to allow all six convergence cases without reducing
-iterations. The pin remains untested by a completed runtime journey and is not a proven diagnosis.
+iterations. The corrected configuration completed all seven 0bc metric cases; that successful run
+exercises the pin without proving the cause of earlier failures. Complete profile generation is
+recorded below; reviewed files were copied and unsigned-release packaging passed locally.
 
 Run all frame/startup benchmarks on a connected device:
 
@@ -83,6 +85,15 @@ python benchmark/validate_reports.py path/to/benchmark/build
 python -m unittest discover -s benchmark/tests
 ```
 
+The verified [0bc metrics run](https://github.com/Defuuls/Orbin/actions/runs/43135470936/job/130909649235)
+booted emulator 37.2.12/build 16428233 and passed all seven cases. [Artifact 13907969224](https://github.com/Defuuls/Orbin/actions/runs/43135470936/artifacts/13907969224)
+contains the original JSON/XML: cold/warm medians were 426.36/189.26ms; all five renderer cases
+have five finite, nonempty frame iterations. Event source `0bc6b22a0f3d8b5e40634cab897f2a80e0f63ef8`
+and synthetic checkout `7af339359e2555c40c2b247444c992aaaf08e6bc` share tree
+`2020f0d9b82a870b284c4a57991f3a65466823dc`. The [implementation record](../docs/design-system/IMPLEMENTATION.md#measured-performance-checkpoints)
+contains the audited CPU/overrun quantiles and historical f1 checkpoint. Positive overruns are
+missed deadlines on a software emulator, not proof of hardware smoothness or a causal speedup.
+
 Generate a shipping baseline profile on a rooted API 35 `google_apis` emulator or suitable device:
 
 ```bash
@@ -99,6 +110,35 @@ Relevant pull requests run the rooted generation workflow and upload a `baseline
 artifact from a read-only generation job. Monthly/manual runs use a separate write-scoped job for
 the draft PR publisher on `automation/baseline-profile`. A successful artifact must be generated and reviewed before
 claiming the committed profile is current; editing fixture sources does not regenerate it.
+
+The [0bc profile generation](https://github.com/Defuuls/Orbin/actions/runs/43135470894/job/130909649140),
+attempt 1, completed actual collection/merge/generation on emulator 37.2.12/build 16428233.
+[Generated artifact 13910396463](https://github.com/Defuuls/Orbin/actions/runs/43135470894/artifacts/13910396463)
+and [reports 13910331427](https://github.com/Defuuls/Orbin/actions/runs/43135470894/artifacts/13910331427)
+come from the same event source, synthetic checkout and tree recorded for the metrics above.
+All six required generator cases passed with no failures/errors/skips among them. Thread reached
+the unchanged 15-iteration limit and logged an unstable final iteration; the standard collector/test
+still passed and produced merged output. This does not establish convergence of all six cases.
+The combined XML has 14 cases, with eight unrelated macrobenchmark cases intentionally skipped by enabledRules;
+this is separate from the full seven-case metrics run, which had no skips.
+
+| Generated file | Bytes | Lines | SHA-256 |
+| --- | ---: | ---: | --- |
+| baseline-prof.txt | 3,259,902 | 32,332 | `a4e3eacf6ea9bf855259e4ac56374e252ceeef3cb5d59c12c22d603a872b14fa` |
+| startup-prof.txt | 2,581,159 | 26,580 | `14514b3bb1bd5e8cf691183caf6767e9d0247105a84c9a743a85ecd41d3380d9` |
+
+The baseline contains production reader rules; both files exclude benchmark fixture rules.
+[Descriptor counts and provenance](../docs/design-system/IMPLEMENTATION.md#generated-profile-artifact)
+are recorded separately from integration: both reviewed files were copied byte-for-byte into the
+repository and their hashes verified. Unsigned-release packaging passed in 2m 24s with
+`:app:assembleRelease -Porbin.unsignedRelease=true -Porbin.warningsAsErrors=true`; actual merge,
+minification, ART-profile compilation and packaging executed. The version 199/code 217 unsigned APK
+is 16,313,250 bytes, SHA-256
+`5e6127a6a0e981f8ba4efe3ca8907e4938ad38d4083756a622a9d741535056cd`. Its actual manifest has
+one MainActivity MAIN/LAUNCHER and no fixture; uncompressed baseline.prof/baseline.profm assets
+are 16,508/1,030 bytes with valid headers, and both DM sidecars are nonempty. Before merge,
+require green checks on the profile/documentation commit at [PR 813 checks](https://github.com/Defuuls/Orbin/pull/813/checks).
+Unsigned packaging does not establish signing, installation or physical-device results.
 
 The old `subscribedFeedScrollFrames` case is replaced by `catalogListScrollFrames`,
 `catalogGridScrollFrames`, `threadScrollFrames`, `filesScrollFrames`, and
