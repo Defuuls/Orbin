@@ -54,8 +54,13 @@ run still lost transport after startup and the teardown guard passed without res
 display reset is not established as the primary cause. Both long workflows now pin emulator
 build `16428233` (37.2.12), a controlled rollback from 37.2.13, whose process-exit GLES cleanup
 regression is [reported upstream](https://github.com/zeroc-ice/ice/issues/6984). API 35, system
-image, guards, cases, iterations and assertions remain unchanged; kernel/error-log capture is
-added. This version pin awaits fresh runtime evidence and is not a proven diagnosis.
+image, guards, cases, iterations and assertions remain unchanged. The first pinned runs verified
+37.2.12, then QEMU exited before boot because `-show-kernel` and `-logcat` both claimed stdio;
+no tests executed and no measurement/profile artifact was produced. Both workflows now keep only
+`-show-kernel`. A permanent repository guard rejects conflicting console flags; its five regression
+cases bring the passing script suite to 48 tests, with repository validation passed. The baseline
+job budget rises from 60 to 90 minutes to allow all six convergence cases without reducing
+iterations. The pin remains untested by a completed runtime journey and is not a proven diagnosis.
 
 Run all frame/startup benchmarks on a connected device:
 

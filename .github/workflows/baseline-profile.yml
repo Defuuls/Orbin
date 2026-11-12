@@ -39,7 +39,7 @@ jobs:
   generate:
     name: Generate baseline profile
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -69,7 +69,7 @@ jobs:
           emulator-build: '16428233' # 37.2.12
           force-avd-creation: false
           # Use the same software renderer and fresh boot as the populated performance run.
-          emulator-options: -no-snapshot -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none -show-kernel -logcat *:E
+          emulator-options: -no-snapshot -no-window -gpu swiftshader -noaudio -no-boot-anim -camera-back none -show-kernel
           disable-animations: true
           # One line: the action runs each line of `script:` as its own `sh -c`.
           #
