@@ -1,14 +1,19 @@
 package com.orbin.ios
 
-/** Immersive routes have black chrome; onboarding and privacy covers use the selected palette. */
+/** Reader app bars and immersive routes use light icons; privacy covers use their selected palette. */
 internal fun lightStatusBarIcons(
     route: Route,
     darkTheme: Boolean,
     firstRun: Boolean,
     lockState: LockState,
-): Boolean =
-    darkTheme ||
-        (!firstRun && !lockState.locked && !lockState.obscured && route.immersive)
+): Boolean = darkTheme || (!firstRun && !lockState.locked && !lockState.obscured && route.hasReaderChrome)
 
-private val Route.immersive: Boolean
-    get() = this == Route.Feed || this is Route.Media || this is Route.ThreadVideos
+private val Route.hasReaderChrome: Boolean
+    get() =
+        when (this) {
+            Route.Feed, Route.Boards, Route.Watched, Route.Saved, Route.Search,
+            Route.Settings, Route.Downloads, Route.History,
+            is Route.Catalog, is Route.BoardMedia, is Route.ThreadPage,
+            is Route.Media, is Route.ThreadVideos,
+            -> true
+        }

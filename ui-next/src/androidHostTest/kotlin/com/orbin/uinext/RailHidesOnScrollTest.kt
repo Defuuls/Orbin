@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -20,30 +21,23 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Fixed TikTok navigation survives paging; secondary catalogs retain their scroll reporting. */
+/** The fixed app bar keeps drawer navigation reachable while Home pages scroll. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class RailHidesOnScrollTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /** Replaces `TikTok navigation remains reachable while paging even with legacy hide preference`. */
     @Test
-    fun `TikTok navigation remains reachable while paging even with legacy hide preference`() {
-        composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenSaved = {}, hideRailOnScroll = true) }
-        }
-        composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
-        scrollFeedDown()
-        composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
+    fun `the drawer opens Saved after paging with the legacy hide preference enabled`() {
+        assertSavedDrawerReachableAfterPaging(hidePreference = true)
     }
 
+    /** Replaces `TikTok navigation remains reachable when the legacy hide preference is off`. */
     @Test
-    fun `TikTok navigation remains reachable when the legacy hide preference is off`() {
-        composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenSaved = {}, hideRailOnScroll = false) }
-        }
-        scrollFeedDown()
-        composeRule.onNodeWithContentDescription(SAVED_TAB).assertExists()
+    fun `the drawer opens Saved after paging with the legacy hide preference disabled`() {
+        assertSavedDrawerReachableAfterPaging(hidePreference = false)
     }
 
     @Test
@@ -61,10 +55,10 @@ class RailHidesOnScrollTest {
         composeRule.onAllNodesWithText("All media").assertCountEquals(1)
     }
 
-    /** The screen reports the change, so the shell can take the system bars with it. */
+    /** The catalog has no chrome that hides: its app bar actions stay reachable mid-scroll. */
     @Test
-    fun `a screen tells the shell when its chrome goes away`() {
-        val reported = mutableListOf<Boolean>()
+    fun `a catalog keeps its app bar actions after scrolling`() {
+        var reloads = 0
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
@@ -72,14 +66,32 @@ class RailHidesOnScrollTest {
                     description = "Technology",
                     itemCount = ROWS.size,
                     rowAt = { ROWS.getOrNull(it) },
-                    hideRailOnScroll = true,
-                    onChromeVisibleChange = { reported += it },
+                    onReload = { reloads += 1 },
                 )
             }
         }
         composeRule.onNode(verticalScrollAction()).performTouchInput { swipeUp() }
         composeRule.waitForIdle()
-        assert(reported.contains(false)) { "expected the screen to report hidden chrome, got $reported" }
+        composeRule.onNodeWithContentDescription("Reload").assertIsDisplayed().performClick()
+        assertTrue("expected one reload, got $reloads", reloads == 1)
+    }
+
+    private fun assertSavedDrawerReachableAfterPaging(hidePreference: Boolean) {
+        var savedOpens = 0
+        composeRule.setContent {
+            NextTheme { FeedScreen(rows = ROWS, onOpenSaved = { savedOpens++ }, hideRailOnScroll = hidePreference) }
+        }
+        composeRule.onNodeWithContentDescription("Menu").assertIsDisplayed()
+        scrollFeedDown()
+        composeRule.onNodeWithContentDescription("Menu").assertIsDisplayed().performClick()
+        composeRule
+            .onNodeWithTag(
+                ReaderDrawerTags.ENTRY + NextDestination.SAVED.name,
+            ).assertIsDisplayed()
+            .performClick()
+        composeRule.waitForIdle()
+        assertTrue("Saved must remain wired after Home scrolls", savedOpens == 1)
+        composeRule.onNodeWithText("Thread number 13").assertIsDisplayed()
     }
 
     private fun scrollFeedDown() {
@@ -95,8 +107,6 @@ class RailHidesOnScrollTest {
         hasScrollAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange)
 
     private companion object {
-        const val SAVED_TAB = "Saved"
-
         val ROWS =
             (1..30).map { index ->
                 FeedRow(

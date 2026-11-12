@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
@@ -36,15 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.collection_back
 import com.orbin.uinext.resources.collection_empty
 import com.orbin.uinext.resources.tiktok_collection_boards
 import com.orbin.uinext.resources.tiktok_collection_sites
@@ -77,15 +73,20 @@ fun ThreadCollectionScreen(
     NextScaffold(
         where = title,
         modifier = modifier,
-        destination = selectedDestination.takeIf { onDestination != null },
+        destination = selectedDestination.takeIf { onBack == null },
         onDestination = onDestination,
+        onBack = onBack,
+        actions =
+            onSettings
+                ?.let {
+                    listOf(ReaderAction(ReaderIcons.Settings, stringResource(Res.string.tiktok_secondary_settings), it))
+                }.orEmpty(),
     ) { padding ->
         Column(
             Modifier.fillMaxSize().windowInsetsPadding(
-                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
             ),
         ) {
-            CollectionHeader(title, onBack, onSettings)
             if (selectedDestination == NextDestination.SAVED && onBack == null) {
                 SavedCollection(rows, onOpen, padding)
             } else if (rows.isEmpty()) {
@@ -98,36 +99,6 @@ fun ThreadCollectionScreen(
                     items(rows, key = { it.id }) { row -> CollectionActivityRow(row, onOpen) }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun CollectionHeader(
-    title: String,
-    onBack: (() -> Unit)?,
-    onSettings: (() -> Unit)?,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (onBack != null) {
-            NextIconAction(ReaderIcons.Back, stringResource(Res.string.collection_back), onBack)
-        } else {
-            Spacer(Modifier.size(MIN_TOUCH_TARGET))
-        }
-        Text(
-            title,
-            style = NextType.titleLarge.copy(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold),
-            color = next.ink,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f).padding(vertical = 8.dp).semantics { heading() },
-        )
-        if (onSettings != null) {
-            NextIconAction(ReaderIcons.Menu, stringResource(Res.string.tiktok_secondary_settings), onSettings)
-        } else {
-            Spacer(Modifier.size(MIN_TOUCH_TARGET))
         }
     }
 }

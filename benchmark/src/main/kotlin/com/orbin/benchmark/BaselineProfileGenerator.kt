@@ -1,53 +1,58 @@
 package com.orbin.benchmark
 
 import androidx.benchmark.macro.junit4.BaselineProfileRule
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
-import androidx.test.uiautomator.Until
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
-private const val PACKAGE_NAME = "com.orbin.app"
-private const val WAIT_TIMEOUT_MS = 10_000L
-
 /**
- * Records the classes and methods used on Orbin's startup path so ART can compile them ahead of
- * time, rather than interpreting them on a user's first launch.
- *
- * This needs real hardware — a rooted emulator or an unlocked physical device — so it cannot run
- * in CI and is not wired into any CI workflow. Run it deliberately:
- *
- * ```
- * ./gradlew :app:generateReleaseBaselineProfile
- * ```
- *
- * The result lands in `app/src/release/generated/baselineProfiles/` and is **committed**, because
- * nothing rebuilds it automatically. Re-record it when startup or the feed changes shape; a stale
- * profile is not harmful, only progressively less useful.
+ * Records real launcher startup and the same populated reader journeys as the frame benchmarks.
+ * Rooted API 35 CI runs on relevant PRs, monthly, and manually; PR runs upload artifacts only.
+ * Fixture orchestration classes are filtered from the shipping profile at collection and merge.
  */
 class BaselineProfileGenerator {
     @get:Rule
     val rule = BaselineProfileRule()
 
+    @After
+    fun restoreWindow() = resetReaderWindow()
+
     @Test
-    fun startupAndFeed() {
-        rule.collect(packageName = PACKAGE_NAME) {
+    fun startup() {
+        rule.collect(
+            packageName = READER_PACKAGE,
+            includeInStartupProfile = true,
+            filterPredicate = ::shippingProfileRule,
+        ) {
             pressHome()
             startActivityAndWait()
-
-            // Startup alone would profile a screen the user leaves immediately. The subscribed
-            // feed is where they land and scroll, so its first frames belong in the profile too.
-            device.wait(Until.hasObject(By.pkg(PACKAGE_NAME).depth(0)), WAIT_TIMEOUT_MS)
-            device.findObject(By.scrollable(true))?.let { feed ->
-                repeat(SCROLL_PASSES) {
-                    feed.fling(Direction.DOWN)
-                    device.waitForIdle()
-                }
-            }
         }
     }
 
-    private companion object {
-        const val SCROLL_PASSES = 3
+    @Test
+    fun catalogList() = collectReader(ReaderJourney.LIST)
+
+    @Test
+    fun catalogGrid() = collectReader(ReaderJourney.GRID)
+
+    @Test
+    fun thread() = collectReader(ReaderJourney.THREAD)
+
+    @Test
+    fun files() = collectReader(ReaderJourney.FILES)
+
+    @Test
+    fun twoPane() = collectReader(ReaderJourney.TWO_PANE)
+
+    private fun collectReader(journey: ReaderJourney) {
+        rule.collect(
+            packageName = READER_PACKAGE,
+            filterPredicate = ::shippingProfileRule,
+        ) {
+            startReaderJourney(journey)
+            exerciseReaderJourney(journey)
+        }
     }
 }
+
+private fun shippingProfileRule(rule: String): Boolean = !rule.contains("Lcom/orbin/app/benchmark/")

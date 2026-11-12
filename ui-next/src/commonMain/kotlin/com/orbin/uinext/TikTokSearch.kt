@@ -81,7 +81,14 @@ internal fun TikTokSearchScreen(
                 .fillMaxSize()
                 .background(next.background)
                 .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    WindowInsets.safeDrawing.only(
+                        if (LocalReaderFramePresent.current) {
+                            WindowInsetsSides.Horizontal
+                        } else {
+                            WindowInsetsSides.Top +
+                                WindowInsetsSides.Horizontal
+                        },
+                    ),
                 ),
     ) {
         SearchNavigationBar(query, onQueryChange, onSearch, onBack)
@@ -114,7 +121,7 @@ private fun SearchNavigationBar(
         val stackAction = maxWidth < 360.dp && LocalDensity.current.fontScale >= 1.6f
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (onBack != null) {
+                if (onBack != null && !LocalReaderFramePresent.current) {
                     NextIconAction(
                         ReaderIcons.Back,
                         stringResource(Res.string.social_settings_back),
@@ -152,7 +159,7 @@ private fun SearchSubmit(onSearch: () -> Unit) {
             stringResource(Res.string.tiktok_search_submit),
             style = NextType.body.copy(fontWeight = FontWeight.SemiBold),
             // The brand pink remains on non-text controls; this shade keeps small text AA on white.
-            color = if (next.dark) TikTokDesign.Pink else Color(0xFFE11D48),
+            color = reader.accent,
         )
     }
 }

@@ -272,8 +272,13 @@ class BrowserTest {
                 }
             browser.openBoard(g)
             browser.catalog.settled()
+            val emptyReader = boardReaderRoute(browser.backStack.value)!!
+            assertNull(emptyReader.thread)
             browser.openThread(ThreadKey(g.provider, g.board.id, ThreadId(7)))
             browser.thread.settled()
+            val selectedReader = boardReaderRoute(browser.backStack.value)!!
+            assertEquals(emptyReader.catalog.stateKey, selectedReader.catalog.stateKey)
+            assertEquals(ThreadId(7), selectedReader.thread?.key?.thread)
             val before = requested.size
 
             browser.openMedia(0)
@@ -281,10 +286,16 @@ class BrowserTest {
             assertTrue(browser.back(), "viewer → thread")
             assertTrue(browser.back(), "thread → catalog")
             assertIs<Load.Ready<*>>(browser.catalog.value)
+            val closedReader = boardReaderRoute(browser.backStack.value)!!
+            assertEquals(emptyReader.catalog.stateKey, closedReader.catalog.stateKey)
+            assertNull(closedReader.thread)
             assertEquals(before, requested.size, "nothing was fetched again")
 
+            val retained = browser.catalog.value
             browser.retry()
-            browser.catalog.settled()
+            assertSame(retained, browser.catalog.value, "retry retains the loaded catalog while it fetches")
+            browser.catalogRefreshing.first { !it }
+            assertIs<Load.Ready<*>>(browser.catalog.value)
             assertEquals(before + 1, requested.size, "retry always fetches")
         }
 
@@ -298,6 +309,9 @@ class BrowserTest {
             val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to mediaThread))
             browser.openThread(WATCHED_KEY)
             browser.thread.settled()
+            // Startup loads both directories alongside the thread. Finish that fixture work
+            // before counting requests caused by viewer selection.
+            browser.boards.settled()
             browser.openMedia(0)
             val route = assertIs<Route.Media>(browser.backStack.value.last())
             val originalStack = browser.backStack.value

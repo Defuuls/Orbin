@@ -1,6 +1,8 @@
 package com.orbin.core.model
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 /**
  * A portable snapshot of the user data that is expensive to recreate by hand.
@@ -11,9 +13,9 @@ import kotlinx.serialization.Serializable
  * hypothetical the moment a bug forces one. This document is the manual alternative: the user
  * exports it to a file they control, and imports it after reinstalling.
  *
- * Every field carries a default and unknown keys are ignored on read, so a backup written by a
- * newer build still restores on an older one (dropping what it does not understand) and a backup
- * written by an older build still restores on a newer one (defaulting what it lacks).
+ * Every field carries a default and unknown keys are ignored on read. Older backups default what
+ * they lack, except those containing a removed color theme: [decodeBackupDocument] refuses those
+ * before any part of the backup can be applied.
  */
 @Serializable
 data class BackupDocument(
@@ -32,6 +34,16 @@ data class BackupDocument(
         /** Bump only for a change old builds cannot safely read; additive fields do not need it. */
         const val CURRENT_FORMAT_VERSION = 1
     }
+}
+
+/** Validates compatibility before deserializing settings or allowing a restore to mutate data. */
+fun Json.decodeBackupDocument(contents: String): BackupDocument {
+    val document = parseToJsonElement(contents)
+    val settings = (document as? JsonObject)?.get("settings") as? JsonObject
+    require(settings?.keys?.any { it == "colorTheme" || it == "color_theme" } != true) {
+        "This backup was made by an older version of Orbin and cannot be restored."
+    }
+    return decodeFromJsonElement(BackupDocument.serializer(), document)
 }
 
 /** A board identified by the provider that serves it, since board ids collide across providers. */

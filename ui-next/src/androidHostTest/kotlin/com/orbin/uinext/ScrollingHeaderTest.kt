@@ -3,9 +3,11 @@ package com.orbin.uinext
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
@@ -51,7 +53,7 @@ class ScrollingHeaderTest {
     }
 
     @Test
-    fun `the board header scrolls away with the catalogue`() {
+    fun `the catalog app bar stays in place while the threads scroll`() {
         val rows = rows()
         composeRule.setContent {
             NextTheme {
@@ -60,15 +62,17 @@ class ScrollingHeaderTest {
                     description = "Technology",
                     itemCount = rows.size,
                     rowAt = { index -> rows.getOrNull(index) },
-                    showRail = false,
                 )
             }
         }
 
         composeRule.onNodeWithText("Technology").assertIsDisplayed()
-        scrollToLastRow()
+        composeRule
+            .onNodeWithTag(CatalogTags.GRID)
+            .performScrollToNode(hasContentDescription(LAST_SUBJECT, substring = true))
 
-        composeRule.onNodeWithText("Technology").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(LAST_SUBJECT, substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Technology").assertIsDisplayed()
     }
 
     @Test
@@ -106,9 +110,6 @@ class ScrollingHeaderTest {
         composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
         composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
     }
-
-    private fun scrollToLastRow() =
-        composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_SUBJECT))
 
     private fun rows() =
         List(ROW_COUNT) { index ->

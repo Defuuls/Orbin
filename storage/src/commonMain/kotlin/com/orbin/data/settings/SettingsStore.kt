@@ -7,10 +7,9 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
-import com.orbin.core.model.DEFAULT_TABLET_CATALOG_COLUMNS
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DEFAULT_WIDE_FEED_COLUMNS
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
@@ -18,8 +17,6 @@ import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.TABLET_MAX_CATALOG_COLUMNS
-import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -61,10 +58,6 @@ class SettingsStore(
 
     override suspend fun setOpenThreadComments(enabled: Boolean) {
         edit { it[Keys.openThreadComments] = enabled }
-    }
-
-    override suspend fun setColorTheme(theme: AppColorTheme) {
-        edit { it[Keys.colorTheme] = theme.name }
     }
 
     override suspend fun setThemeMode(mode: AppThemeMode) {
@@ -120,9 +113,8 @@ class SettingsStore(
         edit { it[key] = columns.coerceIn(1, formFactor.maxFeedColumns) }
     }
 
-    override suspend fun setTabletCatalogColumns(columns: Int) {
-        val clamped = columns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS)
-        edit { it[Keys.tabletCatalogColumns] = clamped }
+    override suspend fun setCatalogMode(mode: CatalogMode) {
+        edit { it[Keys.catalogMode] = mode.name }
     }
 
     private suspend fun edit(block: (MutablePreferences) -> Unit) {
@@ -138,7 +130,6 @@ class SettingsStore(
             deepMediaScan = this[Keys.deepMediaScan] ?: false,
             openThreadComments = this[Keys.openThreadComments] ?: false,
             themeMode = AppThemeMode.entries.firstOrNull { it.name == this[Keys.themeMode] } ?: AppThemeMode.SYSTEM,
-            colorTheme = AppColorTheme.entries.firstOrNull { it.name == this[Keys.colorTheme] } ?: AppColorTheme.ORBIN,
             amoled = this[Keys.amoled] ?: false,
             biometricLockEnabled = this[Keys.biometricLock] ?: false,
             screenPrivacyEnabled = this[Keys.screenPrivacy] ?: false,
@@ -152,7 +143,7 @@ class SettingsStore(
             onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             unfoldedFeedColumns = this[Keys.unfoldedFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
             tabletFeedColumns = this[Keys.tabletFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
-            tabletCatalogColumns = this[Keys.tabletCatalogColumns] ?: DEFAULT_TABLET_CATALOG_COLUMNS,
+            catalogMode = CatalogMode.entries.firstOrNull { it.name == this[Keys.catalogMode] } ?: CatalogMode.LIST,
         )
 
     private fun Preferences.playbackPreferences(): PlaybackPreferences =
@@ -168,7 +159,6 @@ class SettingsStore(
         val coverViolentMedia = booleanPreferencesKey("cover_violent_media")
         val deepMediaScan = booleanPreferencesKey("deep_media_scan")
         val openThreadComments = booleanPreferencesKey("open_thread_comments")
-        val colorTheme = stringPreferencesKey("color_theme")
         val themeMode = stringPreferencesKey("theme_mode")
         val amoled = booleanPreferencesKey("amoled")
         val biometricLock = booleanPreferencesKey("biometric_lock")
@@ -181,6 +171,6 @@ class SettingsStore(
         val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
         val unfoldedFeedColumns = intPreferencesKey("unfolded_feed_columns")
         val tabletFeedColumns = intPreferencesKey("tablet_feed_columns")
-        val tabletCatalogColumns = intPreferencesKey("tablet_catalog_columns")
+        val catalogMode = stringPreferencesKey("catalog_mode")
     }
 }

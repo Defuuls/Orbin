@@ -3,7 +3,6 @@ package com.orbin.ios
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -21,11 +20,8 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
-import com.orbin.core.model.showsTwoPanes
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
-import com.orbin.uinext.NextColorTheme
-import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
@@ -33,7 +29,7 @@ import com.orbin.uinext.OnboardingBoard
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.WhatsNewOnUpdate
-import com.orbin.uinext.colorThemePalette
+import com.orbin.uinext.canonicalNextPalette
 import com.orbin.uinext.next
 import kotlinx.coroutines.flow.map
 
@@ -65,7 +61,7 @@ fun OrbinApp(
     val firstRun by browser.firstRun.state.collectAsState()
     val readerReady = firstRun.initialized && !firstRun.needed
 
-    // A home-screen quick action opens its tab, as an Android app shortcut does.
+    // A home-screen quick action opens its destination, as an Android app shortcut does.
     val quickAction by QuickActions.pending.collectAsState()
     LaunchedEffect(quickAction, lockState.locked, lockState.obscured, readerReady) {
         if (!lockState.locked && !lockState.obscured && readerReady) {
@@ -82,7 +78,7 @@ fun OrbinApp(
             AppThemeMode.LIGHT -> false
             AppThemeMode.DARK -> true
         }
-    val palette = colorThemePalette(NextColorTheme.valueOf(settings.colorTheme.name), dark, settings.amoled)
+    val palette = canonicalNextPalette(dark, settings.amoled)
     val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun.needed, lockState)
     SideEffect { onStatusBarAppearance(lightIcons) }
     NextTheme(
@@ -104,18 +100,23 @@ fun OrbinApp(
                     OnboardingDestination(browser)
                 } else if (!lockState.locked) {
                     val route = backStack.last()
-                    stateHolder.SaveableStateProvider(route.stateKey) {
-                        Destination(
-                            browser,
-                            lock,
-                            downloads,
-                            backup,
-                            formFactor,
-                            version,
-                            route,
-                            pages,
-                            playbackAllowed = !covered && !lockState.obscured,
-                        )
+                    val boardReader = boardReaderRoute(backStack)
+                    if (boardReader != null) {
+                        BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
+                    } else {
+                        stateHolder.SaveableStateProvider(route.stateKey) {
+                            Destination(
+                                browser,
+                                lock,
+                                downloads,
+                                backup,
+                                formFactor,
+                                version,
+                                route,
+                                pages,
+                                playbackAllowed = !covered && !lockState.obscured,
+                            )
+                        }
                     }
                 }
                 LockCover(lock, lockState)
@@ -139,12 +140,18 @@ fun OrbinApp(
 @Composable
 private fun OnboardingDestination(browser: Browser) {
     val setup by browser.firstRun.state.collectAsState()
-    val boards by browser.boards.collectAsState()
+    val directory by browser.boardDirectory.collectAsState()
+    val settings by browser.settings.current.collectAsState()
     val followed by browser.followed.collectAsState()
     val site by browser.activeSite.collectAsState()
+    val boards = remember(directory, site) { directory.boardsOnSite(site) }
     val onSite =
-        remember(boards, site) {
-            (boards as? Load.Ready)?.value.orEmpty().filter { it.provider == site }
+        remember(boards, settings.hideNsfwBoards) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        }
+    val eligible =
+        remember(directory, followed, settings.hideNsfwBoards) {
+            directory.eligibleFollowing(followed, settings.hideNsfwBoards)
         }
     val byId = remember(onSite) { onSite.associateBy { it.board.id.value } }
     OnboardingScreen(
@@ -167,8 +174,8 @@ private fun OnboardingDestination(browser: Browser) {
                 }
             },
         following =
-            remember(followed, site) {
-                followed.filter { it.provider == site }.mapTo(mutableSetOf()) { it.board.value }
+            remember(eligible, site) {
+                eligible.filter { it.provider == site }.mapTo(mutableSetOf()) { it.board.value }
             },
         sites = remember { browser.sites.map { it.name } },
         selectedSite = browser.sites.indexOfFirst { it.id == site },
@@ -176,10 +183,10 @@ private fun OnboardingDestination(browser: Browser) {
         onFollow = { id, follow -> byId[id]?.let { browser.setFollowed(it, follow) } },
         onRetry = browser::retry,
         onStart = { browser.completeFirstRun() },
-        totalFollowing = followed.size,
+        totalFollowing = eligible.size,
         isSaving = setup.isSaving,
         errorMessage = setup.errorMessage,
-        canStart = setup.canStart,
+        canStart = setup.canStart && eligible.isNotEmpty(),
     )
 }
 
@@ -202,23 +209,9 @@ private fun Destination(
         Route.Saved, Route.History, Route.Watched -> ThreadCollectionsDestination(browser, route)
         Route.Search -> SearchDestination(browser)
         Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
-        is Route.Catalog -> CatalogDestination(browser, route.board, formFactor)
+        is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.BoardMedia -> BoardMediaDestination(browser, route.board)
-        is Route.ThreadPage -> {
-            val backStack by browser.backStack.collectAsState()
-            val previous = backStack.getOrNull(backStack.lastIndex - 1)
-            // The catalog stays beside the thread only in a window with room for both: an iPad Pro
-            // 11-inch full screen either way up (834 x 1210pt), not a narrow Stage Manager, Split
-            // View or Slide Over window, which gets the thread alone as a phone does.
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val split = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
-                if (formFactor == FormFactor.TABLET && split && previous is Route.Catalog) {
-                    ThreadSplitDestination(browser, previous.board, formFactor, downloads, pages)
-                } else {
-                    ThreadDestination(browser, downloads, pages)
-                }
-            }
-        }
+        is Route.ThreadPage -> ThreadDestination(browser, downloads, pages)
         is Route.Media -> MediaDestination(browser, downloads, route)
         is Route.ThreadVideos -> ThreadVideosDestination(browser, downloads, route)
     }
@@ -234,18 +227,5 @@ private fun LockCover(
     // Taps stop here rather than reaching the app underneath.
     Box(Modifier.fillMaxSize().background(next.background).pointerInput(Unit) {}) {
         if (state.locked) LockScreen(message = state.message, unlocking = state.unlocking, onUnlock = { lock.unlock() })
-    }
-}
-
-@Composable
-internal fun <T> Loaded(
-    load: Load<T>,
-    onRetry: () -> Unit,
-    content: @Composable (T) -> Unit,
-) {
-    when (load) {
-        Load.Loading -> NextLoading(Modifier.fillMaxSize())
-        is Load.Failed -> NextError(load.message, onRetry = onRetry)
-        is Load.Ready -> content(load.value)
     }
 }

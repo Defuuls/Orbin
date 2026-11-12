@@ -48,6 +48,36 @@ fun showsTwoPanes(
     windowHeightDp: Int,
 ): Boolean = isWideWindow(windowWidthDp, windowHeightDp) && windowWidthDp >= TWO_PANE_MIN_WIDTH_DP
 
+/** Exact pane widths in dp; together they occupy the whole two-pane window. */
+data class ReaderPaneWidths(
+    val catalogDp: Int,
+    val dividerDp: Int,
+    val threadDp: Int,
+)
+
+/**
+ * The catalog gets five twelfths of the width after the divider, rounded down and capped at
+ * 420dp; the thread gets the remainder. Call only for windows eligible for two panes: widths
+ * below [TWO_PANE_MIN_WIDTH_DP] are rejected, and the caller still checks the window height.
+ */
+fun readerPaneWidths(windowWidthDp: Int): ReaderPaneWidths {
+    require(windowWidthDp >= TWO_PANE_MIN_WIDTH_DP) { "Two panes require a window at least 800dp wide." }
+    val catalog =
+        ((windowWidthDp.toLong() - PANE_DIVIDER_DP) * CATALOG_PANE_NUMERATOR / CATALOG_PANE_DENOMINATOR)
+            .coerceAtMost(CATALOG_PANE_MAX_DP.toLong())
+            .toInt()
+    return ReaderPaneWidths(
+        catalogDp = catalog,
+        dividerDp = PANE_DIVIDER_DP,
+        threadDp = windowWidthDp - PANE_DIVIDER_DP - catalog,
+    )
+}
+
+private const val PANE_DIVIDER_DP = 1
+private const val CATALOG_PANE_NUMERATOR = 5
+private const val CATALOG_PANE_DENOMINATOR = 12
+private const val CATALOG_PANE_MAX_DP = 420
+
 /**
  * How many columns the feed shows: one on a window that is not wide ([isWideWindow]) and on a
  * phone; otherwise the reader's choice for this kind of device, within what it allows.
@@ -69,24 +99,3 @@ fun AppSettings.feedColumnsFor(formFactor: FormFactor): Int =
         FormFactor.FOLDABLE -> unfoldedFeedColumns
         FormFactor.TABLET -> tabletFeedColumns
     }
-
-/** The fewest board catalog columns a tablet may choose. */
-const val TABLET_MIN_CATALOG_COLUMNS = 2
-
-/** The most board catalog columns a tablet may choose. */
-const val TABLET_MAX_CATALOG_COLUMNS = 8
-
-/**
- * How many columns a board catalog shows: the reader's choice on a tablet's wide window, within
- * what it allows; null elsewhere (a phone, a foldable, split screen), where the catalog fits as
- * many tiles as the window takes.
- */
-fun catalogColumns(
-    formFactor: FormFactor,
-    windowWidthDp: Int,
-    windowHeightDp: Int,
-    settings: AppSettings,
-): Int? {
-    if (formFactor != FormFactor.TABLET || !isWideWindow(windowWidthDp, windowHeightDp)) return null
-    return settings.tabletCatalogColumns.coerceIn(TABLET_MIN_CATALOG_COLUMNS, TABLET_MAX_CATALOG_COLUMNS)
-}

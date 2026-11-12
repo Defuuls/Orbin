@@ -53,6 +53,7 @@ import org.jetbrains.compose.resources.stringResource
 data class MediaCell(
     val id: String,
     val board: String,
+    val spoiler: Boolean = false,
 )
 
 @Composable

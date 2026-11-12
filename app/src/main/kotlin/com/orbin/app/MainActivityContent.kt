@@ -19,10 +19,9 @@ import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.model.AppSettings
 import com.orbin.uinext.LockScreen
-import com.orbin.uinext.NextColorTheme
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.colorThemePalette
+import com.orbin.uinext.canonicalNextPalette
 import com.orbin.uinext.next
 import kotlinx.coroutines.launch
 
@@ -99,8 +98,7 @@ internal fun AppContent(
     // Material sliders / snackbars / pull-to-refresh were replaced with Next controls, so the
     // MaterialOrbinTheme adapter is gone.
     val nextPalette =
-        colorThemePalette(
-            NextColorTheme.valueOf(settings.colorTheme.name),
+        canonicalNextPalette(
             settings.themeMode.isDark(),
             settings.amoled,
         )

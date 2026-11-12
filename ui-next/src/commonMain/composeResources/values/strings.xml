@@ -96,6 +96,8 @@
     <string name="next_post_expanded_state">Expanded</string>
     <string name="next_post_collapsed">collapsed</string>
     <string name="next_spoiler_reveal">Spoiler — press to reveal</string>
+    <string name="reader_open_browser">Open in browser</string>
+    <string name="reader_spoiler">Spoiler</string>
 
     <!-- The command surface -->
     <string name="next_settings_done">Done</string>

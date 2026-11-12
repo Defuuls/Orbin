@@ -4,23 +4,32 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertWidthIsEqualTo
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
+import com.orbin.uinext.tokens.ReaderAmoledColors
+import com.orbin.uinext.tokens.ReaderLightColors
+import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * Media fills the edge-to-edge viewport while overlay controls and navigation respect safe areas.
@@ -35,8 +44,9 @@ class WindowInsetsTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
+    /** Replaces `immersive media is edge to edge while captions and navigation clear system bars`. */
     @Test
-    fun `immersive media is edge to edge while captions and navigation clear system bars`() {
+    fun `Home media starts below the app bar and captions clear the bottom system inset`() {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
@@ -56,35 +66,36 @@ class WindowInsetsTest {
 
         val root = composeRule.onRoot().getUnclippedBoundsInRoot()
         val media = composeRule.onNodeWithTag("feed-media").getUnclippedBoundsInRoot()
-        assertThat(media.top.value).isWithin(0.5f).of(root.top.value)
+        val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR).getUnclippedBoundsInRoot()
+        assertThat(media.top.value).isWithin(0.5f).of(bar.bottom.value)
+        assertThat((bar.bottom - bar.top).value).isWithin(0.5f).of((STATUS_BAR + ReaderSize.appBar).value)
         assertThat(media.left.value).isWithin(0.5f).of(root.left.value)
         assertThat(media.right.value).isWithin(0.5f).of(root.right.value)
         // Media can extend behind the status bar; its caption must remain readable.
         val firstRow = composeRule.onNodeWithText("A thread that has to stay readable").getUnclippedBoundsInRoot()
         assertThat(firstRow.top.value).isAtLeast(STATUS_BAR.value)
-        val home = composeRule.onNodeWithContentDescription("Home").getUnclippedBoundsInRoot()
-        val saved = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
-        assertThat(home.left.value).isWithin(0.5f).of(root.left.value)
-        assertThat(saved.right.value).isWithin(0.5f).of(root.right.value)
-        assertThat(saved.bottom.value).isWithin(0.5f).of((root.bottom - NAVIGATION_BAR).value)
-        assertThat(firstRow.bottom.value).isAtMost(saved.top.value)
+        assertThat(media.bottom.value).isWithin(0.5f).of((root.bottom - NAVIGATION_BAR).value)
+        assertThat(firstRow.bottom.value).isAtMost((root.bottom - NAVIGATION_BAR).value)
     }
 
+    /** Replaces `navigation uses horizontal safe areas without adding capsule margins`. */
     @Test
-    fun `navigation uses horizontal safe areas without adding capsule margins`() {
+    fun `the app bar fills the width while its controls respect horizontal safe areas`() {
         composeRule.setContent {
             NextTheme {
                 Box {
-                    DestinationPill(NextDestination.FEED, {})
+                    ReaderScaffold("Home", destination = NextDestination.FEED, onDestination = {}) {}
                 }
             }
         }
         applySystemBars(horizontal = 24.dp)
         val root = composeRule.onRoot().getUnclippedBoundsInRoot()
-        val home = composeRule.onNodeWithContentDescription("Home").getUnclippedBoundsInRoot()
-        val saved = composeRule.onNodeWithContentDescription("Saved").getUnclippedBoundsInRoot()
-        assertThat(home.left.value).isWithin(0.5f).of((root.left + 24.dp).value)
-        assertThat(saved.right.value).isWithin(0.5f).of((root.right - 24.dp).value)
+        val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR).getUnclippedBoundsInRoot()
+        val menu = composeRule.onNodeWithContentDescription("Menu").getUnclippedBoundsInRoot()
+        assertThat(bar.left.value).isWithin(0.5f).of(root.left.value)
+        assertThat(bar.right.value).isWithin(0.5f).of(root.right.value)
+        assertThat(menu.left.value).isAtLeast((root.left + 24.dp).value)
+        assertThat(menu.right.value).isAtMost((root.right - 24.dp).value)
     }
 
     @Test
@@ -103,6 +114,45 @@ class WindowInsetsTest {
 
         val title = composeRule.onNodeWithText("Settings and privacy").getUnclippedBoundsInRoot()
         assertThat(title.top.value).isAtLeast(STATUS_BAR.value)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `an open drawer keeps the reader app bar ground behind light status icons`() {
+        composeRule.setContent {
+            NextTheme(darkTheme = false) {
+                ReaderScaffold("Boards", destination = NextDestination.BOARDS, onDestination = {}) {}
+            }
+        }
+        applySystemBars()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        val drawer = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER)
+        drawer.assertWidthIsEqualTo(ReaderSize.drawerMax)
+        val pixels = drawer.captureToImage().toPixelMap()
+        val topInsetPx = with(composeRule.density) { STATUS_BAR.roundToPx() }
+        assertThat(pixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.appBar.toArgb())
+        assertThat(pixels[pixels.width - 1, topInsetPx - 1].toArgb()).isEqualTo(ReaderLightColors.appBar.toArgb())
+        // Top is consumed by the sheet; the first entry starts immediately below it.
+        assertThat(pixels[0, topInsetPx + 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
+        assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the Home drawer keeps a black bottom system inset behind light navigation icons`() {
+        composeRule.setContent {
+            NextTheme(darkTheme = false) {
+                ReaderScaffold("Home", destination = NextDestination.FEED, onDestination = {}, immersive = true) {}
+            }
+        }
+        applySystemBars()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        val pixels = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).captureToImage().toPixelMap()
+        val bottomInsetPx = with(composeRule.density) { NAVIGATION_BAR.roundToPx() }
+        assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderAmoledColors.background.toArgb())
+        assertThat(
+            pixels[0, pixels.height - bottomInsetPx - 1].toArgb(),
+        ).isEqualTo(ReaderLightColors.background.toArgb())
     }
 
     /**

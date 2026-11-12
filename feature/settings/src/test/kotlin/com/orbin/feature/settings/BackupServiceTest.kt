@@ -1,11 +1,11 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.junit.Test
 
 /**
@@ -41,7 +43,7 @@ class BackupServiceTest {
         AppSettings(
             hideNsfwBoards = true,
             themeMode = AppThemeMode.DARK,
-            colorTheme = AppColorTheme.TEAL,
+            catalogMode = CatalogMode.GRID,
             amoled = true,
             biometricLockEnabled = true,
             onboardingCompleted = true,
@@ -56,6 +58,15 @@ class BackupServiceTest {
     fun everySettingSurvivesExportAndImport() =
         runTest {
             val exported = service(FakeSettingsRepository(populatedSettings)).exportToJson("test")
+            val exportedSettings =
+                Json
+                    .parseToJsonElement(exported)
+                    .jsonObject
+                    .getValue("settings")
+                    .jsonObject
+            assertThat(exportedSettings.getValue("catalogMode").toString()).isEqualTo("\"GRID\"")
+            assertThat(exportedSettings.keys)
+                .containsNoneOf("colorTheme", "color_theme", "tabletCatalogColumns", "tablet_catalog_columns")
 
             val destinationSettings = FakeSettingsRepository()
             service(destinationSettings).importFromJson(exported).getOrThrow()
@@ -87,16 +98,86 @@ class BackupServiceTest {
         }
 
     @Test
-    fun importingAnOlderBackupRestoresTheVideoFirstChatDefault() =
+    fun olderBackupsWithoutAColorThemeRestoreListAndVideoFirstChatDefaults() =
         runTest {
-            val destination = FakeSettingsRepository(AppSettings(openThreadComments = true))
+            for (legacyColumns in listOf("", """, "tabletCatalogColumns": 6""")) {
+                val destination =
+                    FakeSettingsRepository(AppSettings(openThreadComments = true, catalogMode = CatalogMode.GRID))
 
-            service(destination)
-                .importFromJson("""{ "settings": { "themeMode": "DARK" } }""")
-                .getOrThrow()
+                service(destination)
+                    .importFromJson("""{ "settings": { "themeMode": "DARK" $legacyColumns } }""")
+                    .getOrThrow()
 
-            assertThat(destination.current.openThreadComments).isFalse()
-            assertThat(destination.current.themeMode).isEqualTo(AppThemeMode.DARK)
+                assertThat(destination.current.openThreadComments).isFalse()
+                assertThat(destination.current.themeMode).isEqualTo(AppThemeMode.DARK)
+                assertThat(destination.current.catalogMode).isEqualTo(CatalogMode.LIST)
+            }
+        }
+
+    @Test
+    fun backupsContainingALegacyColorThemeAreRefusedBeforeAnyDataIsApplied() =
+        runTest {
+            for (mode in RestoreMode.entries) {
+                for (field in listOf("colorTheme", "color_theme")) {
+                    for (value in listOf("\"PURPLE\"", "null", "\"UNRECOGNIZED\"")) {
+                        val settings = FakeSettingsRepository(populatedSettings)
+                        val boards =
+                            FakeBoardPreferencesRepository(
+                                subscribed = setOf(BoardId("g")),
+                                favorites = setOf(BoardId("a")),
+                            )
+                        val keptBookmark = bookmark("g", 7L, watched = true)
+                        val bookmarks = FakeBookmarkRepository(listOf(keptBookmark))
+                        val searches = FakeSearchRepository()
+                        searches.saveSearch(savedSearch("keep"))
+                        val beforeSearches = searches.observeSavedSearches().first()
+                        val json =
+                            """
+                            {
+                              "settings": {
+                                "$field": $value,
+                                "hideNsfwBoards": false,
+                                "themeMode": "LIGHT",
+                                "catalogMode": "LIST"
+                              },
+                              "subscribedBoards": [{"providerId":"fake","boardId":"x"}],
+                              "favoriteBoards": [{"providerId":"fake","boardId":"x"}],
+                              "bookmarks": [{"providerId":"fake","boardId":"x","threadId":42}],
+                              "savedSearches": [{"text":"replace"}]
+                            }
+                            """.trimIndent()
+
+                        val result = service(settings, bookmarks, searches, boards).importFromJson(json, mode)
+
+                        assertThat(result.exceptionOrNull()?.message)
+                            .isEqualTo("This backup was made by an older version of Orbin and cannot be restored.")
+                        assertThat(settings.current).isEqualTo(populatedSettings)
+                        assertThat(boards.observeSubscribedBoards(ProviderId("fake")).first())
+                            .containsExactly(BoardId("g"))
+                        assertThat(boards.observeFavoriteBoards(ProviderId("fake")).first())
+                            .containsExactly(BoardId("a"))
+                        assertThat(bookmarks.observeBookmarks().first()).containsExactly(keptBookmark)
+                        assertThat(searches.observeSavedSearches().first()).isEqualTo(beforeSearches)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun colorThemeMentionedInUserContentDoesNotRefuseACompatibleBackup() =
+        runTest {
+            val json = """{"savedSearches":[{"text":"colorTheme"}]}"""
+            val searches = FakeSearchRepository()
+
+            service(FakeSettingsRepository(), searches = searches).importFromJson(json).getOrThrow()
+
+            assertThat(
+                searches
+                    .observeSavedSearches()
+                    .first()
+                    .single()
+                    .text,
+            ).isEqualTo("colorTheme")
         }
 
     @Test
@@ -277,9 +358,10 @@ class BackupServiceTest {
         settings: FakeSettingsRepository,
         bookmarks: BookmarkRepository = FakeBookmarkRepository(),
         searches: FakeSearchRepository = FakeSearchRepository(),
+        boards: FakeBoardPreferencesRepository = FakeBoardPreferencesRepository(),
     ) = BackupService(
         settings,
-        FakeBoardPreferencesRepository(),
+        boards,
         bookmarks,
         searches,
         FakeProviderRegistry(FakeImageBoardProvider(id = "fake")),

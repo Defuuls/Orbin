@@ -18,6 +18,7 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -107,6 +108,19 @@ interface CatalogRepository {
         board: BoardId,
         sort: CatalogSort,
     ): Flow<PagingData<CatalogThread>>
+
+    /**
+     * Stops remote work while hidden without discarding a successfully loaded paging snapshot.
+     * [onRefreshFailure] receives retained-refresh failures separately from initial Paging errors;
+     * null clears the feedback when a new request starts.
+     */
+    fun catalogStreamWhileVisible(
+        provider: ProviderId,
+        board: BoardId,
+        sort: CatalogSort,
+        visible: StateFlow<Boolean>,
+        onRefreshFailure: ((Throwable?) -> Unit)? = null,
+    ): Flow<PagingData<CatalogThread>> = catalogStream(provider, board, sort)
 }
 
 interface ThreadRepository {

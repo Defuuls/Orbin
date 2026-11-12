@@ -16,8 +16,8 @@ import com.orbin.uinext.PlatformSegments
 /**
  * Boards destination: Next-styled tile grid with DestinationPill chrome.
  *
- * Subscriptions stay in onboarding / Run setup again. Tapping a tile opens that board; Surprise me
- * picks one at random.
+ * Following includes boards chosen in first run and later in this directory. Tapping a tile opens
+ * that board; Surprise me picks one at random.
  */
 @Composable
 fun BoardGalleryScreen(
@@ -35,7 +35,7 @@ fun BoardGalleryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val providerId by viewModel.providerId.collectAsStateWithLifecycle()
-    val favorites by viewModel.favoriteBoardIds.collectAsStateWithLifecycle()
+    val followed by viewModel.followedBoardIds.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val loadedSource = (uiState as? HomeUiState.Success)?.providerId
     val openBoard: (Board) -> Unit = { board ->
@@ -54,14 +54,14 @@ fun BoardGalleryScreen(
         }
 
     val tiles =
-        remember(visibleBoards, favorites, providerId) {
+        remember(visibleBoards, followed, providerId) {
             visibleBoards.map { board ->
                 BoardTile(
                     id = board.id.value,
                     path = "/${board.id.value}/",
                     title = board.title,
                     nsfw = board.isNsfw,
-                    followed = board.id.value in favorites,
+                    followed = board.id.value in followed,
                     site = providerId,
                 )
             }
@@ -80,7 +80,7 @@ fun BoardGalleryScreen(
                 }
             },
             onFollowBoard = { board, checked ->
-                viewModel.setFavorite(board.id, checked, board.site ?: providerId)
+                viewModel.setFollowed(board.id, checked, board.site ?: providerId)
             },
             onOpenBoard = { tile ->
                 visibleBoards.firstOrNull { it.id.value == tile.id }?.let(openBoard)

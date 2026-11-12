@@ -1,0 +1,121 @@
+package com.orbin.uinext
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
+import com.orbin.uinext.tokens.ReaderSize
+import com.orbin.uinext.tokens.ReaderSpace
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+/** Counts reflow at large text sizes; only catalog titles may use an ellipsis. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class CatalogLargeTextTest {
+    @get:Rule
+    val composeRule = createComposeRule()
+
+    @Test
+    fun `normal grid counts retain the specified minimum text block geometry`() {
+        composeRule.setContent { Grid(fontScale = 1f) }
+
+        val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
+        val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
+        LABELS.forEachIndexed { index, label ->
+            val layout = countLayout(label)
+            assertEquals(1, layout.lineCount)
+            assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
+            val card = cards[index].getUnclippedBoundsInRoot()
+            val image = images[index].getUnclippedBoundsInRoot()
+            assertEquals(ReaderSize.gridCardText.value, (card.bottom - image.bottom).value, 0.5f)
+        }
+    }
+
+    @Test
+    fun `font two wraps complete reply and unread counts inside growing grid card bodies`() {
+        composeRule.setContent { Grid(fontScale = 2f) }
+
+        val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
+        val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
+        LABELS.forEachIndexed { index, label ->
+            val layout = countLayout(label)
+            assertEquals(label, layout.layoutInput.text.text)
+            assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
+            assertTrue("$label should wrap in this three-column phone grid", layout.lineCount > 1)
+            assertEquals(label.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
+            repeat(layout.lineCount) { assertFalse(layout.isLineEllipsized(it)) }
+
+            val text = composeRule.onNodeWithText(label, useUnmergedTree = true).getUnclippedBoundsInRoot()
+            val card = cards[index].getUnclippedBoundsInRoot()
+            val image = images[index].getUnclippedBoundsInRoot()
+            assertTrue(
+                "The text block must grow rather than clip the count",
+                card.bottom - image.bottom > ReaderSize.gridCardText,
+            )
+            assertTrue(text.left >= card.left + ReaderSpace.cardPad)
+            assertTrue(text.right <= card.right - ReaderSpace.cardPad)
+            assertTrue(text.top >= image.bottom + ReaderSpace.cardPad)
+            assertTrue(text.bottom <= card.bottom - ReaderSpace.cardPad)
+        }
+    }
+
+    private fun countLayout(label: String): TextLayoutResult {
+        val layouts = mutableListOf<TextLayoutResult>()
+        composeRule
+            .onNodeWithText(label, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        return layouts.single()
+    }
+
+    private fun overflowDetails(
+        label: String,
+        layout: TextLayoutResult,
+    ): String =
+        "$label must fit: size=${layout.size}, lines=${layout.lineCount}, " +
+            "paragraph=${layout.multiParagraph.width}x${layout.multiParagraph.height}, " +
+            "widthOverflow=${layout.didOverflowWidth}, heightOverflow=${layout.didOverflowHeight}, " +
+            "input=${layout.layoutInput}"
+
+    @Composable
+    private fun Grid(fontScale: Float) {
+        val density = LocalDensity.current
+        CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    mode = CatalogMode.GRID,
+                    itemCount = ROWS.size,
+                    rowAt = ROWS::getOrNull,
+                    thumbnail = { _, modifier -> Box(modifier) },
+                )
+            }
+        }
+    }
+
+    private companion object {
+        val LABELS = listOf("1234 replies", "7 new replies")
+        val ROWS =
+            listOf(
+                FeedRow("A title", "/g/", "2m", replies = 1234, media = 1, id = "site/g/1"),
+                FeedRow("Another title", "/g/", "1m", replies = 42, media = 1, unread = 7, id = "site/g/2"),
+            )
+    }
+}

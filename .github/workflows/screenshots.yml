@@ -24,6 +24,7 @@ on:
       - 'gradle.properties'
       - 'core/designsystem/**'
       - 'core/ui/**'
+      - 'core/reader/**'
       - 'feature/gallery/**'
       - 'media/**'
       - 'ui-next/**'

@@ -18,9 +18,9 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.testing.repository.FakeAppUpdater
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
@@ -68,7 +68,7 @@ class SettingsUserJourneyTest {
 
         toggle("Hide NSFW boards") { hideNsfwBoards }
         toggle("Cover violent media") { coverViolentMedia }
-        toggle("True black") { amoled }
+        toggle("AMOLED black") { amoled }
         toggle("App lock") { biometricLockEnabled }
     }
 
@@ -135,13 +135,14 @@ class SettingsUserJourneyTest {
     }
 
     @Test
-    fun everyColorCanBePickedWithoutChangingTheBrightnessPreference() {
+    fun catalogViewCanBePickedWithoutChangingTheBrightnessPreference() {
         launch()
-        AppColorTheme.entries.forEach { theme ->
-            choose("Color theme", theme.label)
-            assertThat(settings.current.colorTheme).isEqualTo(theme)
-            assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
-        }
+        choose("Catalog view", "Grid")
+        assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.GRID)
+        assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
+        choose("Catalog view", "List")
+        assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.LIST)
+        assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
     }
 
     /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */
@@ -151,6 +152,8 @@ class SettingsUserJourneyTest {
 
         listOf(
             "Color scheme",
+            "Color theme",
+            "Catalog columns",
             "Text size",
             "Mute by default",
             "In-app updates",
@@ -165,7 +168,8 @@ class SettingsUserJourneyTest {
             "Cover violent media",
             "Open comments from chat button",
             "Theme",
-            "True black",
+            "AMOLED black",
+            "Catalog view",
             "App lock",
             "Tell me about new releases",
             "Clear local activity",

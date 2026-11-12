@@ -34,6 +34,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
             // Pins the Android side to the app's Compose release rather than the older one the
             // multiplatform artifacts were built against.
             implementation(project.dependencies.platform(libs.compose.bom))

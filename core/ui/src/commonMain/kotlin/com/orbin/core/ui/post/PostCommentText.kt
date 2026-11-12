@@ -40,9 +40,6 @@ import com.orbin.core.model.PostNode
 /** The real host after a link whose text names another; not a link itself, so it reads as a label. */
 private val realDestinationStyle = SpanStyle(fontStyle = FontStyle.Italic)
 
-/** Text painted in its own background colour: present for layout and selection, but unreadable. */
-private val blackedOutSpoilerStyle = SpanStyle(color = SpoilerBackground, background = SpoilerBackground)
-
 private val plainTextUrlRegex = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\"']+""")
 private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']')
 
@@ -174,9 +171,12 @@ internal class CommentRenderContext(
     val revealedSpoilers: Set<Int> = emptySet(),
     val onSpoilerClick: (Int) -> Unit = {},
     val revealedSpoilerBackground: Color = Color.Unspecified,
+    hiddenSpoilerBackground: Color = SpoilerBackground,
     val greentextColor: Color = GreentextColor,
     val quoteLinkColor: Color = QuoteLinkColor,
+    val isolateQuoteLinks: Boolean = false,
 ) {
+    val hiddenSpoilerStyle: SpanStyle = SpanStyle(color = hiddenSpoilerBackground, background = hiddenSpoilerBackground)
     val quoteLinkStyle: SpanStyle = SpanStyle(color = quoteLinkColor, textDecoration = TextDecoration.Underline)
     val quoteLinkStyles: TextLinkStyles = TextLinkStyles(style = quoteLinkStyle)
     private var assignedSpoilers = 0
@@ -278,7 +278,10 @@ private fun AnnotatedString.Builder.appendQuoteLink(
     // Local val: smart-casting a public property from another module isn't allowed.
     val board = node.board
     val prefix = if (board != null) ">>>/${board.value}/" else ">>"
-    val label = "$prefix${node.target.value}"
+    val plainLabel = "$prefix${node.target.value}"
+    // Only the reader's prepared plan opts in: quote syntax is canonical LTR even inside RTL
+    // prose. The builder includes these controls in every annotation range automatically.
+    val label = if (ctx.isolateQuoteLinks) "\u2066$plainLabel\u2069" else plainLabel
     when {
         node.isDead ->
             withStyle(SpanStyle(color = ctx.quoteLinkColor, textDecoration = TextDecoration.LineThrough)) {
@@ -350,12 +353,22 @@ private fun AnnotatedString.Builder.appendSpoiler(
 
         interactive ->
             withLink(spoilerLink { ctx.onSpoilerClick(id) }) {
-                withStyle(blackedOutSpoilerStyle, children(false))
+                appendHiddenSpoiler(ctx.hiddenSpoilerStyle, children(false))
             }
 
         // Previews are not tappable, so a spoiler there simply stays hidden.
-        else -> withStyle(blackedOutSpoilerStyle, children(false))
+        else -> appendHiddenSpoiler(ctx.hiddenSpoilerStyle, children(false))
     }
+}
+
+private fun AnnotatedString.Builder.appendHiddenSpoiler(
+    style: SpanStyle,
+    children: AnnotatedString.Builder.() -> Unit,
+) {
+    val start = length
+    children()
+    // Apply the cover last so a nested quote or greentext color cannot make hidden text readable.
+    addStyle(style, start, length)
 }
 
 /** Builds a styled, clickable link annotation that runs [onClick] when tapped. */

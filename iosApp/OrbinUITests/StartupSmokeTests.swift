@@ -50,24 +50,7 @@ final class StartupSmokeTests: XCTestCase {
         assertHomeAfterSetup(expectsReleaseNotes: true)
         assertFeedTabsChangeSelection()
 
-        let tabs = ["Home", "Watched", "Boards", "Search", "Saved"].map(navigationControl)
-        for (index, tab) in tabs.enumerated() {
-            XCTAssertTrue(tab.exists && tab.isHittable, "Primary destination \(index) must be reachable")
-            XCTAssertGreaterThanOrEqual(tab.frame.width, 44)
-            XCTAssertGreaterThanOrEqual(tab.frame.height, 44)
-        }
-        let center = tabs[2]
-        XCTAssertEqual(center.frame.midX, app.frame.midX, accuracy: 3, "The accessible Boards action occupies the center + position")
-
-        // The center control must navigate, including when a provider's directory is unavailable.
-        center.tap()
-        let boardsSelected = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in self.navigationControl("Boards").isSelected },
-            object: nil
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [boardsSelected], timeout: 15), .completed)
-        navigationControl("Home").tap()
-        assertHomeAfterSetup()
+        assertDrawerDestinations()
 
         // Cold startup repairs a zero-follow install, so reaching Home again also proves that
         // the selected board survived process termination along with setup completion.
@@ -97,15 +80,15 @@ final class StartupSmokeTests: XCTestCase {
             waitUntilHittable([done], description: "The release notes dismissal action")
             done.tap()
         }
-        let home = navigationControl("Home")
-        waitUntilHittable([home], description: "Home after mandatory board setup")
-        XCTAssertTrue(home.isSelected)
+        let menu = menuButton()
+        waitUntilHittable([menu], description: "Home Menu after mandatory board setup")
+        XCTAssertTrue(appBarTitle("Home").exists, "The fixed app bar identifies the Home destination")
         XCTAssertFalse(labeled("Welcome to Orbin").exists, "Persisted setup must not reopen onboarding")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch.exists)
 
-        // Catalog loading, empty results and failures must all retain the feed's tab controls.
+        // Catalog loading, empty results and failures retain the app bar and feed controls.
         let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
-        XCTAssertTrue(forYou.waitForExistence(timeout: 15), "Feed tabs must remain available in every loading state")
+        XCTAssertTrue(forYou.waitForExistence(timeout: 15), "Feed controls must remain available in every loading state")
         XCTAssertTrue(forYou.isSelected, "For You must announce its selected tab state")
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch.exists)
     }
@@ -114,19 +97,33 @@ final class StartupSmokeTests: XCTestCase {
         let following = app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch
         let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
         following.tap()
-        let followingSelected = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in following.isSelected && !forYou.isSelected },
-            object: nil
+        assertFeedSelection(
+            selected: "tiktok_feed_following",
+            unselected: "tiktok_feed_for_you",
+            message: "Following must select its board-following feed even while catalogs are unavailable"
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [followingSelected], timeout: 15), .completed,
-                       "Following must select its board-following feed even while catalogs are unavailable")
         forYou.tap()
-        let discoverySelected = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in forYou.isSelected && !following.isSelected },
+        assertFeedSelection(
+            selected: "tiktok_feed_for_you",
+            unselected: "tiktok_feed_following",
+            message: "For You must return to its independent discovery feed"
+        )
+    }
+
+    private func assertFeedSelection(selected: String, unselected: String, message: String) {
+        // Read both traits in one snapshot: separate full-tree queries can each take seconds
+        // on a busy simulator even after the app has already switched feeds.
+        let matchingStates = app.buttons.matching(
+            NSPredicate(
+                format: "(identifier == %@ AND selected == true) OR (identifier == %@ AND selected == false)",
+                selected, unselected
+            )
+        )
+        let selection = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in matchingStates.count == 2 },
             object: nil
         )
-        XCTAssertEqual(XCTWaiter.wait(for: [discoverySelected], timeout: 15), .completed,
-                       "For You must return to its independent discovery feed")
+        XCTAssertEqual(XCTWaiter.wait(for: [selection], timeout: 15), .completed, message)
     }
 
     private func waitForBoardDirectory(_ board: XCUIElement) {
@@ -157,12 +154,63 @@ final class StartupSmokeTests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label == %@", "Done")).firstMatch
     }
 
-    private func navigationControl(_ label: String) -> XCUIElement {
-        let candidates = app.buttons.matching(NSPredicate(format: "label == %@", label))
-        // A header action may share a tab's name. Require a real bottom button, not a text leaf.
-        return candidates.allElementsBoundByIndex.first {
-            $0.isHittable && $0.frame.minY > app.frame.height / 2 && $0.frame.height <= 120
-        } ?? candidates.firstMatch
+    private func menuButton() -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@", "Menu")).firstMatch
+    }
+
+    private func appBarTitle(_ title: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@ AND label == %@", "reader-app-bar-title", title)
+        ).firstMatch
+    }
+
+    private func drawerEntry(_ destination: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@", "reader-navigation-entry-" + destination)
+        ).firstMatch
+    }
+
+    private func openDrawer() {
+        let menu = menuButton()
+        waitUntilHittable([menu], description: "The app bar Menu button")
+        XCTAssertGreaterThanOrEqual(menu.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(menu.frame.height, 44)
+        menu.tap()
+        waitUntilHittable([drawerEntry("FEED")], description: "The navigation drawer")
+    }
+
+    private func assertDrawerDestinations() {
+        let destinations = [
+            ("FEED", "Home"), ("WATCHED", "Watched"), ("BOARDS", "Boards"),
+            ("SEARCH", "Search"), ("SAVED", "Saved")
+        ]
+        for (identifier, title) in destinations {
+            openDrawer()
+            for (entryID, _) in destinations {
+                let entry = drawerEntry(entryID)
+                XCTAssertTrue(entry.exists && entry.isHittable, "Every primary drawer destination must be reachable")
+                XCTAssertGreaterThanOrEqual(entry.frame.width, 44)
+                XCTAssertGreaterThanOrEqual(entry.frame.height, 44)
+            }
+            drawerEntry(identifier).tap()
+            waitUntilExists([appBarTitle(title)], description: "The " + title + " app bar")
+            openDrawer()
+            XCTAssertTrue(drawerEntry(identifier).isSelected, title + " announces its selected drawer state")
+            drawerEntry(identifier).tap()
+        }
+
+        openDrawer()
+        let settings = drawerEntry("SETTINGS")
+        XCTAssertTrue(settings.exists && settings.isHittable)
+        settings.tap()
+        let back = app.buttons.matching(NSPredicate(format: "label == %@", "Back")).firstMatch
+        waitUntilHittable([back], description: "Settings uses Back in its app bar")
+        XCTAssertFalse(menuButton().exists, "A child screen must not offer the navigation drawer")
+        back.tap()
+        waitUntilExists([appBarTitle("Saved")], description: "Back returns to the previous drawer destination")
+        openDrawer()
+        drawerEntry("FEED").tap()
+        assertHomeAfterSetup()
     }
 
     private func waitUntilHittable(_ elements: [XCUIElement], description: String) {

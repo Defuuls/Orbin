@@ -24,6 +24,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_feed_title
+import com.orbin.uinext.resources.next_search_title
+import com.orbin.uinext.resources.tiktok_feed_menu
+import com.orbin.uinext.tokens.ReaderAmoledColors
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.stringResource
 
@@ -204,18 +207,38 @@ fun FeedScreen(
             null
         }
 
+    var feedMenuVisible by rememberSaveable { mutableStateOf(false) }
     NextScaffold(
         where = stringResource(Res.string.next_feed_title),
         modifier = modifier.fillMaxSize(),
         railVisible = true,
         destination = NextDestination.FEED.takeIf { showRail && hasTabs },
         onDestination = onDestination.takeIf { showRail },
+        drawerDestinations =
+            buildSet {
+                add(NextDestination.FEED)
+                if (onOpenBoards != null) add(NextDestination.BOARDS)
+                if (onOpenWatched != null) add(NextDestination.WATCHED)
+                if (onOpenSaved != null) add(NextDestination.SAVED)
+                if (onOpenSearch != null) add(NextDestination.SEARCH)
+                if (onSettings != null) add(NextDestination.SETTINGS)
+            },
         immersive = true,
+        actions =
+            listOfNotNull(
+                ReaderAction(ReaderIcons.MoreVertical, stringResource(Res.string.tiktok_feed_menu)) {
+                    feedMenuVisible =
+                        true
+                },
+                onOpenSearch?.let {
+                    ReaderAction(ReaderIcons.Search, stringResource(Res.string.next_search_title), it)
+                },
+            ),
     ) { bottomPadding ->
         Box(
             Modifier
                 .fillMaxSize()
-                .background(TikTokDesign.Black)
+                .background(ReaderAmoledColors.background)
                 .padding(bottom = bottomPadding.calculateBottomPadding()),
         ) {
             if (visibleRows.isNotEmpty()) {
@@ -252,6 +275,8 @@ fun FeedScreen(
                 )
             }
             TikTokFeedHeader(
+                menuVisible = feedMenuVisible,
+                onMenuVisibleChange = { feedMenuVisible = it },
                 following = showingFollowing,
                 onFollowingChange = {
                     localFollowing = it

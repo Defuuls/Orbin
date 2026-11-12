@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -31,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -47,7 +45,6 @@ import com.orbin.uinext.resources.next_boards_nsfw
 import com.orbin.uinext.resources.next_boards_random
 import com.orbin.uinext.resources.next_boards_search
 import com.orbin.uinext.resources.next_search_title
-import com.orbin.uinext.resources.next_settings_title
 import com.orbin.uinext.resources.next_status_retry
 import com.orbin.uinext.resources.social_feed_all_boards
 import com.orbin.uinext.resources.social_feed_favorite_add
@@ -144,11 +141,30 @@ fun BoardsScreen(
     }
     Box(modifier.fillMaxSize()) {
         NextScaffold(
-            where = boardsTitle.takeIf { showRail && !hasTabs },
+            where = boardsTitle,
             modifier = Modifier.fillMaxSize(),
             railVisible = railVisible,
             destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
             onDestination = onDestination.takeIf { showRail },
+            drawerDestinations =
+                buildSet {
+                    add(NextDestination.BOARDS)
+                    if (onOpenFeed != null) add(NextDestination.FEED)
+                    if (onOpenWatched != null) add(NextDestination.WATCHED)
+                    if (onOpenSaved != null) add(NextDestination.SAVED)
+                    if (onOpenSearch != null) add(NextDestination.SEARCH)
+                    if (onOpenSettings != null) add(NextDestination.SETTINGS)
+                },
+            actions =
+                listOfNotNull(
+                    onOpenSearch?.let {
+                        ReaderAction(
+                            ReaderIcons.Search,
+                            stringResource(Res.string.next_search_title),
+                            it,
+                        )
+                    },
+                ),
         ) { bottomPad ->
             LazyColumn(
                 state = listState,
@@ -157,42 +173,8 @@ fun BoardsScreen(
             ) {
                 item(key = "boards-title") {
                     Column(Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER)) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (onOpenSearch != null) {
-                                NextIconAction(
-                                    ReaderIcons.Search,
-                                    stringResource(Res.string.next_search_title),
-                                    onOpenSearch,
-                                    tint = next.ink,
-                                )
-                            } else {
-                                Spacer(Modifier.size(MIN_TOUCH_TARGET))
-                            }
-                            Text(
-                                boardsTitle,
-                                style =
-                                    NextType.titleLarge.copy(
-                                        fontSize = 17.sp,
-                                        lineHeight = 22.sp,
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                color = next.ink,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.weight(1f).testTag(NextTitleTags.LARGE).semantics { heading() },
-                            )
-                            if (onOpenSettings != null) {
-                                NextIconAction(
-                                    ReaderIcons.Menu,
-                                    stringResource(Res.string.next_settings_title),
-                                    onOpenSettings,
-                                    tint = next.ink,
-                                )
-                            } else {
-                                Spacer(Modifier.size(MIN_TOUCH_TARGET))
-                            }
+                        if (!LocalReaderFramePresent.current) {
+                            ScreenTitle(boardsTitle, inset = 0.dp)
                         }
                         headerContent()
                         Gap(8)
@@ -267,7 +249,9 @@ fun BoardsScreen(
                 }
             }
         }
-        CompactTitleBar(boardsTitle, showCompactTitle, modifier = Modifier.align(Alignment.TopCenter))
+        if (!hasTabs && !LocalReaderFramePresent.current) {
+            CompactTitleBar(boardsTitle, showCompactTitle, modifier = Modifier.align(Alignment.TopCenter))
+        }
     }
 }
 

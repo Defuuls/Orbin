@@ -1,8 +1,15 @@
 package com.orbin.feature.downloads
 
+import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -10,6 +17,11 @@ import com.orbin.core.designsystem.theme.OrbinTheme
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.testing.repository.FakeDownloadRepository
+import com.orbin.uinext.ReaderAppBarTags
+import com.orbin.uinext.tokens.ReaderSize
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,50 +76,92 @@ class DownloadsScreenTest {
 
     @Test
     fun theScreenOffersBackAndClearActions() {
-        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
+        var backCalls = 0
+        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED), onBack = { backCalls++ })
 
-        composeTestRule.onNodeWithContentDescription("Back").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Clear").assertIsDisplayed()
+        composeTestRule
+            .onNodeWithContentDescription("Back")
+            .assertIsDisplayed()
+            .assertWidthIsAtLeast(ReaderSize.touchTarget)
+            .assertHeightIsAtLeast(ReaderSize.touchTarget)
+            .performClick()
+        composeTestRule.runOnIdle { assertEquals(1, backCalls) }
+        composeTestRule
+            .onNodeWithTag(ReaderAppBarTags.OVERFLOW)
+            .assertWidthIsAtLeast(ReaderSize.touchTarget)
+            .assertHeightIsAtLeast(ReaderSize.touchTarget)
+        openClearMenu()
+            .assertWidthIsAtLeast(ReaderSize.touchTarget)
+            .assertHeightIsAtLeast(ReaderSize.touchTarget)
     }
 
     @Test
     fun clearingAsksForConfirmationFirst() {
-        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
+        val repository = setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
 
-        composeTestRule.onNodeWithContentDescription("Clear").performClick()
+        openClearMenu().performClick()
 
         composeTestRule.onNodeWithText("Clear download history?").assertIsDisplayed()
         composeTestRule.onNodeWithText("clip.webm").assertIsDisplayed()
+        assertDownloadIds(repository, listOf(1L))
     }
 
     @Test
     fun clearingRemovesEveryDownload() {
-        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
+        val repository =
+            setContent(
+                record(1L, "clip.webm", DownloadStatus.COMPLETED),
+                record(2L, "other.webm", DownloadStatus.FAILED),
+            )
 
-        composeTestRule.onNodeWithContentDescription("Clear").performClick()
-        composeTestRule.onNodeWithText("Delete").performClick()
+        openClearMenu().performClick()
+        composeTestRule.onNodeWithText("Clear download history?").assertIsDisplayed()
+        composeTestRule.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
 
         composeTestRule.onNodeWithText("No downloads yet").assertIsDisplayed()
         composeTestRule.onNodeWithText("clip.webm").assertDoesNotExist()
+        composeTestRule.onNodeWithText("other.webm").assertDoesNotExist()
+        assertDownloadIds(repository, emptyList())
     }
 
     @Test
     fun dismissingTheConfirmationKeepsTheDownload() {
-        setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
+        val repository = setContent(record(1L, "clip.webm", DownloadStatus.COMPLETED))
 
-        composeTestRule.onNodeWithContentDescription("Clear").performClick()
-        composeTestRule.onNodeWithText("Cancel").performClick()
+        openClearMenu().performClick()
+        composeTestRule.onNodeWithText("Clear download history?").assertIsDisplayed()
+        composeTestRule.onNode(hasText("Cancel") and hasAnyAncestor(isDialog())).performClick()
 
         composeTestRule.onNodeWithText("clip.webm").assertIsDisplayed()
+        assertDownloadIds(repository, listOf(1L))
     }
 
-    private fun setContent(vararg records: DownloadRecord) {
-        val viewModel = DownloadsViewModel(FakeDownloadRepository(records.toList()))
+    private fun openClearMenu(): SemanticsNodeInteraction {
+        composeTestRule.onNodeWithTag(ReaderAppBarTags.OVERFLOW).assertIsDisplayed().performClick()
+        return composeTestRule.onNodeWithText("Clear").assertIsDisplayed()
+    }
+
+    private fun assertDownloadIds(
+        repository: FakeDownloadRepository,
+        expected: List<Long>,
+    ) {
+        composeTestRule.runOnIdle {
+            assertEquals(expected, runBlocking { repository.observeDownloads().first() }.map { it.id })
+        }
+    }
+
+    private fun setContent(
+        vararg records: DownloadRecord,
+        onBack: () -> Unit = {},
+    ): FakeDownloadRepository {
+        val repository = FakeDownloadRepository(records.toList())
+        val viewModel = DownloadsViewModel(repository)
         composeTestRule.setContent {
             OrbinTheme {
-                DownloadsScreen(onBack = {}, viewModel = viewModel)
+                DownloadsScreen(onBack = onBack, viewModel = viewModel)
             }
         }
+        return repository
     }
 
     private fun record(

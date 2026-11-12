@@ -33,10 +33,38 @@ android {
             )
             signingConfig = signingConfigs.getByName("release")
         }
+        // The baseline-profile plugin creates these release-shaped target variants lazily.
+        // Fixtures must never enter the normal debug or shipped release source sets.
+        configureEach {
+            if (name == "benchmarkRelease" || name == "nonMinifiedRelease") {
+                sourceSets.getByName(name) {
+                    kotlin.directories.add("src/benchmark/kotlin")
+                    res.directories.add("src/benchmark/res")
+                }
+            }
+        }
     }
 
     buildFeatures {
         buildConfig = true
+    }
+}
+
+extensions.configure<com.android.build.api.variant.ApplicationAndroidComponentsExtension> {
+    // The profile plugin copies release's source-set manifest during finalizeDsl. Append fixtures
+    // through the variant API afterward, preserving release's own manifest and production builds.
+    onVariants(selector().withBuildType("benchmarkRelease")) { variant ->
+        variant.sources.manifests.addStaticManifestFile("src/benchmarkRelease/AndroidManifest.xml")
+    }
+    onVariants(selector().withBuildType("nonMinifiedRelease")) { variant ->
+        variant.sources.manifests.addStaticManifestFile("src/nonMinifiedRelease/AndroidManifest.xml")
+    }
+}
+
+baselineProfile {
+    filter {
+        // Fixture orchestration is not shipped; keep only the production paths it exercises.
+        exclude("com.orbin.app.benchmark.**")
     }
 }
 
@@ -52,6 +80,7 @@ dependencies {
     implementation(project(":core:common-android"))
     implementation(project(":core:model"))
     implementation(project(":core:ui"))
+    implementation(project(":core:reader"))
     implementation(project(":core:designsystem"))
 
     // Providers (registered via Hilt @IntoSet)

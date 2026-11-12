@@ -7,14 +7,16 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Thread
 import com.orbin.core.model.toSearchResult
-import com.orbin.core.ui.date.formatRelativeTime
-import com.orbin.domain.thread.replyCounts
-import com.orbin.domain.thread.replyDepths
-import com.orbin.provider.api.UriParts
+import com.orbin.core.reader.catalogRow
+import com.orbin.core.reader.firstMediaIndex
+import com.orbin.core.reader.mediaPostId
+import com.orbin.core.reader.preparePresentation
+import com.orbin.core.reader.threadFiles
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.SearchRow
 import kotlinx.collections.immutable.toImmutableList
+import com.orbin.core.reader.safeExternalLink as sharedSafeExternalLink
 import com.orbin.uinext.Post as NextPost
 
 // Plain-value adapters from the domain model to the ui-next rows, as the Android `Next*Screen`
@@ -92,32 +94,7 @@ internal fun CatalogThread.toRow(
     nowMillis: Long,
     read: Boolean = false,
     unread: Int = 0,
-): FeedRow =
-    FeedRow(
-        id = "${key.provider.value}/${key.board.value}/${key.thread.value}",
-        site = sourceLabel(key.provider.value),
-        poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
-        mediaLabel =
-            originalPost.attachments
-                .firstOrNull()
-                ?.extension
-                .orEmpty()
-                .uppercase(),
-        subject = originalPost.subject?.takeIf { it.isNotBlank() } ?: "No.${key.thread.value}",
-        board = key.board.value,
-        activity =
-            formatRelativeTime(
-                if (stats.lastModifiedMillis > 0L) stats.lastModifiedMillis else originalPost.createdAtMillis,
-                nowMillis,
-            ).orEmpty(),
-        replies = stats.replyCount,
-        media = stats.imageCount,
-        hasPreview = originalPost.attachments.isNotEmpty(),
-        excerpt = originalPost.comment.plainText(),
-        mediaAspectRatio = originalPost.attachments.firstOrNull()?.previewAspectRatio ?: 0f,
-        read = read,
-        unread = unread,
-    )
+): FeedRow = catalogRow(nowMillis).copy(read = read, unread = unread)
 
 /** What a thread's bookmark stores, the same fields Android's thread screen writes. */
 internal fun Thread.toBookmark(nowMillis: Long): Bookmark =
@@ -143,64 +120,20 @@ internal fun Thread.toHistoryEntry(nowMillis: Long): HistoryEntry =
 
 private val Thread.displayTitle: String get() = subject?.takeIf { it.isNotBlank() } ?: "/${key.board.value}/"
 
-internal fun Thread.toPosts(nowMillis: Long): List<NextPost> {
-    val posts = allPosts
-    // The same indent and reply counts as Android's reader, taken from the quote links themselves
-    // so a saved copy without stored backlinks counts the same.
-    val depths = replyDepths(posts)
-    val counts = replyCounts(posts)
-    return posts.map { post ->
-        NextPost(
-            id = post.id.value.toString(),
-            number = "No. ${post.id.value}",
-            author = post.poster.name.orEmpty(),
-            time = formatRelativeTime(post.createdAtMillis, nowMillis).orEmpty(),
-            body = post.comment.plainText(),
-            depth = depths[post.id] ?: 0,
-            hasMedia = post.attachments.isNotEmpty(),
-            replies = counts[post.id] ?: 0,
-            // A spoilered file is covered where it is drawn; `spoiler` here would hide the post's
-            // text instead, which is not what a spoilered file means.
-        )
-    }
-}
+/** Compatibility adapter; both hosts use the same prepared presentation mapper. */
+internal suspend fun Thread.toPosts(nowMillis: Long): List<NextPost> = preparePresentation(nowMillis).rowModels
 
 /** Every file in the thread, in reading order: what the viewer pages through. */
-internal val Thread.files: List<MediaAttachment> get() = allPosts.flatMap { it.attachments }
+internal val Thread.files: List<MediaAttachment> get() = threadFiles
 
 /** The owning post of a viewer page, counting every attachment and skipping text-only posts. */
-internal fun Thread.postIdForFileIndex(index: Int): String? {
-    if (index < 0) return null
-    var remaining = index
-    for (post in allPosts) {
-        if (remaining < post.attachments.size) return post.id.value.toString()
-        remaining -= post.attachments.size
-    }
-    return null
-}
+internal fun Thread.postIdForFileIndex(index: Int): String? = mediaPostId(index)?.value?.toString()
 
 /** Where the post with [postId]'s first file sits in [files], or null when it has none. */
-internal fun Thread.firstFileIndex(postId: String): Int? {
-    var index = 0
-    for (post in allPosts) {
-        if (post.id.value.toString() == postId) return index.takeIf { post.attachments.isNotEmpty() }
-        index += post.attachments.size
-    }
-    return null
-}
+internal fun Thread.firstFileIndex(postId: String): Int? = firstMediaIndex(postId)
 
-/**
- * [url] if it may be handed to the browser, else null: https with a host, nothing else. The same
- * rule as Android's `SafeExternalLinks.sanitizeHttps`, decided by the same URI grammar ([UriParts]
- * is checked against `java.net.URI`), so a post link cannot open anything on iOS that it could not
- * open on Android.
- */
-internal fun safeExternalLink(url: String): String? {
-    val trimmed = url.trim()
-    if (!trimmed.startsWith("https://", ignoreCase = true)) return null
-    val parts = UriParts.parse(trimmed) ?: return null
-    return trimmed.takeIf { parts.scheme.equals("https", ignoreCase = true) && !parts.host.isNullOrBlank() }
-}
+/** The shared HTTPS-only rule is used by both platform readers. */
+internal fun safeExternalLink(url: String): String? = sharedSafeExternalLink(url)
 
 private fun sourceLabel(provider: String): String =
     when (provider) {

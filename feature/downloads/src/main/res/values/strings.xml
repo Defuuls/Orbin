@@ -11,4 +11,5 @@
     <string name="downloads_status_running">Downloading…</string>
     <string name="downloads_status_completed">Completed</string>
     <string name="downloads_status_failed">Failed</string>
+    <string name="downloads_empty_hint">Downloaded files will appear here.</string>
 </resources>

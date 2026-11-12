@@ -22,15 +22,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.SingletonImageLoader
 import coil3.compose.LocalPlatformContext
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
-import com.orbin.core.model.TABLET_MIN_CATALOG_COLUMNS
 import com.orbin.core.model.feedColumns
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_boards_no_visible
@@ -39,13 +38,10 @@ import com.orbin.ios.resources.ios_collection_all_sites
 import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
-import com.orbin.ios.resources.ios_primary_boards
 import com.orbin.ios.resources.ios_primary_loading
-import com.orbin.ios.resources.ios_primary_retry
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
-import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextScaffold
@@ -55,6 +51,7 @@ import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.ThreadCollectionRow
 import com.orbin.uinext.ThreadCollectionScreen
+import com.orbin.uinext.tokens.ReaderSpace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -66,7 +63,7 @@ import kotlin.time.Clock
 
 private const val CLEAR_ARMED_MS = 4_000L
 
-// Home, Boards, Watched, Search and Saved tabs, plus their detail pages.
+// Home, Boards, Watched, Search and Saved drawer destinations, plus their detail pages.
 
 @Composable
 internal fun FeedDestination(
@@ -242,44 +239,42 @@ internal fun FeedDestination(
 
 @Composable
 internal fun BoardsDestination(browser: Browser) {
-    val boards by browser.boards.collectAsState()
-    val favorites by browser.favorites.collectAsState()
+    val directory by browser.boardDirectory.collectAsState()
+    val followed by browser.followed.collectAsState()
     val unreachable by browser.unreachableSites.collectAsState()
     val site by browser.activeSite.collectAsState()
-    val hideNsfw by remember { browser.settings.current.map { it.hideNsfwBoards } }.collectAsState(false)
-    PrimaryLoaded(browser, boards, stringResource(Res.string.ios_primary_boards), NextDestination.BOARDS) { all ->
-        // One site at a time, as Android's boards list; hidden NSFW boards leave it, as there.
-        val list =
-            remember(all, site, hideNsfw) {
-                all.filter { it.provider == site && !(hideNsfw && it.board.isNsfw) }
-            }
-        val byTile = remember(list) { list.associateBy { it.tileId } }
-        val sourceUnavailable = all.none { it.provider == site }
-        BoardsScreen(
-            hideRailOnScroll = false,
-            subtitle = boardsSubtitle(list.size, unreachable),
-            emptyMessage =
-                if (sourceUnavailable) {
-                    stringResource(Res.string.ios_boards_source_unavailable, browser.siteName(site))
-                } else {
-                    stringResource(Res.string.ios_boards_no_visible)
-                },
-            onRetry = if (sourceUnavailable) browser::retry else null,
-            boards =
-                remember(list, favorites) {
-                    list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in favorites) }
-                },
-            onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
-            onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFavorite(it, follow) } },
-            onOpenFeed = { browser.openTab(Route.Feed) },
-            onOpenDownloads = { browser.open(Route.Downloads) },
-            onOpenSaved = { browser.openTab(Route.Saved) },
-            onOpenWatched = { browser.openTab(Route.Watched) },
-            onOpenSearch = { browser.openTab(Route.Search) },
-            onOpenSettings = { browser.open(Route.Settings) },
-            headerContent = { SiteSwitcher(browser, site, gapAfter = 12.dp) },
-        )
-    }
+    val settings by browser.settings.current.collectAsState()
+    val boards = remember(directory, site) { directory.boardsOnSite(site) }
+    // The selector remains available while the selected source loads or fails.
+    val list =
+        remember(boards, settings.hideNsfwBoards) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        }
+    val byTile = remember(list) { list.associateBy { it.tileId } }
+    BoardsScreen(
+        hideRailOnScroll = false,
+        subtitle = boardsSubtitle(list.size, unreachable),
+        emptyMessage =
+            when (boards) {
+                Load.Loading -> stringResource(Res.string.ios_primary_loading)
+                is Load.Failed -> stringResource(Res.string.ios_boards_source_unavailable, browser.siteName(site))
+                is Load.Ready -> stringResource(Res.string.ios_boards_no_visible)
+            },
+        onRetry = if (site in directory.failures) browser::retry else null,
+        boards =
+            remember(list, followed) {
+                list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in followed) }
+            },
+        onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
+        onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
+        onOpenFeed = { browser.openTab(Route.Feed) },
+        onOpenDownloads = { browser.open(Route.Downloads) },
+        onOpenSaved = { browser.openTab(Route.Saved) },
+        onOpenWatched = { browser.openTab(Route.Watched) },
+        onOpenSearch = { browser.openTab(Route.Search) },
+        onOpenSettings = { browser.open(Route.Settings) },
+        headerContent = { SiteSwitcher(browser, site, gapAfter = ReaderSpace.gap) },
+    )
 }
 
 /** Board directory source selector. Home adds an All sites choice separately. */
@@ -394,7 +389,7 @@ internal fun SettingsDestination(
                 playbackScope,
                 playbackChoices,
             ) {
-                settingsGroups(settings, clearArmed, imageCacheCleared, backupState, formFactor, version) +
+                settingsGroups(settings, clearArmed, imageCacheCleared, backupState, version) +
                     ("Playback" to playbackRows(settings, playbackChoices, playbackScope))
             },
         expandedId = expanded,
@@ -450,10 +445,9 @@ internal fun SettingsDestination(
                         browser.settings.setSaveBrowsingHistory(!settings.saveBrowsingHistory)
                     }
                     SettingIds.DOH_PROVIDER,
-                    SettingIds.COLOR_THEME,
                     SettingIds.THEME,
                     SettingIds.FEED_COLUMNS,
-                    SettingIds.CATALOG_COLUMNS,
+                    SettingIds.CATALOG_MODE,
                     "playbackScope",
                     "autoplay",
                     "preloadNextClip",
@@ -503,15 +497,10 @@ internal fun SettingsDestination(
                             .getOrNull(
                                 index,
                             )?.let(browser.settings::setDohProvider)
-                    SettingIds.COLOR_THEME ->
-                        AppColorTheme.entries
-                            .getOrNull(
-                                index,
-                            )?.let(browser.settings::setColorTheme)
                     SettingIds.THEME -> AppThemeMode.entries.getOrNull(index)?.let(browser.settings::setThemeMode)
                     SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
-                    SettingIds.CATALOG_COLUMNS ->
-                        browser.settings.setTabletCatalogColumns(TABLET_MIN_CATALOG_COLUMNS + index)
+                    SettingIds.CATALOG_MODE ->
+                        CatalogMode.entries.getOrNull(index)?.let(browser.settings::setCatalogMode)
                 }
             }
             expanded = null
@@ -631,28 +620,4 @@ internal fun ThreadCollectionsDestination(
         onDestination = if (isTab) browser::openDestination else null,
         selectedDestination = if (route == Route.Watched) NextDestination.WATCHED else NextDestination.SAVED,
     )
-}
-
-/** A network failure must not remove the tab bar or trap the reader on a loading screen. */
-@Composable
-private fun <T> PrimaryLoaded(
-    browser: Browser,
-    load: Load<T>,
-    title: String,
-    destination: NextDestination,
-    content: @Composable (T) -> Unit,
-) {
-    when (load) {
-        is Load.Ready -> content(load.value)
-        else ->
-            MessageScreen(
-                title = title,
-                subtitle = if (load is Load.Failed) load.message else stringResource(Res.string.ios_primary_loading),
-                skeleton = load is Load.Loading,
-                actionLabel = if (load is Load.Failed) stringResource(Res.string.ios_primary_retry) else null,
-                onAction = browser::retry,
-                destination = destination,
-                onDestination = browser::openDestination,
-            )
-    }
 }

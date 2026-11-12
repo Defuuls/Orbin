@@ -34,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -139,13 +138,7 @@ private fun IosSwitch(
                     .size(IOS_SWITCH_THUMB)
                     .clip(thumbShape)
                     .background(
-                        if (checked) {
-                            next.onAccent
-                        } else if (next.dark) {
-                            next.ink
-                        } else {
-                            Color.White
-                        },
+                        if (checked) reader.onAccent else reader.inkMuted,
                     ),
             )
         }
@@ -238,7 +231,7 @@ fun SchematicSearch(
                 ),
             keyboardActions = KeyboardActions(onSearch = { onSearch?.invoke() }),
             textStyle = NextType.body.copy(color = next.ink, lineHeight = 20.sp),
-            cursorBrush = SolidColor(TikTokDesign.Pink),
+            cursorBrush = SolidColor(reader.accent),
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -253,7 +246,7 @@ fun SchematicSearch(
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(4.dp))
-                            .background(if (next.dark) Color(0xFF252525) else Color(0xFFF1F1F2))
+                            .background(reader.surfaceVariant)
                             .padding(
                                 start = 10.dp,
                                 end = if (value.isEmpty()) 10.dp else 48.dp,

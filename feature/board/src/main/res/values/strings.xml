@@ -14,6 +14,7 @@
     <string name="board_error_slow">The board took too long to answer.</string>
     <string name="board_error_rate_limited">The board is limiting requests. Try again in a minute.</string>
     <string name="board_error_gone">This board no longer exists.</string>
+    <string name="board_error_server">The server could not load this board. Try again.</string>
     <string name="board_subscribe">Subscribe to thread</string>
     <string name="board_unsubscribe">Unsubscribe from thread</string>
     <string name="board_audio">Audio</string>
@@ -26,4 +27,7 @@
     <string name="board_loading">Loading…</string>
     <string name="board_try_again">Try again</string>
     <string name="board_refresh">Refresh</string>
+    <string name="board_empty_hint">Reload to check for new threads.</string>
+    <string name="board_no_matches">No matching threads</string>
+    <string name="board_no_matches_hint">Try a different title or phrase.</string>
 </resources>

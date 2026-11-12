@@ -1,6 +1,7 @@
 package com.orbin.feature.thread
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
@@ -10,7 +11,9 @@ import com.orbin.core.model.Bookmark
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Post
+import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
+import com.orbin.core.model.PostNode
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
@@ -24,15 +27,29 @@ import com.orbin.core.testing.repository.FakeSavedThreadRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.ThreadContextElement
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.CoroutineContext
 
 private const val PROVIDER = "fourchan"
 private const val BOARD = "g"
@@ -161,7 +178,7 @@ class ThreadViewModelTest {
         runTest {
             val viewModel = createViewModel()
 
-            viewModel.uiState.test { awaitItem() }
+            viewModel.uiState.test { awaitSuccess() }
             viewModel.exportLinks()
 
             assertThat(viewModel.exportMessage.value).isEqualTo("No links found in this thread")
@@ -177,7 +194,7 @@ class ThreadViewModelTest {
             val history = FakeHistoryRepository()
 
             val first = createViewModel(historyRepository = history)
-            first.uiState.test { awaitItem() }
+            first.uiState.test { awaitSuccess() }
             first.saveScrollPosition(PostId(42), offsetPx = 17)
             advanceTimeBy(650L)
             runCurrent()
@@ -196,7 +213,7 @@ class ThreadViewModelTest {
         runTest {
             val history = FakeHistoryRepository()
             val viewModel = createViewModel(historyRepository = history)
-            viewModel.uiState.test { awaitItem() }
+            viewModel.uiState.test { awaitSuccess() }
 
             viewModel.saveScrollPosition(PostId(42), offsetPx = 17)
             runCurrent()
@@ -207,6 +224,168 @@ class ThreadViewModelTest {
             assertThat(target.offsetPx).isEqualTo(17)
         }
 
+    @Test
+    fun `failed refresh keeps content and prepared snapshot then recovery clears the error`() =
+        runTest {
+            val repository = RefreshingThreadRepository(defaultThread())
+            val viewModel = createViewModel(threadRepository = repository)
+            viewModel.uiState.test {
+                val initial = awaitSuccess()
+                repository.next = OrbinResult.Failure(DataError.Offline())
+                viewModel.refresh()
+                val retained = awaitSuccess()
+                assertThat(retained.thread).isEqualTo(initial.thread)
+                assertThat(retained.presentation).isSameInstanceAs(initial.presentation)
+                assertThat(retained.refreshFailure).isInstanceOf(DataError.Offline::class.java)
+                assertThat(viewModel.isRefreshing.value).isFalse()
+
+                val updated = defaultThread().copy(stats = ThreadStats(replyCount = 4))
+                repository.next = OrbinResult.Success(updated)
+                viewModel.refresh()
+                val recovered = awaitSuccess()
+                assertThat(recovered.thread).isEqualTo(updated)
+                assertThat(recovered.refreshFailure).isNull()
+                assertThat(recovered.presentation).isNotSameInstanceAs(initial.presentation)
+            }
+        }
+
+    @Test
+    fun `refresh cancels an older load before it can replace the new revision`() =
+        runTest {
+            val updated = defaultThread().copy(stats = ThreadStats(replyCount = 5))
+            val repository = RefreshingThreadRepository(defaultThread(), firstDelayMillis = 1_000L)
+            val viewModel = createViewModel(threadRepository = repository)
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(ThreadUiState.Loading)
+                runCurrent()
+                repository.next = OrbinResult.Success(updated)
+                viewModel.refresh()
+                assertThat(awaitSuccess().thread).isEqualTo(updated)
+                advanceTimeBy(2_000L)
+                runCurrent()
+                assertThat((viewModel.uiState.value as ThreadUiState.Success).thread).isEqualTo(updated)
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun `the actual host load filters and formats comments only in its worker context`() =
+        runTest {
+            val worker = MarkedWorkerDispatcher()
+            val walks = AtomicInteger()
+            val nodes = WorkerCheckedNodes(worker, walks)
+            val source =
+                defaultThread().let {
+                    it.copy(originalPost = it.originalPost.copy(comment = PostComment("", nodes)))
+                }
+            val repository = RefreshingThreadRepository(source)
+            val viewModel = createViewModel(threadRepository = repository, presentationDispatcher = worker)
+            viewModel.uiState.test {
+                val initial = awaitSuccess()
+                assertThat(
+                    initial.presentation.rowModels
+                        .single()
+                        .body,
+                ).isEqualTo("A visible comment")
+                assertThat(walks.get()).isGreaterThan(0)
+            }
+        }
+
+    @Test
+    fun `leaving cancels initial loading immediately including unread observer and visible return restarts it`() =
+        runTest {
+            val repository = CancellableThreadRepository()
+            val viewModel =
+                createViewModel(
+                    threadRepository = repository,
+                    presentationDispatcher = UnconfinedTestDispatcher(testScheduler),
+                )
+            val unread = backgroundScope.launch { viewModel.firstUnreadPostId.collect() }
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(ThreadUiState.Loading)
+                runCurrent()
+                assertThat(repository.requests).hasSize(1)
+                cancelAndIgnoreRemainingEvents()
+            }
+            unread.cancel()
+            runCurrent()
+            assertThat(repository.requests.single().cancelled).isTrue()
+
+            lateinit var loaded: ThreadUiState.Success
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(ThreadUiState.Loading)
+                runCurrent()
+                assertThat(repository.requests).hasSize(2)
+                repository.requests
+                    .last()
+                    .result
+                    .complete(OrbinResult.Success(defaultThread()))
+                loaded = awaitSuccess()
+            }
+            runCurrent()
+            viewModel.uiState.test {
+                assertThat(awaitSuccess().presentation).isSameInstanceAs(loaded.presentation)
+                runCurrent()
+                assertThat(repository.requests).hasSize(2)
+            }
+            assertThat(repository.requests.map { it.forceRefresh }).containsExactly(false, false).inOrder()
+        }
+
+    @Test
+    fun `leaving cancels refresh while retaining Ready and completed refresh never repeats on resume`() =
+        runTest {
+            val repository = CancellableThreadRepository()
+            val viewModel =
+                createViewModel(
+                    threadRepository = repository,
+                    presentationDispatcher = UnconfinedTestDispatcher(testScheduler),
+                )
+            lateinit var initial: ThreadUiState.Success
+            viewModel.uiState.test {
+                awaitItem()
+                runCurrent()
+                repository.requests
+                    .single()
+                    .result
+                    .complete(OrbinResult.Success(defaultThread()))
+                initial = awaitSuccess()
+                viewModel.refresh()
+                runCurrent()
+                assertThat(repository.requests).hasSize(2)
+                assertThat((viewModel.uiState.value as ThreadUiState.Success).presentation)
+                    .isSameInstanceAs(initial.presentation)
+            }
+            runCurrent()
+            assertThat(repository.requests.last().cancelled).isTrue()
+
+            val updated = defaultThread().copy(stats = ThreadStats(replyCount = 7))
+            lateinit var refreshed: ThreadUiState.Success
+            viewModel.uiState.test {
+                assertThat(awaitSuccess().presentation).isSameInstanceAs(initial.presentation)
+                runCurrent()
+                assertThat(repository.requests).hasSize(3)
+                repository.requests
+                    .last()
+                    .result
+                    .complete(OrbinResult.Success(updated))
+                refreshed = awaitSuccess()
+                assertThat(refreshed.thread).isEqualTo(updated)
+            }
+            runCurrent()
+            viewModel.uiState.test {
+                assertThat(awaitSuccess().presentation).isSameInstanceAs(refreshed.presentation)
+                runCurrent()
+                assertThat(repository.requests).hasSize(3)
+            }
+            assertThat(repository.requests.map { it.forceRefresh }).containsExactly(false, true, true).inOrder()
+        }
+
+    private suspend fun ReceiveTurbine<ThreadUiState>.awaitSuccess(): ThreadUiState.Success {
+        var state = awaitItem()
+        while (state !is ThreadUiState.Success) state = awaitItem()
+        return state
+    }
+
     private fun createViewModel(
         thread: Thread = defaultThread(),
         threadRepository: ThreadRepository = FakeThreadRepository(thread),
@@ -215,6 +394,7 @@ class ThreadViewModelTest {
         downloadRepository: FakeDownloadRepository = FakeDownloadRepository(),
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
         savedThreadRepository: FakeSavedThreadRepository = FakeSavedThreadRepository(),
+        presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
     ) = ThreadViewModel(
         savedStateHandle =
             SavedStateHandle(
@@ -226,6 +406,7 @@ class ThreadViewModelTest {
         historyRepository = historyRepository,
         settingsRepository = settingsRepository,
         savedThreadRepository = savedThreadRepository,
+        presentationDispatcher = presentationDispatcher,
     )
 
     private fun defaultThread() =
@@ -310,4 +491,91 @@ private class FailingThreadRepository : ThreadRepository {
         thread: ThreadId,
         forceRefresh: Boolean,
     ): OrbinResult<Thread> = OrbinResult.Failure(DataError.Offline())
+}
+
+private class RefreshingThreadRepository(
+    thread: Thread,
+    private val firstDelayMillis: Long = 0L,
+) : ThreadRepository {
+    var next: OrbinResult<Thread> = OrbinResult.Success(thread)
+
+    override fun observeThread(
+        key: ThreadKey,
+        forceRefresh: Boolean,
+    ): Flow<OrbinResult<Thread>> {
+        val result = next
+        return flow {
+            if (!forceRefresh) delay(firstDelayMillis)
+            emit(result)
+        }
+    }
+
+    override suspend fun refreshThread(
+        provider: ProviderId,
+        board: BoardId,
+        thread: ThreadId,
+        forceRefresh: Boolean,
+    ): OrbinResult<Thread> = next
+}
+
+private class MarkedWorkerDispatcher :
+    CoroutineDispatcher(),
+    ThreadContextElement<Boolean> {
+    private val active = ThreadLocal.withInitial { false }
+
+    fun assertActive() = check(active.get() == true) { "The host walked post text outside its preparation worker" }
+
+    override fun dispatch(
+        context: CoroutineContext,
+        block: Runnable,
+    ) = Dispatchers.Default.dispatch(context, block)
+
+    override fun updateThreadContext(context: CoroutineContext): Boolean =
+        (active.get() == true).also { active.set(true) }
+
+    override fun restoreThreadContext(
+        context: CoroutineContext,
+        oldState: Boolean,
+    ) = active.set(oldState)
+}
+
+private class WorkerCheckedNodes(
+    private val worker: MarkedWorkerDispatcher,
+    private val walks: AtomicInteger,
+) : ImmutableList<PostNode> by persistentListOf(PostNode.Text("A visible comment")) {
+    override fun iterator(): Iterator<PostNode> {
+        worker.assertActive()
+        walks.incrementAndGet()
+        return persistentListOf(PostNode.Text("A visible comment")).iterator()
+    }
+}
+
+private class CancellableThreadRepository : ThreadRepository {
+    data class Request(
+        val forceRefresh: Boolean,
+        val result: CompletableDeferred<OrbinResult<Thread>> = CompletableDeferred(),
+        var cancelled: Boolean = false,
+    )
+
+    val requests = mutableListOf<Request>()
+
+    override fun observeThread(
+        key: ThreadKey,
+        forceRefresh: Boolean,
+    ): Flow<OrbinResult<Thread>> =
+        flow {
+            val request = Request(forceRefresh).also(requests::add)
+            try {
+                emit(request.result.await())
+            } finally {
+                request.cancelled = !currentCoroutineContext().isActive
+            }
+        }
+
+    override suspend fun refreshThread(
+        provider: ProviderId,
+        board: BoardId,
+        thread: ThreadId,
+        forceRefresh: Boolean,
+    ): OrbinResult<Thread> = error("The reader observes threads")
 }

@@ -18,7 +18,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.UpdateStatus
-import com.orbin.core.ui.device.rememberFormFactor
 import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
@@ -70,7 +69,6 @@ fun NextSettingsScreen(
     val checkUpdatesOnLaunch by viewModel.checkUpdatesOnLaunch.collectAsStateWithLifecycle()
     val strictDns by viewModel.strictDns.collectAsStateWithLifecycle()
     val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
-    val formFactor = rememberFormFactor()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val strings = remember(context) { context.settingsStrings() }
@@ -127,7 +125,6 @@ fun NextSettingsScreen(
             cacheLabel,
             clearArmed,
             checkUpdatesOnLaunch,
-            formFactor,
             strictDns,
             dnsFallbackActive,
         ) {
@@ -139,7 +136,6 @@ fun NextSettingsScreen(
                 cacheLabel,
                 clearArmed,
                 checkUpdatesOnLaunch,
-                formFactor,
                 DnsRowState(strict = strictDns, fallbackActive = dnsFallbackActive),
             )
         }

@@ -29,6 +29,9 @@ data class FeedRow(
     val mediaLabel: String = "",
     val watched: Boolean = false,
     val bookmarked: Boolean = false,
+    val sticky: Boolean = false,
+    val closed: Boolean = false,
+    val imageSpoiler: Boolean = false,
     val threadNumber: String =
         id.substringAfterLast('/').trimStart(':').takeIf { candidate ->
             candidate.isNotEmpty() && candidate.all { it.isDigit() }

@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /** Decorative control: its enclosing setting row owns the labeled switch action and state. */
@@ -22,11 +21,9 @@ import androidx.compose.ui.unit.dp
 internal fun TikTokSettingsSwitch(checked: Boolean) {
     val track by animateColorAsState(
         if (checked) {
-            TikTokDesign.Pink
-        } else if (next.dark) {
-            Color(0xFF3B3B3B)
+            reader.accent
         } else {
-            Color(0xFFE3E3E4)
+            reader.surfaceVariant
         },
         label = "settings-switch-track",
     )
@@ -41,7 +38,7 @@ internal fun TikTokSettingsSwitch(checked: Boolean) {
                 .offset(x = offset)
                 .size(22.dp)
                 .clip(CircleShape)
-                .background(Color.White),
+                .background(if (checked) reader.onAccent else reader.inkMuted),
         )
     }
 }

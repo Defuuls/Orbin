@@ -65,10 +65,16 @@ object ReaderIcons {
     }
     val Menu: ImageVector by lazy { outline("Menu", "M4 5.5h16M4 12h16M4 18.5h16") }
     val More: ImageVector by lazy { outline("More", "M6 12h.01M12 12h.01M18 12h.01") }
+    val MoreVertical: ImageVector by lazy { outline("MoreVertical", "M12 6h.01M12 12h.01M12 18h.01") }
+    val Refresh: ImageVector by lazy { outline("Refresh", "M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4") }
     val Back: ImageVector by lazy { outline("Back", "M15 4l-8 8 8 8", autoMirror = true) }
     val ChevronDown: ImageVector by lazy { outline("ChevronDown", "M6 9l6 6 6-6") }
     val ChevronRight: ImageVector by lazy { outline("ChevronRight", "M9 5l7 7-7 7", autoMirror = true) }
     val Close: ImageVector by lazy { outline("Close", "M6 6l12 12M18 6 6 18") }
+    val Pin: ImageVector by lazy { outline("Pin", "M8 3h8M9 3v6l-3 4v2h12v-2l-3-4V3M12 15v7") }
+    val Lock: ImageVector by lazy {
+        outline("Lock", "M6 10h12v11H6ZM8 10V6a4 4 0 0 1 8 0v4M12 14v3")
+    }
     val Check: ImageVector by lazy { outline("Check", "M5 12l4 4L19 6") }
     val Download: ImageVector by lazy {
         outline("Download", "M12 3v12M7 10l5 5 5-5M4 16v4h16v-4")

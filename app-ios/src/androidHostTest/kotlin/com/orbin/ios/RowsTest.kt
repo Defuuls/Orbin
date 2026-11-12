@@ -19,6 +19,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -108,42 +109,44 @@ class RowsTest {
     }
 
     @Test
-    fun aSpoileredFileLeavesItsPostsTextReadable() {
-        val covered =
-            post(1, files = 1).let {
-                it.copy(
-                    attachments =
-                        it.attachments
-                            .map { a ->
-                                a.copy(isSpoiler = true)
-                            }.toPersistentList(),
-                )
-            }
-        val thread = Thread(key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)), originalPost = covered)
+    fun aSpoileredFileLeavesItsPostsTextReadable() =
+        runTest {
+            val covered =
+                post(1, files = 1).let {
+                    it.copy(
+                        attachments =
+                            it.attachments
+                                .map { a ->
+                                    a.copy(isSpoiler = true)
+                                }.toPersistentList(),
+                    )
+                }
+            val thread = Thread(key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)), originalPost = covered)
 
-        // The file is covered where it is drawn; the post's text stays as it is.
-        assertEquals(false, thread.toPosts(nowMillis = 0).single().spoiler)
-    }
+            // The file is covered where it is drawn; the post's text stays as it is.
+            assertEquals(false, thread.toPosts(nowMillis = 0).single().spoiler)
+        }
 
     @Test
-    fun postsIndentAndCountRepliesFromQuoteLinksAsOnAndroid() {
-        fun quoting(
-            id: Long,
-            vararg targets: Long,
-        ) = post(id, files = 0).copy(repliesTo = targets.map(::PostId).toPersistentList())
-        // No stored backlinks, as in a saved copy: the counts come from the quotes themselves.
-        val thread =
-            Thread(
-                key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)),
-                originalPost = post(1, files = 0),
-                replies = persistentListOf(quoting(2, 1), quoting(3, 2), quoting(4, 3)),
-            )
+    fun postsIndentAndCountRepliesFromQuoteLinksAsOnAndroid() =
+        runTest {
+            fun quoting(
+                id: Long,
+                vararg targets: Long,
+            ) = post(id, files = 0).copy(repliesTo = targets.map(::PostId).toPersistentList())
+            // No stored backlinks, as in a saved copy: the counts come from the quotes themselves.
+            val thread =
+                Thread(
+                    key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(1)),
+                    originalPost = post(1, files = 0),
+                    replies = persistentListOf(quoting(2, 1), quoting(3, 2), quoting(4, 3)),
+                )
 
-        val posts = thread.toPosts(nowMillis = 0)
+            val posts = thread.toPosts(nowMillis = 0)
 
-        assertEquals(listOf(0, 0, 1, 2), posts.map { it.depth })
-        assertEquals(listOf(1, 1, 1, 0), posts.map { it.replies })
-    }
+            assertEquals(listOf(0, 0, 1, 2), posts.map { it.depth })
+            assertEquals(listOf(1, 1, 1, 0), posts.map { it.replies })
+        }
 
     @Test
     fun onlyHttpsLinksWithAHostMayBeOpened() {

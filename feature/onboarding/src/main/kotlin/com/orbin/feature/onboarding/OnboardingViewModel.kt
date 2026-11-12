@@ -6,6 +6,7 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.matchesFilterTokens
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -25,7 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -93,10 +93,12 @@ class OnboardingViewModel
                 boards[provider.metadata.id].orEmpty().map { it.value }.toSet()
             }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 
+        private val eligibleBoards = MutableStateFlow<Map<ProviderId, Set<BoardId>>>(emptyMap())
+
         val totalFollowing: StateFlow<Int> =
-            followedBoards
-                .map { boards -> boards.values.sumOf { it.size } }
-                .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+            combine(followedBoards, eligibleBoards) { followed, eligible ->
+                followed.entries.sumOf { (provider, boards) -> boards.count { it in eligible[provider].orEmpty() } }
+            }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
         private val _setupState = MutableStateFlow(OnboardingSetupState())
         val setupState: StateFlow<OnboardingSetupState> = _setupState.asStateFlow()
@@ -122,7 +124,19 @@ class OnboardingViewModel
                         if (selectedProvider.value.metadata.id != targetProviderId) return@launch
                         _boards.value =
                             when (result) {
-                                is OrbinResult.Success -> OnboardingBoardsState.Success(result.data.toImmutableList())
+                                is OrbinResult.Success -> {
+                                    val hideNsfw = settingsRepository.settings.first().hideNsfwBoards
+                                    val visible =
+                                        result.data
+                                            .filterNot { board -> hideNsfw && board.isNsfw }
+                                            .filterNot { board -> board.matchesFilterTokens(emptySet()) }
+                                    eligibleBoards.update { current ->
+                                        current + (targetProviderId to visible.mapTo(mutableSetOf()) { it.id })
+                                    }
+                                    OnboardingBoardsState.Success(
+                                        visible.toImmutableList(),
+                                    )
+                                }
                                 is OrbinResult.Failure -> OnboardingBoardsState.Error(result.error.message)
                             }
                     } catch (cancelled: CancellationException) {
@@ -149,6 +163,7 @@ class OnboardingViewModel
                 try {
                     writes.withLock {
                         boardPreferencesRepository.setSubscribedBoard(provider, BoardId(boardId), subscribed)
+                        if (!subscribed) boardPreferencesRepository.setFavoriteBoard(provider, BoardId(boardId), false)
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -178,12 +193,12 @@ class OnboardingViewModel
                 try {
                     writes.withLock {
                         val persisted =
-                            providers.associate {
-                                it.metadata.id to
-                                    (
-                                        boardPreferencesRepository.observeSubscribedBoards(it.metadata.id).first() +
-                                            boardPreferencesRepository.observeFavoriteBoards(it.metadata.id).first()
-                                    )
+                            providers.associate { provider ->
+                                val id = provider.metadata.id
+                                val followed =
+                                    boardPreferencesRepository.observeSubscribedBoards(id).first() +
+                                        boardPreferencesRepository.observeFavoriteBoards(id).first()
+                                id to followed.intersect(eligibleBoards.value[id].orEmpty())
                             }
                         val active =
                             selected.takeIf { persisted[it].orEmpty().isNotEmpty() }

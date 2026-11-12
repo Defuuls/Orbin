@@ -1,11 +1,10 @@
 package com.orbin.uinext
 
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
@@ -15,15 +14,16 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Network state changes must leave a route out of a primary destination. */
+/** A loading or failed primary destination retains its Menu and every drawer route. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class PrimaryLoadingNavigationTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /** Replaces loadingBoardsKeepAllFiveTabsUsable: navigation now opens through Menu. */
     @Test
-    fun loadingBoardsKeepAllFiveTabsUsable() {
+    fun loadingBoardsKeepAllDrawerDestinationsUsable() {
         var selected: NextDestination? = null
         composeRule.setContent {
             NextTheme {
@@ -36,13 +36,26 @@ class PrimaryLoadingNavigationTest {
                 )
             }
         }
-        composeRule.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertCountEquals(5)
-        composeRule.onNodeWithContentDescription("Watched").performClick()
-        assertEquals(NextDestination.WATCHED, selected)
+
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        listOf(
+            NextDestination.FEED,
+            NextDestination.WATCHED,
+            NextDestination.BOARDS,
+            NextDestination.SEARCH,
+            NextDestination.SAVED,
+            NextDestination.SETTINGS,
+        ).forEach { destination ->
+            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertIsDisplayed()
+        }
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.BOARDS.name).assertIsSelected()
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.WATCHED.name).performClick()
+        composeRule.runOnIdle { assertEquals(NextDestination.WATCHED, selected) }
     }
 
+    /** Replaces failedHomeOffersRetryAndNavigationToAnotherTab with the equivalent drawer route. */
     @Test
-    fun failedHomeOffersRetryAndNavigationToAnotherTab() {
+    fun failedHomeOffersRetryAndNavigationToAnotherDrawerDestination() {
         var retries = 0
         var selected: NextDestination? = null
         composeRule.setContent {
@@ -57,9 +70,11 @@ class PrimaryLoadingNavigationTest {
                 )
             }
         }
+
         composeRule.onNodeWithText("Try again").performClick()
-        assertEquals(1, retries)
-        composeRule.onNodeWithContentDescription("Saved").performClick()
-        assertEquals(NextDestination.SAVED, selected)
+        composeRule.runOnIdle { assertEquals(1, retries) }
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.SAVED.name).performClick()
+        composeRule.runOnIdle { assertEquals(NextDestination.SAVED, selected) }
     }
 }

@@ -21,12 +21,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 /**
@@ -61,19 +64,32 @@ class HomeViewModel
             viewModelScope.launch { settingsRepository.setActiveProviderId(ProviderId(id)) }
         }
 
-        val favoriteBoardIds: StateFlow<Set<String>> =
+        /** First-run subscriptions and older favorites are the same Following choice in Boards. */
+        val followedBoardIds: StateFlow<Set<String>> =
             activeProvider
-                .flatMapLatest { provider -> boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id) }
-                .map { boards -> boards.map { it.value }.toSet() }
+                .flatMapLatest { provider ->
+                    combine(
+                        boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
+                        boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
+                    ) { favorites, subscriptions -> favorites + subscriptions }
+                }.map { boards -> boards.map { it.value }.toSet() }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
-        fun setFavorite(
+        private val followWrites = Mutex()
+
+        fun setFollowed(
             boardId: String,
-            favorite: Boolean,
+            followed: Boolean,
             sourceId: String = activeProvider.value.metadata.id.value,
         ) {
             val provider = ProviderId(sourceId)
-            viewModelScope.launch { boardPreferencesRepository.setFavoriteBoard(provider, BoardId(boardId), favorite) }
+            val board = BoardId(boardId)
+            viewModelScope.launch {
+                followWrites.withLock {
+                    boardPreferencesRepository.setSubscribedBoard(provider, board, followed)
+                    if (!followed) boardPreferencesRepository.setFavoriteBoard(provider, board, false)
+                }
+            }
         }
 
         /** Provider id passed along when navigating into a board. */

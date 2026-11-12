@@ -4,16 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,28 +23,31 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
-import com.orbin.core.model.Thread
-import com.orbin.core.ui.post.PostCommentText
+import com.orbin.core.model.isWideWindow
+import com.orbin.core.reader.ReaderPostComment
+import com.orbin.core.reader.ThreadPresentationIndex
+import com.orbin.core.reader.readerThreadStatus
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_pencil_download_all
 import com.orbin.ios.resources.ios_pencil_share
 import com.orbin.ios.resources.ios_pencil_unwatch
 import com.orbin.ios.resources.ios_pencil_watch
-import com.orbin.uinext.MediaCell
+import com.orbin.ios.resources.ios_reader_thread
 import com.orbin.uinext.NextPullToRefresh
+import com.orbin.uinext.ReaderAppBar
+import com.orbin.uinext.ReaderErrorState
+import com.orbin.uinext.ReaderNavigation
+import com.orbin.uinext.ReaderRefreshFailure
+import com.orbin.uinext.ReaderThreadSkeleton
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.next
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextType
-import kotlinx.coroutines.flow.map
+import com.orbin.uinext.tokens.ReaderRadius
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import kotlin.time.Clock
 
 // A thread and the full-screen viewer over its files.
 
@@ -61,25 +58,55 @@ internal fun ThreadDestination(
     pages: ThreadPages?,
 ) {
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     val thread by browser.thread.collectAsState()
+    val presentation by browser.preparedThread.collectAsState()
+    val refreshing by browser.threadRefreshing.collectAsState()
+    val refreshFailure by browser.threadRefreshFailure.collectAsState()
     val firstUnread by browser.firstUnreadPostId.collectAsState()
     val mediaTarget by browser.mediaScroll.target.collectAsState()
     NextPullToRefresh(
-        isRefreshing = thread is Load.Loading,
+        isRefreshing = refreshing,
         onRefresh = browser::retry,
         modifier = Modifier.fillMaxSize(),
     ) {
-        Loaded(thread, onRetry = browser::retry) { loaded ->
+        val loaded = (thread as? Load.Ready)?.value
+        val prepared = presentation?.takeIf { it.thread == loaded }
+        if (loaded == null || prepared == null) {
+            Column(Modifier.fillMaxSize()) {
+                ReaderAppBar(
+                    title = stringResource(Res.string.ios_reader_thread),
+                    navigation = ReaderNavigation.BACK,
+                    onNavigation = browser::back,
+                )
+                when (val state = thread) {
+                    is Load.Failed ->
+                        ReaderErrorState(
+                            cause = state.cause.toReaderCause(),
+                            onRetry = browser::retry,
+                            message = state.message.takeIf { state.cause == BrowserFailureCause.UNKNOWN },
+                        )
+                    else -> ReaderThreadSkeleton(wideWindow = readerWideWindow())
+                }
+            }
+        } else {
             val watching by remember(loaded.key) { browser.watched.watching(loaded.key) }.collectAsState(false)
             val saved by remember(loaded.key) { browser.saved(loaded.key) }.collectAsState(false)
             ThreadContent(
-                thread = loaded,
+                presentation = prepared,
+                refreshing = refreshing,
+                refreshFailure = refreshFailure,
                 watching = watching,
                 saved = saved,
                 onToggleSaved = { browser.toggleSaved(loaded) },
                 firstUnreadPostId = firstUnread,
                 onWatch = { browser.watched.toggle(loaded) },
                 onBack = { browser.back() },
+                onReload = browser::retry,
+                onOpenBrowser =
+                    browser.threadWebUrl(loaded.key)?.let { url ->
+                        { safeExternalLink(url)?.let(uriHandler::openUri) }
+                    },
                 onOpenFile = browser::openMedia,
                 mediaPostId = mediaTarget?.takeIf { it.first == loaded.key }?.second,
                 onMediaScrollConsumed = { mediaTarget?.let(browser.mediaScroll::consume) },
@@ -98,8 +125,10 @@ internal fun ThreadDestination(
 }
 
 @Composable
-private fun ThreadContent(
-    thread: Thread,
+internal fun ThreadContent(
+    presentation: ThreadPresentationIndex,
+    refreshing: Boolean,
+    refreshFailure: Load.Failed?,
     watching: Boolean,
     firstUnreadPostId: String?,
     onWatch: () -> Unit,
@@ -112,17 +141,19 @@ private fun ThreadContent(
     onBack: (() -> Unit)? = null,
     saved: Boolean = false,
     onToggleSaved: (() -> Unit)? = null,
+    onReload: (() -> Unit)? = null,
+    onOpenBrowser: (() -> Unit)? = null,
 ) {
-    val now = remember(thread) { Clock.System.now().toEpochMilliseconds() }
-    val posts = remember(thread) { thread.toPosts(now) }
-    val byId = remember(thread) { thread.allPosts.associateBy { it.id.value.toString() } }
-    val attachments = remember(thread) { thread.files }
+    val thread = presentation.thread
+    val statusText = readerThreadStatus(presentation)
+    // The window's size, not this pane's, decides the thumbnail size: the thread pane of a split
+    // is narrower than the window it is in.
+    val wideWindow = readerWideWindow()
+    val posts = presentation.rowModels
+    val byId = presentation.rowsById
     val boardLabel = "/${thread.key.board.value}/"
-    val fileCells =
-        remember(attachments, boardLabel) {
-            attachments.map { MediaCell(id = it.id, board = boardLabel) }
-        }
-    val attachmentsById = remember(attachments) { attachments.associateBy { it.id } }
+    val fileCells = presentation.fileCells
+    val attachmentsById = presentation.attachmentsById
     val uriHandler = LocalUriHandler.current
     // Where a tapped quote asks the list to scroll; cleared once the screen has scrolled there.
     var scrollTarget by remember(thread) { mutableStateOf<String?>(null) }
@@ -163,6 +194,9 @@ private fun ThreadContent(
             siteName = thread.key.provider.value,
             onBack = onBack,
             posts = posts,
+            subtitle = statusText,
+            statusText = statusText,
+            reloading = refreshing,
             watching = watching,
             saved = saved,
             onToggleSaved = onToggleSaved,
@@ -170,21 +204,16 @@ private fun ThreadContent(
             onLayoutChange = { layout = it },
             files = fileCells,
             onOpenFile = { cell ->
-                val index = attachments.indexOfFirst { it.id == cell.id }
-                if (index >= 0) onOpenFile(index)
+                presentation.mediaIndex[cell.id]?.let(onOpenFile)
             },
             fileTile = { cell, tileModifier ->
                 attachmentsById[cell.id]?.let { attachment ->
-                    Box(tileModifier.clip(RoundedCornerShape(NextRadius.tile))) {
-                        SharpImage(
-                            attachment,
-                            attachment.originalFileName,
-                            Modifier.fillMaxSize(),
-                            fill = Modifier.fillMaxSize(),
-                            // Thread jumps must not start full-video thumbnail decoders.
-                            videoFrame = false,
+                    Box(tileModifier.clip(RoundedCornerShape(ReaderRadius.card))) {
+                        ReaderThumbnail(
+                            attachment = attachment.copy(isSpoiler = false),
+                            contentDescription = attachment.originalFileName,
+                            modifier = Modifier.fillMaxSize(),
                         )
-                        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                     }
                 }
             },
@@ -201,9 +230,8 @@ private fun ThreadContent(
             onScrollConsumed = { scrollTarget = null },
             body = { post ->
                 byId[post.id]?.let { entry ->
-                    PostCommentText(
-                        comment = entry.comment,
-                        selectable = true,
+                    ReaderPostComment(
+                        row = entry,
                         onQuoteClick = { target ->
                             val id = target.value.toString()
                             collapsed.remove(id)
@@ -214,66 +242,34 @@ private fun ThreadContent(
                 }
             },
             media = { post, modifier ->
-                val postAttachments = byId[post.id]?.attachments.orEmpty()
-                if (postAttachments.size == 1) {
-                    val attachment = postAttachments.first()
-                    Box(
-                        modifier
-                            .aspectRatio(attachment.threadPreviewAspect())
-                            .clickable { thread.firstFileIndex(post.id)?.let(onOpenFile) },
-                    ) {
-                        // Use the site's thumbnail: a long jump can compose several video posts
-                        // just before the viewer needs the same limited decoder resources.
-                        SharpImage(
-                            attachment,
-                            attachment.originalFileName,
-                            Modifier.fillMaxSize(),
-                            fill = Modifier.fillMaxSize(),
-                            videoFrame = false,
-                            contentScale = ContentScale.Fit,
-                        )
-                        // Opening it still asks again in the viewer: the cover is lifted per file there.
-                        if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
-                    }
-                } else if (postAttachments.size > 1) {
-                    val pagerState = rememberPagerState(pageCount = { postAttachments.size })
-                    val firstIndex = thread.firstFileIndex(post.id)
-                    Column(modifier = modifier) {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier =
-                                Modifier.fillMaxWidth().aspectRatio(
-                                    postAttachments.first().threadPreviewAspect(),
-                                ),
-                            beyondViewportPageCount = 0,
-                        ) { page ->
-                            val attachment = postAttachments[page]
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .clickable { firstIndex?.let { onOpenFile(it + page) } },
-                            ) {
-                                SharpImage(
-                                    attachment,
-                                    attachment.originalFileName,
-                                    Modifier.fillMaxSize(),
-                                    fill = Modifier.fillMaxSize(),
-                                    videoFrame = false,
-                                    contentScale = ContentScale.Fit,
-                                )
-                                if (attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "${pagerState.currentPage + 1} of ${postAttachments.size}",
-                            style = NextType.labelMedium,
-                            color = next.muted,
+                // The post's first file, cropped to the square the screen gives it. The viewer
+                // pages through the rest. It is the site's thumbnail: a long jump can compose
+                // several video posts just before the viewer needs the same decoder resources.
+                byId[post.id]?.post?.attachments?.firstOrNull()?.let { attachment ->
+                    Box(modifier.clickable { presentation.firstMediaIndex(post.id)?.let(onOpenFile) }) {
+                        ReaderThumbnail(
+                            attachment = attachment.copy(isSpoiler = false),
+                            contentDescription = attachment.originalFileName,
+                            modifier = Modifier.fillMaxSize(),
                         )
                     }
                 }
             },
+            onReload = onReload,
+            onOpenBrowser = onOpenBrowser,
+            onPostReference = { id ->
+                collapsed.remove(id)
+                scrollTarget = id
+            },
+            wideWindow = wideWindow,
         )
+        refreshFailure?.let { failure ->
+            ReaderRefreshFailure(
+                cause = failure.cause.toReaderCause(),
+                onRetry = onReload,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
         val watchLabel = if (watching) Res.string.ios_pencil_unwatch else Res.string.ios_pencil_watch
         PencilMenu(
             expanded = pencilMenu,
@@ -291,6 +287,23 @@ private fun ThreadContent(
 
 /** How far one radian of barrel roll scrolls a thread. */
 private val PENCIL_ROLL_SCROLL = 400.dp
+
+@Composable
+private fun readerWideWindow(): Boolean {
+    val windowSize = LocalWindowInfo.current.containerSize
+    return with(LocalDensity.current) {
+        isWideWindow(
+            windowSize.width
+                .toDp()
+                .value
+                .toInt(),
+            windowSize.height
+                .toDp()
+                .value
+                .toInt(),
+        )
+    }
+}
 
 @Composable
 internal fun MediaDestination(

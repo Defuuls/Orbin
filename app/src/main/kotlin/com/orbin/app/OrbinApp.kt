@@ -52,7 +52,7 @@ import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
 
 /**
- * Root composable. Home, Boards, Watched, Search and Saved own the shared five-tab chrome;
+ * Root composable. Home, Boards, Watched, Search and Saved use the shared drawer and app bar;
  * settings, downloads, threads and catalogs use hierarchical back navigation.
  */
 @Composable
@@ -72,7 +72,13 @@ fun OrbinApp(
                 it.hasRoute(Route.Gallery::class) ||
                 it.hasRoute(Route.ThreadVideos::class)
         } ?: !startWithOnboarding
-    SystemBarAppearance(immersive = immersive)
+    val readerBarVisible =
+        currentEntry?.destination?.let { destination ->
+            !destination.hasRoute(Route.Onboarding::class) &&
+                !destination.hasRoute(Route.Gallery::class) &&
+                !destination.hasRoute(Route.ThreadVideos::class)
+        } ?: !startWithOnboarding
+    SystemBarAppearance(immersive = immersive, readerBarVisible = readerBarVisible)
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val twoPaneBoardDetail = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
@@ -184,7 +190,10 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
 
 /** Match native system icons to the actual surface, including a black Home in a light app. */
 @Composable
-internal fun SystemBarAppearance(immersive: Boolean = false) {
+internal fun SystemBarAppearance(
+    immersive: Boolean = false,
+    readerBarVisible: Boolean = false,
+) {
     val activity = LocalView.current.context.findActivity() as? ComponentActivity ?: return
     val darkIcons = !next.dark && !immersive
     SideEffect {
@@ -194,7 +203,10 @@ internal fun SystemBarAppearance(immersive: Boolean = false) {
             } else {
                 SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             }
-        activity.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        activity.enableEdgeToEdge(
+            statusBarStyle = if (readerBarVisible) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT) else style,
+            navigationBarStyle = style,
+        )
     }
 }
 

@@ -45,15 +45,15 @@ class SettingsDirectoryTest {
                 SettingsScreen(
                     groups =
                         listOf(
-                            "Appearance" to listOf(SettingItem("amoled", "True black", "Off", checked = false)),
+                            "Appearance" to listOf(SettingItem("amoled", "AMOLED black", "Off", checked = false)),
                         ),
                     onBack = { exits++ },
                 )
             }
         }
-        composeRule.onNodeWithText("True black").assertDoesNotExist()
+        composeRule.onNodeWithText("AMOLED black").assertDoesNotExist()
         composeRule.onNodeWithText("Appearance").performClick()
-        composeRule.onNodeWithText("True black").assertIsOff()
+        composeRule.onNodeWithText("AMOLED black").assertIsOff()
         composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Settings and privacy").assertExists()
@@ -78,7 +78,7 @@ class SettingsDirectoryTest {
                 SettingsScreen(
                     groups =
                         listOf(
-                            "Appearance" to listOf(SettingItem("amoled", "True black", "Off", checked = false)),
+                            "Appearance" to listOf(SettingItem("amoled", "AMOLED black", "Off", checked = false)),
                         ),
                 )
             }
@@ -107,26 +107,26 @@ class SettingsDirectoryTest {
                             "Appearance" to
                                 listOf(
                                     SettingItem(
-                                        "colorTheme",
-                                        "Color theme",
-                                        "Blue",
+                                        "catalogMode",
+                                        "Catalog view",
+                                        "List",
                                         SettingKind.CHOICE,
-                                        options = listOf("Blue", "Teal"),
+                                        options = listOf("List", "Grid"),
                                     ),
                                 ),
                         ),
-                    expandedId = "colorTheme",
+                    expandedId = "catalogMode",
                     onBack = {},
                 )
             }
         }
-        composeRule.onNodeWithText("Color theme").assertExists()
+        composeRule.onNodeWithText("Catalog view").assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Appearance").assertExists()
-        composeRule.onNodeWithText("Color theme").assertExists()
+        composeRule.onNodeWithText("Catalog view").assertExists()
         composeRule.onNodeWithContentDescription("Back").performClick()
         composeRule.onNodeWithText("Settings and privacy").assertExists()
-        composeRule.onNodeWithText("Color theme").assertDoesNotExist()
+        composeRule.onNodeWithText("Catalog view").assertDoesNotExist()
     }
 
     @Test

@@ -1,6 +1,6 @@
 # Orbin reader design
 
-This is the normative design for Orbin's board catalog and thread reader. **The app does not implement it yet.** The shipped screens, and the Roborazzi baselines under `ui-next`, still show the previous design until they are migrated to this one.
+This is the normative design for Orbin's board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
 The design comes from a set of catalog and thread mockups and from the resources of the Clover 3.0.2 Android app they imitate. Where those sources disagreed, this document records the choice and the reason under [Source record](#source-record).
 
@@ -18,7 +18,7 @@ Covered here:
 
 Orbin is read-only. This design has no compose button, no reply box and no per-post reply control, and none may be added under it.
 
-Not covered: Home, Watched, Saved, Search results, Settings and the media viewer. Those screens keep their shipped behavior until this document specifies them.
+Home, Watched, Saved, Search and Settings take this design's frame and colors and keep their own content layout; [Other screens](#other-screens) says how. The media viewer is not covered and keeps its shipped behavior.
 
 ## Tokens
 
@@ -174,6 +174,30 @@ Vertical padding is `space.postPadY` above and below. Body text is never wider t
 
 A thread ends with a footer `size.threadStatus` tall that reports reply count, image count and the last update time in `type.meta`, `color.inkMuted`, centered.
 
+### Reading state in the catalog
+
+- A thread the reader has opened shows its title in `color.inkMuted`.
+- A watched thread with unread replies shows the unread count, not the reply count, in a pill with a `color.accent` ground and `color.onAccent` text.
+- A muted thread shows the word "Muted" as its title in `color.inkMuted`, with no thumbnail and no preview.
+
+### Reply nesting
+
+- A reply is indented `space.gap` for each level below the post it answers, to three levels at most. Deeper replies stay at the third level.
+- The indent moves the whole cell, thumbnail included. The hairline under the cell starts at the indent.
+- Tapping a post's header line collapses the replies under it. A collapsed post shows the number of hidden replies in `type.meta`, `color.inkMuted`, where its body was.
+- Jumping to a post inside a collapsed group expands the group first.
+
+### Unread marker
+
+- The first post the reader has not seen is preceded by a full-width line `size.hairline` thick in `color.accent`, with the label "New" in `type.meta`, `color.accent`, at the gutter above it.
+- The thread overflow offers "First new post" while such a post exists.
+
+### Files view
+
+- The thread overflow switches between Posts and Files. Files shows every file in the thread as a grid that follows the catalog grid's column rule: pane width divided by `size.gridCardMin`, rounded down, with `space.gridGap` between and around the tiles.
+- Tiles are square with `radius.card` corners. A tile opens the media viewer at that file.
+- In Files, the overflow adds Download all and Save page.
+
 ## Phone catalog
 
 ### List mode
@@ -243,7 +267,7 @@ Horizontal budget of a list row in the 399dp catalog pane:
 | Count pill | `size.pillMinWidth` | 48dp |
 | Gutter | `space.gutter` | 16dp |
 
-The two width conditions, the ratio and the cap match what `core/model/FeedLayout.kt` and `app/navigation/BoardDetailTwoPane.kt` do today. The divider there is 0.5dp.
+The width conditions and the pane-width calculation live in `core/model/FeedLayout.kt`. Both platforms use the shared `ui-next/ReaderTwoPane.kt` component for the panes, the 1dp divider and the empty detail message.
 
 ## Navigation
 
@@ -256,22 +280,53 @@ The app bar is `size.appBar` tall on `color.appBar`, with content in `color.onAp
 | Board title with arrow | Catalog app bar | Opens the board picker, grouped by site |
 | Reload | Catalog and thread app bars | Reloads the catalog or the thread |
 | Search | Catalog app bar | Filters the loaded catalog by title and text |
-| Overflow | Catalog app bar | List or grid mode, sort order, open in a browser |
+| Overflow | Catalog app bar | List or grid mode, sort order, board media, open in a browser |
 | Back | Thread app bar, leading | Returns to the catalog, or closes the thread pane |
 | Bookmark | Thread app bar | Adds the thread to Watched, or removes it |
-| Overflow | Thread app bar | Files, download all, share, open in a browser, jump to top or bottom |
+| Overflow | Thread app bar | Posts or Files, save thread, share, open in a browser, top, first new post, bottom; in Files also download all and save page |
 | Thumbnail | Post | Opens the media viewer at that file |
 | Post reference | Post body and reply list | Scrolls to that post, or shows it inline |
 
 The drawer is as wide as the window less `size.appBar`, and never wider than `size.drawerMax`.
 
+- The drawer's ground is `color.background`. Each entry is `size.touchTarget` tall with a `size.icon` icon at the gutter and its label in `type.stateBody`, `color.ink`, `space.gap` after the icon.
+- The entry for the screen in view has a `color.selected` ground and is announced as selected.
+- The Menu button opens the drawer on both platforms. On Android a swipe from the leading edge also opens it. On iOS it does not, because that swipe goes back.
+- Choosing an entry closes the drawer and switches screen. Back closes an open drawer before it does anything else.
+- Screens reached from another screen (a thread, Settings, Downloads, History) show Back in place of Menu and have no drawer.
+
 Controls in the source material that Orbin does not have: the compose button, the reply box and its options, and the reply arrow on each post. They are omitted, and nothing takes their place.
+
+## Other screens
+
+Home, Watched, Boards, Search and Saved are the drawer's entries. Each takes the frame above: the app bar with Menu, the screen's name as its title, and the drawer. The five-tab bar is gone.
+
+- A screen's own title header is removed, because the app bar now carries the title. Everything under that header keeps its layout.
+- Actions that sat in a screen's header move to the app bar: at most two as icons, the rest in the overflow.
+- Every color on these screens comes from the color table. No screen has a palette of its own.
+- Home keeps its full-screen feed on a black ground in every theme. The app bar sits above the feed, not over it. The feed's Following and For You tabs and its action column stay drawn over the media.
+- Settings and Downloads show Back, not Menu.
+- Content scrolls under nothing: the list starts below the app bar and ends at the bottom system inset.
+
+## Settings
+
+Appearance has three choices and no others:
+
+| Setting | Choices | Default |
+| --- | --- | --- |
+| Theme | System, Light, Dark | System |
+| AMOLED black | On, Off | Off |
+| Catalog view | List, Grid | List |
+
+There is no color theme choice; the color table is the only palette. There is no catalog column count; the grid rule sets it.
+
+A stored color theme or column count from an earlier version is ignored. A backup file that contains a color theme is refused whole, with the message "This backup was made by an older version of Orbin and cannot be restored." Nothing from a refused backup is applied.
 
 ## Themes
 
 ![Themes](diagrams/themes.svg)
 
-Light, dark and AMOLED differ only in the color table. Sizes, spacing and type do not change with the theme. AMOLED uses pure black for every ground so that an OLED screen turns those pixels off.
+Light, dark and AMOLED differ only in the color table. Sizes, spacing and type do not change with the theme. AMOLED uses pure black for screen, row, post, card, app bar, sheet and dialog grounds so that an OLED screen turns those pixels off. Placeholder and selection fills keep the distinct `color.surfaceVariant` and `color.selected` values from the color table.
 
 ## States
 
@@ -369,4 +424,4 @@ The unit test reads the tables in this document. It checks that the arithmetic h
 
 The visual check renders every diagram and the companion page in light and dark at phone and desktop widths and compares them with the images in `baselines/`. After an intended change, regenerate them with `node scripts/design_docs_visual.cjs --update` and review the difference. It needs Playwright 1.63.0 and its Chromium build; the `Design docs` workflow installs both and runs only when these files change.
 
-Neither check says anything about the app. Screenshot coverage for the implemented design is added with the implementation.
+Neither check renders the app. `scripts/tests/test_design_spec.py` also compares `ui-next`'s `ReaderTokens.kt` with the tables here in both directions. App layout, behavior, screenshot, performance and iOS device evidence are separate checks listed in [Implementation and verification](IMPLEMENTATION.md); passing the document checks alone does not establish that the app follows every rule.

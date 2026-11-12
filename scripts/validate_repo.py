@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -222,6 +223,32 @@ def check_tracked_hygiene() -> None:
             fail("hygiene", f"tracked assistant/scratchpad file: {rel}")
 
 
+def check_emulator_options() -> None:
+    """Check the one-line emulator option fields used by repository workflows."""
+    directory = ROOT / ".github/workflows"
+    for path in sorted([*directory.glob("*.yml"), *directory.glob("*.yaml")]):
+        for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            match = re.match(r"^\s*emulator-options:\s*(.+?)\s*$", line)
+            if not match:
+                continue
+            location = f"{path.relative_to(ROOT).as_posix()}:{number}"
+            try:
+                arguments = shlex.split(match.group(1), comments=True)
+                if len(arguments) == 1:
+                    # A quoted YAML scalar contains the command line as one string.
+                    arguments = shlex.split(arguments[0], comments=True)
+            except ValueError as error:
+                fail("emulator-options", f"{location} has invalid option quoting: {error}")
+                continue
+            flags = {argument.split("=", 1)[0] for argument in arguments}
+            if {"-show-kernel", "-logcat"} <= flags:
+                fail(
+                    "emulator-options",
+                    f"{location} combines -show-kernel and -logcat; both claim the emulator serial console. "
+                    "Keep only one diagnostic option.",
+                )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fix-links", action="store_true", help="backfill missing CHANGELOG link refs")
@@ -237,6 +264,7 @@ def main() -> int:
     check_changelog_links(tags, args.fix_links)
     check_relative_links()
     check_release_tooling()
+    check_emulator_options()
     check_tracked_hygiene()
 
     for note in notes:

@@ -7,10 +7,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferencesSerializer
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
@@ -86,7 +87,7 @@ class SettingsStoreTest {
         }
 
     @Test
-    fun everyColorSurvivesAStoreWrapperRecreation() =
+    fun everyCatalogModeSurvivesAStoreWrapperRecreation() =
         runTest {
             val dataStore = backgroundScope.dataStore()
             val store = SettingsStore(dataStore)
@@ -94,10 +95,10 @@ class SettingsStoreTest {
                 store.setThemeMode(mode)
                 listOf(true, false).forEach { amoled ->
                     store.setAmoled(amoled)
-                    AppColorTheme.entries.forEach { theme ->
-                        store.setColorTheme(theme)
+                    CatalogMode.entries.forEach { catalogMode ->
+                        store.setCatalogMode(catalogMode)
                         val restored = SettingsStore(dataStore).settings.first()
-                        assertEquals(theme, restored.colorTheme)
+                        assertEquals(catalogMode, restored.catalogMode)
                         assertEquals(mode, restored.themeMode)
                         assertEquals(amoled, restored.amoled)
                     }
@@ -106,16 +107,45 @@ class SettingsStoreTest {
         }
 
     @Test
-    fun unknownColorFallsBackWithoutLosingOtherSettings() =
+    fun legacyColorAndColumnSettingsAreIgnoredWithoutLosingOtherSettings() =
         runTest {
             val dataStore = backgroundScope.dataStore()
             dataStore.edit {
                 it[stringPreferencesKey("color_theme")] = "FUTURE_COLOR"
+                it[intPreferencesKey("tablet_catalog_columns")] = 8
                 it[stringPreferencesKey("theme_mode")] = "DARK"
             }
             val restored = SettingsStore(dataStore).settings.first()
-            assertEquals(AppColorTheme.ORBIN, restored.colorTheme)
+            assertEquals(CatalogMode.LIST, restored.catalogMode)
             assertEquals(AppThemeMode.DARK, restored.themeMode)
+        }
+
+    @Test
+    fun unknownCatalogModeFallsBackToListWithoutLosingOtherSettings() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit {
+                it[stringPreferencesKey("catalog_mode")] = "FUTURE_MODE"
+                it[booleanPreferencesKey("screen_privacy")] = true
+            }
+
+            val restored = SettingsStore(dataStore).settings.first()
+
+            assertEquals(CatalogMode.LIST, restored.catalogMode)
+            assertTrue(restored.screenPrivacyEnabled)
+        }
+
+    @Test
+    fun savedCatalogModeTakesPrecedenceOverIgnoredLegacyValues() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit {
+                it[stringPreferencesKey("color_theme")] = "PURPLE"
+                it[intPreferencesKey("tablet_catalog_columns")] = -1
+            }
+            SettingsStore(dataStore).setCatalogMode(CatalogMode.GRID)
+
+            assertEquals(CatalogMode.GRID, SettingsStore(dataStore).settings.first().catalogMode)
         }
 
     @Test
@@ -180,7 +210,7 @@ class SettingsStoreTest {
             val settings = SettingsStore(dataStore).settings.first()
             assertTrue(settings.hideNsfwBoards)
             assertEquals(AppThemeMode.LIGHT, settings.themeMode)
-            assertEquals(AppColorTheme.ORBIN, settings.colorTheme)
+            assertEquals(CatalogMode.LIST, settings.catalogMode)
         }
 
     @Test

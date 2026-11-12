@@ -1,20 +1,10 @@
 package com.orbin.feature.thread
 
 import android.content.Intent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,9 +19,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -39,29 +28,29 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.common.link.SafeExternalLinks
-import com.orbin.core.model.MediaAttachment
+import com.orbin.core.common.result.DataError
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
-import com.orbin.core.model.ThumbnailSize
-import com.orbin.core.ui.date.formatRelativeTime
-import com.orbin.core.ui.post.PostCommentText
-import com.orbin.domain.thread.replyCounts
-import com.orbin.domain.thread.replyDepths
+import com.orbin.core.model.isWideWindow
+import com.orbin.core.reader.ReaderPostComment
+import com.orbin.core.reader.mediaPostId
+import com.orbin.core.reader.readerThreadStatus
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.NextSnackbarHostState
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.ReaderAppBar
+import com.orbin.uinext.ReaderErrorState
+import com.orbin.uinext.ReaderFailureCause
+import com.orbin.uinext.ReaderNavigation
+import com.orbin.uinext.ReaderRefreshFailure
+import com.orbin.uinext.ReaderThreadSkeleton
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.next
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import com.orbin.uinext.Post as NextPost
 
 @Composable
 fun NextThreadScreen(
@@ -72,6 +61,7 @@ fun NextThreadScreen(
     viewModel: ThreadViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null,
 ) {
+    val configuration = LocalConfiguration.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val isWatching by viewModel.isWatching.collectAsStateWithLifecycle()
@@ -91,25 +81,22 @@ fun NextThreadScreen(
     NextTheme {
         when (val state = uiState) {
             is ThreadUiState.Loading ->
-                MessageScreen(
-                    title = viewModel.title.ifBlank { stringResource(R.string.thread_title_fallback) },
-                    subtitle = stringResource(R.string.next_thread_loading),
-                    modifier = modifier,
-                )
+                ThreadStateFrame(viewModel.title, onBack, modifier) {
+                    ReaderThreadSkeleton(
+                        wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
+                    )
+                }
             is ThreadUiState.Blocked ->
-                MessageScreen(
-                    title = stringResource(R.string.next_thread_blocked_title),
-                    subtitle = stringResource(R.string.next_thread_blocked),
-                    modifier = modifier,
-                )
+                ThreadStateFrame(viewModel.title, onBack, modifier) {
+                    MessageScreen(
+                        title = stringResource(R.string.next_thread_blocked_title),
+                        subtitle = stringResource(R.string.next_thread_blocked),
+                    )
+                }
             is ThreadUiState.Error ->
-                MessageScreen(
-                    title = stringResource(R.string.next_thread_unavailable),
-                    subtitle = state.message,
-                    actionLabel = stringResource(R.string.next_thread_try_again),
-                    onAction = viewModel::refresh,
-                    modifier = modifier,
-                )
+                ThreadStateFrame(viewModel.title, onBack, modifier) {
+                    ReaderErrorState(cause = state.cause.readerCause(), onRetry = viewModel::refresh)
+                }
             is ThreadUiState.Success ->
                 LoadedThread(
                     state = state,
@@ -149,6 +136,7 @@ private fun LoadedThread(
     onBack: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val haptics = LocalHapticFeedback.current
     val thread = state.thread
     val listState = rememberLazyListState()
@@ -158,7 +146,8 @@ private fun LoadedThread(
             thread.key,
             saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
         ) { mutableStateListOf<String>() }
-    val presentation = remember(thread) { thread.toPresentationIndex() }
+    val presentation = state.presentation
+    val statusText = readerThreadStatus(presentation)
     val rows = presentation.rows
 
     var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
@@ -193,7 +182,7 @@ private fun LoadedThread(
         val index = mediaScrollIndex ?: return@LaunchedEffect
         if (!initialScrollRestored || layout != ThreadLayout.POSTS || rows.isEmpty()) return@LaunchedEffect
 
-        val targetPostId = thread.postIdForMediaIndex(index)
+        val targetPostId = presentation.postIdForMediaIndex(index)
         val target = targetPostId?.let { postId -> rows.indexOfFirst { it.post.id == postId } } ?: -1
         if (target >= 0) {
             collapsed.remove(rows[target].row.id)
@@ -229,7 +218,9 @@ private fun LoadedThread(
                 siteName = thread.key.provider.value,
                 onBack = onBack,
                 posts = presentation.rowModels,
-                subtitle = thread.subtitleText(state.fromSavedCopy),
+                subtitle = statusText,
+                statusText = statusText,
+                reloading = isRefreshing,
                 watching = isWatching,
                 saved = isSaved,
                 onToggleSaved = viewModel::toggleBookmark,
@@ -239,15 +230,15 @@ private fun LoadedThread(
                     layout = it
                 },
                 files = presentation.fileCells,
-                fileColumns = ThumbnailSize.MEDIUM.threadGridColumns(),
                 onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
                 fileTile = { cell, tileModifier ->
                     presentation.attachmentsById[cell.id]?.let { attachment ->
                         MediaThumbnail(
-                            attachment = attachment,
-                            modifier = tileModifier.clip(RoundedCornerShape(NextRadius.tile)),
-                            // Files wall tiles are large; pull source with thumb placeholder.
-                            fullResolution = true,
+                            attachment = attachment.copy(isSpoiler = false),
+                            fullResolution = false,
+                            modifier = tileModifier,
+                            // The screen clips each tile's corners itself.
+                            cornerRadius = 0.dp,
                             onClick = { presentation.mediaIndex[cell.id]?.let(::openMedia) },
                         )
                     }
@@ -294,9 +285,8 @@ private fun LoadedThread(
                 },
                 body = { row ->
                     presentation.rowsById[row.id]?.let { entry ->
-                        PostCommentText(
-                            comment = entry.post.comment,
-                            selectable = true,
+                        ReaderPostComment(
+                            row = entry,
                             onQuoteClick = { target ->
                                 val id = target.value.toString()
                                 collapsed.remove(id)
@@ -307,19 +297,38 @@ private fun LoadedThread(
                     }
                 },
                 media = { row, tileModifier ->
-                    val postAttachments =
-                        presentation.rowsById[row.id]
-                            ?.post
-                            ?.attachments
-                            .orEmpty()
-                    PostMedia(
-                        attachments = postAttachments,
-                        scrollable = true,
-                        modifier = tileModifier,
-                        onOpen = { id -> presentation.mediaIndex[id]?.let(::openMedia) },
-                    )
+                    // The post's first file, cropped to the square the screen gives it. The viewer
+                    // pages through the rest.
+                    presentation.rowsById[row.id]?.post?.attachments?.firstOrNull()?.let { first ->
+                        MediaThumbnail(
+                            attachment = first.copy(isSpoiler = false),
+                            fullResolution = false,
+                            modifier = tileModifier,
+                            cornerRadius = 0.dp,
+                            onClick = { presentation.firstMediaIndex(row.id)?.let(::openMedia) },
+                        )
+                    }
                 },
+                onReload = viewModel::refresh,
+                onOpenBrowser =
+                    viewModel.threadWebUrl?.let { url ->
+                        {
+                            SafeExternalLinks.open(context, url)
+                        }
+                    },
+                onPostReference = { id ->
+                    collapsed.remove(id)
+                    scrollTarget = id
+                },
+                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
             )
+            state.refreshFailure?.let { failure ->
+                ReaderRefreshFailure(
+                    cause = failure.readerCause(),
+                    onRetry = viewModel::refresh,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
             NextSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -328,152 +337,31 @@ private fun LoadedThread(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PostMedia(
-    attachments: List<MediaAttachment>,
-    scrollable: Boolean,
+private fun ThreadStateFrame(
+    title: String,
+    onBack: (() -> Unit)?,
     modifier: Modifier,
-    onOpen: (String) -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    if (attachments.isEmpty()) return
-    val shape = RoundedCornerShape(NextRadius.tile)
-    if (attachments.size == 1) {
-        val only = attachments.first()
-        MediaThumbnail(
-            attachment = only,
-            modifier = modifier.aspectRatio(only.threadAspectRatio()).clip(shape),
-            // Thread cells are display-sized: progressive thumb → full source.
-            fullResolution = true,
-            contentScale = ContentScale.Fit,
-            onClick = { onOpen(only.id) },
+    Column(modifier.fillMaxSize()) {
+        ReaderAppBar(
+            title = title.ifBlank { stringResource(R.string.thread_title_fallback) },
+            navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+            onNavigation = onBack ?: {},
         )
-        return
-    }
-    if (scrollable) {
-        val pagerState = rememberPagerState(pageCount = { attachments.size })
-        val stableAspectRatio = attachments.first().threadAspectRatio()
-        Column(modifier = modifier) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxWidth().aspectRatio(stableAspectRatio),
-                beyondViewportPageCount = 0,
-            ) { page ->
-                val attachment = attachments[page]
-                MediaThumbnail(
-                    attachment = attachment,
-                    modifier = Modifier.fillMaxWidth().clip(shape),
-                    fullResolution = true,
-                    contentScale = ContentScale.Fit,
-                    onClick = { onOpen(attachment.id) },
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "${pagerState.currentPage + 1} of ${attachments.size}",
-                style = NextType.labelMedium,
-                color = next.muted,
-            )
-        }
-        return
-    }
-    Column(modifier = modifier) {
-        attachments.forEachIndexed { index, attachment ->
-            MediaThumbnail(
-                attachment = attachment,
-                modifier = Modifier.fillMaxWidth().aspectRatio(attachment.threadAspectRatio()).clip(shape),
-                fullResolution = true,
-                contentScale = ContentScale.Fit,
-                onClick = { onOpen(attachment.id) },
-            )
-            if (index < attachments.lastIndex) Spacer(modifier = Modifier.height(8.dp))
-        }
+        content()
     }
 }
 
-private fun MediaAttachment.threadAspectRatio(): Float =
-    previewAspectRatio
-        .takeIf { it.isFinite() && it > 0f }
-        ?.coerceIn(MIN_THREAD_MEDIA_ASPECT, MAX_THREAD_MEDIA_ASPECT) ?: 1f
-
-internal data class ThreadRow(
-    val post: com.orbin.core.model.Post,
-    val row: NextPost,
-)
-
-private data class ThreadPresentationIndex(
-    val rows: List<ThreadRow>,
-    val rowModels: List<NextPost>,
-    val rowsById: Map<String, ThreadRow>,
-    val attachmentsById: Map<String, MediaAttachment>,
-    val mediaIndex: Map<String, Int>,
-    val fileCells: List<MediaCell>,
-)
-
-private fun Thread.toPresentationIndex(): ThreadPresentationIndex {
-    val rows = toRows()
-    val attachments = allPosts.flatMap { it.attachments }
-    val boardLabel = "/${key.board.value}/"
-    return ThreadPresentationIndex(
-        rows = rows,
-        rowModels = rows.map { it.row },
-        rowsById = rows.associateBy { it.row.id },
-        attachmentsById = attachments.associateBy { it.id },
-        mediaIndex = attachments.withIndex().associate { (index, media) -> media.id to index },
-        fileCells = attachments.map { MediaCell(id = it.id, board = boardLabel) },
-    )
-}
-
-internal fun Thread.postIdForMediaIndex(mediaIndex: Int): PostId? {
-    if (mediaIndex < 0) return null
-    var remaining = mediaIndex
-    for (post in allPosts) {
-        if (remaining < post.attachments.size) return post.id
-        remaining -= post.attachments.size
-    }
-    return null
-}
-
-internal fun Thread.toRows(): List<ThreadRow> {
-    val posts = allPosts
-    val depths = replyDepths(posts)
-    val counts = replyCounts(posts)
-    return posts.map { post ->
-        ThreadRow(
-            post = post,
-            row =
-                NextPost(
-                    id = post.id.value.toString(),
-                    number = "No. ${post.id.value}",
-                    author = post.poster.name.orEmpty(),
-                    time = formatRelativeTime(post.createdAtMillis).orEmpty(),
-                    body = "",
-                    depth = depths[post.id] ?: 0,
-                    hasMedia = post.attachments.isNotEmpty(),
-                    replies = counts[post.id] ?: 0,
-                ),
-        )
-    }
-}
-
-private fun Thread.subtitleText(fromSavedCopy: Boolean): String {
-    val files = allPosts.sumOf { it.attachments.size }
-    val base = "${allPosts.size} posts  ·  $files files"
-    return if (fromSavedCopy) "$base  ·  saved copy" else base
-}
-
-private fun ThumbnailSize.threadGridColumns(): Int =
+private fun DataError?.readerCause(): ReaderFailureCause =
     when (this) {
-        ThumbnailSize.COMPACT -> COMPACT_COLUMNS
-        ThumbnailSize.MEDIUM -> MEDIUM_COLUMNS
-        ThumbnailSize.LARGE -> LARGE_COLUMNS
-        ThumbnailSize.FILL -> FILL_COLUMNS
+        is DataError.Offline, is DataError.Timeout -> ReaderFailureCause.NETWORK
+        is DataError.NotFound -> ReaderFailureCause.NOT_FOUND
+        is DataError.Server, is DataError.RateLimited -> ReaderFailureCause.SERVER
+        else -> ReaderFailureCause.UNKNOWN
     }
 
-private const val COMPACT_COLUMNS = 4
-private const val MEDIUM_COLUMNS = 3
-private const val LARGE_COLUMNS = 2
-private const val FILL_COLUMNS = 1
-private const val MIN_THREAD_MEDIA_ASPECT = 0.5625f
-private const val MAX_THREAD_MEDIA_ASPECT = 3f
+internal fun Thread.postIdForMediaIndex(mediaIndex: Int): PostId? = mediaPostId(mediaIndex)
+
 private const val SCROLL_TRACK_SETTLE_MS = 180L

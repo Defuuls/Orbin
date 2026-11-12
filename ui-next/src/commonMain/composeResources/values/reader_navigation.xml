@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_drawer">Navigation</string>
+    <string name="reader_nav_home">Home</string>
+    <string name="reader_nav_watched">Watched</string>
+    <string name="reader_nav_boards">Boards</string>
+    <string name="reader_nav_search">Search</string>
+    <string name="reader_nav_saved">Saved</string>
+    <string name="reader_nav_settings">Settings</string>
+    <string name="reader_catalog_filter">Filter this catalog</string>
+    <string name="reader_close_filter">Close catalog search</string>
+    <string name="reader_picker_empty">No boards available</string>
+    <string name="reader_dismiss_picker">Close board picker</string>
+</resources>

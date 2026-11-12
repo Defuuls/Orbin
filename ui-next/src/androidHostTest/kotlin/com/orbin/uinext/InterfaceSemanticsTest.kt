@@ -6,7 +6,6 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -46,7 +45,29 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a board catalog offers no layout switcher`() {
+    fun `a board catalog offers its other layout from the overflow menu`() {
+        val chosen = mutableListOf<CatalogMode>()
+        composeRule.setContent {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = ROWS.size,
+                    rowAt = ROWS::getOrNull,
+                    mode = CatalogMode.LIST,
+                    onModeChange = { chosen += it },
+                )
+            }
+        }
+        composeRule.onNodeWithText("Grid view").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("List view").assertDoesNotExist()
+        composeRule.onNodeWithText("Grid view").performClick()
+        assert(chosen == listOf(CatalogMode.GRID)) { "expected one switch to the grid, got $chosen" }
+    }
+
+    @Test
+    fun `a board catalog with nothing to offer draws no overflow button`() {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
@@ -57,8 +78,7 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        composeRule.onNodeWithText("Grid").assertDoesNotExist()
-        composeRule.onNodeWithText("Images").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").assertDoesNotExist()
     }
 
     @Test
@@ -109,7 +129,8 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(1)
+        composeRule.onAllNodesWithText("Technology", substring = true).assertCountEquals(1)
+        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(0)
     }
 
     @Test
@@ -135,7 +156,7 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a thread shows its title once and keeps only the top and bottom jumps`() {
+    fun `a thread shows its title once and offers the top and bottom jumps from its overflow`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -149,23 +170,28 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        // The floating rail used to repeat the subject at the bottom of the screen.
         composeRule.onAllNodesWithText("Weekly desktop thread").assertCountEquals(1)
+        composeRule.onNodeWithText("Top").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("More options").performClick()
         composeRule.onNodeWithText("Top").assertExists()
         composeRule.onNodeWithText("Bottom").assertExists()
-        composeRule.onNodeWithText("↓").assertDoesNotExist()
+        // With nothing unread there is no third jump.
+        composeRule.onNodeWithText("First new post").assertDoesNotExist()
     }
 
+    /** Replaces `the five tabs expose home boards watched search and saved`; missing callbacks omit entries. */
     @Test
-    fun `the five tabs expose home boards watched search and saved`() {
+    fun `the drawer exposes only the wired root destinations and Settings`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
         }
-        listOf("Home", "Boards", "Watched", "Search", "Saved").forEach { label ->
-            composeRule.onNode(hasContentDescription(label) and hasRole(Role.Tab)).assertExists()
+        composeRule.onNodeWithContentDescription("Menu").performClick()
+        listOf("Home", "Boards", "Settings").forEach { label ->
+            composeRule.onNode(hasText(label) and hasRole(Role.Tab)).assertExists()
         }
-        composeRule.onNode(hasText("Downloads") and hasRole(Role.Tab)).assertDoesNotExist()
-        composeRule.onNode(hasText("Settings") and hasRole(Role.Tab)).assertDoesNotExist()
+        listOf("Watched", "Search", "Saved", "Downloads").forEach { label ->
+            composeRule.onNode(hasText(label) and hasRole(Role.Tab)).assertDoesNotExist()
+        }
     }
 
     @Test

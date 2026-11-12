@@ -1,10 +1,10 @@
 package com.orbin.ios
 
-import com.orbin.core.model.AppColorTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
+import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.FormFactor
@@ -144,8 +144,6 @@ class FakeSettings : SettingsRepository {
     override suspend fun setOpenThreadComments(enabled: Boolean) =
         settings.update { it.copy(openThreadComments = enabled) }
 
-    override suspend fun setColorTheme(theme: AppColorTheme) = settings.update { it.copy(colorTheme = theme) }
-
     override suspend fun setThemeMode(mode: AppThemeMode) = settings.update { it.copy(themeMode = mode) }
 
     override suspend fun setAmoled(enabled: Boolean) = settings.update { it.copy(amoled = enabled) }
@@ -198,6 +196,5 @@ class FakeSettings : SettingsRepository {
         }
     }
 
-    override suspend fun setTabletCatalogColumns(columns: Int) =
-        settings.update { it.copy(tabletCatalogColumns = columns) }
+    override suspend fun setCatalogMode(mode: CatalogMode) = settings.update { it.copy(catalogMode = mode) }
 }
