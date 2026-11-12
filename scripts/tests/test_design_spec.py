@@ -530,38 +530,55 @@ class LayoutTest(unittest.TestCase):
             (56, 56, 50, 44),
         )
 
+    GRID_HEADERS = ["Viewport width", "Viewport height", "Columns", "Image height", "Card width"]
+
     def test_grid_examples_follow_the_rule(self) -> None:
         m = self.m
-        rows = self.spec.one(["Pane width", "Columns", "Card width"])
-        self.assertIn(360, [number(row[0]) for row in rows])
-        for pane, columns, card in rows:
-            width = number(pane)
-            expected_columns = max(1, int(width // m["size.gridCardMin"]))
-            self.assertEqual(int(columns), expected_columns, f"columns at {pane}")
+        rows = self.spec.one(self.GRID_HEADERS)
+        viewports = [(number(row[0]), number(row[1])) for row in rows]
+        self.assertIn((360, 560), viewports)
+        for viewport_width, viewport_height, columns, image, card in rows:
+            width, height = number(viewport_width), number(viewport_height)
+            expected_image = max(height * m["ratio.gridImageHeight"], m["size.gridCardMin"])
+            self.assertAlmostEqual(number(image), expected_image, places=2, msg=f"image at {width}x{height}")
+            expected_columns = max(1, int(width // expected_image))
+            self.assertEqual(int(columns), expected_columns, f"columns at {width}x{height}")
             expected_card = (width - 2 * m["space.gridOuter"] - (expected_columns - 1) * m["space.gridGap"]) / expected_columns
-            self.assertAlmostEqual(number(card), expected_card, places=2, msg=f"card width at {pane}")
+            self.assertAlmostEqual(number(card), expected_card, places=2, msg=f"card width at {width}x{height}")
 
-    def test_legacy_grid_card_text_helper_retains_its_fixed_height_budget(self) -> None:
+    def test_grid_examples_cover_portrait_wide_and_floored_viewports(self) -> None:
+        m = self.m
+        rows = self.spec.one(self.GRID_HEADERS)
+        columns = [int(row[2]) for row in rows]
+        images = [number(row[3]) for row in rows]
+        heights = [number(row[1]) for row in rows]
+        self.assertIn(1, columns, "no portrait example with one full-width column")
+        self.assertTrue(any(count > 1 for count in columns), "no wide example with several columns")
+        self.assertTrue(
+            any(image == m["size.gridCardMin"] and height * m["ratio.gridImageHeight"] < image for image, height in zip(images, heights)),
+            "no example is held at the minimum image height",
+        )
+
+    def test_grid_card_text_minimum_fits_two_title_lines_and_metadata(self) -> None:
         m, types = self.m, self.types
         content = 2 * m["space.cardPad"] + 2 * types["type.cardTitle"][1] + m["space.line"] + types["type.meta"][1]
         self.assertEqual(m["size.gridCardText"], content)
 
-    def test_active_grid_cards_use_clovers_two_ratios_and_elevation(self) -> None:
+    def test_grid_images_are_half_the_viewport_and_fit_two_lines(self) -> None:
         m = self.m
-        self.assertEqual(m["ratio.gridCard"], 9 / 18)
-        self.assertAlmostEqual(m["ratio.gridThumbnail"], 16 / 13, places=6)
+        self.assertEqual(m["ratio.gridImageHeight"], 1 / 2)
         self.assertEqual(m["space.gridOuter"], 2)
         self.assertEqual(m["space.gridGap"], 4)
         self.assertEqual(m["radius.card"], 2)
         self.assertEqual(m["size.cardElevation"], 2)
-        for _, _, card in self.spec.one(["Pane width", "Columns", "Card width"]):
-            width = number(card)
-            height = width / m["ratio.gridCard"]
-            image_height = width / m["ratio.gridThumbnail"]
-            self.assertAlmostEqual(height, width * 2, places=4)
-            self.assertAlmostEqual(image_height, width * 13 / 16, places=4)
-            self.assertAlmostEqual(height - image_height, width * 19 / 16, places=4)
-            self.assertGreater(height - image_height, 2 * m["space.cardPad"])
+        for row in self.spec.one(self.GRID_HEADERS):
+            height, columns, image, card = number(row[1]), int(row[2]), number(row[3]), number(row[4])
+            self.assertGreaterEqual(image, m["size.gridCardMin"])
+            if image > m["size.gridCardMin"]:
+                self.assertAlmostEqual(2 * image, height, places=4, msg="two images fill the viewport")
+            if columns > 1:
+                self.assertGreaterEqual(card + m["space.gridGap"], image * 0.9, "a multi-column image is roughly as wide as tall")
+            self.assertGreater(card, m["size.touchTarget"])
 
     def test_album_cells_have_one_dp_margins_and_the_32dp_metadata_strip(self) -> None:
         m = self.m

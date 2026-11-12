@@ -303,9 +303,10 @@ private fun ReaderFeedGrid(
         val grid = mode == CatalogMode.GRID
         val gap = if (grid) ReaderSpace.gridGap else 0.dp
         val outer = if (grid) ReaderSpace.gridOuter else 0.dp
+        val gridSpec = catalogGridSpec(maxWidth, maxHeight)
         val stateHeight = (maxHeight - outer * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(if (grid) catalogGridColumns(maxWidth) else 1),
+            columns = GridCells.Fixed(if (grid) gridSpec.columns else 1),
             state = state,
             modifier = Modifier.fillMaxSize().testTag(ReaderFeedTags.GRID),
             contentPadding =
@@ -328,7 +329,7 @@ private fun ReaderFeedGrid(
             } else {
                 items(count = rows.size, key = { rows[it].id }, contentType = { mode }) { index ->
                     val row = rows[index]
-                    ReaderFeedItem(row, mode, wideWindow, thumbnail, activityText(row), actions)
+                    ReaderFeedItem(row, mode, wideWindow, thumbnail, activityText(row), actions, gridSpec.imageHeight)
                 }
             }
         }

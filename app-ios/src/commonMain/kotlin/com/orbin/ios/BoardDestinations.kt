@@ -218,7 +218,11 @@ internal fun CatalogDestination(
                     thumbnail = { row, modifier ->
                         byRow[row.id]?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                             // The shared cell invokes this slot only after its spoiler is revealed.
-                            ReaderThumbnail(attachment.copy(isSpoiler = false), modifier)
+                            ReaderThumbnail(
+                                attachment.copy(isSpoiler = false),
+                                modifier,
+                                sharp = mode.sharpensThumbnails,
+                            )
                         }
                     },
                 )

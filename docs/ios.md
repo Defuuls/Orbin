@@ -229,3 +229,10 @@ also fills the build's **What to Test** from `CHANGELOG.md` (`scripts/testflight
 release's own section, or what is unreleased for a manual build between releases. Preview it with
 `python3 scripts/testflight_notes.py --version-name 158-Yuzu --print`. TestFlight builds expire
 after 90 days, so a new release (or a manual run) keeps the app installable.
+
+If an upload succeeds and Apple takes too long to register its build, run **Retry TestFlight
+notes** from Actions on `main`. Provide the existing release name, numeric marketing version,
+and full uploaded build number. It attaches the release's notes to that build using the existing
+App Store Connect secrets. It performs no archive or upload and fails visibly if the notes
+cannot be saved. For example, release `202-Arracacha` uses marketing version `202` and the exact
+build number from its successful upload, such as `220.202611121516`.

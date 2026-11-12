@@ -15,6 +15,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Changed
 - Documented storage, DNS, and third-party disclosure accurately per platform in the privacy policy, README, user guides, website, and F-Droid metadata stub.
+- Sized grid thumbnails from the window: on a phone each catalog and Home card spans the full width with an image half the height of the area below the app bar, and landscape or wide windows split into columns that keep each image at least as wide as it is tall.
+- Drew still images in grid cards from the original file, decoded to the card's size, so large thumbnails stay sharp; GIFs and videos keep the provider thumbnail.
 
 ### Fixed
 - Lifted the full-screen Android video transport, seek bar, and feed progress above the gesture and navigation bars on edge-to-edge displays, including tall 20:9 phones such as the Pixel 10 Pro XL, while letting the video itself draw behind the bars.
@@ -22,6 +24,7 @@ All notable changes to Orbin are documented here. The format is based on
 ### Testing
 - Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
 - Added window-inset regressions that dispatch a tall-phone navigation bar and a landscape display cutout and require the gallery time bar, transport buttons, and feed progress to stay in the safe drawing area.
+- Added regressions for the grid sizing rule across portrait, landscape, tablet, short and unmeasured windows, for catalog, Home and loading-grid layouts, and for sharp grid image requests on iOS.
 
 ## [202-Arracacha] - 2026-11-12
 

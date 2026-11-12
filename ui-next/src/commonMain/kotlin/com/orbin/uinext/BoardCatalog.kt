@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -58,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isFinite
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_board_media
 import com.orbin.uinext.resources.next_row_files
@@ -90,8 +90,16 @@ enum class CatalogMode {
     /** One row per thread: thumbnail, title, post number and date, preview, reply count. */
     LIST,
 
-    /** Cards in as many columns as fit, using Clover's card/image ratios and reply/file counts. */
+    /** Cards with an image half the viewport tall, in the columns [catalogGridSpec] gives, and reply/file counts. */
     GRID,
+    ;
+
+    /**
+     * Whether a host's thumbnail slot should draw a still image from its original file, decoded to
+     * the cell. A grid card is far wider than a provider thumbnail (about 250 pixels), which would
+     * look blurry stretched across it; a list cell is thumbnail-sized and never needs the original.
+     */
+    val sharpensThumbnails: Boolean get() = this == GRID
 }
 
 object CatalogTags {
@@ -182,7 +190,8 @@ fun BoardScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
         ) {
             val grid = mode == CatalogMode.GRID
-            val columns = if (grid) catalogGridColumns(maxWidth) else 1
+            val gridSpec = catalogGridSpec(maxWidth, maxHeight)
+            val columns = if (grid) gridSpec.columns else 1
             val gap = if (grid) ReaderSpace.gridGap else NO_GAP
             val outer = if (grid) ReaderSpace.gridOuter else NO_GAP
             val cellMin = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
@@ -207,9 +216,17 @@ fun BoardScreen(
                 ) { index ->
                     val row = rowAt(index)
                     when {
-                        row == null && grid -> Box(Modifier.fillMaxWidth().aspectRatio(1f))
+                        row == null && grid -> Box(Modifier.fillMaxWidth().height(gridSpec.imageHeight))
                         row == null -> Box(Modifier.fillMaxWidth().height(cellMin))
-                        grid -> CatalogCard(row, row.id == selectedRowId, onOpenRow, thumbnail, wideWindow = wideWindow)
+                        grid ->
+                            CatalogCard(
+                                row = row,
+                                selected = row.id == selectedRowId,
+                                onOpen = onOpenRow,
+                                thumbnail = thumbnail,
+                                imageHeight = gridSpec.imageHeight,
+                                wideWindow = wideWindow,
+                            )
                         else ->
                             CatalogRow(
                                 row = row,
@@ -225,8 +242,37 @@ fun BoardScreen(
     }
 }
 
-/** Grid columns for a pane [width] wide: the width over `size.gridCardMin`, rounded down, at least one. */
+/**
+ * Columns for the thread Files grid in a pane [width] wide: the width over `size.gridCardMin`,
+ * rounded down, at least one. Catalog, Home and loading grids use [catalogGridSpec] instead.
+ */
 fun catalogGridColumns(width: Dp): Int = maxOf(1, (width / ReaderSize.gridCardMin).toInt())
+
+/** How a thread grid divides its viewport: [columns] cards per line, each with an image [imageHeight] tall. */
+data class CatalogGridSpec(
+    val columns: Int,
+    val imageHeight: Dp,
+)
+
+/**
+ * The thread grid for a viewport [width] by [height], measured below the app bar.
+ *
+ * A card's image is `ratio.gridImageHeight` (half) of the viewport tall, so two lines of images
+ * fit on screen, and never shorter than `size.gridCardMin`, which keeps it usable in a short
+ * split-screen window. Columns are the width over that image height, rounded down, at least one:
+ * a portrait phone gets one full-width column, and a wide window gets as many as keep each image
+ * at least as wide as tall.
+ * An unbounded or unmeasured [height] falls back to the minimum image height.
+ */
+fun catalogGridSpec(
+    width: Dp,
+    height: Dp,
+): CatalogGridSpec {
+    val half = if (height.isFinite && height > 0.dp) height * ReaderRatio.gridImageHeight else ReaderSize.gridCardMin
+    val imageHeight = maxOf(half, ReaderSize.gridCardMin)
+    val columns = if (width.isFinite && width > 0.dp) maxOf(1, (width / imageHeight).toInt()) else 1
+    return CatalogGridSpec(columns, imageHeight)
+}
 
 /** A reply or unread count as the pill shows it: exact below 1000, then thousands to one decimal, rounded down. */
 internal fun abbreviatedCount(count: Int): AbbreviatedCount =
@@ -481,13 +527,14 @@ private fun CatalogCounts(
     }
 }
 
-/** A thread as a grid card with Clover's image ratio and plain reply/file counters. */
+/** A thread as a grid card: an image [imageHeight] tall, then the subject, excerpt and plain counters. */
 @Composable
 internal fun CatalogCard(
     row: FeedRow,
     selected: Boolean,
     onOpen: (FeedRow) -> Unit,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+    imageHeight: Dp,
     modifier: Modifier = Modifier,
     itemTag: String? = null,
     thumbnailTag: String? = null,
@@ -549,6 +596,7 @@ internal fun CatalogCard(
             },
     ) {
         ReaderCatalogCardLayout(
+            imageHeight = imageHeight,
             image = { imageModifier ->
                 Box(
                     imageModifier
@@ -659,19 +707,17 @@ private fun CatalogTitle(
     )
 }
 
-/** Clover's 9:18 card and 16:13 image ratios, with text expansion for accessibility. */
+/** A grid card: a full-width image [imageHeight] tall with the text below it, which grows with the font scale. */
 @Composable
 fun ReaderCatalogCardLayout(
+    imageHeight: Dp,
     modifier: Modifier = Modifier,
     image: @Composable (Modifier) -> Unit,
     content: @Composable (Modifier) -> Unit,
 ) {
-    BoxWithConstraints(modifier.fillMaxWidth()) {
-        val textMinimum = maxWidth / ReaderRatio.gridCard - maxWidth / ReaderRatio.gridThumbnail
-        Column(Modifier.fillMaxWidth()) {
-            image(Modifier.fillMaxWidth().aspectRatio(ReaderRatio.gridThumbnail))
-            content(Modifier.fillMaxWidth().heightIn(min = textMinimum).padding(ReaderSpace.cardPad))
-        }
+    Column(modifier.fillMaxWidth()) {
+        image(Modifier.fillMaxWidth().height(imageHeight))
+        content(Modifier.fillMaxWidth().heightIn(min = ReaderSize.gridCardText).padding(ReaderSpace.cardPad))
     }
 }
 
