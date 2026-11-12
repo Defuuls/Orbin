@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 
 class StatusBarRootControllerTest {
     @Test
-    fun immersiveRoutesUseLightIconsAndSettingsOrPrivacyCoversRestoreThePalette() {
+    fun readerRoutesUseLightIconsAndPrivacyOrFirstRunCoversRestoreThePalette() {
         val appearance = StatusBarAppearance()
         val content = UIViewController()
         val root = StatusBarRootController(content, appearance)
@@ -29,8 +29,10 @@ class StatusBarRootControllerTest {
 
         appearance.setLightIcons(lightStatusBarIcons(Route.Feed, false, false, unlocked))
         assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
+        // Settings sits under the reader app bar like every other route, so its icons are light
+        // in the light theme too: the bar's ground is the app bar green, not the page.
         appearance.setLightIcons(lightStatusBarIcons(Route.Settings, false, false, unlocked))
-        assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle())
+        assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
         appearance.setLightIcons(lightStatusBarIcons(media, false, false, unlocked))
         assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle())
         appearance.setLightIcons(lightStatusBarIcons(Route.ThreadVideos(media.thread), false, false, unlocked))
