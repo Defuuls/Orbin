@@ -9,11 +9,13 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -103,7 +105,8 @@ class InterfaceSemanticsTest {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenReplies = {}, repliesOpenComments = true) }
         }
-        composeRule.onNodeWithTag(ReaderFeedTags.more(ROWS[0].id)).performClick()
+        composeRule.onNodeWithTag(ReaderFeedTags.more(ROWS[0].id)).assertDoesNotExist()
+        composeRule.onNodeWithTag(ReaderFeedTags.row(ROWS[0].id)).performTouchInput { longClick() }
         composeRule.onNodeWithText("View replies to ${ROWS[0].subject}").assertHasClickAction()
     }
 

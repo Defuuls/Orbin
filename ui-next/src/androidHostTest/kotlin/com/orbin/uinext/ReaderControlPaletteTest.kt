@@ -17,12 +17,14 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderColors
@@ -103,7 +105,8 @@ class ReaderControlPaletteTest(
                 FeedScreen(rows = listOf(row), onToggleWatch = {})
             }
         }
-        compose.onNodeWithTag(ReaderFeedTags.more(row.id)).performClick()
+        compose.onNodeWithTag(ReaderFeedTags.more(row.id)).assertDoesNotExist()
+        compose.onNodeWithTag(ReaderFeedTags.row(row.id)).performTouchInput { longClick() }
         val painted =
             compose
                 .onNodeWithText("Stop watching Palette fixture")

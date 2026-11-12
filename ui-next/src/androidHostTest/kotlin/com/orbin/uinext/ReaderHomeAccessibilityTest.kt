@@ -18,6 +18,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -78,12 +79,13 @@ class ReaderHomeAccessibilityTest {
         assertTrue("Source choice must stay below the fixed app bar", sourceBounds.top >= bar.bottom)
         compose.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertDoesNotExist()
         compose.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
+        compose.onNodeWithTag(ReaderFeedTags.more(ROW.id)).assertDoesNotExist()
         compose
-            .onNodeWithTag(ReaderFeedTags.more(ROW.id))
+            .onNodeWithTag(ReaderFeedTags.row(ROW.id))
             .assertIsDisplayed()
             .assertWidthIsAtLeast(48.dp)
             .assertHeightIsAtLeast(48.dp)
-            .performClick()
+            .performTouchInput { longClick() }
         compose.onNodeWithText("Watch ${ROW.subject}").assertIsDisplayed()
         compose.onNodeWithText("Save ${ROW.subject}").assertIsDisplayed()
     }
