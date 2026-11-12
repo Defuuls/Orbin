@@ -169,8 +169,10 @@ private fun ReaderSkeleton(
             Modifier.fillMaxSize().clearAndSetSemantics { contentDescription = label },
         ) {
             val grid = mode == CatalogMode.GRID
-            val columns = if (grid) catalogGridColumns(maxWidth) else 1
-            val minimum = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
+            val gridSpec = catalogGridSpec(maxWidth, maxHeight)
+            val columns = if (grid) gridSpec.columns else 1
+            val cellMinimum = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
+            val minimum = if (grid) gridSpec.imageHeight else cellMinimum
             val rowCount = ceil(maxHeight.value / minimum.value).toInt().coerceAtLeast(1)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
@@ -182,6 +184,7 @@ private fun ReaderSkeleton(
                 items(rowCount * columns) {
                     if (grid) {
                         ReaderCatalogCardLayout(
+                            imageHeight = gridSpec.imageHeight,
                             modifier =
                                 Modifier
                                     .testTag(ReaderStateTags.SKELETON_CELL)

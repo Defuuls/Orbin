@@ -1,18 +1,23 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -33,9 +38,10 @@ class CatalogLargeTextTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `normal catalog cards use Clover 9 by 18 cards and 16 by 13 image geometry`() {
+    fun `normal catalog cards span the phone with an image half the viewport tall`() {
         composeRule.setContent { Grid(fontScale = 1f) }
 
+        val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
         LABELS.forEachIndexed { index, label ->
@@ -44,14 +50,54 @@ class CatalogLargeTextTest {
             assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
             val card = cards[index].getUnclippedBoundsInRoot()
             val image = images[index].getUnclippedBoundsInRoot()
-            assertEquals((card.right - card.left).value * 2f, (card.bottom - card.top).value, 0.5f)
-            assertEquals((card.right - card.left).value * 13f / 16f, (image.bottom - image.top).value, 0.5f)
+            // 411dp less the 2dp outer margin at each edge: one column.
+            assertEquals(407f, (card.right - card.left).value, 0.5f)
+            assertEquals((grid.bottom - grid.top).value / 2f, (image.bottom - image.top).value, 0.5f)
+            assertTrue(
+                "the text block keeps its minimum below the image",
+                (card.bottom - image.bottom) >= ReaderSize.gridCardText,
+            )
         }
     }
 
     @Test
-    fun `font two wraps complete reply and unread counts inside growing grid card bodies`() {
+    fun `font two keeps complete counts below a full-width image of unchanged height`() {
         composeRule.setContent { Grid(fontScale = 2f, longTitles = true, longCounts = true) }
+
+        val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
+        val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
+        LONG_LABELS.forEachIndexed { index, label ->
+            val layout = countLayout(label)
+            assertEquals(label, layout.layoutInput.text.text)
+            assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
+            assertEquals(label.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
+            repeat(layout.lineCount) { assertFalse(layout.isLineEllipsized(it)) }
+
+            val text = composeRule.onNodeWithText(label, useUnmergedTree = true).getUnclippedBoundsInRoot()
+            val card = cards[index].getUnclippedBoundsInRoot()
+            val image = images[index].getUnclippedBoundsInRoot()
+            assertEquals(
+                "Large text never shrinks the image",
+                (grid.bottom - grid.top).value / 2f,
+                (image.bottom - image.top).value,
+                0.5f,
+            )
+            assertTrue(
+                "The text block must grow rather than clip the count",
+                (card.bottom - image.bottom) > ReaderSize.gridCardText,
+            )
+            assertTrue(text.top >= image.bottom + ReaderSpace.cardPad)
+            assertTrue(text.bottom <= card.bottom - ReaderSpace.cardPad)
+        }
+    }
+
+    @Test
+    fun `font two wraps complete reply and unread counts inside a short pane's three narrow cards`() {
+        // 250dp leaves less than 240dp below the app bar, so images sit at the 120dp floor, three across.
+        composeRule.setContent {
+            Box(Modifier.size(360.dp, 250.dp)) { Grid(fontScale = 2f, longTitles = true, longCounts = true) }
+        }
 
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
@@ -65,16 +111,18 @@ class CatalogLargeTextTest {
             )
             assertEquals(2f, layout.layoutInput.density.fontScale, 0f)
             assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
-            assertTrue("$label should wrap in this three-column phone grid", layout.lineCount > 1)
+            assertTrue("$label should wrap in this three-column grid", layout.lineCount > 1)
             assertEquals(label.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
             repeat(layout.lineCount) { assertFalse(layout.isLineEllipsized(it)) }
 
             val text = composeRule.onNodeWithText(label, useUnmergedTree = true).getUnclippedBoundsInRoot()
             val card = cards[index].getUnclippedBoundsInRoot()
             val image = images[index].getUnclippedBoundsInRoot()
+            assertEquals("three 116dp cards share the line", 116f, (card.right - card.left).value, 0.5f)
+            assertEquals(ReaderSize.gridCardMin.value, (image.bottom - image.top).value, 0.5f)
             assertTrue(
                 "The text block must grow rather than clip the count",
-                (card.bottom - card.top) > (card.right - card.left) * 2,
+                (card.bottom - image.bottom) > ReaderSize.gridCardText,
             )
             assertTrue(text.left >= card.left + ReaderSpace.cardPad)
             assertTrue(text.right <= card.right - ReaderSpace.cardPad)

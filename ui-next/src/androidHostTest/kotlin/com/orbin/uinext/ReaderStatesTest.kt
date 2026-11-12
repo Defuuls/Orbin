@@ -133,6 +133,25 @@ class ReaderStatesTest {
     }
 
     @Test
+    fun `grid catalog skeleton reserves the loaded grid's columns and half-viewport images`() {
+        composeRule.setContent { NextTheme { ReaderCatalogSkeleton(mode = CatalogMode.GRID, showProgress = false) } }
+
+        val root = composeRule.onNodeWithTag(ReaderStateTags.CATALOG_SKELETON).getUnclippedBoundsInRoot()
+        val expected = catalogGridSpec(root.right - root.left, root.bottom - root.top)
+        val cells = composeRule.onAllNodesWithTag(ReaderStateTags.SKELETON_CELL, useUnmergedTree = true)
+        val first = cells.onFirst().getUnclippedBoundsInRoot()
+        assertEquals("a portrait phone is one column", 1, expected.columns)
+        // 360dp less the 2dp outer margin at each edge.
+        assertEquals(356f, (first.right - first.left).value, 0.5f)
+        assertTrue(
+            "a cell is at least its image, half the viewport, tall",
+            (first.bottom - first.top) >= expected.imageHeight,
+        )
+        // Enough lines to cover the viewport: two images fill it exactly.
+        cells.assertCountEquals(2)
+    }
+
+    @Test
     fun `wide thread skeleton reserves wide geometry and can share the host progress bar`() {
         composeRule.setContent {
             NextTheme {

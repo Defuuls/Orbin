@@ -131,8 +131,8 @@ Both platforms use bundled Roboto for the reader and shared default-family text.
 | `size.thumbnailWide` | 100dp | Cell thumbnail width and height in a wide window. |
 | `size.cellMin` | 96dp | Legacy shared-cell and loading minimum |
 | `size.cellMinWide` | 124dp | Legacy shared-cell and loading minimum, wide |
-| `size.gridCardMin` | 120dp | Grid column count is the pane width divided by this, rounded down. |
-| `size.gridCardText` | 76dp | Compatibility value; active card height comes from ratio.gridCard |
+| `size.gridCardMin` | 120dp | Thread Files columns are the pane width over this, rounded down; also the minimum grid image height. |
+| `size.gridCardText` | 76dp | Minimum height of a grid card's text block, so cards on one line stay level. |
 | `size.cardElevation` | 2dp | Catalog card elevation, matching Clover v3.0.2. |
 | `size.threadStatus` | 88dp | Thread footer that reports reply and image counts. |
 | `size.albumDetails` | 32dp | The album cell adds this metadata strip to its width to determine its height. |
@@ -159,10 +159,9 @@ Both platforms use bundled Roboto for the reader and shared default-family text.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `ratio.gridCard` | 0.5 | Card width / minimum height (9:18) |
-| `ratio.gridThumbnail` | 1.230769 | Image width / height (16:13; exact fraction in code) |
+| `ratio.gridImageHeight` | 0.5 | A grid card's image height as a fraction of the grid viewport's height: two lines per screen. |
 
-Compatibility helpers remain public: type.rowTitle, type.meta, type.preview, type.body, type.cardTitle, type.postAuthor and type.pill; space.rowPadY and space.postPadY; size.cellMin, size.cellMinWide, size.gridCardText, size.pillHeight and size.pillMinWidth; radius.small and radius.pill. These values do not restore the removed trailing count pill or the old square catalog-card image. Generic controls and loading fallbacks may still use them. The general space.gutter (16dp) aligns drawer/control edges; space.line (4dp) separates inline helper content.
+Compatibility helpers remain public: type.rowTitle, type.meta, type.preview, type.body, type.cardTitle, type.postAuthor and type.pill; space.rowPadY and space.postPadY; size.cellMin, size.cellMinWide, size.pillHeight and size.pillMinWidth; radius.small and radius.pill. These values do not restore the removed trailing count pill or the old square catalog-card image. Generic controls and loading fallbacks may still use them. The general space.gutter (16dp) aligns drawer/control edges; space.line (4dp) separates inline helper content.
 
 
 ## Shared cell
@@ -213,7 +212,7 @@ A thread ends with size.threadStatus (88dp minimum), space.postInset (8dp) paddi
 
 The thread toolbar's Files action opens Clover-style album cells. The album container uses space.albumPadding (1dp); each cell uses space.albumCellMargin (1dp), yielding a 2dp outside inset and 2dp between cells. Images have square corners. Cell height is its width plus size.albumDetails (32dp), which reserves the filename/size strip.
 
-Column count still uses the shared size.gridCardMin rule. Files opens the viewer at the selected attachment and retains Download all and Save page in overflow. These read-only Orbin actions preserve their real file identities.
+Column count is max(1, floor(pane width / size.gridCardMin)); the Files album does not use the catalog's half-viewport rule. Files opens the viewer at the selected attachment and retains Download all and Save page in overflow. These read-only Orbin actions preserve their real file identities.
 
 ## Phone catalog
 
@@ -236,19 +235,23 @@ There is one 288dp content column after the image, including both text insets; n
 
 ![Phone catalog, grid mode](diagrams/phone-catalog-grid.svg)
 
-- Columns are max(1, floor(pane width / size.gridCardMin)).
+- The grid viewport is the pane below the fixed app bar. Image height = max(viewport height × ratio.gridImageHeight, size.gridCardMin): half the viewport, so two lines of images fit on screen, with a 120dp floor for short split-screen windows.
+- Columns are max(1, floor(viewport width / image height)). A portrait phone or tablet shows one full-width column; a landscape or wide window shows as many columns as keep each image at least as wide as it is tall (for example 4 on a 740 × 360dp phone, 3 on a 1200 × 800dp tablet).
 - space.gridOuter (2dp) surrounds the grid. Adjacent cards are separated by space.gridGap (4dp).
 - Card width = (pane width − 2 × gridOuter − (columns − 1) × gridGap) / columns.
-- ratio.gridCard is 9:18: normal card height is twice card width. ratio.gridThumbnail is 16:13: image height is 13/16 of card width. The text area takes the remaining 19/16 of card width.
+- The image spans the card's width at that height and is cropped to fill it. A still image is drawn from its original file, decoded to the card's size over the provider thumbnail, because a thumbnail (about 250px) is too small to fill a card sharply; GIFs and videos keep the thumbnail. The text area sits below the image and is at least size.gridCardText (76dp) tall.
 - The text area uses space.cardPad (8dp). Subject text uses the regular 14/16sp body style with at most three lines, followed by the opening excerpt and any real source metadata. Plain counters at the foot read, for example, “23R 4I”. Accessibility announces complete reply/file counts and unread metadata.
-- Cards use radius.card (2dp) and size.cardElevation (2dp), with no stroked outline. Text can expand beyond the normal ratio at large font scales.
+- Cards use radius.card (2dp) and size.cardElevation (2dp), with no stroked outline. Text grows below the image at large font scales; the image height does not change.
 
-| Pane width | Columns | Card width |
-| --- | --- | --- |
-| 360dp | 3 | 116dp |
-| 399dp | 3 | 129dp |
-| 420dp | 3 | 136dp |
-| 600dp | 5 | 116dp |
+| Viewport width | Viewport height | Columns | Image height | Card width |
+| --- | --- | --- | --- | --- |
+| 360dp | 560dp | 1 | 280dp | 356dp |
+| 411dp | 731dp | 1 | 365.5dp | 407dp |
+| 740dp | 304dp | 4 | 152dp | 181dp |
+| 1200dp | 744dp | 3 | 372dp | 396dp |
+| 360dp | 200dp | 3 | 120dp | 116dp |
+
+The viewport is the window less the status bar and size.appBar, so a 360 × 640dp phone has a 560dp viewport. The first two rows are portrait phones, the third a landscape phone, the fourth a landscape tablet, and the last a short split-screen window held at the size.gridCardMin floor.
 
 The List/Grid choice is remembered per device and shared by Home and board catalogs.
 
@@ -326,8 +329,8 @@ Home uses the catalog's List and Grid cells, on `color.background` in the curren
 
 - The fixed app bar is titled Home. Reload and Search appear when their callbacks are available, with at most two primary actions. Available source controls sit below the bar on the themed screen. Their labels use `type.label`; selected controls announce their selection and use the reader colors. Home has no Following or For You selector. Source controls do not cover a thumbnail or row.
 - Home shows video threads only from explicitly subscribed boards. Favorites do not imply subscriptions, and a stored legacy discovery selection cannot include unsubscribed boards. Site and board identities stay source-qualified.
-- List uses the catalog's compact row geometry, regular typography, plain totals, thumbnail sizes and large-text rules. Grid uses its 9:18 card and 16:13 image ratios, 2dp margins/elevation and regular subject type.
-- Rows use bounded provider thumbnails. No Home row mounts a full-screen player or starts inline playback. A separate media action explicitly opens the existing media viewer; tapping the row opens its thread. Spoiler covers still reveal before media can open.
+- List uses the catalog's compact row geometry, regular typography, plain totals, thumbnail sizes and large-text rules. Grid uses the catalog's half-viewport image rule and columns, 2dp margins/elevation and regular subject type.
+- List rows use bounded provider thumbnails; grid cards sharpen still images as the catalog does, bounded to the card's size. No Home row mounts a full-screen player or starts inline playback. A separate media action explicitly opens the existing media viewer; tapping the row opens its thread. Spoiler covers still reveal before media can open.
 - Long-press a Home row, grid card or preview to open its context menu. Home has no per-item three-dot button or box. The menu offers the wired Watch, Save, Share and board actions, plus its thread videos or comments action. The videos/comments choice follows the existing setting. Missing callbacks omit the unavailable actions. There is no floating media action rail.
 - Each source keeps its own first-visible thread and scroll offset when the reader switches away and returns. Changing List/Grid preserves the reading position for that source. Refresh keeps existing content and follows the retained-content progress and retry rules.
 - Home follows the reader loading, empty and error rules. Its app bar and source controls stay usable in each state.
@@ -422,9 +425,9 @@ The application is implemented independently. Standard open-source Roboto font r
 | App bar height | 56dp | `size.appBar` |
 | Thumbnail, default | 72dp | `size.thumbnail` |
 | Thumbnail, larger-screen variant | 100dp | `size.thumbnailWide` |
-| Grid card width | 120dp | `size.gridCardMin` |
+| Grid card width | 120dp | Viewport width / columns; see the grid rule (Orbin sizes cards from the viewport, not Clover's fixed width) |
 | Grid card corner / elevation / margin, API 21+ | 2dp each | radius.card, size.cardElevation, space.gridOuter |
-| Grid card / image width:height | 9:18 / 16:13 | ratio.gridCard / ratio.gridThumbnail |
+| Grid image height | 13/16 of card width | Half the grid viewport, `ratio.gridImageHeight`, at least `size.gridCardMin` |
 | Post body, phone / wide | 14sp / 16sp | type.postBody / type.postBodyWide |
 | Post details, phone / wide | 10sp / 12sp | type.postDetails / type.postDetailsWide |
 | Post text inset, phone / wide | 8dp / 10dp | space.postInset / space.postInsetWide |

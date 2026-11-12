@@ -10,7 +10,7 @@ This record tracks the implementation of the [normative reader design](README.md
 
 Current source includes:
 
-- Compact catalog/posts with 72/100dp leading thumbnails, 8/10dp text insets, regular 14/16sp body and 10/12sp details; plain reply/file totals, 9:18 cards, 16:13 images and 2dp card margin/elevation/corners. Toolbar navigation/action/overflow widths are 56/50/44dp.
+- Compact catalog/posts with 72/100dp leading thumbnails, 8/10dp text insets, regular 14/16sp body and 10/12sp details; plain reply/file totals, grid cards whose image is half the viewport tall (one full-width column on a portrait phone) and 2dp card margin/elevation/corners. Toolbar navigation/action/overflow widths are 56/50/44dp.
 - Bundled verified Roboto on Android and iOS. Medium/Medium Italic and Condensed Regular match the supplied open-source APK assets; Regular/Bold/Italic faces are pinned to the actual API31 reference-runtime fonts. [Packaged provenance and licenses](../../ui-next/src/commonMain/composeResources/files/licenses/roboto_provenance.json) record exact hashes.
 - Home without For You/Following controls. Only explicitly subscribed boards enter Home or satisfy setup. Favorites remain independent: subscribing creates no favorite and unfollowing preserves an existing favorite. Source-qualified board identities and reading anchors remain separate.
 - Clover-style Settings categories, compact title/summary rows, trailing values/switches and anchored choice menus, retaining Orbin's real settings and stored callbacks. Long searchable scope choices keep their accessible page.

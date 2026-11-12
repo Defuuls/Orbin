@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_feed_open_media
 import com.orbin.uinext.resources.reader_reveal_spoiler
@@ -55,6 +56,7 @@ internal fun ReaderFeedItem(
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     activity: String,
     actions: ReaderFeedRowActions,
+    gridImageHeight: Dp,
 ) {
     var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
     val covered = row.imageSpoiler && !revealed && row.hasPreview && !row.muted
@@ -85,6 +87,7 @@ internal fun ReaderFeedItem(
                 selected = false,
                 onOpen = actions.onOpenRow,
                 thumbnail = thumbnail,
+                imageHeight = gridImageHeight,
                 itemTag = ReaderFeedTags.row(row.id),
                 thumbnailTag = ReaderFeedTags.thumbnail(row.id),
                 metadata = metadata,

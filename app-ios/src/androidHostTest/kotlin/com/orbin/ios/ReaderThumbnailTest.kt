@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import android.content.Context
 import android.os.Looper
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
@@ -101,6 +102,70 @@ class ReaderThumbnailTest {
         // Coil's null-data sentinel is an implementation detail; an original URL is never selected.
         assertNull(request.data as? String)
     }
+
+    @Test
+    fun `a list cell requests only the provider thumbnail`() {
+        composeRule.setContent { NextTheme { ReaderThumbnail(ATTACHMENT, Modifier.size(72.dp)) } }
+
+        composeRule.waitUntil { resolvedRequests.isNotEmpty() }
+        composeRule.waitForIdle()
+        assertTrue(resolvedRequests.all { it.first == ATTACHMENT.thumbnailUrl })
+    }
+
+    @Test
+    fun `a grid card sharpens a still image with its original decoded to the card size`() {
+        var density = 0f
+        composeRule.setContent {
+            density = LocalDensity.current.density
+            NextTheme { ReaderThumbnail(ATTACHMENT, Modifier.size(300.dp, 200.dp), sharp = true) }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { resolvedRequests.any { it.first == ATTACHMENT.sourceUrl } }
+        val card = Size((300 * density).toInt(), (200 * density).toInt())
+        assertTrue(
+            "the thumbnail still fills the card first",
+            resolvedRequests.any { it.first == ATTACHMENT.thumbnailUrl },
+        )
+        assertEquals(
+            "the original is bounded by the card, never decoded at full size",
+            card,
+            resolvedRequests.first { it.first == ATTACHMENT.sourceUrl }.second,
+        )
+    }
+
+    @Test
+    fun `a grid card never requests the original of a gif, a video or a file without one`() {
+        val unsharpenable =
+            listOf(
+                ATTACHMENT.copy(type = MediaType.ANIMATED_IMAGE),
+                ATTACHMENT.copy(type = MediaType.VIDEO),
+                ATTACHMENT.copy(sourceUrl = ""),
+            )
+        composeRule.setContent {
+            NextTheme {
+                Column {
+                    for (attachment in unsharpenable) {
+                        ReaderThumbnail(attachment, Modifier.size(300.dp, 200.dp), sharp = true)
+                    }
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = 5_000) { resolvedRequests.size >= unsharpenable.size }
+        composeRule.waitForIdle()
+        assertTrue(resolvedRequests.all { it.first == ATTACHMENT.thumbnailUrl })
+    }
+
+    @Test
+    fun `a sharp request keeps the cell size and exact precision`() =
+        runTest {
+            val context: Context = RuntimeEnvironment.getApplication()
+            val request =
+                readerThumbnailRequest(context, ATTACHMENT, SizeResolver(Size(712, 600)), ATTACHMENT.cardImageUrl())
+            assertEquals(ATTACHMENT.sourceUrl, request.data)
+            assertEquals(Size(712, 600), request.sizeResolver.size())
+            assertEquals(Precision.EXACT, request.precision)
+        }
 
     @Test
     fun `a spoiler cover owns the first tap and disappears after reveal`() {
