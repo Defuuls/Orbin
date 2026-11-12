@@ -7,8 +7,11 @@ import UIKit
 final class OrbinAppDelegate: UIResponder, UIApplicationDelegate {
     override init() {
         super.init()
-        // This also precedes background URLSession callbacks, which can initialize AppGraph.
-        requireEncryptedDns()
+        // Encrypted DNS must be in place before any HTTP client is built. The applicator is
+        // registered first, then Android's default (Cloudflare, fallback allowed) is applied;
+        // AppGraph later updates both when settings load. registerBackgroundRefresh can itself
+        // initialize AppGraph, so it comes last.
+        installEncryptedDns()
         BackgroundRefreshKt.registerBackgroundRefresh()
     }
 
@@ -35,15 +38,27 @@ final class OrbinAppDelegate: UIResponder, UIApplicationDelegate {
     }
 }
 
-/// Encrypted DNS for every connection the app makes, URLSession included, as Android's always-on
-/// DNS-over-HTTPS: some networks (mobile carriers especially) block sites by answering their DNS
-/// lookups wrongly. Cloudflare is Android's default resolver, reached by address so looking it up
-/// does not go through the network's DNS either. Networks whose own DNS is already encrypted keep it.
-private func requireEncryptedDns() {
-    guard let resolver = URL(string: "https://cloudflare-dns.com/dns-query") else { return }
-    let addresses: [NWEndpoint] = ["1.1.1.1", "1.0.0.1"].map { .hostPort(host: NWEndpoint.Host($0), port: 443) }
+/// Wires process-wide Network.framework DNS-over-HTTPS to the Kotlin settings: the saved
+/// resolver (Cloudflare, Google, OpenDNS or NextDNS) and whether encrypted resolution is
+/// required. Reached by address so looking the resolver up does not go through the network's
+/// DNS either. When [required] is false, the system may fall back to ordinary DNS if DoH fails,
+/// matching Android. When true, lookups fail instead of falling back.
+private func installEncryptedDns() {
+    EncryptedDns.shared.setApplicator { url, bootstrapIpsCsv, requiredFlag in
+        applyOrbinEncryptedDns(
+            resolverURL: url,
+            bootstrap: bootstrapIpsCsv.split(separator: ",").map(String.init).filter { !$0.isEmpty },
+            required: requiredFlag == "true"
+        )
+    }
+    EncryptedDns.shared.applyDefault()
+}
+
+private func applyOrbinEncryptedDns(resolverURL: String, bootstrap: [String], required: Bool) {
+    guard let resolver = URL(string: resolverURL) else { return }
+    let addresses: [NWEndpoint] = bootstrap.map { .hostPort(host: NWEndpoint.Host($0), port: 443) }
     NWParameters.PrivacyContext.default.requireEncryptedNameResolution(
-        true,
+        required,
         fallbackResolver: .https(resolver, serverAddresses: addresses)
     )
 }

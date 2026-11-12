@@ -6,11 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- Applied the saved DNS-over-HTTPS provider and Strict encrypted DNS setting on iOS, matching Android, instead of always requiring Cloudflare.
+- Stored iOS crash reports in Application Support files with complete Data Protection, migrating and clearing the previous UserDefaults records, and dropped the device model from those reports.
+- Strengthened the iOS app lock with a this-device-only Keychain item that requires Face ID, Touch ID or the passcode (`userPresence`), created on the first successful unlock so existing users are not locked out.
+- Restricted the WebM WKWebView to the local player document: navigation away is cancelled, window.open and link previews are disabled, and file-URL access is not granted.
+- Removed private vulnerability-reporting instructions from SECURITY.md, the bug-report template, and related docs.
+
 ### Changed
+- Documented storage, DNS, and third-party disclosure accurately per platform in the privacy policy, README, user guides, website, and F-Droid metadata stub.
 - Sized grid thumbnails from the window: on a phone each catalog and Home card spans the full width with an image half the height of the area below the app bar, and landscape or wide windows split into columns that keep each image at least as wide as it is tall.
 - Drew still images in grid cards from the original file, decoded to the card's size, so large thumbnails stay sharp; GIFs and videos keep the provider thumbnail.
 
 ### Testing
+- Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
 - Added regressions for the grid sizing rule across portrait, landscape, tablet, short and unmeasured windows, for catalog, Home and loading-grid layouts, and for sharp grid image requests on iOS.
 
 ## [202-Arracacha] - 2026-11-12

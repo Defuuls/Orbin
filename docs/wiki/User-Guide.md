@@ -149,12 +149,12 @@ contrast-aware themes.
 
 ## Privacy at a glance
 
-- Local database content is encrypted with SQLCipher.
-- Preferences use encrypted storage protected by Android Keystore material.
-- Optional biometric app lock protects access and recents previews.
-- Application networking is HTTPS-only.
-- DNS uses encrypted resolvers where possible and reports fallback when a network blocks them.
-- Android cloud backup/device transfer of private Orbin state is disabled.
+- **Android.** The local database is encrypted with SQLCipher, and preferences with an encrypted DataStore protected by Android Keystore material.
+- **iOS.** The local database is SQLite in Application Support, protected by iOS Data Protection. Settings are a DataStore file in the same directory and are not separately encrypted. Crash reports use complete Data Protection.
+- Optional app lock: Android uses strong biometrics or the device credential; iOS uses Face ID, Touch ID or the passcode, gated by a Keychain item that requires user presence.
+- Application networking is HTTPS-only on both platforms.
+- DNS uses DNS-over-HTTPS (Cloudflare, Google, OpenDNS or NextDNS). If lookup fails and Strict encrypted DNS is off, the system DNS may be used. Android reports that fallback; iOS does not.
+- Android cloud backup and device transfer of private Orbin state are disabled. iOS excludes Application Support from iCloud backup.
 - Explicit backup exports and saved-link text files are **not encrypted**.
 
 See [[Settings Guide|Settings-Guide]] for configuration details and [[Troubleshooting]] for common

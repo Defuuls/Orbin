@@ -28,7 +28,8 @@ Text size follows Android's system font setting or iOS Dynamic Type.
 | Hide NSFW boards | Hides NSFW boards from browsing surfaces. |
 | Cover violent media | Uses text and filenames to cover potentially violent media. It cannot identify unlabeled content from pixels. |
 | App lock | Requires device authentication before showing content. Importing a backup does not change the existing lock policy. |
-| Strict encrypted DNS | Android only. Stops loading when encrypted DNS is unavailable, instead of falling back to the network's resolver. The row warns when fallback is active. |
+| Encrypted DNS | Looks up site names over DNS-over-HTTPS through Cloudflare (the default), Google, OpenDNS or NextDNS, on Android and iOS. |
+| Strict encrypted DNS | Stops loading when encrypted DNS is unavailable, instead of falling back to the network's resolver, on Android and iOS. On Android the row warns when fallback is active; iOS cannot observe that signal. |
 
 ## Data and storage
 

@@ -1,33 +1,33 @@
 # Security Policy
 
-Orbin encrypts its local database (history, bookmarks, downloads, saved searches) with
-SQLCipher and settings with an encrypted DataStore, both backed by a hardware-backed Android
-Keystore key, and enforces HTTPS-only networking with optional DNS-over-HTTPS. If you find a way
-around any of that — or any other security issue — please report it privately rather than
-opening a public issue.
-
-## Reporting a vulnerability
-
-Use GitHub's private vulnerability reporting: open the
-[Security tab](https://github.com/Defuuls/Orbin/security) on this repository and click
-**"Report a vulnerability."** This opens a private advisory visible only to the maintainer and
-you, so the issue isn't public before a fix ships.
-
-Please include:
-
-- The affected version (`versionName`, e.g. `78-Alioth`) or commit.
-- Steps to reproduce, or a proof of concept.
-- What you'd expect to happen instead, and the actual impact (data exposure, bypassed lock,
-  network downgrade, etc).
-
 ## Supported versions
 
 Orbin ships one continuous line of signed releases — only the
 [latest release](https://github.com/Defuuls/Orbin/releases/latest) is supported. There are no
 maintained long-term-support branches.
 
+## Platform security
+
+Both the Android and iOS apps enforce HTTPS-only networking and DNS-over-HTTPS (Cloudflare by
+default, or Google, OpenDNS or NextDNS), with an optional strict mode that refuses system-DNS
+fallback.
+
+**Android.** The local database (history, bookmarks, downloads, saved searches) is encrypted with
+SQLCipher, and settings with an encrypted DataStore, both backed by a hardware-backed Android
+Keystore key. The optional app lock gates a Keystore key with strong biometrics or the device
+credential. Crash reports are stored encrypted.
+
+**iOS.** The local database is unencrypted SQLite in Application Support, protected by iOS Data
+Protection (`NSFileProtectionCompleteUntilFirstUserAuthentication`) and excluded from iCloud
+backup. Settings live in a plaintext DataStore file under the same directory protection. Crash
+reports are written to files with `NSFileProtectionComplete`. The optional app lock uses Face ID,
+Touch ID or the device passcode, and a this-device-only Keychain item whose access control
+requires user presence.
+
+Neither platform sends telemetry. Explicit backup exports are unencrypted files the user chooses
+where to keep.
+
 ## Scope
 
-In scope: the Orbin Android app itself (this repository) and its published release APKs.
-Out of scope: the third-party image board services Orbin connects to — report issues with those
-directly to their own operators.
+In scope: the Orbin Android and iOS apps in this repository and their published releases.
+Out of scope: the third-party imageboard services and DNS resolvers Orbin connects to.

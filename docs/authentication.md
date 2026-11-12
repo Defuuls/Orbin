@@ -9,8 +9,12 @@ networking stack, so Android's process-only guarantee does not apply there.
 
 The app lock controls the screen, separately from encryption of local data. Android's unlock
 key requires a fresh strong biometric operation; its data-encryption key deliberately does not,
-so startup and background workers can run. iOS uses device-owner authentication, including the
-device passcode.
+so startup and background workers can run. iOS uses device-owner authentication (Face ID, Touch
+ID or the device passcode) and then reads a this-device-only Keychain item created with
+`kSecAccessControlUserPresence`. The already-authenticated `LAContext` is passed to the Keychain
+so the user is not prompted twice. The item is created on the first successful unlock after
+upgrade, so existing users are not locked out. `userPresence` is used rather than
+`biometryCurrentSet` so a passcode still unlocks the app on a device without Face ID or Touch ID.
 
 Android loads settings and readiness together before showing content. Unreadable or empty
 encrypted settings recover with biometric lock enabled and onboarding complete, so neither a

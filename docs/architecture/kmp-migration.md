@@ -27,7 +27,7 @@ no behaviour change.
 |---|---|---|
 | DI | Hilt (Android-only) | kotlin-inject (shared) ✅ started |
 | HTTP | OkHttp + Ktor/OkHttp; Darwin on iOS with no policy | Ktor everywhere, one factory and shared policy ✅. OkHttp stays as Android's engine. |
-| Database | Room KMP + SQLCipher (Android) | Room KMP; SQLCipher on both platforms |
+| Database | Room KMP + SQLCipher (Android) | Room KMP on both; SQLCipher remains Android-only (iOS uses bundled SQLite and Data Protection) |
 | Settings | DataStore (partly shared) | DataStore Preferences, shared only |
 | Navigation | androidx navigation-compose + custom | Navigation Compose Multiplatform, typed routes |
 | ViewModels | AndroidX + Hilt | Lifecycle ViewModel (Compose Multiplatform) |
@@ -75,7 +75,7 @@ no behaviour change.
 
 - Move the repositories and paging (paging-common) into shared code.
 - Delete the duplicated repository code in `app-ios`.
-- Encrypt the database on both platforms (SQLCipher on iOS).
+- Encrypt the database on both platforms (SQLCipher on iOS). Not done: iOS still uses bundled SQLite under Data Protection, and its DataStore file is not application-encrypted.
 - Grow `SharedGraph` to cover these, and shrink Hilt's `data` modules to platform inputs.
 
 ### Phase 4: media (medium)
