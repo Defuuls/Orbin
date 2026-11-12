@@ -122,10 +122,19 @@ jobs:
               names.setdefault(str(nameid),[])
               if value not in names[str(nameid)]:names[str(nameid)].append(value)
             return names
-           for face in ['Regular','Bold','Italic','BoldItalic']:
-            name='Roboto-'+face+'.ttf';adb('pull','/system/fonts/'+name,str(fonts/name))
+           family=ET.parse(fonts/'fonts.xml').getroot().find("family[@name='sans-serif']")
+           assert family is not None,'Actual runtime sans-serif family missing'
+           selected=[]
+           for style,weight in [('normal','400'),('normal','700'),('italic','400'),('italic','700')]:
+            matches=[n for n in family.findall('font') if n.get('style','normal')==style and n.get('weight','400')==weight]
+            assert len(matches)==1,('Ambiguous actual font mapping',style,weight)
+            node=matches[0];name=(node.text or '').strip()
+            assert re.fullmatch(r'[A-Za-z0-9_.-]+\.ttf',name),('Unsafe or missing font filename',name)
+            selected.append({'style':style,'weight':int(weight),'file':name,'axes':{a.get('tag'):a.get('stylevalue') for a in node.findall('axis')}})
+           for name in dict.fromkeys(n['file'] for n in selected):
+            adb('pull','/system/fonts/'+name,str(fonts/name))
             data=(fonts/name).read_bytes();font_records.append({'file':name,'system_path':'/system/fonts/'+name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'name_table':font_names(data)})
-           (fonts/'font-provenance.json').write_text(json.dumps({'api_level':31,'source':'Actual/system/fonts files pulled from the running reference emulator','faces':font_records},indent=2)+'\n')
+           (fonts/'font-provenance.json').write_text(json.dumps({'api_level':31,'source':'Actual/system/fonts files pulled from the running reference emulator; face filenames and axes selected from that same runtime fonts.xml','requested_faces':selected,'files':font_records},indent=2)+'\n')
            try:
             notice=adb('exec-out','cat','/system/etc/NOTICE.xml.gz',binary=True,check=False)
             tree=ET.fromstring(gzip.decompress(notice));matched=[n for n in tree.iter('file-name') if 'roboto' in (n.text or '').lower()];ids={n.get('contentId') for n in matched};selected=ET.Element('licenses')
@@ -134,7 +143,7 @@ jobs:
              if n.get('contentId') in ids:selected.append(n)
             ET.ElementTree(selected).write(fonts/'NOTICE-Roboto.xml',encoding='utf-8',xml_declaration=True)
            except Exception as e:(fonts/'notice-extraction.txt').write_text(str(e)+'\nLicense metadata is also preserved from each actual font name table.\n')
-           print('Pulled four exact runtime Roboto faces and font mapping before UI inspection',flush=True)
+           print('Pulled actual XML-selected runtime Roboto files and four face mappings before UI inspection',flush=True)
            (out/'device-properties.txt').write_text(adb('shell','getprop'))
            (out/'install.log').write_text(adb('install','-g','--no-streaming',str(apk),timeout=90));result['installed']=True
            (out/'package.txt').write_text(adb('shell','dumpsys','package','org.floens.chan'))
