@@ -66,7 +66,9 @@ fun FeedPlaybackControls(
     BoxWithConstraints(
         modifier
             .testTag(FeedPlaybackTags.SURFACE)
-            .semantics {
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+            ).semantics {
                 contentDescription = playbackLabel
                 role = Role.Button
                 onClick(label = playbackLabel) {
@@ -119,6 +121,7 @@ fun FeedPlaybackControls(
                 .fillMaxWidth()
                 .height(2.dp)
                 .background(Color.White.copy(alpha = 0.18f))
+                .testTag(FeedPlaybackTags.PROGRESS)
                 .semantics { progressBarRangeInfo = ProgressBarRangeInfo(progressValue, 0f..1f) },
         ) {
             Box(Modifier.fillMaxWidth(progressValue).height(2.dp).background(Color.White.copy(alpha = 0.85f)))
@@ -129,6 +132,7 @@ fun FeedPlaybackControls(
 object FeedPlaybackTags {
     const val SURFACE = "tiktok_video_surface"
     const val MUTE = "tiktok_video_mute"
+    const val PROGRESS = "tiktok_video_progress"
 }
 
 /**
