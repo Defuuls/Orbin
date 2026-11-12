@@ -62,12 +62,8 @@ import platform.UIKit.UIApplicationState.UIApplicationStateActive
 import platform.UIKit.UIApplicationWillResignActiveNotification
 import platform.UIKit.UIColor
 import platform.UIKit.UIDevice
-import platform.WebKit.WKNavigation
-import platform.WebKit.WKNavigationDelegateProtocol
 import platform.WebKit.WKWebView
-import platform.WebKit.WKWebViewConfiguration
 import platform.WebKit.WKWebsiteDataStore
-import platform.darwin.NSObject
 import kotlin.coroutines.resume
 
 /**
@@ -336,14 +332,9 @@ internal actual fun NativeWebMPlayer(
     }
     val navigation =
         remember(url) {
-            object : NSObject(), WKNavigationDelegateProtocol {
-                override fun webView(
-                    webView: WKWebView,
-                    didFinishNavigation: WKNavigation?,
-                ) {
-                    if (webView.hasPlaybackSurface()) {
-                        webView.evaluateJavaScript(webMPlaybackScript(request()), completionHandler = null)
-                    }
+            WebMPageDelegate { webView ->
+                if (webView.hasPlaybackSurface()) {
+                    webView.evaluateJavaScript(webMPlaybackScript(request()), completionHandler = null)
                 }
             }
         }
@@ -351,20 +342,14 @@ internal actual fun NativeWebMPlayer(
         remember(url, preloader) {
             val warmed = preloader?.takeWebM(url)
             if (warmed != null) {
-                warmed.navigationDelegate = navigation
+                warmed.applyWebMPolicy(navigation)
                 return@remember warmed
             }
-            val configuration =
-                WKWebViewConfiguration().apply {
-                    allowsInlineMediaPlayback = true
-                    mediaTypesRequiringUserActionForPlayback = 0uL
-                    // In-memory only: the default store keeps WebKit's cache and cookies on disk,
-                    // which would undo the app's choice not to persist media (see AppGraph).
-                    // One shared store: a new store per view means a new WebContent process per video.
-                    websiteDataStore = mediaDataStore
-                }
-            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
-                navigationDelegate = navigation
+            // In-memory only: the default store keeps WebKit's cache and cookies on disk,
+            // which would undo the app's choice not to persist media (see AppGraph).
+            // One shared store: a new store per view means a new WebContent process per video.
+            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = webMViewConfiguration()).apply {
+                applyWebMPolicy(navigation)
                 opaque = false
                 backgroundColor = UIColor.blackColor
                 scrollView.scrollEnabled = false
@@ -466,6 +451,7 @@ internal actual fun NativeWebMPlayer(
             center.removeObserver(backgroundObserver)
             // A neighbouring pager page must not keep playing audio or video.
             webView.navigationDelegate = null
+            webView.UIDelegate = null
             webView.tearDownMedia()
         }
     }
@@ -565,18 +551,11 @@ internal actual fun NativeInlineLoop(
     loop: Boolean,
     muted: Boolean,
 ) {
+    val navigation = remember(url) { WebMPageDelegate() }
     val webView =
         remember(url, loop, muted) {
-            val configuration =
-                WKWebViewConfiguration().apply {
-                    allowsInlineMediaPlayback = true
-                    mediaTypesRequiringUserActionForPlayback = 0uL
-                    // In-memory only: the default store keeps WebKit's cache and cookies on disk,
-                    // which would undo the app's choice not to persist media (see AppGraph).
-                    // One shared store: a new store per view means a new WebContent process per video.
-                    websiteDataStore = mediaDataStore
-                }
-            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = configuration).apply {
+            WKWebView(frame = CGRectMake(0.0, 0.0, 0.0, 0.0), configuration = webMViewConfiguration()).apply {
+                applyWebMPolicy(navigation)
                 scrollView.scrollEnabled = false
                 scrollView.bounces = false
                 userInteractionEnabled = false

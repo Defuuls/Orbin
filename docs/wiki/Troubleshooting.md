@@ -55,11 +55,12 @@ slower by design.
 
 ### Why does DNS say it fell back to the system resolver?
 
-Some networks block the configured encrypted DNS endpoint. Orbin falls back so browsing does not
-fail completely and reports that privacy degradation under **Settings → Strict encrypted DNS**.
-Switching resolver or network may clear it; the notice clears after encrypted resolution succeeds
-again. Turn **Strict encrypted DNS** on if you would rather nothing load than let the network see
-which sites you open.
+Some networks block the configured encrypted DNS endpoint. When **Strict encrypted DNS** is off
+(the default), Orbin falls back to the system's DNS so browsing does not fail completely, on
+Android and iOS. Android reports that privacy degradation under **Settings → Strict encrypted DNS**;
+iOS cannot observe the fallback, so it has no such notice. Switching resolver or network may
+clear it; on Android the notice clears after encrypted resolution succeeds again. Turn **Strict
+encrypted DNS** on if you would rather nothing load than let the network see which sites you open.
 
 ### How do I update Orbin?
 
@@ -73,14 +74,16 @@ silently. Signed APKs and checksums are also on the repository Releases page for
 
 ### Is local browsing data encrypted?
 
-The main local database is encrypted with SQLCipher and preferences use encrypted storage protected
-by Android Keystore material.
+**Android.** The main local database is encrypted with SQLCipher and preferences use encrypted
+storage protected by Android Keystore material. If Android loses or refuses to save the Keystore
+key that protects the database, Orbin tells you. When the key is lost, the database cannot be
+opened and is cleared; import a backup from **Settings** to get your boards, bookmarks and saved
+searches back. When a new key cannot be saved, Orbin keeps that session in memory, leaves your
+existing data untouched, and tries again on the next start.
 
-If Android loses or refuses to save the Keystore key that protects the database, Orbin tells you.
-When the key is lost, the database cannot be opened and is cleared; import a backup from
-**Settings** to get your boards, bookmarks and saved searches back. When a new key cannot be saved,
-Orbin keeps that session in memory, leaves your existing data untouched, and tries again on the
-next start.
+**iOS.** The database is ordinary SQLite in Application Support, protected by iOS Data Protection
+and excluded from iCloud backup. Settings are a DataStore file in the same directory and are not
+separately encrypted. Crash reports use complete Data Protection.
 
 ### Are backups and saved-link files encrypted?
 

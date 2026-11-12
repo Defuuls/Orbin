@@ -85,11 +85,14 @@ the checklist is pending and simulator coverage does not establish physical-devi
   Android, an import merges and never restores the app lock. A backup containing an old color
   theme is refused before any data is applied, with the message "This backup was made by an
   older version of Orbin and cannot be restored.";
-- encrypted DNS for every request, as Android's always-on DNS-over-HTTPS, so a network that
-  blocks a site through DNS (some mobile carriers do) does not hide it. The UIKit app delegate sets it
-  app-wide at launch (`NWParameters.PrivacyContext.default`, iOS 16+) with Android's default
-  resolver, Cloudflare; a network whose own DNS is already encrypted keeps it. Unlike Android there
-  is no fallback to plain DNS where Cloudflare is blocked, and no resolver setting yet;
+- encrypted DNS for every request, as Android's DNS-over-HTTPS, so a network that blocks a site
+  through DNS (some mobile carriers do) does not hide it. The UIKit app delegate registers a
+  process-wide applicator (`NWParameters.PrivacyContext.default`, iOS 16+) and applies Android's
+  default at launch: Cloudflare, with system-DNS fallback allowed. Once settings load, the saved
+  resolver (Cloudflare, Google, OpenDNS or NextDNS) and **Strict encrypted DNS** are applied the
+  same way Android applies them. When strict is on, lookups fail instead of falling back; when
+  it is off, the system may use ordinary DNS if DoH fails. iOS cannot show Android's fallback
+  warning, because it cannot observe that the system resolver was used;
 - iPhone and iPad, in every orientation on iPad and in Split View and Stage Manager windows. The
   screens size themselves to the window. Home uses one full-viewport vertical page on every
   device, with natural media aspect ratios and safe captions on a black ground in every theme.
@@ -114,7 +117,9 @@ the checklist is pending and simulator coverage does not establish physical-devi
   clearing the reading history (two taps, as on Android) and clearing the image cache;
 - the app lock, as on Android: with it on, the app is locked at launch and whenever it has been
   in the background, and hidden in the app switcher. It unlocks with Face ID or Touch ID, or the
-  device passcode, where Android asks for strong biometrics only. Turning it on asks you to unlock
+  device passcode, where Android asks for strong biometrics only, and then confirms a this-device-only
+  Keychain item whose access control requires the same user presence. The item is created on the
+  first successful unlock, so existing users are not locked out. Turning it on asks you to unlock
   once first, so it cannot lock you out. The lock screen is the shared `ui-next` one Android uses.
 
 Home, Watched, Boards, Search and Saved use an app bar with a Menu button opening the navigation
@@ -132,7 +137,10 @@ or catalog column counts are ignored.
 
 Followed boards and settings live in a DataStore file beside the database, read and written by
 the same `BoardPreferencesStore` and `SettingsStore` (`:storage`) that Android's settings use,
-with the same keys.
+with the same keys. The file itself is not encrypted at the application layer; it sits in
+Application Support under iOS Data Protection (`CompleteUntilFirstUserAuthentication`) and is
+excluded from iCloud backup, as the SQLite database is. Crash reports are kept in a
+`diagnostics` folder there with complete Data Protection, not in UserDefaults.
 
 iOS decides when the background refresh runs, from how often you use the app; it does not run in
 the simulator, and not at all if Background App Refresh is off in the system settings. The thread

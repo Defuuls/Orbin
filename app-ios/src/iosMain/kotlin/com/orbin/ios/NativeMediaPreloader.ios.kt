@@ -37,11 +37,7 @@ import platform.UIKit.UIColor
 import platform.UIKit.UIView
 import platform.UIKit.accessibilityElementsHidden
 import platform.UIKit.setFrame
-import platform.WebKit.WKNavigation
-import platform.WebKit.WKNavigationDelegateProtocol
 import platform.WebKit.WKWebView
-import platform.WebKit.WKWebViewConfiguration
-import platform.darwin.NSObject
 
 /** Only the upcoming clip is retained; promoted resources become the visible player's responsibility. */
 internal actual fun createNativeMediaPreloader(): NativeMediaPreloader = IosMediaPreloader()
@@ -205,31 +201,21 @@ private class PreparedWebM(
 ) : PreparedClip {
     private var promoted = false
     private val navigation =
-        object : NSObject(), WKNavigationDelegateProtocol {
-            override fun webView(
-                webView: WKWebView,
-                didFinishNavigation: WKNavigation?,
-            ) {
-                if (!promoted) {
-                    webView.evaluateJavaScript(
-                        "var v=document.getElementById('v');if(v){v.muted=true;v.preload='auto';" +
-                            "if(v.networkState===0)v.load()}",
-                        completionHandler = null,
-                    )
-                }
+        WebMPageDelegate { webView ->
+            if (!promoted) {
+                webView.evaluateJavaScript(
+                    "var v=document.getElementById('v');if(v){v.muted=true;v.preload='auto';" +
+                        "if(v.networkState===0)v.load()}",
+                    completionHandler = null,
+                )
             }
         }
     val webView =
         WKWebView(
             frame = CGRectMake(0.0, 0.0, 0.0, 0.0),
-            configuration =
-                WKWebViewConfiguration().apply {
-                    allowsInlineMediaPlayback = true
-                    mediaTypesRequiringUserActionForPlayback = 0uL
-                    websiteDataStore = mediaDataStore
-                },
+            configuration = webMViewConfiguration(),
         ).apply {
-            navigationDelegate = navigation
+            applyWebMPolicy(navigation)
             opaque = false
             backgroundColor = UIColor.blackColor
             scrollView.scrollEnabled = false
@@ -247,11 +233,13 @@ private class PreparedWebM(
     fun promote(): WKWebView {
         promoted = true
         webView.navigationDelegate = null
+        webView.UIDelegate = null
         return webView
     }
 
     override fun close() {
         webView.navigationDelegate = null
+        webView.UIDelegate = null
         webView.removeFromSuperview()
         webView.tearDownMedia()
     }

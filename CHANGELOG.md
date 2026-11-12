@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Security
+- Applied the saved DNS-over-HTTPS provider and Strict encrypted DNS setting on iOS, matching Android, instead of always requiring Cloudflare.
+- Stored iOS crash reports in Application Support files with complete Data Protection, migrating and clearing the previous UserDefaults records, and dropped the device model from those reports.
+- Strengthened the iOS app lock with a this-device-only Keychain item that requires Face ID, Touch ID or the passcode (`userPresence`), created on the first successful unlock so existing users are not locked out.
+- Restricted the WebM WKWebView to the local player document: navigation away is cancelled, window.open and link previews are disabled, and file-URL access is not granted.
+- Removed private vulnerability-reporting instructions from SECURITY.md, the bug-report template, and related docs.
+
+### Changed
+- Documented storage, DNS, and third-party disclosure accurately per platform in the privacy policy, README, user guides, website, and F-Droid metadata stub.
+
+### Testing
+- Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
+
 ## [202-Arracacha] - 2026-11-12
 
 ### Changed

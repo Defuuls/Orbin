@@ -12,10 +12,15 @@ import kotlin.concurrent.Volatile
  *
  * Kept apart from [SettingsRepositoryImpl] on purpose: the HTTP client is built from this, and the
  * settings stores come from the shared graph, which is built from the HTTP client.
+ *
+ * [initial] is the starting snapshot (Android's default user agent, or iOS's). [updateDoh] then
+ * changes only the resolver and strict-mode flag; the rest of the snapshot is left alone.
  */
-class FixedNetworkConfigProvider : NetworkConfigProvider {
+class FixedNetworkConfigProvider(
+    initial: NetworkConfig = NetworkConfig(),
+) : NetworkConfigProvider {
     @Volatile
-    private var config = NetworkConfig()
+    private var config = initial
 
     override fun current(): NetworkConfig = config
 
@@ -23,17 +28,41 @@ class FixedNetworkConfigProvider : NetworkConfigProvider {
         provider: DohProvider,
         strict: Boolean = false,
     ) {
-        val doh =
-            when (provider) {
-                DohProvider.CLOUDFLARE -> DohConfig.Cloudflare
-                DohProvider.OPENDNS -> DohConfig.OpenDns
-                DohProvider.NEXTDNS -> DohConfig.NextDns
-                DohProvider.GOOGLE -> DohConfig.Google
-            }
         config =
             config.copy(
-                dnsOverHttps = doh,
+                dnsOverHttps = provider.toDohConfig(),
                 strictDoh = strict,
             )
     }
+}
+
+/** The DoH endpoint and bootstrap addresses that belong to a [DohProvider] setting. */
+fun DohProvider.toDohConfig(): DohConfig =
+    when (this) {
+        DohProvider.CLOUDFLARE -> DohConfig.Cloudflare
+        DohProvider.OPENDNS -> DohConfig.OpenDns
+        DohProvider.NEXTDNS -> DohConfig.NextDns
+        DohProvider.GOOGLE -> DohConfig.Google
+    }
+
+/**
+ * What both platforms apply for a resolver choice: the DoH URL, its bootstrap addresses, and
+ * whether encrypted resolution is required (Android's "strict encrypted DNS").
+ */
+data class EncryptedDnsRequest(
+    val resolverUrl: String,
+    val bootstrapIps: List<String>,
+    val required: Boolean,
+)
+
+fun encryptedDnsRequest(
+    provider: DohProvider,
+    strict: Boolean,
+): EncryptedDnsRequest {
+    val doh = provider.toDohConfig()
+    return EncryptedDnsRequest(
+        resolverUrl = doh.resolverUrl,
+        bootstrapIps = doh.bootstrapIps,
+        required = strict,
+    )
 }

@@ -6,8 +6,6 @@ labels: bug
 assignees: ""
 ---
 
-<!-- Security issue? Don't file it here — see SECURITY.md for private reporting. -->
-
 ## What happened
 
 <!-- A clear description of the bug. -->
