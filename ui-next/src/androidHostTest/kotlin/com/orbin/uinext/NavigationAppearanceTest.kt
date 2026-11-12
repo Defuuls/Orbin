@@ -29,7 +29,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** The fixed app bar uses reader tokens, and Home's black content starts below it. */
+/** The fixed app bar uses reader tokens, and Home's themed content starts below it. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
@@ -39,8 +39,8 @@ class NavigationAppearanceTest {
 
     /** Replaces the immersive bottom-bar/offset-center-colors test with the approved Home frame. */
     @Test
-    fun `Home has a full width reader app bar above black content`() {
-        installNavigation(immersive = true)
+    fun `Home has a full width reader app bar above themed content`() {
+        installNavigation(immersive = false)
         val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR)
         bar.assertWidthIsEqualTo(390.dp).assertHeightIsEqualTo(ReaderSize.appBar)
         val pixels = bar.captureToImage().toPixelMap()
@@ -51,7 +51,7 @@ class NavigationAppearanceTest {
         val barBounds = bar.getUnclippedBoundsInRoot()
         assertThat(content.getUnclippedBoundsInRoot().top.value).isWithin(0.5f).of(barBounds.bottom.value)
         val contentPixels = content.captureToImage().toPixelMap()
-        assertThat(contentPixels[0, 0].toArgb()).isEqualTo(Color.Black.toArgb())
+        assertThat(contentPixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
     }
 
     /** Replaces the white secondary bottom-bar test with a token-based app bar and content ground. */

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Text
@@ -28,9 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -41,6 +38,9 @@ import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -63,6 +63,12 @@ import com.orbin.uinext.NextIconAction
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.exp
 
+internal object MediaViewerTags {
+    const val PAGER = "ios-media-viewer-pager"
+    const val ACTIVE_PAGE = "ios-media-viewer-active-page"
+    const val PLAYER = "ios-media-viewer-player"
+}
+
 /**
  * The thread's files full screen, one per page: swipe up or down between them, pinch or double-tap to zoom an
  * image, back (the edge swipe) or the close button to leave. Video and audio in a format the system
@@ -82,23 +88,17 @@ internal fun MediaViewer(
         LaunchedEffect(Unit) { onClose() }
         return
     }
-    val pager =
-        rememberPagerState(
-            initialPage = startIndex.coerceIn(0, (files.size - 1).coerceAtLeast(0)),
-        ) { files.size }
+    val selection = rememberMediaViewerSelection(files, startIndex, onPageChanged)
+    val pager = selection.pager
     val preloader = remember { createNativeMediaPreloader() }
     DisposableEffect(preloader) {
         onDispose { preloader.close() }
     }
-    LaunchedEffect(preloader, files, pager.currentPage, playback.preloadNextClip) {
-        preloader.prepare(nextMediaPreloadTarget(files, pager.currentPage, playback.preloadNextClip, supportsWebM))
-    }
-    val reportPage by rememberUpdatedState(onPageChanged)
-    LaunchedEffect(pager) {
-        snapshotFlow { pager.settledPage }.collect { reportPage(it) }
+    LaunchedEffect(preloader, files, selection.index, playback.preloadNextClip) {
+        preloader.prepare(nextMediaPreloadTarget(files, selection.index, playback.preloadNextClip, supportsWebM))
     }
     val close = {
-        reportPage(pager.settledPage)
+        onPageChanged(selection.index)
         onClose()
     }
     var pencilMenu by remember { mutableStateOf(false) }
@@ -106,7 +106,7 @@ internal fun MediaViewer(
     OnPencilGesture { gesture ->
         when (gesture) {
             PencilGesture.DOUBLE_TAP ->
-                if (pager.currentPage < files.lastIndex) pager.animateScrollToPage(pager.currentPage + 1)
+                if (selection.index < files.lastIndex) pager.animateScrollToPage(selection.index + 1)
             PencilGesture.SQUEEZE -> pencilMenu = true
         }
     }
@@ -115,24 +115,36 @@ internal fun MediaViewer(
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
         VerticalPager(
             state = pager,
+            key = { page -> selection.keys.getOrNull(page) ?: "media-pending:$page" },
             beyondViewportPageCount = if (playback.preloadNextClip) 1 else 0,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().testTag(MediaViewerTags.PAGER),
         ) { page ->
-            MediaPage(
-                files[page.coerceIn(0, files.lastIndex)],
-                active = page == pager.currentPage,
-                playback = playback,
-                preloader = preloader,
-            )
+            val file = files.getOrNull(page) ?: return@VerticalPager
+            val active = selection.keys.getOrNull(page) == selection.key
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (active) {
+                            Modifier.testTag(MediaViewerTags.ACTIVE_PAGE).semantics {
+                                contentDescription = file.originalFileName
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
+            ) {
+                MediaPage(file, active = active, playback = playback, preloader = preloader)
+            }
         }
-        val current = files[pager.currentPage.coerceIn(0, files.lastIndex)]
+        val current = files[selection.index]
         Row(
             modifier = Modifier.fillMaxWidth().safeDrawingPadding().padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(Res.string.ios_media_position, pager.currentPage + 1, files.size),
+                text = stringResource(Res.string.ios_media_position, selection.index + 1, files.size),
                 color = Color.White,
                 modifier = Modifier.padding(start = 8.dp),
             )
@@ -168,7 +180,7 @@ private fun SaveButton(
     file: MediaAttachment,
     onSave: (MediaAttachment) -> Boolean,
 ) {
-    var result by remember(file) { mutableStateOf<Boolean?>(null) }
+    var result by remember(file.id, file.sourceUrl) { mutableStateOf<Boolean?>(null) }
     TextButton(onClick = { result = onSave(file) }, enabled = result == null) {
         Text(
             text =
@@ -195,8 +207,8 @@ private fun MediaPage(
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
-    var revealed by remember(file) { mutableStateOf(!file.isSpoiler) }
-    var looping by remember(file, playback.loopVideos) { mutableStateOf(playback.loopVideos) }
+    var revealed by remember(file.id, file.sourceUrl, file.isSpoiler) { mutableStateOf(!file.isSpoiler) }
+    var looping by remember(file.id, file.sourceUrl, playback.loopVideos) { mutableStateOf(playback.loopVideos) }
     if (!revealed) {
         SpoilerCover(
             modifier = Modifier.clickable { revealed = true },
@@ -217,7 +229,12 @@ private fun MediaPage(
                     autoPlay = playback.autoplay,
                     initiallyMuted = playback.startMuted && SessionAudio.muted,
                     preloader = preloader,
-                    modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .safeDrawingPadding()
+                            .padding(top = PLAYER_TOP_INSET)
+                            .testTag(MediaViewerTags.PLAYER),
                 )
                 TextButton(
                     onClick = { looping = !looping },
@@ -238,7 +255,12 @@ private fun MediaPage(
         webm != null && supportsWebM && active ->
             NativeWebMPlayer(
                 url = webm,
-                modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(top = PLAYER_TOP_INSET),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(top = PLAYER_TOP_INSET)
+                        .testTag(MediaViewerTags.PLAYER),
                 active = active,
                 autoPlay = playback.autoplay,
                 initiallyMuted = playback.startMuted && SessionAudio.muted,

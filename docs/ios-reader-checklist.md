@@ -1,6 +1,6 @@
 # iOS reader device checklist
 
-**Status: pending. No physical iPhone or iPad checks have been recorded for this reader change.**
+**Status: pending for the Home reader correction. No physical iPhone or iPad checks have been recorded for this change.**
 
 Use the [normative reader design](design-system/README.md) as the expected behavior. Simulator,
 host and screenshot tests complement this pass; they do not mark these manual checks complete.
@@ -40,8 +40,23 @@ an older backup containing a color theme. If a case cannot be produced, record i
   screen and check its search query, selected source and scroll position are preserved.
 - [ ] Open Settings from the drawer and Downloads from an available host action. Return using
   both the Back button and the system gesture without a duplicate destination appearing.
-- [ ] Home stays black in every theme, with its app bar above the feed. Following / For You and
-  media actions remain usable; content is clear of app bars and the bottom system inset.
+- [ ] Home uses reader List rows by default, with the fixed Home app bar, provider thumbnails and
+  the normal Light, Dark or AMOLED screen colors. No full-screen pager, floating action rail or
+  inline autoplay remains. Verify this after setup, cold relaunch and an update from version 199.
+- [ ] Following / For You and source controls remain below the app bar and announce selection.
+  Switch feed tabs and sources after scrolling; each returns to its own thread and offset.
+- [ ] Change Catalog view between List and Grid, return to Home and cold relaunch. Home follows
+  the remembered choice without losing its current reading position.
+- [ ] A row opens its thread; the separate media action opens the existing viewer explicitly.
+  Watch, Save, Share, board and thread videos/comments actions work through each row's context
+  menu; the videos/comments setting retains its effect. Spoilers reveal before opening media.
+
+- [ ] Home's Reload action and pull refresh retain the selected feed/source and return to the
+  same thread when loaded content updates. Retry remains reachable after a refresh failure.
+- [ ] Saved presents stored thread titles, source/board, saved time and available unread counts
+  as reader rows; selecting identical board/thread numbers on different sites opens the correct source.
+- [ ] In the media viewer, insertion or reordering of live thread files keeps the selected
+  attachment where it still exists. Save and Close report that file, and returning releases playback.
 
 ## iPhone, iPad and window changes
 

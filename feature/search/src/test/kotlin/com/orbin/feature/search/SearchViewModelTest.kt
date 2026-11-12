@@ -74,6 +74,17 @@ class SearchViewModelTest {
         }
 
     @Test
+    fun `an empty scope asks for followed boards rather than a separate favorites setup`() =
+        runTest {
+            val viewModel = createViewModel(FakeSearchRepository(), subscribed = emptySet())
+
+            viewModel.search("kotlin")
+
+            val state = viewModel.state.first { it is SearchUiState.Error } as SearchUiState.Error
+            assertThat(state.message).isEqualTo("Follow a few boards to search them")
+        }
+
+    @Test
     fun `a search is never stored`() =
         runTest {
             val repo = FakeSearchRepository(listOf(result))

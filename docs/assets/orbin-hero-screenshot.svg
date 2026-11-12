@@ -1,6 +1,6 @@
-<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="199-Komatsuna">
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" data-release-version="200-Shungiku">
   <title id="title">Orbin shared TikTok-style Home preview</title>
-  <desc id="desc">Screenshot-style illustration of Orbin 199 Komatsuna showing the current vertical Home feed, source-aware actions, and fixed five-position navigation. The embedded PNG is an unmodified 390 by 844 shared-UI fixture rendered by the Android host in iOS mode with local artwork; it is not a native iOS device screenshot.</desc>
+  <desc id="desc">Screenshot-style illustration of Orbin 200 Shungiku showing the current vertical Home feed, source-aware actions, and fixed five-position navigation. The embedded PNG is an unmodified 390 by 844 shared-UI fixture rendered by the Android host in iOS mode with local artwork; it is not a native iOS device screenshot.</desc>
   <rect width="1200" height="800" fill="#0B0B0F"/>
   <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
     <text x="64" y="76" font-size="16" font-weight="700" letter-spacing="2" fill="#25F4EE">ORBIN</text>
@@ -10,7 +10,7 @@
     <rect x="61" y="284" width="285" height="44" rx="6" fill="#25F4EE"/>
     <rect x="67" y="284" width="285" height="44" rx="6" fill="#FE2C55"/>
     <rect x="64" y="284" width="285" height="44" rx="6" fill="#FFFFFF"/>
-    <text id="release-label" x="206.5" y="313" text-anchor="middle" font-size="18" font-weight="700" fill="#161823">199 · Komatsuna</text>
+    <text id="release-label" x="206.5" y="313" text-anchor="middle" font-size="18" font-weight="700" fill="#161823">200 · Shungiku</text>
 
     <circle cx="72" cy="385" r="5" fill="#FE2C55"/>
     <text x="96" y="391" font-size="23" font-weight="650" fill="#FFFFFF">Vertical Home, real controls</text>

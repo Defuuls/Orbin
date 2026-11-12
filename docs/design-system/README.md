@@ -1,8 +1,8 @@
 # Orbin reader design
 
-This is the normative design for Orbin's board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
+This is the normative design for Orbin's Home, board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
-The design comes from a set of catalog and thread mockups and from the resources of the Clover 3.0.2 Android app they imitate. Where those sources disagreed, this document records the choice and the reason under [Source record](#source-record).
+The design comes from catalog and thread mockups, with Clover 3.0.2 as a visual reference for readable cells, spacing and navigation. Orbin retains its own identity, discovery and following feeds, board sources, saved/watch tools and video playback. Where the reference and Orbin's requirements differ, this document records the choice and the reason under [Source record](#source-record).
 
 A visual companion, [schematic.html](schematic.html), shows the same diagrams and tokens on one page. If the page and this document ever differ, this document is correct.
 
@@ -10,6 +10,7 @@ A visual companion, [schematic.html](schematic.html), shows the same diagrams an
 
 Covered here:
 
+- Home in list mode and grid mode, including feed and source selection;
 - the board catalog in list mode and grid mode;
 - the thread reader;
 - the two-pane layout that shows both;
@@ -18,7 +19,7 @@ Covered here:
 
 Orbin is read-only. This design has no compose button, no reply box and no per-post reply control, and none may be added under it.
 
-Home, Watched, Saved, Search and Settings take this design's frame and colors and keep their own content layout; [Other screens](#other-screens) says how. The media viewer is not covered and keeps its shipped behavior.
+Home uses the same reader cells, List/Grid modes and theme colors as the board catalog. Saved uses a compact reader list of real stored records. Watched, Search and Settings take this design's frame and colors; [Other screens](#other-screens) says how. The media viewer keeps its dedicated playback experience.
 
 ## Tokens
 
@@ -72,7 +73,7 @@ Every pair below must meet its minimum ratio in all three themes. 4.5 is the WCA
 
 ### Type
 
-The family is the platform's default sans serif: Roboto on Android, San Francisco on iOS.
+The family is the platform's default sans serif: Roboto on Android, San Francisco on iOS. This applies to the app bars, Home controls, rows and other shared controls as well as catalog and thread text.
 
 | Token | Size | Line height | Weight | Use |
 | --- | --- | --- | --- | --- |
@@ -301,12 +302,31 @@ Controls in the source material that Orbin does not have: the compose button, th
 
 Home, Watched, Boards, Search and Saved are the drawer's entries. Each takes the frame above: the app bar with Menu, the screen's name as its title, and the drawer. The five-tab bar is gone.
 
-- A screen's own title header is removed, because the app bar now carries the title. Everything under that header keeps its layout.
+- The app bar replaces each screen's own title header. Watched, Boards and Search keep the remaining content layout. Home and Saved follow the reader layouts below.
 - Actions that sat in a screen's header move to the app bar: at most two as icons, the rest in the overflow.
 - Every color on these screens comes from the color table. No screen has a palette of its own.
-- Home keeps its full-screen feed on a black ground in every theme. The app bar sits above the feed, not over it. The feed's Following and For You tabs and its action column stay drawn over the media.
 - Settings and Downloads show Back, not Menu.
 - Content scrolls under nothing: the list starts below the app bar and ends at the bottom system inset.
+
+### Home
+
+Home uses the catalog's List and Grid cells, on `color.background` in the current theme. It defaults to List and follows the remembered device-wide Catalog view setting. A fresh installation, cold launch and update all reach this reader layout after any required board setup.
+
+- The fixed app bar is titled Home. Reload and Search appear when their callbacks are available, with at most two primary actions. Following and For You, together with the available source controls, sit below the bar on the themed screen. Their labels use `type.label`; selected controls announce their selection and use the reader colors. These controls do not cover a thumbnail or row.
+- For You discovers video threads across boards; Following shows video threads from followed boards. Changing the presentation does not change either data policy. Site and board identities stay source-qualified.
+- List uses the catalog's row geometry, typography, count pill, thumbnail sizes and large-text rules. Grid uses the catalog's column, gap and card rules. The existing token values remain unchanged.
+- Rows use bounded provider thumbnails. No Home row mounts a full-screen player or starts inline playback. A separate media action explicitly opens the existing media viewer; tapping the row opens its thread. Spoiler covers still reveal before media can open.
+- A row's context menu offers the wired Watch, Save, Share and board actions, plus its thread videos or comments action. The videos/comments choice follows the existing setting. Missing callbacks omit the unavailable actions. There is no floating media action rail.
+- Each feed tab and source keeps its own first-visible thread and scroll offset when the reader switches away and returns. Changing List/Grid preserves the reading position for that feed and source. Refresh keeps existing content and follows the retained-content progress and retry rules.
+- Home follows the reader loading, empty and error rules. Its app bar and feed/source controls stay usable in each state.
+
+The previous exception retaining a black, full-screen Home pager and over-media controls is retired. Full-screen playback remains an explicit media-viewer destination. Live attachment updates retain the selected file by identity where it still exists.
+
+### Saved and board discovery
+
+- Saved is a keyed reader list of actual stored thread records. Titles use `type.rowTitle`; source, thread number, saved time and available unread metadata use `type.meta` and the reader colors. Each row opens its stored source-qualified thread. No profile header, social statistics or decorative media covers are synthesized.
+- The existing board picker groups boards by site and keeps source-qualified selection. Boards retains its existing search for finding boards.
+- Global Search describes its existing scope accurately: catalogs of followed boards across all sites. Following includes subscriptions and retained favorites.
 
 ## Settings
 
@@ -365,7 +385,7 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ## Performance contract
 
-- Lists request the provider's thumbnail, never the full file, and decode it at the drawn size for the screen density.
+- Lists, including Home, request the provider's thumbnail, never the full file, and decode it at the drawn size for the screen density. Home does not preload full media or own inline players; explicit media opening transfers playback to the existing viewer.
 - The thumbnail's space is reserved before the image arrives, so cells do not change height when images load.
 - List items have stable keys made of provider, board and post number, so two sites with the same board code never collide.
 - Catalog rows and grid cards in one mode all have the same structure, so the list can reuse them.
@@ -375,6 +395,16 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ## Source record
 
+### Design influences
+
+These apps guide selected interaction and layout choices while Orbin retains its own identity, features and accessible palette:
+
+- **Clover 3.0.2** supplies the reading foundation: compact thumbnail-first cells, clear metadata, a stable toolbar and drawer, and grouped settings. The supplied APK was inspected as reference data; its code and assets are not included in Orbin.
+- **[KurobaEx](https://github.com/K1rakishou/Kuroba-Experimental/tree/bf3723ac7416055595471bb4f679c7e6953da676)** informs explicit contextual toolbar actions and discoverable, site-aware board navigation. Orbin adapts those patterns to its existing drawer and feed controls.
+- **[Chance](https://github.com/moffatman/chan/tree/34792ed2ce152f36958fb74de11d47563279a318)** informs source-qualified discovery, reader-oriented saved libraries, and restoring reading or media positions by identity. Orbin preserves its own thread and media routes.
+
+Reference source and promotional images establish design evidence, rather than a runtime or pixel-equivalence claim. Posting interfaces, extra navigation systems and new social features are outside this read-only design.
+
 ### Values taken from the app
 
 | Item | App value | This design |
@@ -383,7 +413,7 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 | Thumbnail, default | 72dp | `size.thumbnail` |
 | Thumbnail, larger-screen variant | 100dp | `size.thumbnailWide` |
 | Grid card width | 120dp | `size.gridCardMin` |
-| Grid card corner, larger-screen variant | 2dp | `radius.card` |
+| Grid card corner, API 21+ variant | 2dp | `radius.card` |
 | Divider | 1dp | `size.hairline` |
 | Thread footer | 88dp | `size.threadStatus` |
 | Error title | 24sp | `type.stateTitle` |
@@ -392,7 +422,11 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 | Teal accent | `#009688` | Darkened to `color.accent` so text buttons reach 4.5:1 |
 | Post layout | Thumbnail left of text | Same |
 
-Dark theme colors and pane widths could not be read from the app's resources. The dark and AMOLED palettes here are derived, and the pane rules follow Orbin's existing code.
+The supplied reference APK is `org.floens.chan`, version `v3.0.2` (version code `30002`), SHA-256 `3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300`.
+
+Its dark theme colors are readable in the style resources. `Chan.Theme.Dark` defines `backcolor` as `#232323` and `backcolor_secondary` as `#303030`. `Chan.Theme.Black` inherits Dark and overrides those values with `#000000` and `#212121`. Orbin's approved Dark and AMOLED palettes remain independently derived and contrast-tested: the color table above defines their backgrounds and surface variants, including Dark `#121212` and `#2A2A2A`.
+
+Pane widths were not established from the APK resources. The pane rules follow Orbin's existing code.
 
 ### Corrections to the wireframes
 

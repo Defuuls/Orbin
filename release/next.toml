@@ -1,39 +1,35 @@
-# Orbin 199 - Komatsuna
+# Orbin 200 - Shungiku
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number       = 199
-codename     = "Komatsuna"
-version_code = 217
+number       = 200
+codename     = "Shungiku"
+version_code = 218
 
-highlight = "Shared green reader layouts, drawer navigation, remembered List/Grid catalogs, and resilient refresh across Android and iOS."
+highlight = "Home now uses the shared reader List/Grid design, platform fonts, and explicit video opening on Android and iOS."
 
 summary = [
-  "bump Orbin to 199-Komatsuna / versionCode 217",
-  "ship the shared Android and iOS catalog and thread reader",
-  "preserve navigation, reading position, media ownership, and refresh recovery",
-  "synchronize release notes and version documentation",
+  "bump Orbin to 200-Shungiku / versionCode 218",
+  "replace the retained TikTok Home pager with the shared reader list and grid",
+  "keep discovery, followed boards, media playback, and saved thread actions",
+  "verify the actual launch screen and synchronize release documentation",
 ]
 
 [changelog]
-Added = [
-  "Remembered List and Grid catalogs with a site-grouped board picker, search within the loaded catalog, sorting, and source-aware actions.",
-  "Nested and collapsible thread replies, unread markers, and shared Files grids on Android and iOS.",
-  "Reader loading skeletons, centered empty states, cause-specific errors, and refresh progress with Retry feedback.",
-  "A shared reader design guide with layout and theme rules, diagrams, and an implementation and verification record.",
-]
 Changed = [
-  "Applied the green reader palette in Light, Dark, and AMOLED, with shared catalog and post cells that adapt to larger text and right-to-left layouts.",
-  "Replaced bottom navigation tabs with fixed app bars and a drawer for Home, Watched, Boards, Search, Saved, and Settings. Child screens use Back, and Home keeps its black media feed below the app bar.",
-  "Kept catalogs and threads side by side on wide screens while preserving catalog selection and separate reading positions.",
-  "Simplified Appearance to System, Light, or Dark with optional AMOLED and an app-wide Catalog view. Retired color-theme and tablet-column preferences; backups containing the removed color-theme format are refused before any data is restored.",
+  "Replaced Home's full-screen TikTok-style pager, overlaid tabs, and action rail with reader rows and grid cards on the normal Light, Dark, or AMOLED background.",
+  "Applied the remembered Catalog view to Home and kept For You, Following, and source selection in ordinary reader controls below the fixed app bar.",
+  "Used native platform fonts throughout the app instead of the previous TikTok font family.",
+  "Replaced the old custom settings switches and section headings with reader controls based on Clover.",
+  "Presented Saved as a compact library of real thread records with source-qualified navigation inspired by dedicated readers.",
+  "Added an explicit Home reload action and clarified that global search covers followed-board catalogs across all sites.",
+  "Kept Home thumbnails bounded and opened videos explicitly in the existing media viewer, preserving playback settings and thread actions.",
 ]
 Fixed = [
-  "Stopped obsolete catalog and thread loads when leaving a screen or hiding its pane; returning reuses loaded content, and refreshes retain loaded rows and the correct reading position.",
-  "Kept permanently filtered content out of reused thread data and prevented stale board or thread results from replacing the current selection.",
-  "Back closes an open drawer before leaving the reader, hidden drawers no longer expose controls to accessibility, and refresh-failure actions stay clear of system insets.",
-  "Reserved attachment preview space, requested thumbnails at their drawn size, and kept revealing spoilers separate from opening media.",
+  "Made the default Home screen follow the new reader style after first-run setup, app updates, and cold relaunches.",
+  "Removed Home's immersive system-bar treatment while retaining full-screen media viewing.",
+  "Kept the selected iOS media attachment stable when live thread files are inserted, reordered, or removed.",
 ]
 Testing = [
-  "Added reader navigation, layout, refresh retention, shared presentation, thumbnail, and accessibility regressions, plus populated catalog, thread, Files, and two-pane performance and profile journeys.",
-  "Added specification, token, and diagram checks and an iPhone/iPad reader checklist; shared logic tests run on the host while native UIKit and media tests remain on the iOS simulator.",
+  "Replaced old Home pager expectations with reader layout, feed/source continuity, explicit media opening, accessibility, and theme regressions.",
+  "Added deterministic Home visual coverage and an installed iOS startup assertion for the actual reader layout.",
 ]
