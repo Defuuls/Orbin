@@ -122,9 +122,14 @@ shipping raw provider HTML into the screen layer.
 
 ## Encrypted persistence
 
-Room storage is encrypted with SQLCipher. Preferences are encrypted and protected by Android
-Keystore material. Android cloud backup/device transfer of private Orbin state is disabled; explicit
-exports are user-controlled.
+**Android.** Room storage is encrypted with SQLCipher. Preferences are encrypted and protected by
+Android Keystore material. Android cloud backup and device transfer of private Orbin state are
+disabled; explicit exports are user-controlled.
+
+**iOS.** The same Room schema is opened as bundled SQLite in Application Support, under iOS Data
+Protection (`CompleteUntilFirstUserAuthentication`) and excluded from iCloud backup. Settings are
+a DataStore file in that directory and are not separately encrypted. Crash reports use complete
+Data Protection. Explicit exports are user-controlled.
 
 ## Architecture enforcement
 

@@ -1,8 +1,8 @@
 # Orbin
 
-Orbin is a privacy-focused, open-source **Android imageboard browser** built with Kotlin, Jetpack
-Compose, and Material 3. It is a **read-only client**: Orbin browses boards, catalogs, threads,
-links, and media but does not post, reply, or create threads.
+Orbin is a privacy-focused, open-source **Android and iOS imageboard browser** built with Kotlin
+Multiplatform and Compose Multiplatform. It is a **read-only client**: Orbin browses boards,
+catalogs, threads, links, and media but does not post, reply, or create threads.
 
 - **Repository:** https://github.com/Defuuls/Orbin
 - **Website:** https://defuuls.github.io/Orbin/
@@ -15,10 +15,10 @@ links, and media but does not post, reply, or create threads.
 | | |
 | --- | --- |
 | Current release | **v199 — Komatsuna** (2026-11-11) |
-| Platform | Android 12+ (`minSdk` 31), compile SDK 37, target SDK 36 |
+| Platform | Android 12+ (`minSdk` 31) and iOS 16+ |
 | Providers | 4chan/Vichan-compatible reference provider; BBW Chan/LynxChan |
 | UI | Adaptive grid-first Compose interface for phones, tablets and foldables |
-| Storage | SQLCipher database + encrypted preferences |
+| Storage | Android: SQLCipher database + Keystore-backed encrypted preferences. iOS: SQLite and a DataStore file under Data Protection (settings are not separately encrypted). |
 | Release model | Signed, tag-driven GitHub releases with automated preflight |
 
 ## Highlights
@@ -41,9 +41,10 @@ links, and media but does not post, reply, or create threads.
   for reply attachments. What you save is listed in the **Downloads** tab.
 - **Wide-screen two-pane layout.** On sufficiently wide displays, catalogs and threads remain
   visible together without losing navigation state.
-- **Privacy and security.** Encrypted local data, Android Keystore-backed app lock, HTTPS-only
-  application networking, encrypted DNS with fallback reporting, and disabled cloud backup of
-  private app state.
+- **Privacy and security.** Android encrypts local data with SQLCipher and a Keystore-backed
+  DataStore; iOS uses SQLite and Data Protection (settings are not separately encrypted). Optional
+  app lock (Android Keystore / iOS Keychain), HTTPS-only networking, DNS-over-HTTPS with optional
+  strict mode, and no cloud backup of private state.
 - **Engineering guardrails.** Architecture validation, provider contract tests, screenshot tests,
   instrumentation, CodeQL, performance/build-health checks, and release preflight are merge/release
   gates rather than documentation-only promises.

@@ -1,7 +1,9 @@
 package com.orbin.ios
 
+import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.data.settings.LegacySyncCleanup
 import com.orbin.graph.createSharedGraph
+import com.orbin.network.NetworkConfig
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +26,16 @@ internal object AppGraph {
     val scope = MainScope()
 
     /**
+     * Live HTTPS and DNS-over-HTTPS settings. The HTTP client is built from this before the
+     * DataStore is available, so it starts at Cloudflare with fallback allowed — the same default
+     * Android ships — and [updateDoh] is called once settings load and whenever they change.
+     */
+    val networkConfig =
+        FixedNetworkConfigProvider(
+            NetworkConfig(userAgent = ORBIN_USER_AGENT),
+        )
+
+    /**
      * One HTTP client for the providers, image loading and saves, so every request looks the same.
      * Catalogs, threads and board lists always come from the site: iOS's URL cache otherwise served
      * them for up to a minute, so pulling to refresh showed the same page again. Sensitive response
@@ -41,6 +53,7 @@ internal object AppGraph {
                     }
                     configureRequest { setCachePolicy(NSURLRequestReloadIgnoringLocalCacheData) }
                 },
+                networkConfig,
             )
         }
 
@@ -64,6 +77,15 @@ internal object AppGraph {
         scope.launch(Dispatchers.Default) {
             deleteLegacySyncKeychainItems()
             LegacySyncCleanup.clear(preferences)
+        }
+        // Apply the saved resolver (and "strict" flag) as soon as settings are available, and
+        // again if the user changes them. EncryptedDns updates the process-wide PrivacyContext
+        // that Swift registered at launch; networkConfig updates the Ktor HTTPS policy.
+        scope.launch(Dispatchers.Default) {
+            shared.settingsStore.settings.collect { settings ->
+                networkConfig.updateDoh(settings.dohProvider, settings.strictDohEnabled)
+                EncryptedDns.apply(settings.dohProvider, settings.strictDohEnabled)
+            }
         }
     }
 

@@ -2,9 +2,14 @@ package com.orbin.ios
 
 import com.orbin.data.database.OrbinDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
+import okio.Path.Companion.toPath
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileProtectionComplete
+import platform.Foundation.NSFileProtectionKey
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLIsExcludedFromBackupKey
 import platform.Foundation.NSUserDefaults
 import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIDevice
@@ -15,11 +20,13 @@ import kotlin.native.terminateWithUnhandledException
 import kotlin.time.Clock
 
 /**
- * The app's [StartupCrashes], kept in the standard user defaults rather than the database: safe
- * mode has to work when the database is what keeps the app from starting.
+ * The app's [StartupCrashes], kept as protected files in Application Support rather than
+ * UserDefaults or the database: safe mode has to work when the database is what keeps the app
+ * from starting, and the files use complete Data Protection so they are unreadable while the
+ * device is locked.
  */
 internal object IosStartupCrashes {
-    val crashes = StartupCrashes(UserDefaultsCrashStore) { nowMillis() }
+    val crashes = StartupCrashes(createStore()) { nowMillis() }
 
     private var installed = false
 
@@ -66,7 +73,6 @@ internal object IosStartupCrashes {
                 "app: ${info("OrbinVersionName") ?: info("CFBundleShortVersionString")} (${info("CFBundleVersion")})",
             )
             appendLine("ios: ${UIDevice.currentDevice.systemVersion}")
-            appendLine("device: ${UIDevice.currentDevice.model}")
             appendLine()
             append(throwable.stackTraceToString().replace(URL_REGEX, "[url]"))
         }
@@ -79,31 +85,67 @@ internal object IosStartupCrashes {
     private val URL_REGEX = Regex("""https?://\S+""", RegexOption.IGNORE_CASE)
 }
 
-private object UserDefaultsCrashStore : CrashStore {
-    private val defaults get() = NSUserDefaults.standardUserDefaults
+@OptIn(ExperimentalForeignApi::class)
+private fun createStore(): CrashStore {
+    val store =
+        FileCrashStore(
+            directory = diagnosticsDirectory().toPath(),
+            protect = { path -> protectComplete(path.toString()) },
+        )
+    adoptUserDefaults(store)
+    return store
+}
 
-    override var startupCrashes: Int
-        get() = defaults.integerForKey(KEY_STARTUP_CRASHES).toInt()
-        set(value) {
-            defaults.setInteger(value.toLong(), KEY_STARTUP_CRASHES)
-            // The app is about to go down when this is a crash: write it now, not later.
-            defaults.synchronize()
-        }
-
-    override fun appendReport(report: String) {
-        defaults.setObject((reports() + report).takeLast(MAX_REPORTS), KEY_REPORTS)
+@OptIn(ExperimentalForeignApi::class)
+private fun adoptUserDefaults(store: CrashStore) {
+    val defaults = NSUserDefaults.standardUserDefaults
+    val reports = defaults.stringArrayForKey(LEGACY_KEY_REPORTS)?.filterIsInstance<String>().orEmpty()
+    val count = defaults.integerForKey(LEGACY_KEY_STARTUP_CRASHES).toInt()
+    adoptLegacyCrashRecords(store, reports, count) {
+        defaults.removeObjectForKey(LEGACY_KEY_REPORTS)
+        defaults.removeObjectForKey(LEGACY_KEY_STARTUP_CRASHES)
         defaults.synchronize()
     }
-
-    override fun reports(): List<String> = defaults.stringArrayForKey(KEY_REPORTS)?.filterIsInstance<String>().orEmpty()
-
-    override fun clearReports() {
-        defaults.removeObjectForKey(KEY_REPORTS)
-    }
-
-    private const val KEY_STARTUP_CRASHES = "orbin.diagnostics.startupCrashes"
-    private const val KEY_REPORTS = "orbin.diagnostics.reports"
-
-    /** The newest few: enough to show a pattern, small enough for user defaults. */
-    private const val MAX_REPORTS = 5
 }
+
+@OptIn(ExperimentalForeignApi::class)
+private fun diagnosticsDirectory(): String {
+    val parent =
+        NSFileManager.defaultManager.URLForDirectory(
+            directory = NSApplicationSupportDirectory,
+            inDomain = NSUserDomainMask,
+            appropriateForURL = null,
+            create = true,
+            error = null,
+        )
+    parent?.setResourceValue(value = true, forKey = NSURLIsExcludedFromBackupKey, error = null)
+    val dirPath = requireNotNull(parent?.path) { "No Application Support directory" } + "/diagnostics"
+    val manager = NSFileManager.defaultManager
+    if (!manager.fileExistsAtPath(dirPath)) {
+        manager.createDirectoryAtPath(
+            path = dirPath,
+            withIntermediateDirectories = true,
+            attributes = mapOf(NSFileProtectionKey to NSFileProtectionComplete),
+            error = null,
+        )
+    }
+    protectComplete(dirPath)
+    return dirPath
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun protectComplete(path: String) {
+    NSFileManager.defaultManager.setAttributes(
+        attributes = mapOf(NSFileProtectionKey to NSFileProtectionComplete),
+        ofItemAtPath = path,
+        error = null,
+    )
+    NSURL.fileURLWithPath(path).setResourceValue(
+        value = true,
+        forKey = NSURLIsExcludedFromBackupKey,
+        error = null,
+    )
+}
+
+private const val LEGACY_KEY_STARTUP_CRASHES = "orbin.diagnostics.startupCrashes"
+private const val LEGACY_KEY_REPORTS = "orbin.diagnostics.reports"

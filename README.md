@@ -24,7 +24,7 @@ The reader follows the [reader design](docs/design-system/README.md). Its [imple
 | **Settings and privacy** | Searchable directory with dedicated subpages, retained privacy and backup controls, and inherited app/site/board playback settings. |
 | **Media & Hardware Performance** | Coil 3 images + Media3 / AVPlayer video with bounded next-clip preloading, swipe gallery, double-tap seek, persistent session unmute, board media walls, optional deep-scan media discovery, and organized downloads (`Downloads/Orbin`). |
 | **Themes & Ergonomics** | One green reader palette with System / Light / Dark appearance and optional AMOLED black, system text scaling, mirrored right-to-left layouts, and searchable settings grouped by task. |
-| **Privacy & Security** | SQLCipher-encrypted Room database, Keystore-backed encrypted preferences & biometric app lock, recents privacy shield (`FLAG_SECURE`), HTTPS-only transport with DoH fallback, and zero telemetry or cloud backups. |
+| **Privacy & Security** | HTTPS-only transport and DNS-over-HTTPS (Cloudflare, Google, OpenDNS or NextDNS) on Android and iOS, with optional strict mode. Android: SQLCipher-encrypted Room database, Keystore-backed encrypted preferences, biometric app lock, and `FLAG_SECURE` in recents. iOS: SQLite and a DataStore file under Data Protection (settings are not separately encrypted), and an optional Face ID / Touch ID / passcode lock. No telemetry or cloud backups. |
 | **Providers** | Engine-agnostic `ImageBoardProvider` contract shipping **4chan** (`provider:vichan`) and **BBWChan** (`provider:lynxchan`). |
 
 ---

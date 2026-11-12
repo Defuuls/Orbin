@@ -224,7 +224,7 @@
       </div>
       <div class="card">
         <h3>Private by design</h3>
-        <p>No accounts, analytics or ads. Local data is encrypted at rest, every request is HTTPS with encrypted DNS, and an optional app lock keeps it closed. See the <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">privacy policy</a>.</p>
+        <p>No accounts, analytics or ads. Every request is HTTPS with encrypted DNS. Android encrypts local data with SQLCipher and a Keystore-backed DataStore; iOS stores SQLite and settings under Data Protection (settings are not separately encrypted). An optional app lock keeps the reader closed. See the <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">privacy policy</a>.</p>
       </div>
     </div>
   </div>
@@ -303,19 +303,19 @@
 <section id="privacy">
   <div class="wrap">
     <h2>Privacy &amp; security</h2>
-    <p class="section-lead">Privacy in Orbin is structural, not a settings checkbox.</p>
+    <p class="section-lead">What Orbin keeps, and how, depends on the platform; the <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">privacy policy</a> is the source of truth.</p>
     <div class="grid">
       <div class="card">
-        <h3>Encrypted at rest</h3>
-        <p>History, bookmarks, downloads and searches live in an encrypted database, and settings in encrypted storage. On Android the keys are hardware-backed.</p>
+        <h3>Stored on the device</h3>
+        <p>History, bookmarks, downloads and searches stay on the device. Android encrypts them with SQLCipher and a Keystore-backed DataStore. iOS uses SQLite and a DataStore file under Data Protection; the settings file is not separately encrypted.</p>
       </div>
       <div class="card">
         <h3>Locked down</h3>
-        <p>An optional biometric app lock, with locked content kept out of the app switcher.</p>
+        <p>An optional app lock &mdash; strong biometrics or the device credential on Android, Face ID, Touch ID or the passcode on iOS &mdash; with locked content kept out of the app switcher.</p>
       </div>
       <div class="card">
         <h3>Quiet on the wire</h3>
-        <p>HTTPS only, encrypted DNS, no analytics, and no cloud backup of local data.</p>
+        <p>HTTPS only, DNS-over-HTTPS (Cloudflare, Google, OpenDNS or NextDNS), no analytics, and no cloud backup of local data.</p>
       </div>
     </div>
   </div>
