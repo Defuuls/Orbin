@@ -171,6 +171,7 @@ fun NextFeedScreen(
             onRefresh = viewModel::refresh,
             modifier = modifier.fillMaxSize(),
         ) {
+            val catalogMode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST
             FeedScreen(
                 rows = rows,
                 isLoading = loading,
@@ -193,7 +194,7 @@ fun NextFeedScreen(
                 onSelectSource = onSelectSource,
                 query = localQuery,
                 onQueryChange = { localQuery = it },
-                mode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST,
+                mode = catalogMode,
                 onModeChange = { selected ->
                     viewModel.setCatalogMode(
                         if (selected == CatalogMode.GRID) StoredCatalogMode.GRID else StoredCatalogMode.LIST,
@@ -262,7 +263,7 @@ fun NextFeedScreen(
                         MediaThumbnail(
                             // The shared reader owns spoiler reveal before composing the image.
                             attachment.copy(isSpoiler = false),
-                            fullResolution = false,
+                            fullResolution = catalogMode.sharpensThumbnails,
                             contentScale = ContentScale.Crop,
                             cornerRadius = 0.dp,
                             modifier = tileModifier,

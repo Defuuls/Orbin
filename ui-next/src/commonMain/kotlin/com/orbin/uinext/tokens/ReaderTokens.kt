@@ -266,10 +266,10 @@ object ReaderSize {
     /** The same minimum in a wide window. */
     val cellMinWide: Dp = 124.dp
 
-    /** Grid column count is the pane width divided by this, rounded down. */
+    /** Thread Files columns are the pane width over this, rounded down; also the minimum grid image height. */
     val gridCardMin: Dp = 120.dp
 
-    /** Legacy minimum retained for API compatibility; catalog cards now use [ReaderRatio]. */
+    /** Minimum height of a grid card's text block, so cards on one line stay level. */
     val gridCardText: Dp = 76.dp
 
     /** Catalog card elevation, matching Clover v3.0.2. */
@@ -323,8 +323,8 @@ object ReaderRadius {
     val pill: Dp = 18.dp
 }
 
-/** Width divided by height, as bound by Clover v3.0.2's CardPostCell. */
+/** Proportions the reader layout derives from its viewport. */
 object ReaderRatio {
-    val gridCard: Float get() = 9f / 18f
-    val gridThumbnail: Float get() = 16f / 13f
+    /** A grid card's image height as a fraction of the grid viewport's height: two lines per screen. */
+    val gridImageHeight: Float get() = 1f / 2f
 }

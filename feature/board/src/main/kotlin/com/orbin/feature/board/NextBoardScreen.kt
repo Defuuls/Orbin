@@ -218,7 +218,7 @@ fun NextBoardScreen(
                                     MediaThumbnail(
                                         // The shared catalog slot owns spoiler reveal before composing media.
                                         attachment = attachment.copy(isSpoiler = false),
-                                        fullResolution = false,
+                                        fullResolution = mode.sharpensThumbnails,
                                         contentScale = ContentScale.Crop,
                                         cornerRadius = 0.dp,
                                         modifier = tileModifier,

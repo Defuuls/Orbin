@@ -81,8 +81,10 @@ an older backup containing a color theme. If a case cannot be produced, record i
 - [ ] Scroll a thread, resize across the two-pane boundary, rotate and return through the media
   viewer. Catalog and thread reading positions remain associated with the same content.
 - [ ] Switch List / Grid through both Settings and catalog overflow. The choice persists across
-  boards and cold relaunch; columns follow pane width / 120dp with a minimum of one. Check
-  2dp outer margins, 4dp gaps, 9:18 cards, 16:13 images and 2dp corners/elevation.
+  boards and cold relaunch. In Grid each image is half the height of the area below the app bar
+  (never under 120dp): one full-width column in portrait, several in landscape or a wide window,
+  re-flowing on rotation. Still images look sharp, not stretched thumbnails. Check 2dp outer
+  margins, 4dp gaps and 2dp corners/elevation.
 
 ## Text size, direction and VoiceOver
 

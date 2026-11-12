@@ -108,9 +108,11 @@ internal fun FeedDestination(browser: Browser) {
         modifier = Modifier.fillMaxSize(),
     ) {
         BoxWithConstraints {
+            val catalogMode =
+                if (settings.catalogMode == CatalogMode.GRID) ReaderCatalogMode.GRID else ReaderCatalogMode.LIST
             FeedScreen(
                 rows = rows,
-                mode = if (settings.catalogMode == CatalogMode.GRID) ReaderCatalogMode.GRID else ReaderCatalogMode.LIST,
+                mode = catalogMode,
                 onModeChange = { selected ->
                     browser.settings.setCatalogMode(
                         if (selected == ReaderCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST,
@@ -151,7 +153,11 @@ internal fun FeedDestination(browser: Browser) {
                 thumbnail = { row, modifier ->
                     byRow[row.id]?.thread?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                         // The reader cell reveals spoilers before requesting this bounded preview.
-                        ReaderThumbnail(attachment.copy(isSpoiler = false), modifier)
+                        ReaderThumbnail(
+                            attachment.copy(isSpoiler = false),
+                            modifier,
+                            sharp = catalogMode.sharpensThumbnails,
+                        )
                     }
                 },
                 onOpenBoard = { row ->

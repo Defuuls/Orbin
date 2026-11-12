@@ -449,6 +449,37 @@ class ReaderHomePresentationTest {
         compose.runOnIdle { assertEquals(0, modeChanges) }
     }
 
+    @Test
+    fun readerHomeGridShowsOneFullWidthCardWithAnImageHalfTheViewport() {
+        val rows = rows("fourchan")
+        compose.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = rows,
+                    mode = CatalogMode.GRID,
+                    thumbnail = { _, modifier -> Box(modifier) },
+                    onOpenBoards = {},
+                    onOpenSearch = {},
+                    onSettings = {},
+                )
+            }
+        }
+
+        val grid = compose.onNodeWithTag(ReaderFeedTags.GRID).getUnclippedBoundsInRoot()
+        val expected = catalogGridSpec(grid.right - grid.left, grid.bottom - grid.top)
+        val card = compose.onNodeWithTag(ReaderFeedTags.row(rows[0].id)).getUnclippedBoundsInRoot()
+        val next = compose.onNodeWithTag(ReaderFeedTags.row(rows[1].id)).getUnclippedBoundsInRoot()
+        val image =
+            compose
+                .onNodeWithTag(ReaderFeedTags.thumbnail(rows[0].id), useUnmergedTree = true)
+                .getUnclippedBoundsInRoot()
+        assertEquals("a portrait phone is one column", 1, expected.columns)
+        assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
+        assertEquals((grid.bottom - grid.top).value / 2, expected.imageHeight.value, 0.5f)
+        assertEquals("the image spans the card", (card.right - card.left).value, (image.right - image.left).value, 0.5f)
+        assertTrue("the second card starts below the first", next.top >= card.bottom)
+    }
+
     private fun assertNoFeedSelectors() {
         listOf(
             ReaderFeedTags.FOLLOWING,

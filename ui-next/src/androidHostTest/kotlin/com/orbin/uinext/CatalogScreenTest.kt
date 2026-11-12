@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,6 +33,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.tokens.ReaderLightColors
@@ -53,7 +55,7 @@ class CatalogScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `grid columns are the pane width over the minimum card width, rounded down`() {
+    fun `thread files columns are the pane width over the minimum card width, rounded down`() {
         assertEquals(3, catalogGridColumns(360.dp))
         assertEquals(3, catalogGridColumns(399.dp))
         assertEquals(3, catalogGridColumns(420.dp))
@@ -66,6 +68,55 @@ class CatalogScreenTest {
     fun `a pane narrower than one card still shows one column`() {
         assertEquals(1, catalogGridColumns(119.dp))
         assertEquals(1, catalogGridColumns(0.dp))
+    }
+
+    @Test
+    fun `only grid cards ask hosts for a sharper image than the provider thumbnail`() {
+        assertTrue(CatalogMode.GRID.sharpensThumbnails)
+        assertTrue(!CatalogMode.LIST.sharpensThumbnails)
+        assertEquals(listOf(CatalogMode.LIST, CatalogMode.GRID), CatalogMode.entries)
+    }
+
+    @Test
+    fun `a portrait phone grid is one column of images half the viewport tall`() {
+        assertEquals(CatalogGridSpec(columns = 1, imageHeight = 370.dp), catalogGridSpec(360.dp, 740.dp))
+        assertEquals(CatalogGridSpec(columns = 1, imageHeight = 600.dp), catalogGridSpec(800.dp, 1200.dp))
+    }
+
+    @Test
+    fun `a wide viewport splits into columns no narrower than the image is tall`() {
+        assertEquals(CatalogGridSpec(columns = 4, imageHeight = 180.dp), catalogGridSpec(740.dp, 360.dp))
+        assertEquals(CatalogGridSpec(columns = 3, imageHeight = 400.dp), catalogGridSpec(1200.dp, 800.dp))
+        // A square viewport is exactly two images wide; one dp narrower rounds down to one column.
+        assertEquals(2, catalogGridSpec(800.dp, 800.dp).columns)
+        assertEquals(1, catalogGridSpec(799.dp, 800.dp).columns)
+    }
+
+    @Test
+    fun `rotating a window keeps the image at half of whichever height it has`() {
+        val portrait = catalogGridSpec(411.dp, 800.dp)
+        val landscape = catalogGridSpec(800.dp, 411.dp)
+        assertEquals(CatalogGridSpec(columns = 1, imageHeight = 400.dp), portrait)
+        assertEquals(CatalogGridSpec(columns = 3, imageHeight = 205.5.dp), landscape)
+    }
+
+    @Test
+    fun `a short viewport never shrinks the image below the minimum card size`() {
+        assertEquals(ReaderSize.gridCardMin, catalogGridSpec(360.dp, 200.dp).imageHeight)
+        assertEquals(ReaderSize.gridCardMin, catalogGridSpec(360.dp, 240.dp).imageHeight)
+        assertEquals(121.dp, catalogGridSpec(360.dp, 242.dp).imageHeight)
+        // The floor also sets the columns: 360 / 120.
+        assertEquals(3, catalogGridSpec(360.dp, 200.dp).columns)
+    }
+
+    @Test
+    fun `an unmeasured, negative or unbounded viewport falls back to one safe column`() {
+        val fallback = CatalogGridSpec(columns = 1, imageHeight = ReaderSize.gridCardMin)
+        assertEquals(fallback, catalogGridSpec(0.dp, 0.dp))
+        assertEquals(fallback, catalogGridSpec((-1).dp, (-1).dp))
+        assertEquals(fallback, catalogGridSpec(119.dp, Dp.Infinity))
+        assertEquals(fallback, catalogGridSpec(Dp.Infinity, Dp.Unspecified))
+        assertEquals(fallback.copy(columns = 3), catalogGridSpec(360.dp, Dp.Infinity))
     }
 
     @Test
@@ -250,19 +301,71 @@ class CatalogScreenTest {
     }
 
     @Test
-    fun `grid mode lays cards out three across in a 360dp pane`() {
-        composeRule.setContent { NextTheme { Catalog(mode = CatalogMode.GRID) } }
+    fun `grid mode shows one full-width card whose image is half the grid viewport on a phone`() {
+        composeRule.setContent { NextTheme { Catalog(mode = CatalogMode.GRID, thumbnail = true) } }
 
+        val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val first = cards[0].getUnclippedBoundsInRoot()
-        val third = cards[2].getUnclippedBoundsInRoot()
-        val fourth = cards[3].getUnclippedBoundsInRoot()
-        assertEquals("the first three cards share a row", first.top.value, third.top.value, 0.5f)
-        assertTrue("the fourth card starts a new row", fourth.top > first.top)
-        assertEquals("Clover's card margin leaves 2dp at the outer edge", 2f, first.left.value, 0.5f)
-        // (360 - two outer margins of 2 - two internal gaps of 4) / 3 columns
-        assertEquals(116f, (first.right - first.left).value, 0.5f)
+        val second = cards[1].getUnclippedBoundsInRoot()
+        val image =
+            composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)[0].getUnclippedBoundsInRoot()
+        assertEquals("the outer margin leaves 2dp at each edge", 2f, first.left.value, 0.5f)
+        assertEquals("one card spans the pane", 356f, (first.right - first.left).value, 0.5f)
+        assertEquals("the image spans the card", 356f, (image.right - image.left).value, 0.5f)
+        assertEquals(
+            "the image is half the viewport below the app bar",
+            (grid.bottom - grid.top).value / 2,
+            (image.bottom - image.top).value,
+            0.5f,
+        )
+        assertTrue("the text sits below the image", first.bottom > image.bottom)
+        assertTrue("the next card starts a new line", second.top >= first.bottom)
         composeRule.onNodeWithText("23R 4I", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a short pane splits the grid into columns and keeps each image half its height`() {
+        composeRule.setContent {
+            NextTheme { Box(Modifier.size(360.dp, 356.dp)) { Catalog(mode = CatalogMode.GRID, thumbnail = true) } }
+        }
+
+        val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        val expected = catalogGridSpec(grid.right - grid.left, grid.bottom - grid.top)
+        assertEquals((grid.bottom - grid.top).value / 2, expected.imageHeight.value, 0.5f)
+        assertEquals("360dp holds two such images across, not three", 2, expected.columns)
+        val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
+        val first = cards[0].getUnclippedBoundsInRoot()
+        val second = cards[1].getUnclippedBoundsInRoot()
+        val image =
+            composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)[0].getUnclippedBoundsInRoot()
+        assertEquals("two cards share the first line", first.top.value, second.top.value, 0.5f)
+        // (360 - two outer margins of 2 - one gap of 4) / 2 columns
+        assertEquals(176f, (first.right - first.left).value, 0.5f)
+        assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
+    }
+
+    @Test
+    fun `a pending grid row reserves the same image height as a loaded card`() {
+        composeRule.setContent {
+            NextTheme {
+                BoardScreen(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = 2,
+                    rowAt = { index -> ROWS.first().takeIf { index == 0 } },
+                    mode = CatalogMode.GRID,
+                    thumbnail = { _, _ -> },
+                )
+            }
+        }
+
+        val image =
+            composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val card = composeRule.onNodeWithTag(CatalogTags.CARD).getUnclippedBoundsInRoot()
+        val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        assertEquals((grid.bottom - grid.top).value / 2, (image.bottom - image.top).value, 0.5f)
+        assertTrue("the loaded card leads the grid", card.top < image.bottom)
     }
 
     @Test

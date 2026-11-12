@@ -20,14 +20,19 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.uinext.ReaderSpoilerCover
 
 /**
- * A catalog preview never requests originals, GIF playback or a video frame. The parent's fixed
- * square reserves layout space, and Coil resolves its pixel constraints at the screen density.
+ * A catalog preview never requests GIF playback or a video frame. The parent reserves the layout
+ * space, and Coil resolves its pixel constraints at the screen density.
+ *
+ * A list cell is thumbnail-sized, so it only ever requests the provider thumbnail. A grid card is
+ * far wider than that thumbnail (about 250 pixels), so it passes [sharp]: the thumbnail fills the
+ * space at once and, for a still image, the original is decoded to the card's size over it.
  */
 @Composable
 internal fun ReaderThumbnail(
     attachment: MediaAttachment,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    sharp: Boolean = false,
 ) {
     var revealed by rememberSaveable(attachment.id, attachment.thumbnailUrl) { mutableStateOf(false) }
     PencilHoverPreview(
@@ -50,19 +55,36 @@ internal fun ReaderThumbnail(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().then(sizeResolver),
             )
+            val sharpUrl = attachment.cardImageUrl().takeIf { sharp && it != attachment.thumbnailUrl }
+            if (sharpUrl != null) {
+                val sharpRequest =
+                    remember(context, sharpUrl, sizeResolver) {
+                        readerThumbnailRequest(context, attachment, sizeResolver, sharpUrl)
+                    }
+                AsyncImage(
+                    model = sharpRequest,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }
 
-/** No source fallback: a missing provider preview leaves the already reserved square empty. */
+/**
+ * A request for [url], the provider thumbnail unless a grid card asks for its sharper image, decoded
+ * to the measured cell. A blank [url] has no fallback: the already reserved space stays empty.
+ */
 internal fun readerThumbnailRequest(
     context: PlatformContext,
     attachment: MediaAttachment,
     sizeResolver: SizeResolver,
+    url: String = attachment.thumbnailUrl,
 ): ImageRequest =
     ImageRequest
         .Builder(context)
-        .data(attachment.thumbnailUrl.takeIf(String::isNotBlank))
+        .data(url.takeIf(String::isNotBlank))
         .size(sizeResolver)
         .precision(Precision.EXACT)
         .build()
