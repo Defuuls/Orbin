@@ -1,155 +1,170 @@
-name: Instrumentation tests
-
-# The androidTest sources in app, feature:settings and feature:downloads were compiled by ci.yml
-# but never executed — running them needs an emulator, which needs KVM. GitHub's ubuntu runners
-# expose nested virtualisation, so they can. This is a separate workflow rather than a job in
-# ci.yml because an emulator boot plus a test run is minutes of wall clock, and it should not sit
-# in the path of every lint fix.
+name: Clover Settings reference inspection
 
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
-
-concurrency:
-  group: instrumentation-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
 
-jobs:
-  instrumentation:
-    name: Instrumentation tests (API ${{ matrix.api-level }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        # Both ends of the supported range. 31 is minSdk and the one that earns its minutes:
-        # it is where predictive back is absent, the notification-permission branch is live, and
-        # edge-to-edge is opt-in rather than enforced. A green run on 35 alone says nothing about
-        # the devices minSdk 31 admits.
-        api-level: [31, 35]
+concurrency:
+  group: clover-settings-reference
+  cancel-in-progress: false
 
+jobs:
+  inspect:
+    name: Inspect exact Clover 3.0.2 Settings
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CLOVER_ARTIFACT_DIR: ${{ runner.temp }}/clover-settings-evidence
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
-
-      - name: Set up JDK and Gradle
-        uses: ./.github/actions/setup-jdk-gradle
-
-      # The runner ships KVM but leaves it root-owned; without this the emulator silently falls
-      # back to software rendering and the job times out rather than failing usefully.
+          sparse-checkout: .github/workflows/instrumentation.yml
       - name: Enable KVM
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      # The emulator runner downloads the system image and platform itself, and a truncated
-      # download fails the job with "Error on ZipFile unknown archive" before any test runs.
-      # Cache them, and on a miss install them here with retries, clearing partial downloads.
-      - name: System image cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: sysimg-cache
+        run: sudo chmod a+rw /dev/kvm
+      - name: Restore existing API 31 system image
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
-            /usr/local/lib/android/sdk/system-images/android-${{ matrix.api-level }}
-            /usr/local/lib/android/sdk/platforms/android-${{ matrix.api-level }}
-          key: sysimg-${{ matrix.api-level }}-google_apis-x86_64
-
-      - name: Install system image
-        if: steps.sysimg-cache.outputs.cache-hit != 'true'
+            /usr/local/lib/android/sdk/system-images/android-31
+            /usr/local/lib/android/sdk/platforms/android-31
+          key: sysimg-31-google_apis-x86_64
+      - name: Download and verify exact supplied reference APK
         run: |
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          PACKAGES="system-images;android-${{ matrix.api-level }};google_apis;x86_64 platforms;android-${{ matrix.api-level }} emulator"
-          for attempt in 1 2 3; do
-            if yes | "$SDKMANAGER" --install $PACKAGES > /dev/null; then
-              exit 0
-            fi
-            echo "sdkmanager attempt $attempt failed; clearing partial downloads" >&2
-            rm -rf "$ANDROID_HOME/.temp" "$HOME/.android/cache"
-            sleep $((attempt * 15))
-          done
-          exit 1
+          set -euo pipefail
+          mkdir -p "$CLOVER_ARTIFACT_DIR"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/Clover-v3.0.2.apk" https://github.com/chandevel/Clover/releases/download/v3.0.2/Clover-v3.0.2.apk
+          printf '%s  %s\n' 3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300 "$RUNNER_TEMP/Clover-v3.0.2.apk" | sha256sum --check
+          sha256sum "$RUNNER_TEMP/Clover-v3.0.2.apk" > "$CLOVER_ARTIFACT_DIR/apk-sha256.txt"
+      - name: Prepare focused UI inspection
+        run: |
+          cat > "$RUNNER_TEMP/clover-inspect.py" <<'PYCODE'
+          import hashlib,json,os,re,subprocess,time,traceback,xml.etree.ElementTree as ET
+          from pathlib import Path
+          out=Path(os.environ['CLOVER_ARTIFACT_DIR']);out.mkdir(parents=True,exist_ok=True)
+          apk=Path(os.environ['RUNNER_TEMP'])/'Clover-v3.0.2.apk'
+          expected='3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300'
+          actual=hashlib.sha256(apk.read_bytes()).hexdigest()
+          assert actual==expected,(actual,expected)
+          events=[];screens=[]
+          def adb(*args,timeout=40,binary=False,check=True):
+           p=subprocess.run(['adb',*args],capture_output=True,text=not binary,timeout=timeout)
+           if check and p.returncode:raise RuntimeError('adb '+repr(args)+' failed: '+str(p.stderr)[-1200:])
+           return p.stdout
 
-      - name: AVD cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}
+          def nodes(xml):
+           try:return list(ET.fromstring(xml).iter('node'))
+           except ET.ParseError:return []
+          def capture(name):
+           time.sleep(1)
+           try:
+            adb('shell','uiautomator','dump','/sdcard/clover-reference.xml',timeout=35)
+            xml=adb('exec-out','cat','/sdcard/clover-reference.xml',timeout=15)
+           except Exception as e:
+            xml='<hierarchy error='+json.dumps(str(e))+'/>'
+           (out/(name+'.xml')).write_text(xml)
+           png=adb('exec-out','screencap','-p',timeout=30,binary=True)
+           assert png.startswith(b'\x89PNG\r\n\x1a\n'),'Not a PNG'
+           (out/(name+'.png')).write_bytes(png)
+           labels=[{'text':n.get('text',''),'description':n.get('content-desc',''),'id':n.get('resource-id',''),'bounds':n.get('bounds',''),'class':n.get('class','')} for n in nodes(xml) if n.get('text') or n.get('content-desc')]
+           events.append({'capture':name,'labels':labels});screens.append(name)
+           (out/'timeline.json').write_text(json.dumps(events,indent=2)+'\n')
+           print(name,[(n['text'] or n['description']) for n in labels][:35],flush=True)
+           return xml
 
-      # Booting once on a cache miss and saving the snapshot turns a ~4 minute cold boot into
-      # seconds on subsequent runs.
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
+          def tap_node(n,label):
+           box=list(map(int,re.findall(r'\d+',n.get('bounds',''))))
+           if len(box)!=4:return False
+           x=(box[0]+box[2])//2;y=(box[1]+box[3])//2
+           adb('shell','input','tap',str(x),str(y));events.append({'action':'tap','label':label,'coordinates':[x,y]});time.sleep(1)
+           return True
+
+          def click(xml,*labels):
+           for label in labels:
+            for n in nodes(xml):
+             text=n.get('text','').strip();desc=n.get('content-desc','').strip()
+             if text.casefold()==label.casefold() or desc.casefold()==label.casefold():return tap_node(n,label)
+           return False
+
+          def back():
+           adb('shell','input','keyevent','KEYCODE_BACK');events.append({'action':'Back'});time.sleep(1)
+
+          def status_dialogs(xml):
+           for i in range(4):
+            texts=' '.join(n.get('text','') for n in nodes(xml)).lower()
+            is_system=any(n.get('package') in ('android','com.android.permissioncontroller') for n in nodes(xml))
+            if is_system and ('older version' in texts or 'permission' in texts or 'allow' in texts):
+             if click(xml,'OK','Allow','Continue'):xml=capture('startup_system_dialog_dismissed_'+str(i));continue
+            if ('crash' in texts or 'welcome' in texts) and click(xml,'No','Not now','Skip','Continue','OK'):
+             xml=capture('startup_notice_dismissed_'+str(i));continue
+            break
+           return xml
+
+          result={'apk_sha256':actual,'source_url':'https://github.com/chandevel/Clover/releases/download/v3.0.2/Clover-v3.0.2.apk','package':'org.floens.chan','installed':False,'settings_root_observed':False,'captures':screens,'method':'Actual installed APK and adb UI interaction on API31 accelerated emulator; no application build'}
+          try:
+           (out/'device-properties.txt').write_text(adb('shell','getprop'))
+           (out/'install.log').write_text(adb('install','-g','--no-streaming',str(apk),timeout=90));result['installed']=True
+           (out/'package.txt').write_text(adb('shell','dumpsys','package','org.floens.chan'))
+           (out/'launch.log').write_text(adb('shell','am','start','-W','-n','org.floens.chan/.ui.activity.BoardActivity',timeout=90))
+           xml=status_dialogs(capture('startup'))
+           if not click(xml,'Settings'):
+            if not click(xml,'More options','Menu','More'):
+             size=adb('shell','wm','size');numbers=re.findall(r'(\d+)x(\d+)',size);w,h=map(int,numbers[-1]);adb('shell','input','tap',str(w-24),'52')
+            xml=capture('main_overflow')
+            if not click(xml,'Settings'):
+             adb('shell','input','keyevent','KEYCODE_BACK');adb('shell','input','tap','24','52');xml=capture('main_drawer')
+             assert click(xml,'Settings'),'Settings entry not found in actual main UI'
+           xml=capture('settings_root_light')
+           result['settings_root_observed']=True
+           (out/'root-labels.txt').write_text('\n'.join(n.get('text','') for n in nodes(xml) if n.get('text'))+'\n')
+           if click(xml,'Appearance'):
+            appearance=capture('appearance_light')
+            if click(appearance,'Layout mode','Layout'):
+             capture('layout_choice');back();appearance=capture('appearance_after_layout_back')
+            if click(appearance,'Font size'):
+             capture('font_size_choice');back();appearance=capture('appearance_after_font_back')
+            if click(appearance,'Theme'):
+             theme=capture('theme_page')
+             if click(theme,'Dark','Black'):
+              capture('theme_selected_dark')
+             else:
+              for i in range(1,4):
+               adb('shell','input','swipe','420','400','60','400','350');capture('theme_swipe_'+str(i))
+             back();capture('appearance_after_theme_back')
+            back();xml=capture('settings_root_after_appearance_back')
+           else:result['appearance_entry_found']=False
+           if click(xml,'Behavior'):
+            capture('behavior');back();xml=capture('settings_root_after_behavior_back')
+           result['result']='PASS actual Settings root and available subpages captured'
+          except Exception as e:
+           result['result']='FAIL';result['error']=str(e);(out/'error.txt').write_text(traceback.format_exc())
+           try:capture('failure')
+           except Exception:pass
+          finally:
+           result['captures']=screens;(out/'result.json').write_text(json.dumps(result,indent=2)+'\n')
+           try:(out/'logcat-tail.txt').write_text(adb('logcat','-d','-t','200',check=False))
+           except Exception:pass
+           print(json.dumps(result,indent=2),flush=True)
+          if result.get('result')=='FAIL':raise SystemExit(1)
+          PYCODE
+      - name: Install and inspect Clover Settings on accelerated emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: ${{ matrix.api-level }}
+          api-level: 31
           target: google_apis
           arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
-
-      - name: Resolve modules with instrumentation tests
-        run: |
-          TASKS=$(find . -type d -path '*/src/androidTest' -not -path './build/*' \
-            | sed 's|^\./||; s|/src/androidTest$||; s|/|:|g; s|^|:|; s|$|:connectedDebugAndroidTest|' \
-            | sort | tr '\n' ' ')
-          if [ -z "$TASKS" ]; then
-            echo "No androidTest sources found" >&2
-            exit 1
-          fi
-          echo "Running: $TASKS"
-          echo "INSTRUMENTATION_TASKS=$TASKS" >> "$GITHUB_ENV"
-
-      - name: Run instrumentation tests
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          avd-name: clover-settings-reference-ci
+          force-avd-creation: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -memory 2048 -cores 2 -skin 480x800 -dpi 160
           disable-animations: true
-          script: ./gradlew $INSTRUMENTATION_TASKS --continue; S=$?; timeout 60 adb logcat -d > logcat-api-${{ matrix.api-level }}.txt 2>&1; exit $S
-
-      - name: Summarise logcat
-        if: failure()
-        run: |
-          echo "--- app and test process lines ---"
-          grep -iE "orbin|AndroidRuntime|FATAL|ActivityManager.*com\.orbin" \
-            "logcat-api-${{ matrix.api-level }}.txt" | tail -200 || true
-
-      - name: Upload logcat
-        if: failure()
-        continue-on-error: true
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: logcat-api-${{ matrix.api-level }}
-          path: logcat-api-${{ matrix.api-level }}.txt
-          if-no-files-found: ignore
-
-      - name: Upload instrumentation reports
+          script: python3 "$RUNNER_TEMP/clover-inspect.py"
+      - name: Upload reference evidence
         if: always()
-        continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: instrumentation-reports-api-${{ matrix.api-level }}
-          path: |
-            **/build/reports/androidTests/**
-            **/build/outputs/androidTest-results/**
-          if-no-files-found: ignore
+          name: clover-settings-runtime
+          path: ${{ runner.temp }}/clover-settings-evidence/
+          retention-days: 14
+          if-no-files-found: warn
