@@ -79,7 +79,7 @@ class MediaViewerIdentityTest {
             }
         }
         assertSelected(files[1], 2, 3)
-        compose.onNodeWithText("Save").performClick()
+        compose.onNodeWithContentDescription("Save").performClick()
         compose.onNodeWithContentDescription("Close").performClick()
         compose.runOnIdle {
             assertEquals(listOf(files[1]), saved)
@@ -114,7 +114,7 @@ class MediaViewerIdentityTest {
         assertSelected(selected, 3, 4)
         compose.runOnIdle { files = listOf(last, first, file("inserted"), selected) }
         assertSelected(selected, 4, 4)
-        compose.onNodeWithText("Save").performClick()
+        compose.onNodeWithContentDescription("Save").performClick()
         compose.runOnIdle {
             assertEquals(listOf(selected), saved)
             assertTrue(reported.isNotEmpty())
@@ -194,7 +194,7 @@ class MediaViewerIdentityTest {
         assertSelected(selected, 2, 2)
         compose.runOnIdle { files = listOf(selected, first) }
         assertSelected(selected, 1, 2)
-        compose.onNodeWithText("Save").performClick()
+        compose.onNodeWithContentDescription("Save").performClick()
         compose.runOnIdle { assertEquals(listOf(selected), saved) }
     }
 
@@ -229,15 +229,18 @@ class MediaViewerIdentityTest {
             }
         }
         assertSelected(selected, 2, 2)
+        compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Loop: On").performClick()
-        compose.onNodeWithText("Save").performClick()
+        compose.onNodeWithContentDescription("Save").performClick()
         compose.runOnIdle {
             selected = selected.copy(originalFileName = "updated.mp4", width = 1920, height = 1080)
             files = listOf(files[0], selected)
         }
         assertSelected(selected, 2, 2)
+        compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Loop: Off").assertIsDisplayed()
-        compose.onNodeWithText("Added to Downloads").assertIsDisplayed()
+        compose.onNodeWithText("Loop: Off").performClick()
+        compose.onNodeWithContentDescription("Added to Downloads").assertIsDisplayed()
         compose.runOnIdle { assertEquals(1, saved.size) }
     }
 
@@ -262,7 +265,7 @@ class MediaViewerIdentityTest {
             .assertIsDisplayed()
             .assertContentDescriptionEquals(file.originalFileName)
         compose.onAllNodesWithTag(MediaViewerTags.PLAYER, useUnmergedTree = true).assertCountEquals(1)
-        compose.onNodeWithText("$position of $count").assertIsDisplayed()
+        compose.onNodeWithText("$position/$count").assertIsDisplayed()
     }
 
     private fun file(

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_followed_boards">Followed boards</string>
+    <string name="reader_board_follow">Follow %1$s</string>
+    <string name="reader_board_unfollow">Unfollow %1$s</string>
+</resources>

@@ -95,6 +95,7 @@ internal fun ReaderFeedItem(
                 spoilerRevealed = revealed,
                 onRevealSpoiler = { revealed = true },
                 accessibilityActions = customActions,
+                wideWindow = wideWindow,
             )
             if (menu.isNotEmpty()) {
                 ReaderFeedMore(
@@ -205,7 +206,7 @@ private fun ReaderFeedMore(
                     text = {
                         Text(
                             item.label,
-                            style = ReaderType.stateBody,
+                            style = ReaderType.stateBody.withReaderFont(),
                             color =
                                 when {
                                     !item.enabled -> reader.inkMuted

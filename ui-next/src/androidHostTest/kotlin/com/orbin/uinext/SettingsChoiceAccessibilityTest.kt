@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.Role
@@ -12,9 +14,14 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -63,22 +70,21 @@ class SettingsChoiceAccessibilityTest {
         }
 
         val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
-        composeRule.onNodeWithText("List").assert(radio).assertIsSelected()
-        composeRule
-            .onNodeWithText("Grid")
+        popupOption("List").assert(radio).assertIsSelected()
+        popupOption("Grid")
             .assert(radio)
             .assertIsNotSelected()
             .performClick()
         composeRule.onNodeWithText("Catalog view").performClick()
-        composeRule.onNodeWithText("Grid").assertIsSelected().performClick()
+        popupOption("Grid").assertIsSelected().performClick()
         composeRule.onNodeWithText("Catalog view").performClick()
-        composeRule.onNodeWithText("Grid").assertIsSelected()
-        composeRule.onNodeWithText("List").assertIsNotSelected()
+        popupOption("Grid").assertIsSelected()
+        popupOption("List").assertIsNotSelected()
     }
 
     @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun selectedChoicePaintsTheReaderAccent() {
+    fun selectedFloatingChoiceKeepsNeutralPreferenceTextAndSelectionSemantics() {
         composeRule.setContent {
             NextTheme(darkTheme = false) {
                 SettingsScreen(
@@ -102,8 +108,7 @@ class SettingsChoiceAccessibilityTest {
             }
         }
         val pixels =
-            composeRule
-                .onNodeWithText("List")
+            popupOption("List")
                 .assertIsSelected()
                 .captureToImage()
                 .toPixelMap()
@@ -113,9 +118,15 @@ class SettingsChoiceAccessibilityTest {
                     for (x in 0 until pixels.width) add(pixels[x, y].toArgb())
                 }
             }
-        assertTrue("The selected choice must paint the reader accent", ReaderLightColors.accent.toArgb() in colors)
+        assertTrue(
+            "The plain preference menu must use the neutral primary text",
+            Color(0xDE000000).compositeOver(ReaderLightColors.background).toArgb() in colors,
+        )
         assertFalse("The removed palette must not color the choice", TikTokDesign.Pink.toArgb() in colors)
     }
+
+    private fun popupOption(label: String) =
+        composeRule.onNode(hasText(label) and hasAnyAncestor(hasTestTag("reader-settings-choice-popup")))
 
     @Test
     fun scopeSearchKeepsTheOriginalOptionIndex() {
@@ -147,6 +158,6 @@ class SettingsChoiceAccessibilityTest {
         composeRule.onNodeWithText("Site · /board12/").performClick()
         composeRule.waitForIdle()
         assertEquals(12, selectedIndex)
-        composeRule.onNodeWithText("Playback").assertExists()
+        composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Playback")
     }
 }

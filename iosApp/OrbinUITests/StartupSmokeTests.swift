@@ -48,7 +48,6 @@ final class StartupSmokeTests: XCTestCase {
         hasOpenedFeed = true
         startBrowsing.tap()
         assertHomeAfterSetup(expectsReleaseNotes: true)
-        assertFeedTabsChangeSelection()
 
         assertDrawerDestinations()
 
@@ -99,44 +98,11 @@ final class StartupSmokeTests: XCTestCase {
         )
         XCTAssertEqual(legacyFeed.count, 0, "Home must not render the old full-screen video pager or action column")
 
-        // Catalog loading, empty results and failures retain the app bar and feed controls.
-        let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
-        XCTAssertTrue(forYou.waitForExistence(timeout: 15), "Feed controls must remain available in every loading state")
-        XCTAssertTrue(forYou.isSelected, "For You must announce its selected tab state")
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch.exists)
-    }
-
-    private func assertFeedTabsChangeSelection() {
-        let following = app.buttons.matching(NSPredicate(format: "label == %@", "Following")).firstMatch
-        let forYou = app.buttons.matching(NSPredicate(format: "label == %@", "For You")).firstMatch
-        following.tap()
-        assertFeedSelection(
-            selected: "reader-feed-following",
-            unselected: "reader-feed-for-you",
-            message: "Following must select its board-following feed even while catalogs are unavailable"
+        // Reader Home has one subscription scope, including after drawer returns and cold launch.
+        let socialTabs = app.buttons.matching(
+            NSPredicate(format: "label == %@ OR label == %@", "For You", "Following")
         )
-        forYou.tap()
-        assertFeedSelection(
-            selected: "reader-feed-for-you",
-            unselected: "reader-feed-following",
-            message: "For You must return to its independent discovery feed"
-        )
-    }
-
-    private func assertFeedSelection(selected: String, unselected: String, message: String) {
-        // Read both traits in one snapshot: separate full-tree queries can each take seconds
-        // on a busy simulator even after the app has already switched feeds.
-        let matchingStates = app.buttons.matching(
-            NSPredicate(
-                format: "(identifier == %@ AND selected == true) OR (identifier == %@ AND selected == false)",
-                selected, unselected
-            )
-        )
-        let selection = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in matchingStates.count == 2 },
-            object: nil
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [selection], timeout: 15), .completed, message)
+        XCTAssertEqual(socialTabs.count, 0, "Reader Home must not display social discovery/feed selectors")
     }
 
     private func waitForBoardDirectory(_ board: XCUIElement) {
@@ -216,6 +182,9 @@ final class StartupSmokeTests: XCTestCase {
         let settings = drawerEntry("SETTINGS")
         XCTAssertTrue(settings.exists && settings.isHittable)
         settings.tap()
+        waitUntilExists([appBarTitle("Settings")], description: "Reader preferences use the Settings app bar")
+        XCTAssertFalse(appBarTitle("Settings and privacy").exists, "Settings must not retain the social directory title")
+        attachScreenshot(named: "ios-reader-settings")
         let back = app.buttons.matching(NSPredicate(format: "label == %@", "Back")).firstMatch
         waitUntilHittable([back], description: "Settings uses Back in its app bar")
         XCTAssertFalse(menuButton().exists, "A child screen must not offer the navigation drawer")

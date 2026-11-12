@@ -103,7 +103,7 @@ class ReaderPaletteScreenshotTest(
                                 ),
                             ),
                     ),
-                expandedId = "catalogMode",
+                expandedId = "amoled",
             )
         }
 

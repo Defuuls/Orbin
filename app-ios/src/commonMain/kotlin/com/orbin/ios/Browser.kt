@@ -101,7 +101,7 @@ sealed interface Route {
 
     data object Watched : Route
 
-    /** Search over favorite and followed boards across sites. */
+    /** Search over explicitly subscribed boards across sites. */
     data object Search : Route
 
     /** Settings, opened from the feed's header or the boards list. */
@@ -178,10 +178,9 @@ class Browser(
         combine(
             providers.map { provider ->
                 val id = provider.metadata.id
-                combine(
-                    boardPreferences.observeSubscribedBoards(id),
-                    boardPreferences.observeFavoriteBoards(id),
-                ) { subscribed, favorites -> (subscribed + favorites).map { FollowedBoard(id, it) } }
+                boardPreferences.observeSubscribedBoards(id).map { subscribed ->
+                    subscribed.map { FollowedBoard(id, it) }
+                }
             },
         ) { perSite -> perSite.flatMap { it }.toSet() }
 
@@ -189,7 +188,7 @@ class Browser(
     val followed: StateFlow<Set<FollowedBoard>> =
         followedBoards.stateIn(scope, SharingStarted.Eagerly, emptySet())
 
-    /** First run reads the same persisted subscriptions and favorites as Home, across every site. */
+    /** Setup and Home read explicit persisted subscriptions, never independent favorites. */
     val firstRun =
         FirstRun(
             settings,
@@ -329,7 +328,7 @@ class Browser(
      */
     val firstUnreadPostId: StateFlow<String?> = _firstUnreadPostId.asStateFlow()
 
-    /** Stars are independent from the older subscription preference. Both contribute to Home. */
+    /** Stars remain independent shortcuts; only explicit subscriptions contribute to Home. */
     val favorites: StateFlow<Set<FollowedBoard>> =
         combine(
             providers.map { provider ->
@@ -398,7 +397,6 @@ class Browser(
         Haptics.light()
         firstRun.updateFollow {
             boardPreferences.setSubscribedBoard(board.provider, board.board.id, follow)
-            if (!follow) boardPreferences.setFavoriteBoard(board.provider, board.board.id, false)
         }
     }
 

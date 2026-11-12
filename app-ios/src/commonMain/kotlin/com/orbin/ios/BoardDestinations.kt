@@ -27,6 +27,7 @@ import coil3.compose.AsyncImage
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.attachmentDetails
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.readerPaneWidths
@@ -284,12 +285,22 @@ internal fun BoardMediaDestination(
                             )
                         is Load.Ready -> {
                             val items = remember(load.value) { boardMediaItems(board, load.value) }
-                            val byId = remember(items) { items.associateBy { it.id } }
+                            val byId = remember(items) { items.associateBy { "${it.key.provider.value}/${it.id}" } }
                             MediaWallScreen(
                                 scanned = 1,
                                 total = 1,
                                 failed = 0,
-                                cells = remember(items) { items.map { MediaCell(it.id, label) } },
+                                cells =
+                                    remember(items) {
+                                        items.map {
+                                            MediaCell(
+                                                id = "${it.key.provider.value}/${it.id}",
+                                                board = "${it.key.provider.value} $label",
+                                                spoiler = it.attachment.isSpoiler,
+                                                details = it.attachment.attachmentDetails(),
+                                            )
+                                        }
+                                    },
                                 showRail = false,
                                 title = label,
                                 onOpen = { cell -> byId[cell.id]?.let { browser.openThread(it.key) } },
@@ -302,7 +313,6 @@ internal fun BoardMediaDestination(
                                                 Modifier.fillMaxSize(),
                                                 fill = Modifier.fillMaxSize(),
                                             )
-                                            if (item.attachment.isSpoiler) SpoilerCover(Modifier.matchParentSize())
                                         }
                                     }
                                 },

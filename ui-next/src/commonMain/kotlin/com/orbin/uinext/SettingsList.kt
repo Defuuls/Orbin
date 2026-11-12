@@ -3,7 +3,6 @@ package com.orbin.uinext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,7 +24,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -49,14 +45,11 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -69,7 +62,6 @@ import com.orbin.uinext.resources.social_settings_search_options
 import com.orbin.uinext.resources.social_settings_title
 import com.orbin.uinext.resources.social_settings_view_history
 import com.orbin.uinext.tokens.NextType
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 data class SettingItem(
@@ -116,6 +108,7 @@ fun SettingsScreen(
 ) {
     val state = rememberLazyListState()
     var query by rememberSaveable { mutableStateOf("") }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
     val pages = remember(groups) { settingsPages(groups) }
     var page by rememberSaveable {
         mutableStateOf(
@@ -131,7 +124,8 @@ fun SettingsScreen(
     }
     val choice = groups.flatMap { it.second }.firstOrNull { it.id == choiceId }
     val labels = settingsPageLabels()
-    val title = choice?.label ?: page?.let { labels[it] } ?: stringResource(Res.string.social_settings_title)
+    val fullPageChoice = choice?.takeIf { it.id == "playbackScope" || it.options.size > 8 }
+    val title = fullPageChoice?.label ?: page?.let { labels[it] } ?: stringResource(Res.string.social_settings_title)
     val visibleGroups =
         remember(groups, query, page) {
             when {
@@ -144,12 +138,14 @@ fun SettingsScreen(
     val closeLocalPage: () -> Unit = {
         if (choiceId != null) {
             choiceId = null
-        } else {
+        } else if (page != null) {
             page = null
+        } else {
             query = ""
+            searchVisible = false
         }
     }
-    val localBack = choiceId != null || page != null || query.isNotBlank()
+    val localBack = choiceId != null || page != null || query.isNotBlank() || searchVisible
     val backAction = if (localBack) closeLocalPage else onBack
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -160,12 +156,11 @@ fun SettingsScreen(
         if (item.kind == SettingKind.CHOICE) choiceId = item.id
         onActivate(item)
     }
-    Column(modifier = modifier.fillMaxSize().background(next.background)) {
-        SettingsNavigationBar(title, backAction)
-        Hairline()
-        if (choice != null) {
-            SettingsChoiceList(choice) { index ->
-                onSelectOption(choice, index)
+    Column(modifier = modifier.fillMaxSize().background(reader.surfaceVariant).testTag("reader-settings-root")) {
+        SettingsNavigationBar(title, backAction, if (page == null) ({ searchVisible = true }) else null)
+        if (fullPageChoice != null) {
+            SettingsChoiceList(fullPageChoice) { index ->
+                onSelectOption(fullPageChoice, index)
                 choiceId = null
             }
         } else {
@@ -174,7 +169,7 @@ fun SettingsScreen(
                 modifier = Modifier.weight(1f).imePadding().testTag("settings-list"),
                 contentPadding = PaddingValues(bottom = 24.dp + bottomInset()),
             ) {
-                if (page == null) {
+                if (page == null && searchVisible) {
                     item(key = "search") {
                         val searchLabel = stringResource(Res.string.next_settings_search)
                         Column(Modifier.padding(top = 8.dp, bottom = 8.dp)) {
@@ -202,9 +197,9 @@ fun SettingsScreen(
                 if (page == null && query.isBlank()) {
                     settingsDirectory(pages.keys, onNavigate != null).forEachIndexed { index, (heading, entries) ->
                         item(key = "directory:$heading") {
-                            Column {
+                            Column(Modifier.background(reader.background)) {
                                 if (index > 0) {
-                                    Box(Modifier.fillMaxWidth().height(8.dp).background(next.raised))
+                                    Box(Modifier.fillMaxWidth().height(12.dp).background(reader.surfaceVariant))
                                 }
                                 SettingsSectionHeading(directorySectionLabel(heading))
                                 entries.forEach { destination ->
@@ -238,8 +233,11 @@ fun SettingsScreen(
                     }
                     visibleGroups.forEachIndexed { index, (heading, rows) ->
                         item(key = "group:$index") {
-                            Column {
-                                if (heading.isNotBlank()) SettingsSectionHeading(heading)
+                            Column(Modifier.background(reader.background)) {
+                                if (index > 0) {
+                                    Box(Modifier.fillMaxWidth().height(12.dp).background(reader.surfaceVariant))
+                                }
+                                SettingsSectionHeading(heading.ifBlank { page?.let { labels[it] }.orEmpty() })
                                 if (page == "history" && onNavigate != null && query.isBlank()) {
                                     SettingsDirectoryRow(
                                         "history",
@@ -262,6 +260,12 @@ fun SettingsScreen(
                                         item.id == expandedId && item.kind == SettingKind.TEXT,
                                         activate,
                                         onCommitText,
+                                        choiceVisible = item.id == choiceId,
+                                        onSelectOption = { index ->
+                                            onSelectOption(item, index)
+                                            choiceId = null
+                                        },
+                                        onDismissChoice = { choiceId = null },
                                     )
                                 }
                             }
@@ -277,11 +281,19 @@ fun SettingsScreen(
 private fun SettingsNavigationBar(
     title: String,
     onBack: (() -> Unit)?,
+    onSearch: (() -> Unit)?,
 ) {
     ReaderAppBar(
         title = title,
         navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
         onNavigation = { onBack?.invoke() },
+        actions =
+            onSearch
+                ?.let {
+                    listOf(
+                        ReaderAction(ReaderIcons.Search, stringResource(Res.string.next_settings_search), it),
+                    )
+                }.orEmpty(),
     )
 }
 
@@ -289,9 +301,9 @@ private fun SettingsNavigationBar(
 private fun SettingsSectionHeading(label: String) {
     Text(
         text = label,
-        style = ReaderType.stateBody,
-        color = reader.inkMuted,
-        modifier = Modifier.padding(start = GUTTER, end = GUTTER, top = 16.dp, bottom = 8.dp).semantics { heading() },
+        style = preferenceTitleStyle,
+        color = reader.inkSecondary,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp).semantics { heading() },
     )
 }
 
@@ -302,33 +314,23 @@ private fun SettingsDirectoryRow(
     value: String? = null,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier =
+    Column(Modifier.fillMaxWidth().background(reader.background)) {
+        Column(
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 52.dp)
+                .heightIn(min = 48.dp)
                 .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = GUTTER, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Icon(settingsIcon(destination), contentDescription = null, tint = next.ink, modifier = Modifier.size(22.dp))
-        Text(label, style = NextType.body, color = next.ink, modifier = Modifier.weight(1f))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (value != null) Text(value, style = NextType.bodyDense, color = next.muted)
-            SettingsChevron()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+        ) {
+            Text(label, style = preferenceTitleStyle, color = preferencePrimaryColor)
+            Text(
+                value ?: settingsDirectorySummary(destination),
+                style = preferenceSummaryStyle,
+                color = reader.inkSecondary,
+            )
         }
+        ReaderHairline()
     }
-}
-
-@Composable
-private fun SettingsChevron() {
-    Icon(
-        ReaderIcons.ChevronRight,
-        contentDescription = null,
-        tint = next.faint,
-        modifier = Modifier.size(16.dp),
-    )
 }
 
 @Composable
@@ -345,6 +347,7 @@ private fun SettingsChoiceList(
         modifier =
             Modifier
                 .fillMaxSize()
+                .background(reader.background)
                 .imePadding()
                 .testTag("settings-list")
                 .selectableGroup(),
@@ -364,8 +367,8 @@ private fun SettingsChoiceList(
             item(key = "hint") {
                 Text(
                     item.hint,
-                    style = NextType.footnote.copy(fontSize = 13.sp, lineHeight = 18.sp),
-                    color = next.muted,
+                    style = preferenceSummaryStyle,
+                    color = reader.inkSecondary,
                     modifier = Modifier.padding(horizontal = GUTTER, vertical = 8.dp),
                 )
             }
@@ -385,19 +388,10 @@ private fun SettingsChoiceList(
             ) {
                 Text(
                     option,
-                    style = NextType.body,
-                    fontWeight = if (index == item.selected) FontWeight.SemiBold else FontWeight.Normal,
-                    color = next.ink,
+                    style = preferenceTitleStyle,
+                    color = preferencePrimaryColor,
                     modifier = Modifier.weight(1f),
                 )
-                if (index == item.selected) {
-                    Icon(
-                        ReaderIcons.Check,
-                        contentDescription = null,
-                        tint = reader.accent,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
             }
         }
         if (options.isEmpty()) {
@@ -405,7 +399,7 @@ private fun SettingsChoiceList(
                 Text(
                     stringResource(Res.string.next_settings_no_matches),
                     style = NextType.body,
-                    color = next.muted,
+                    color = reader.inkSecondary,
                     modifier = Modifier.padding(GUTTER),
                 )
             }
@@ -419,6 +413,9 @@ private fun SettingRow(
     expanded: Boolean,
     onActivate: (SettingItem) -> Unit,
     onCommitText: (SettingItem, String) -> Unit,
+    choiceVisible: Boolean = false,
+    onSelectOption: (Int) -> Unit = {},
+    onDismissChoice: () -> Unit = {},
 ) {
     val bringIntoView = remember { BringIntoViewRequester() }
     LaunchedEffect(expanded) { if (expanded) bringIntoView.bringIntoView() }
@@ -434,98 +431,63 @@ private fun SettingRow(
                     if (item.kind == SettingKind.TOGGLE) toggleableState = ToggleableState(item.isOn())
                 }
         }
-    Column(Modifier.bringIntoViewRequester(bringIntoView)) {
-        BoxWithConstraints(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp)
-                .then(action)
-                .padding(horizontal = GUTTER, vertical = 12.dp),
-        ) {
-            val valueStyle = NextType.bodyDense.copy(fontWeight = FontWeight.Normal, letterSpacing = 0.sp)
-            val measurer = rememberTextMeasurer()
-            val hasValue = item.kind != SettingKind.TOGGLE && item.value.isNotBlank()
-            val hasChevron = item.kind == SettingKind.CHOICE || item.kind == SettingKind.TEXT
-            val labelWidth = measurer.measure(item.label, NextType.body, maxLines = 1, softWrap = false).size.width
-            val valueWidth =
-                if (hasValue) {
-                    measurer
-                        .measure(
-                            item.value,
-                            valueStyle,
-                            maxLines = 1,
-                            softWrap = false,
-                        ).size.width
-                } else {
-                    0
-                }
-            val trailingWidth = with(LocalDensity.current) { (if (hasChevron) 32.dp else 12.dp).roundToPx() }
-            val stackValue = hasValue && labelWidth + valueWidth + trailingWidth > constraints.maxWidth
-            Column(Modifier.fillMaxWidth()) {
-                Row(
-                    Modifier.fillMaxWidth().heightIn(min = 28.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
+    ReaderSettingAnchor(item, choiceVisible, onSelectOption, onDismissChoice) {
+        Column(Modifier.bringIntoViewRequester(bringIntoView).background(reader.background)) {
+            Row(
+                Modifier
+                    .testTag("reader-setting-row-${item.id}")
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .then(action)
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
                     Text(
                         item.label,
-                        style = NextType.body,
-                        color = if (item.destructive) nextDestructiveRed else next.ink,
-                        modifier = Modifier.weight(1f),
+                        style = preferenceTitleStyle,
+                        color = if (item.destructive) nextDestructiveRed else preferencePrimaryColor,
                     )
-                    if (item.kind == SettingKind.TOGGLE) {
-                        Box(Modifier.height(32.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-                            ReaderSettingsSwitch(checked = item.isOn())
-                        }
-                    } else {
-                        if (hasValue && !stackValue) {
-                            Text(
-                                item.value,
-                                style = valueStyle,
-                                color = if (item.destructive) nextDestructiveRed else next.muted,
-                            )
-                        }
-                        if (hasChevron) SettingsChevron()
+                    if (item.kind != SettingKind.TOGGLE && item.value.isNotBlank()) {
+                        Text(
+                            item.value,
+                            style = preferenceSummaryStyle,
+                            color = if (item.destructive) nextDestructiveRed else reader.inkSecondary,
+                        )
+                    }
+                    if (item.hint != null && item.kind != SettingKind.TEXT) {
+                        Text(item.hint, style = preferenceSummaryStyle, color = reader.inkSecondary)
                     }
                 }
-                if (stackValue) {
+                if (item.kind == SettingKind.TOGGLE) {
+                    Box(Modifier.clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+                        ReaderSettingsSwitch(checked = item.isOn())
+                    }
+                }
+            }
+            if (item.copyable && item.text.isNotBlank()) {
+                SelectionContainer {
                     Text(
-                        item.value,
-                        style = valueStyle,
-                        color = if (item.destructive) nextDestructiveRed else next.muted,
-                        modifier = Modifier.padding(top = 4.dp),
+                        item.text,
+                        style = preferenceSummaryStyle,
+                        color = preferencePrimaryColor,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     )
                 }
-                if (item.hint != null && item.kind != SettingKind.TEXT) {
+            }
+            if (expanded) {
+                if (item.hint != null) {
                     Text(
                         item.hint,
-                        style = NextType.footnote.copy(fontSize = 13.sp, lineHeight = 18.sp),
-                        color = next.muted,
-                        modifier = Modifier.padding(top = 4.dp),
+                        style = preferenceSummaryStyle,
+                        color = reader.inkSecondary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
                     )
                 }
+                SettingTextEditor(item, onCommitText)
             }
-        }
-        if (item.copyable && item.text.isNotBlank()) {
-            SelectionContainer {
-                Text(
-                    item.text,
-                    style = NextType.footnote,
-                    color = next.ink,
-                    modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 14.dp),
-                )
-            }
-        }
-        if (expanded) {
-            if (item.hint != null) {
-                Text(
-                    item.hint,
-                    style = NextType.footnote,
-                    color = next.muted,
-                    modifier = Modifier.padding(start = GUTTER, end = GUTTER, bottom = 10.dp),
-                )
-            }
-            SettingTextEditor(item, onCommitText)
+            ReaderHairline()
         }
     }
 }

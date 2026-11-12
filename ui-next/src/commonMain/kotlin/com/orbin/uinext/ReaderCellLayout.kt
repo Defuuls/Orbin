@@ -110,7 +110,7 @@ fun ReaderSpoilerCover(
     ) {
         Text(
             text = stringResource(Res.string.reader_spoiler),
-            style = ReaderType.meta,
+            style = ReaderType.meta.withReaderFont(),
             color = colors.ink,
             textAlign = TextAlign.Center,
         )

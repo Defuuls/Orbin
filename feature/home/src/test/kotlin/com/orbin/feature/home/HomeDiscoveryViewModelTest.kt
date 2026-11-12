@@ -59,7 +59,7 @@ class HomeDiscoveryViewModelTest {
     val main = MainDispatcherRule()
 
     @Test
-    fun `For You discovers unfollowed boards while Following uses subscriptions and favorites`() =
+    fun `Home uses explicit subscriptions and ignores legacy discovery selection`() =
         runTest {
             val directory = listOf(board("a"), board("g"), board("p"))
             val requested = mutableListOf<BoardId>()
@@ -67,25 +67,20 @@ class HomeDiscoveryViewModelTest {
             val vm = viewModel(directory, preferences = preferences, provider = provider { requested += it.board })
             try {
                 vm.uiState.test {
-                    assertThat(completePage().boards.map { it.board.id.value }).containsExactly("a", "g", "p")
-                    assertThat(requested).hasSize(3)
-
-                    // Changing what is followed must not silently narrow or refetch discovery.
-                    preferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("a"), true)
+                    val initial = completePage()
+                    assertThat(initial.mode).isEqualTo(HomeFeedMode.FOLLOWING)
+                    assertThat(initial.boards.map { it.board.id.value }).containsExactly("g")
+                    vm.setFeedMode(HomeFeedMode.FOR_YOU)
                     advanceUntilIdle()
-                    assertThat(requested).hasSize(3)
-                    expectMostRecentItem()
-
-                    vm.setFeedMode(HomeFeedMode.FOLLOWING)
-                    val following = completePage(HomeFeedMode.FOLLOWING)
-                    assertThat(following.mode).isEqualTo(HomeFeedMode.FOLLOWING)
-                    assertThat(following.boards.map { it.board.id.value }).containsExactly("a", "g", "p")
-                    preferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("a"), false)
-                    val narrowed = completePage()
-                    assertThat(narrowed.boards.map { it.board.id.value }).containsExactly("g", "p")
-                    assertThat(narrowed.boards.flatMap { it.threads }).hasSize(2)
-                    // These are followed boards with no watched threads or bookmark state at all.
-                    assertThat(requested).hasSize(3)
+                    val kept = vm.uiState.value as SubscribedFeedUiState.Success
+                    assertThat(kept.mode).isEqualTo(HomeFeedMode.FOLLOWING)
+                    assertThat(kept.boards.map { it.board.id.value }).containsExactly("g")
+                    assertThat(requested.map { it.value }).containsExactly("g")
+                    preferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("a"), true)
+                    assertThat(completePage().boards.map { it.board.id.value }).containsExactly("a", "g")
+                    preferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("g"), false)
+                    assertThat(completePage().boards.map { it.board.id.value }).containsExactly("a")
+                    assertThat(requested.map { it.value }).containsExactly("a", "g")
                 }
             } finally {
                 vm.viewModelScope.cancel()
@@ -93,30 +88,23 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `discovery loads small pages and reuses earlier catalogs`() =
+    fun `new subscriptions load once without discovering other directory boards`() =
         runTest {
             val directory = (0..17).map { board("b%02d".format(it)) }
+            val preferences = FakeBoardPreferencesRepository(setOf(BoardId("b00")))
             val requested = mutableListOf<BoardId>()
-            val vm = viewModel(directory, provider = provider { requested += it.board })
+            val vm = viewModel(directory, preferences = preferences, provider = provider { requested += it.board })
             try {
                 vm.uiState.test {
                     val first = completePage()
-                    assertThat(first.boards).hasSize(8)
-                    assertThat(first.canLoadMore).isTrue()
-                    assertThat(requested).hasSize(8)
-
+                    assertThat(first.boards).hasSize(1)
+                    assertThat(first.canLoadMore).isFalse()
+                    preferences.setSubscribedBoard(ProviderId("fourchan"), BoardId("b01"), true)
+                    assertThat(completePage().boards).hasSize(2)
                     vm.loadMoreDiscovery()
-                    assertThat(completePage().boards).hasSize(16)
-                    assertThat(requested).hasSize(16)
-                    vm.loadMoreDiscovery()
-                    val last = completePage()
-                    assertThat(last.boards).hasSize(18)
-                    assertThat(last.canLoadMore).isFalse()
-                    assertThat(requested.distinct()).hasSize(18)
-                    assertThat(requested).hasSize(18)
                     vm.loadMoreDiscovery()
                     advanceUntilIdle()
-                    assertThat(requested).hasSize(18)
+                    assertThat(requested.map { it.value }).containsExactly("b00", "b01")
                 }
             } finally {
                 vm.viewModelScope.cancel()
@@ -124,7 +112,7 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `returning from Following retains the discovered window without fetching it again`() =
+    fun `legacy mode changes and source filters retain subscribed catalogs without refetching`() =
         runTest {
             val requested = mutableListOf<BoardId>()
             val vm =
@@ -135,21 +123,16 @@ class HomeDiscoveryViewModelTest {
                 )
             try {
                 vm.uiState.test {
-                    assertThat(completePage().boards).hasSize(8)
-                    vm.loadMoreDiscovery()
-                    assertThat(completePage().boards).hasSize(16)
-                    assertThat(requested).hasSize(16)
-                    vm.setFeedMode(HomeFeedMode.FOLLOWING)
-                    assertThat(completePage(HomeFeedMode.FOLLOWING).boards).hasSize(1)
+                    assertThat(completePage().boards).hasSize(1)
                     vm.setFeedMode(HomeFeedMode.FOR_YOU)
-                    assertThat(completePage(HomeFeedMode.FOR_YOU).boards).hasSize(16)
-                    assertThat(requested).hasSize(16)
-                    // A source choice is a new discovery context and starts its own small page.
+                    vm.setFeedMode(HomeFeedMode.FOLLOWING)
+                    advanceUntilIdle()
+                    assertThat((vm.uiState.value as SubscribedFeedUiState.Success).boards).hasSize(1)
                     vm.setProviderFilter("fourchan")
-                    var selectedSource = completePage()
-                    while (selectedSource.providerFilter != "fourchan") selectedSource = completePage()
-                    assertThat(selectedSource.boards).hasSize(8)
-                    assertThat(requested).hasSize(16)
+                    var selected = completePage()
+                    while (selected.providerFilter != "fourchan") selected = completePage()
+                    assertThat(selected.boards).hasSize(1)
+                    assertThat(requested.map { it.value }).containsExactly("b00")
                 }
             } finally {
                 vm.viewModelScope.cancel()
@@ -224,7 +207,7 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `initial discovery includes an outsider even when the reader follows more than one page`() =
+    fun `all subscribed boards load without nearby directory outsiders`() =
         runTest {
             val familiar = (0..9).map { board("a%02d".format(it)) }
             val outsider = board("z")
@@ -237,13 +220,11 @@ class HomeDiscoveryViewModelTest {
                 )
             try {
                 vm.uiState.test {
-                    val discovery = completePage()
-                    assertThat(discovery.boards).hasSize(8)
-                    assertThat(requested).contains(outsider.id)
-                    vm.setFeedMode(HomeFeedMode.FOLLOWING)
-                    val following = completePage(HomeFeedMode.FOLLOWING)
-                    assertThat(following.boards).hasSize(10)
-                    assertThat(following.boards.map { it.board.id }).doesNotContain(outsider.id)
+                    val loaded = completePage()
+                    assertThat(loaded.boards).hasSize(10)
+                    assertThat(loaded.canLoadMore).isFalse()
+                    assertThat(requested).containsExactlyElementsIn(familiar.map { it.id })
+                    assertThat(requested).doesNotContain(outsider.id)
                 }
             } finally {
                 vm.viewModelScope.cancel()
@@ -251,21 +232,24 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `repeated near-end requests before state catches up request only one next page`() =
+    fun `repeated near-end callbacks cannot request unsubscribed pages`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             val requested = mutableListOf<BoardId>()
-            val vm = viewModel((0..31).map { board("b%02d".format(it)) }, provider = provider { requested += it.board })
+            val vm =
+                viewModel(
+                    (0..31).map { board("b%02d".format(it)) },
+                    preferences = FakeBoardPreferencesRepository(setOf(BoardId("b00"))),
+                    provider = provider { requested += it.board },
+                )
             try {
                 vm.uiState.test {
                     runCurrent()
-                    assertThat(completePage().boards).hasSize(8)
-                    vm.loadMoreDiscovery()
-                    vm.loadMoreDiscovery()
-                    vm.loadMoreDiscovery()
+                    assertThat(completePage().boards).hasSize(1)
+                    repeat(3) { vm.loadMoreDiscovery() }
                     runCurrent()
-                    assertThat(completePage().boards).hasSize(16)
-                    assertThat(requested).hasSize(16)
+                    assertThat((vm.uiState.value as SubscribedFeedUiState.Success).boards).hasSize(1)
+                    assertThat(requested.map { it.value }).containsExactly("b00")
                 }
             } finally {
                 vm.viewModelScope.cancel()
@@ -274,7 +258,7 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `failed catalogs are requested once per refresh generation while discovery pages expand`() =
+    fun `failed subscribed catalogs are requested once per refresh generation`() =
         runTest {
             var unavailable = true
             val calls = mutableListOf<BoardId>()
@@ -291,7 +275,8 @@ class HomeDiscoveryViewModelTest {
                 vm.uiState.test {
                     assertThat(completePage().failedBoards).hasSize(7)
                     vm.loadMoreDiscovery()
-                    val later = completePage()
+                    advanceUntilIdle()
+                    val later = vm.uiState.value as SubscribedFeedUiState.Success
                     assertThat(later.boards).hasSize(16)
                     assertThat(later.failedBoards).hasSize(7)
                     assertThat(calls).hasSize(16)
@@ -308,13 +293,17 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `an unavailable discovery page fails fast instead of sweeping every remaining board`() =
+    fun `an unavailable subscribed scope is retryable without sweeping other boards`() =
         runTest {
             var unavailable = true
             val calls = mutableListOf<BoardId>()
             val vm =
                 viewModel(
                     (0..23).map { board("b%02d".format(it)) },
+                    preferences =
+                        FakeBoardPreferencesRepository(
+                            (0..7).mapTo(mutableSetOf()) { BoardId("b%02d".format(it)) },
+                        ),
                     provider =
                         provider {
                             calls += it.board
@@ -334,7 +323,7 @@ class HomeDiscoveryViewModelTest {
                     vm.refresh()
                     val ready = completePage()
                     assertThat(ready.boards).hasSize(8)
-                    assertThat(ready.canLoadMore).isTrue()
+                    assertThat(ready.canLoadMore).isFalse()
                     assertThat(calls).hasSize(16)
                 }
             } finally {
@@ -500,8 +489,8 @@ class HomeDiscoveryViewModelTest {
                     vm.loadMoreDiscovery()
                     release.complete(Unit)
                     val ready = completePage()
-                    assertThat(ready.boards).hasSize(8)
-                    assertThat(requested).hasSize(8)
+                    assertThat(ready.boards).hasSize(12)
+                    assertThat(requested).hasSize(12)
                     assertThat(maximum).isAtMost(4)
                 }
             } finally {
@@ -510,7 +499,7 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `the first discovery page includes both sources and a source switch fetches only that source`() =
+    fun `subscribed sources retain qualified identities and source switches reuse their own catalogs`() =
         runTest {
             val directory = (0..11).map { board("b%02d".format(it)) }
             val calls = mutableListOf<Pair<ProviderId, BoardId>>()
@@ -521,15 +510,15 @@ class HomeDiscoveryViewModelTest {
                 vm.uiState.test {
                     val ready = completePage()
                     assertThat(ready.boards.groupingBy { it.providerId }.eachCount())
-                        .containsExactly("fourchan", 4, "bbwchan", 4)
-                    assertThat(calls).hasSize(8)
+                        .containsExactly("fourchan", 12, "bbwchan", 12)
+                    assertThat(calls).hasSize(24)
                     vm.setProviderFilter("bbwchan")
                     val scoped = completePage()
                     assertThat(scoped.providerFilter).isEqualTo("bbwchan")
-                    assertThat(scoped.boards).hasSize(8)
+                    assertThat(scoped.boards).hasSize(12)
                     assertThat(scoped.boards.map { it.providerId }.toSet()).containsExactly("bbwchan")
-                    assertThat(calls.count { it.first.value == "fourchan" }).isEqualTo(4)
-                    assertThat(calls.count { it.first.value == "bbwchan" }).isEqualTo(8)
+                    assertThat(calls.count { it.first.value == "fourchan" }).isEqualTo(12)
+                    assertThat(calls.count { it.first.value == "bbwchan" }).isEqualTo(12)
                 }
             } finally {
                 vm.viewModelScope.cancel()
@@ -537,47 +526,50 @@ class HomeDiscoveryViewModelTest {
         }
 
     @Test
-    fun `changing to Following cancels obsolete discovery instead of showing its late results`() =
+    fun `changing source cancels obsolete subscribed loads instead of publishing late results`() =
         runTest {
             val release = CompletableDeferred<Unit>()
             var cancellations = 0
-            val followed = board("z")
+            val first =
+                provider("fourchan") {
+                    try {
+                        release.await()
+                    } finally {
+                        if (!release.isCompleted) cancellations++
+                    }
+                }
+            val second = provider("bbwchan") {}
             val vm =
                 viewModel(
-                    (0..9).map { board("b%02d".format(it)) } + followed,
-                    preferences = FakeBoardPreferencesRepository(setOf(followed.id)),
-                    provider =
-                        provider {
-                            if (it.board != followed.id) {
-                                try {
-                                    release.await()
-                                } finally {
-                                    if (!release.isCompleted) cancellations++
-                                }
-                            }
-                        },
+                    (0..9).map { board("b%02d".format(it)) },
+                    provider = first,
+                    providers = listOf(first, second),
                 )
+            vm.setProviderFilter("fourchan")
             try {
                 vm.uiState.test {
                     runCurrent()
-                    vm.setFeedMode(HomeFeedMode.FOLLOWING)
-                    val selected = completePage(HomeFeedMode.FOLLOWING)
+                    vm.setProviderFilter("bbwchan")
+                    val selected = completePage()
                     assertThat(selected.mode).isEqualTo(HomeFeedMode.FOLLOWING)
-                    assertThat(selected.boards.map { it.board.id }).containsExactly(followed.id)
+                    assertThat(selected.providerFilter).isEqualTo("bbwchan")
+                    assertThat(selected.boards).hasSize(10)
+                    assertThat(selected.boards.map { it.providerId }.toSet()).containsExactly("bbwchan")
                     assertThat(cancellations).isEqualTo(4)
                     release.complete(Unit)
                     advanceUntilIdle()
                     val latest = vm.uiState.value as SubscribedFeedUiState.Success
-                    assertThat(latest.mode).isEqualTo(HomeFeedMode.FOLLOWING)
-                    assertThat(latest.boards.map { it.board.id }).containsExactly(followed.id)
+                    assertThat(latest.providerFilter).isEqualTo("bbwchan")
+                    assertThat(latest.boards.map { it.providerId }.toSet()).containsExactly("bbwchan")
                 }
             } finally {
+                release.complete(Unit)
                 vm.viewModelScope.cancel()
             }
         }
 
     @Test
-    fun `persisted content settings arrive before discovery can request adult or permanently filtered boards`() =
+    fun `persisted content settings arrive before subscribed adult or permanently filtered boards can load`() =
         runTest {
             val settingsFlow = MutableSharedFlow<AppSettings>(replay = 1)
             val settings =
@@ -621,7 +613,8 @@ private fun board(id: String) = Board(BoardId(id), "Board $id")
 
 private fun viewModel(
     boards: List<Board>,
-    preferences: BoardPreferencesRepository = FakeBoardPreferencesRepository(subscribed = emptySet()),
+    preferences: BoardPreferencesRepository =
+        FakeBoardPreferencesRepository(subscribed = boards.mapTo(mutableSetOf()) { it.id }),
     settings: SettingsRepository = FakeSettingsRepository(),
     provider: ImageBoardProvider = provider {},
     providers: List<ImageBoardProvider> = listOf(provider),

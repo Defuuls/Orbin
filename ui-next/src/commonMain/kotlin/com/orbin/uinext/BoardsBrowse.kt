@@ -46,15 +46,16 @@ import com.orbin.uinext.resources.next_boards_random
 import com.orbin.uinext.resources.next_boards_search
 import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.resources.next_status_retry
+import com.orbin.uinext.resources.reader_board_follow
+import com.orbin.uinext.resources.reader_board_unfollow
+import com.orbin.uinext.resources.reader_followed_boards
 import com.orbin.uinext.resources.social_feed_all_boards
-import com.orbin.uinext.resources.social_feed_favorite_add
-import com.orbin.uinext.resources.social_feed_favorite_boards
-import com.orbin.uinext.resources.social_feed_favorite_remove
 import com.orbin.uinext.resources.tiktok_board_follow
 import com.orbin.uinext.resources.tiktok_board_following
 import com.orbin.uinext.resources.tiktok_boards_title
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 /** A board directory row. Its stable [id] includes its site when more than one site is shown. */
@@ -73,7 +74,7 @@ internal fun List<BoardTile>.sortedAlphabetically(): List<BoardTile> =
             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.title },
     )
 
-/** A searchable, source-scoped directory with independent open and favorite actions. */
+/** A searchable, source-scoped directory with independent open and subscription actions. */
 @Composable
 fun BoardsScreen(
     boards: List<BoardTile>,
@@ -217,7 +218,7 @@ fun BoardsScreen(
                     if (favorites.isNotEmpty()) {
                         item(
                             key = "favorite-heading",
-                        ) { BoardSectionTitle(stringResource(Res.string.social_feed_favorite_boards)) }
+                        ) { BoardSectionTitle(stringResource(Res.string.reader_followed_boards)) }
                         items(favorites, key = { "favorite:${it.id}" }) { board ->
                             BoardListRow(
                                 board,
@@ -285,7 +286,7 @@ private fun BoardListRow(
                 .nextClickable(role = Role.Button, onClick = onClick)
                 .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         BoardIcon(
             siteId = board.site ?: board.id.substringBefore('/'),
@@ -293,9 +294,9 @@ private fun BoardListRow(
             title = board.title,
             modifier = Modifier.size(48.dp),
         )
-        Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
-            Text(board.path, style = NextType.titleMedium, color = next.ink)
-            Text(board.title, style = NextType.bodyMedium, color = next.muted)
+        Column(Modifier.weight(1f)) {
+            Text(board.path, style = ReaderType.postBody.withReaderFont(), color = reader.ink)
+            Text(board.title, style = ReaderType.meta.withReaderFont(), color = reader.inkSecondary)
             val metadata =
                 listOfNotNull(
                     board.site?.let(::sourceLabel)?.takeIf(String::isNotBlank),
@@ -304,8 +305,8 @@ private fun BoardListRow(
             if (metadata.isNotBlank()) {
                 Text(
                     metadata,
-                    style = NextType.footnote,
-                    color = next.muted,
+                    style = ReaderType.postDetails.withReaderFont(),
+                    color = reader.inkSecondary,
                 )
             }
         }
@@ -314,9 +315,9 @@ private fun BoardListRow(
             val actionDescription =
                 stringResource(
                     if (board.followed) {
-                        Res.string.social_feed_favorite_remove
+                        Res.string.reader_board_unfollow
                     } else {
-                        Res.string.social_feed_favorite_add
+                        Res.string.reader_board_follow
                     },
                     identity,
                 )
@@ -359,4 +360,4 @@ private fun BoardListRow(
     }
 }
 
-private val BOARD_DIRECTORY_GUTTER = 12.dp
+private val BOARD_DIRECTORY_GUTTER = 16.dp

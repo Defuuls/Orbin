@@ -1,0 +1,143 @@
+{
+  "reference_apk": "Clover3.0.2 supplied by the user",
+  "reference_apk_sha256": "3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300",
+  "license": "Apache-2.0",
+  "faces": [
+    {
+      "resource": "reader_roboto_medium.ttf",
+      "original_name": "Roboto-Medium.ttf",
+      "origin": "Supplied Clover3.0.2 APK, assets/font/Roboto-Medium.ttf",
+      "version": "Version 2.000980; 2014",
+      "copyright": "Font data copyright Google 2014",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "6e2ec5c5f89e4ce302bb93b46cb7cc336236501de17348e284878914c5e0e723",
+      "verification": "Exact unmodified open-source font asset from reference APK",
+      "independent_identical_distribution": "https://github.com/Dogfalo/materialize/blob/v0.95.3/font/roboto/Roboto-Medium.ttf",
+      "independent_identical_distribution_sha256": "6e2ec5c5f89e4ce302bb93b46cb7cc336236501de17348e284878914c5e0e723"
+    },
+    {
+      "resource": "reader_roboto_medium_italic.ttf",
+      "original_name": "Roboto-MediumItalic.ttf",
+      "origin": "Supplied Clover3.0.2 APK, assets/font/Roboto-MediumItalic.ttf",
+      "version": "Version 2.000980; 2014",
+      "copyright": "Font data copyright Google 2014",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "4eab76b2b5cb055ee4d8c77d0b2ef9c39cf53df7b277946d5f59e7e5c7a43318",
+      "verification": "Exact unmodified open-source font asset from reference APK"
+    },
+    {
+      "resource": "reader_roboto_condensed_regular.ttf",
+      "original_name": "RobotoCondensed-Regular.ttf",
+      "origin": "Supplied Clover3.0.2 APK, assets/font/RobotoCondensed-Regular.ttf",
+      "version": "Version 2.000980; 2014",
+      "copyright": "Font data copyright Google 2014",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "6dc7ba162db365941a23c68f8417eca8884c821ff6104a5a7f825ce090407b77",
+      "verification": "Exact unmodified open-source font asset from reference APK"
+    },
+    {
+      "resource": "reader_roboto_regular.ttf",
+      "original_name": "RobotoStatic-Regular.ttf",
+      "origin": "Inspected Clover3.0.2 Android API31 emulator /system/fonts/RobotoStatic-Regular.ttf",
+      "version": "Version 2.138; 2017",
+      "copyright": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "06cba01eb71ea5cbd3a7df498910624db68953beead4be18fd91f8ec7dc72351",
+      "verification": "Exact unmodified static normal400 font selected by the inspected reference runtime",
+      "evidence_run": "https://github.com/Defuuls/Orbin/actions/runs/43240831169",
+      "runtime_mapping": "/system/etc/fonts.xml family sans-serif, weight400, style normal",
+      "source_fonts_xml_sha256": "a3467cbab1b42cd80a3f7e822b0d9e7355da4e298e8718feaa753cced3d85565"
+    },
+    {
+      "resource": "reader_roboto_italic.ttf",
+      "original_name": "Roboto-Regular.ttf",
+      "origin": "Inspected Clover3.0.2 Android API31 emulator /system/fonts/Roboto-Regular.ttf",
+      "version": "Version 3.002; 2020",
+      "copyright": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "7884f03e6e6ced322dc2ea6cc5d5fd6b9527cdf2bb660830672a75630d04b63d",
+      "verification": "Static instance at the exact axes selected by the inspected reference runtime; no synthesized weight or italic style",
+      "evidence_run": "https://github.com/Defuuls/Orbin/actions/runs/43240831169",
+      "source_sha256": "f10a4d95fb922a38aeeae842005dfdc4c7ef1e7a66308f6379d749c44133b876",
+      "source_fonts_xml_sha256": "a3467cbab1b42cd80a3f7e822b0d9e7355da4e298e8718feaa753cced3d85565",
+      "runtime_mapping": "/system/etc/fonts.xml family sans-serif",
+      "modification_notice": "Derived from the Apache-2.0 variable font by fixing all variation axes; updated static style names and removed variation tables. No outline editing beyond the selected variable-font interpolation.",
+      "axis_values": {
+        "wght": 400,
+        "wdth": 100,
+        "ital": 1
+      },
+      "instancing": {
+        "tool": "fontTools.varLib.instancer.instantiateVariableFont",
+        "version": "4.61.1",
+        "arguments": {
+          "inplace": true,
+          "optimize": true,
+          "updateFontNames": true
+        },
+        "recalcTimestamp": false
+      }
+    },
+    {
+      "resource": "reader_roboto_bold.ttf",
+      "original_name": "Roboto-Regular.ttf",
+      "origin": "Inspected Clover3.0.2 Android API31 emulator /system/fonts/Roboto-Regular.ttf",
+      "version": "Version 3.002; 2020",
+      "copyright": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "0b1f2159d147d5f16bf65e2c7ddb45a84675dbb97079a16fabf4bda431a822ac",
+      "verification": "Static instance at the exact axes selected by the inspected reference runtime; no synthesized weight or italic style",
+      "evidence_run": "https://github.com/Defuuls/Orbin/actions/runs/43240831169",
+      "source_sha256": "f10a4d95fb922a38aeeae842005dfdc4c7ef1e7a66308f6379d749c44133b876",
+      "source_fonts_xml_sha256": "a3467cbab1b42cd80a3f7e822b0d9e7355da4e298e8718feaa753cced3d85565",
+      "runtime_mapping": "/system/etc/fonts.xml family sans-serif",
+      "modification_notice": "Derived from the Apache-2.0 variable font by fixing all variation axes; updated static style names and removed variation tables. No outline editing beyond the selected variable-font interpolation.",
+      "axis_values": {
+        "wght": 700,
+        "wdth": 100,
+        "ital": 0
+      },
+      "instancing": {
+        "tool": "fontTools.varLib.instancer.instantiateVariableFont",
+        "version": "4.61.1",
+        "arguments": {
+          "inplace": true,
+          "optimize": true,
+          "updateFontNames": true
+        },
+        "recalcTimestamp": false
+      }
+    },
+    {
+      "resource": "reader_roboto_bold_italic.ttf",
+      "original_name": "Roboto-Regular.ttf",
+      "origin": "Inspected Clover3.0.2 Android API31 emulator /system/fonts/Roboto-Regular.ttf",
+      "version": "Version 3.002; 2020",
+      "copyright": "Copyright 2011 Google Inc. All Rights Reserved.",
+      "license": "Licensed under the Apache License, Version 2.0",
+      "sha256": "cddd066fdd8e5444933293685dca2c76ec0131446534b6c82db33607722b5b3b",
+      "verification": "Static instance at the exact axes selected by the inspected reference runtime; no synthesized weight or italic style",
+      "evidence_run": "https://github.com/Defuuls/Orbin/actions/runs/43240831169",
+      "source_sha256": "f10a4d95fb922a38aeeae842005dfdc4c7ef1e7a66308f6379d749c44133b876",
+      "source_fonts_xml_sha256": "a3467cbab1b42cd80a3f7e822b0d9e7355da4e298e8718feaa753cced3d85565",
+      "runtime_mapping": "/system/etc/fonts.xml family sans-serif",
+      "modification_notice": "Derived from the Apache-2.0 variable font by fixing all variation axes; updated static style names and removed variation tables. No outline editing beyond the selected variable-font interpolation.",
+      "axis_values": {
+        "wght": 700,
+        "wdth": 100,
+        "ital": 1
+      },
+      "instancing": {
+        "tool": "fontTools.varLib.instancer.instantiateVariableFont",
+        "version": "4.61.1",
+        "arguments": {
+          "inplace": true,
+          "optimize": true,
+          "updateFontNames": true
+        },
+        "recalcTimestamp": false
+      }
+    }
+  ],
+  "runtime_body_fonts_status": "COMPLETE: actual reference API31 static normal400 bytes and exact XML-axis instances for Bold/Italic/BoldItalic; APK Medium/MediumItalic/Condensed bytes retained unchanged"
+}

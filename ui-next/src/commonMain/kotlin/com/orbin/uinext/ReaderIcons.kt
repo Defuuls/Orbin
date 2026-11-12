@@ -1,5 +1,18 @@
 package com.orbin.uinext
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -10,10 +23,8 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * A single outline family for reader controls on Android and iOS.
- *
- * Shapes share a 24dp canvas, rounded joins, and an optical 1.8dp stroke. Selected tab variants
- * fill the same silhouette, keeping layout and hit targets stable when selection changes.
+ * Clover's standard Material toolbar symbols, with Orbin-specific optional reader symbols.
+ * Every icon retains the shared 24dp canvas and stable layout and accessibility targets.
  */
 object ReaderIcons {
     val Plus: ImageVector by lazy { outline("Plus", "M12 5v14M5 12h14") }
@@ -21,19 +32,18 @@ object ReaderIcons {
     val HeartFilled: ImageVector by lazy { filled("HeartFilled", HEART) }
     val Home: ImageVector by lazy { outline("Home", HOME) }
     val HomeFilled: ImageVector by lazy { filled("HomeFilled", HOME) }
-    val Search: ImageVector by lazy {
-        outline("Search", "M18 10.5a7.5 7.5 0 1 1-15 0a7.5 7.5 0 0 1 15 0ZM16 16l5 5")
-    }
+    val Search: ImageVector get() = Icons.Filled.Search
     val Boards: ImageVector by lazy { outline("Boards", BOARDS) }
     val BoardsFilled: ImageVector by lazy { filled("BoardsFilled", BOARDS) }
+    val Album: ImageVector get() = Icons.Filled.PhotoLibrary
     val Watched: ImageVector by lazy {
         outline("Watched", "$BELL M12 2v1M10 20.5a2 2 0 0 0 4 0")
     }
     val WatchedFilled: ImageVector by lazy {
         filled("WatchedFilled", "$BELL M11 2a1 1 0 0 1 2 0v1h-2ZM10 20h4a2 2 0 0 1-4 0Z")
     }
-    val Saved: ImageVector by lazy { outline("Saved", SAVED) }
-    val SavedFilled: ImageVector by lazy { filled("SavedFilled", SAVED) }
+    val Saved: ImageVector get() = Icons.Filled.BookmarkBorder
+    val SavedFilled: ImageVector get() = Icons.Filled.Bookmark
     val Chat: ImageVector by lazy {
         outline(
             "Chat",
@@ -60,35 +70,24 @@ object ReaderIcons {
             "M9 18V5l11-2v13M9 8l11-2M9 18c0 1.7-1.7 3-3.5 3S2 20.2 2 18.5 3.7 16 5.5 16 9 16.3 9 18ZM20 16c0 1.7-1.7 3-3.5 3s-3.5-.8-3.5-2.5S14.7 14 16.5 14s3.5.3 3.5 2Z",
         )
     }
-    val Share: ImageVector by lazy {
-        outline("Share", "M21 3l-7.3 18-3.3-7.4L3 10.3 21 3ZM10.4 13.6 21 3")
-    }
-    val Menu: ImageVector by lazy { outline("Menu", "M4 5.5h16M4 12h16M4 18.5h16") }
-    val More: ImageVector by lazy { outline("More", "M6 12h.01M12 12h.01M18 12h.01") }
-    val MoreVertical: ImageVector by lazy { outline("MoreVertical", "M12 6h.01M12 12h.01M12 18h.01") }
-    val Refresh: ImageVector by lazy { outline("Refresh", "M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4") }
-    val Back: ImageVector by lazy { outline("Back", "M15 4l-8 8 8 8", autoMirror = true) }
+    val Share: ImageVector get() = Icons.Filled.Share
+    val Menu: ImageVector get() = Icons.Filled.Menu
+    val More: ImageVector get() = Icons.Filled.MoreVert
+    val MoreVertical: ImageVector get() = Icons.Filled.MoreVert
+    val Refresh: ImageVector get() = Icons.Filled.Refresh
+    val Back: ImageVector get() = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronDown: ImageVector by lazy { outline("ChevronDown", "M6 9l6 6 6-6") }
     val ChevronRight: ImageVector by lazy { outline("ChevronRight", "M9 5l7 7-7 7", autoMirror = true) }
-    val Close: ImageVector by lazy { outline("Close", "M6 6l12 12M18 6 6 18") }
+    val Close: ImageVector get() = Icons.Filled.Close
     val Pin: ImageVector by lazy { outline("Pin", "M8 3h8M9 3v6l-3 4v2h12v-2l-3-4V3M12 15v7") }
     val Lock: ImageVector by lazy {
         outline("Lock", "M6 10h12v11H6ZM8 10V6a4 4 0 0 1 8 0v4M12 14v3")
     }
     val Check: ImageVector by lazy { outline("Check", "M5 12l4 4L19 6") }
-    val Download: ImageVector by lazy {
-        outline("Download", "M12 3v12M7 10l5 5 5-5M4 16v4h16v-4")
-    }
+    val Download: ImageVector get() = Icons.Filled.FileDownload
     val Star: ImageVector by lazy { outline("Star", STAR) }
     val StarFilled: ImageVector by lazy { filled("StarFilled", STAR) }
-    val Settings: ImageVector by lazy {
-        outline(
-            "Settings",
-            "M9.5 2.5h5l.6 2.3 1.5.9 2.3-.6 2.5 4.3-1.7 1.7v1.8l1.7 1.7-2.5 4.3-2.3-.6-1.5.9-.6 2.3h-5" +
-                "l-.6-2.3-1.5-.9-2.3.6-2.5-4.3 1.7-1.7v-1.8L2.6 9.4 5.1 5.1l2.3.6 1.5-.9.6-2.3Z" +
-                "M15.5 12a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0Z",
-        )
-    }
+    val Settings: ImageVector get() = Icons.Filled.Settings
     val Play: ImageVector by lazy {
         outline("Play", "$CIRCLE M10 8l6 4-6 4Z")
     }
@@ -133,7 +132,6 @@ object ReaderIcons {
             "M4 14h5c.6 0 1 .4 1 1v5c0 .6-.4 1-1 1H4c-.6 0-1-.4-1-1v-5c0-.6.4-1 1-1Z" +
             "M15 14h5c.6 0 1 .4 1 1v5c0 .6-.4 1-1 1h-5c-.6 0-1-.4-1-1v-5c0-.6.4-1 1-1Z"
     private const val BELL = "M6 9a6 6 0 0 1 12 0c0 5.5 2 6.5 2 8H4c0-1.5 2-2.5 2-8Z"
-    private const val SAVED = "M6 3.5c0-.3.2-.5.5-.5h11c.3 0 .5.2.5.5V21l-6-4-6 4Z"
     private const val STAR = "M12 3l2.8 5.7 6.3.9-4.5 4.4 1.1 6.3-5.7-3-5.7 3 1.1-6.3-4.5-4.4 6.3-.9Z"
     private const val HEART =
         "M12 21 3.3 12.7A5.6 5.6 0 0 1 12 5.6a5.6 5.6 0 0 1 8.7 7.1Z"

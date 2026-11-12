@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -22,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -45,7 +43,6 @@ import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderThreadSkeleton
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.tokens.ReaderRadius
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -208,7 +205,7 @@ internal fun ThreadContent(
             },
             fileTile = { cell, tileModifier ->
                 attachmentsById[cell.id]?.let { attachment ->
-                    Box(tileModifier.clip(RoundedCornerShape(ReaderRadius.card))) {
+                    Box(tileModifier) {
                         ReaderThumbnail(
                             attachment = attachment.copy(isSpoiler = false),
                             contentDescription = attachment.originalFileName,

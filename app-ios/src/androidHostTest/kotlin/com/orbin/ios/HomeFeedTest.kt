@@ -105,17 +105,17 @@ class HomeFeedTest {
         }
 
     @Test
-    fun discoveryIncludesUnfollowedBoardsAndBothSourcesWhileFollowingNeedsNoWatchedThread() =
+    fun homeIncludesOnlySubscribedBoardsAcrossBothSourcesAndIgnoresLegacyDiscoveryMode() =
         runTest {
             val fixture = Fixture(backgroundScope, sources = listOf("one", "two"), count = 12)
-            fixture.followed.value = setOf(fixture.key("one", 0))
+            fixture.followed.value = setOf(fixture.key("one", 0), fixture.key("two", 4))
             val home = fixture.start()
             runCurrent()
-            assertEquals(8, fixture.requested.size)
+            assertEquals(HomeFeedMode.FOLLOWING, home.mode.value)
+            assertEquals(fixture.followed.value, fixture.requested.toSet())
             assertEquals(setOf("one", "two"), fixture.requested.map { it.provider.value }.toSet())
-            assertTrue(fixture.requested.any { it !in fixture.followed.value })
             assertEquals(
-                8,
+                2,
                 home
                     .rows()
                     .map { it.feedRowId }
@@ -123,65 +123,72 @@ class HomeFeedTest {
                     .size,
             )
 
-            home.selectMode(HomeFeedMode.FOLLOWING)
+            home.selectMode(HomeFeedMode.FOR_YOU)
             runCurrent()
+            assertEquals(HomeFeedMode.FOLLOWING, home.mode.value)
             assertEquals(
-                listOf(fixture.key("one", 0)),
-                home.rows().map { FollowedBoard(it.provider, it.thread.key.board) },
+                fixture.followed.value,
+                home.rows().mapTo(mutableSetOf()) { FollowedBoard(it.provider, it.thread.key.board) },
             )
-            assertEquals(8, fixture.requested.size, "the followed catalog was already cached")
+            assertEquals(2, fixture.requested.size, "legacy mode selection cannot fetch unselected boards")
         }
 
     @Test
-    fun initialDiscoveryIncludesOutsidersEvenWhenMoreThanAPageOfBoardsAreFollowed() =
+    fun homeLoadsEverySubscribedBoardBeyondTheFormerDiscoveryPageWithoutFetchingOutsiders() =
         runTest {
             val fixture = Fixture(backgroundScope, count = 16)
             fixture.followed.value = (0..13).mapTo(mutableSetOf()) { fixture.key("one", it) }
-            fixture.start()
+            val home = fixture.start()
             runCurrent()
-            assertEquals(8, fixture.requested.size)
-            assertTrue(fixture.requested.any { it !in fixture.followed.value })
+            assertEquals(14, fixture.requested.size)
+            assertEquals(fixture.followed.value, fixture.requested.toSet())
+            assertEquals(14, home.rows().size)
+            assertFalse(home.canLoadMore.value)
         }
 
     @Test
-    fun pagesCoalesceRepeatedCallbacksAndSurviveATabRoundTripWithoutRefetching() =
+    fun repeatedLegacyPagingAndModeCallbacksReuseOnlySubscribedCatalogs() =
         runTest {
             val fixture = Fixture(backgroundScope, count = 24)
-            fixture.followed.value = setOf(fixture.key("one", 0))
+            fixture.followed.value = (0 until 16).mapTo(mutableSetOf()) { fixture.key("one", it) }
             val home = fixture.start()
             runCurrent()
             home.loadMore()
             home.loadMore()
             runCurrent()
             assertEquals(16, fixture.requested.size)
-            assertEquals(16, home.completedDiscoveryCount.value)
+            assertEquals(0, home.completedDiscoveryCount.value)
             home.selectMode(HomeFeedMode.FOLLOWING)
             runCurrent()
             home.selectMode(HomeFeedMode.FOR_YOU)
+            home.load()
             runCurrent()
             assertEquals(16, home.rows().size)
             assertEquals(16, fixture.requested.size)
-            assertTrue(home.canLoadMore.value)
+            assertEquals(fixture.followed.value, fixture.requested.toSet())
+            assertEquals(HomeFeedMode.FOLLOWING, home.mode.value)
+            assertFalse(home.canLoadMore.value)
         }
 
     @Test
-    fun changingSourcesResetsThePageWindowAndNeverMergesSameNamedBoards() =
+    fun changingSourcesReusesSubscribedCatalogsAndNeverMergesSameNamedBoards() =
         runTest {
             val fixture = Fixture(backgroundScope, sources = listOf("one", "two"), count = 18)
             val home = fixture.start()
             runCurrent()
+            assertEquals(36, fixture.requested.size)
             fixture.source.value = ProviderId("two")
             home.load()
             runCurrent()
-            assertEquals(8, home.rows().size)
+            assertEquals(18, home.rows().size)
             assertTrue(home.rows().all { it.provider.value == "two" })
             home.loadMore()
             runCurrent()
-            assertEquals(16, home.rows().size)
+            assertEquals(18, home.rows().size)
             fixture.source.value = ProviderId("one")
             home.load()
             runCurrent()
-            assertEquals(8, home.rows().size)
+            assertEquals(18, home.rows().size)
             assertTrue(home.rows().all { it.provider.value == "one" })
             assertEquals(fixture.requested.distinct().size, fixture.requested.size)
         }
@@ -201,7 +208,7 @@ class HomeFeedTest {
             assertEquals(4, fixture.maxInFlight)
             release.complete(Unit)
             runCurrent()
-            assertEquals(8, home.rows().size)
+            assertEquals(16, home.rows().size)
             assertFalse(home.isLoadingMore.value)
         }
 
@@ -225,9 +232,10 @@ class HomeFeedTest {
         }
 
     @Test
-    fun anOutageIsRetryableAndDoesNotAutomaticallySweepEveryBoard() =
+    fun anOutageIsRetryableWithoutFetchingUnsubscribedBoards() =
         runTest {
             val fixture = Fixture(backgroundScope, count = 24)
+            fixture.followed.value = (0 until 8).mapTo(mutableSetOf()) { fixture.key("one", it) }
             fixture.catalog = { error("offline") }
             val home = fixture.start()
             runCurrent()
@@ -240,6 +248,7 @@ class HomeFeedTest {
             runCurrent()
             assertEquals(8, home.rows().size)
             assertEquals(16, fixture.requested.size)
+            assertEquals(fixture.followed.value, fixture.requested.toSet())
         }
 
     @Test
@@ -269,14 +278,14 @@ class HomeFeedTest {
         }
 
     @Test
-    fun anUnavailableSourceShowsAnErrorWhileFollowingWithNoBoardsIsImmediatelyEmpty() =
+    fun anUnavailableSubscribedSourceShowsAnErrorWhileNoSubscriptionsIsImmediatelyEmpty() =
         runTest {
             val fixture = Fixture(backgroundScope)
             fixture.directory.value = HomeFeedDirectory(failures = mapOf(ProviderId("one") to "Directory unavailable"))
             val home = fixture.start()
             runCurrent()
             assertEquals(Load.Failed("Directory unavailable"), home.content.value)
-            home.selectMode(HomeFeedMode.FOLLOWING)
+            fixture.followed.value = emptySet()
             runCurrent()
             assertEquals(Load.Ready(emptyList()), home.content.value)
             fixture.followed.value = setOf(fixture.key("one", 0))
@@ -421,7 +430,7 @@ class HomeFeedTest {
     private fun HomeFeed.rows(): List<FeedThread> = assertIs<Load.Ready<List<FeedThread>>>(content.value).value
 
     @Test
-    fun discoveryWaitsForPersistedPrivacyBeforeRequestingAnyCatalog() =
+    fun subscribedHomeWaitsForPersistedPrivacyBeforeRequestingAnyCatalog() =
         runTest {
             val raw = MutableSharedFlow<AppSettings>()
             val fixture = Fixture(backgroundScope, count = 2)
@@ -463,7 +472,7 @@ class HomeFeedTest {
             val home = fixture.start()
             runCurrent()
             assertIs<Load.Failed>(home.content.value)
-            assertEquals(8, fixture.requested.size)
+            assertEquals(24, fixture.requested.size)
         }
 
     /** A separately driven worker queue avoids real threads and shared test-scheduler advancement. */
@@ -498,7 +507,10 @@ class HomeFeedTest {
     ) {
         val settings = MutableStateFlow(AppSettings.Default)
         val preferences = FakeBoardPreferences()
-        val followed = MutableStateFlow<Set<FollowedBoard>>(emptySet())
+        val followed =
+            MutableStateFlow<Set<FollowedBoard>>(
+                sources.flatMap { id -> (0 until count).map { key(id, it) } }.toSet(),
+            )
         val source = MutableStateFlow<ProviderId?>(null)
         val firstRun = MutableStateFlow(FirstRunState(initialized = true, needed = false))
         val directory =

@@ -1,0 +1,18 @@
+Roboto font data copyright Google, 2014 and contributors.
+Copyright 2011 Google Inc. All Rights Reserved.
+
+Roboto, Roboto Medium, Roboto Medium Italic and Roboto Condensed are open-source
+font software licensed under Apache License 2.0. See roboto_APACHE2.txt and the
+unmodified font name/license tables. The reference APK is only the source of
+its redistributable Google font files; no Clover application code, logo,
+branding or other application assets are copied.
+
+See roboto_provenance.json for each asset's source, version and SHA-256.
+
+Changed-file notice: reader_roboto_bold.ttf, reader_roboto_italic.ttf and
+reader_roboto_bold_italic.ttf are static instances of the inspected Android
+API31 Roboto variable font, generated with fontTools 4.61.1. Their weight,
+width and italic axes match that runtime's fonts.xml exactly. Static style
+names are updated and variation tables removed; no independent outline
+edits were made. The input hash, selected axes and output hashes are in
+roboto_provenance.json. The other bundled font files are unmodified.

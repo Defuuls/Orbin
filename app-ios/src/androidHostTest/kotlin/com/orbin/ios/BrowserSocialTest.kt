@@ -23,6 +23,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -181,7 +182,7 @@ class BrowserSocialTest {
             val browser = browser(backgroundScope, BOTH_SITES)
             val board = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first()
             browser.selectFeedMode(HomeFeedMode.FOLLOWING)
-            browser.setFavorite(board, true)
+            browser.setFollowed(board, true)
             browser.finishSetupIfNeeded()
             val feed = browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             val row = assertIs<Load.Ready<List<FeedThread>>>(feed).value.first()
@@ -202,20 +203,28 @@ class BrowserSocialTest {
         }
 
     @Test
-    fun favoriteBoardsJoinHomeAndCanBeRemovedWithoutAffectingSubscriptions() =
+    fun favoriteBoardsStayIndependentOfHomeSubscriptions() =
         runTest {
             val browser = browser(backgroundScope, BOTH_SITES)
             val board = assertIs<Load.Ready<List<SiteBoard>>>(browser.boards.settled()).value.first()
             browser.selectFeedMode(HomeFeedMode.FOLLOWING)
             browser.setFavorite(board, true)
-            browser.finishSetupIfNeeded()
-            browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
-            assertTrue(FollowedBoard(board.provider, board.board.id) in browser.favorites.value)
+            val key = FollowedBoard(board.provider, board.board.id)
+            browser.favorites.first { key in it }
+            val setup = browser.firstRun.state.first { it.initialized }
+            assertTrue(setup.needed)
+            assertFalse(setup.canStart)
+            assertTrue(browser.followed.value.isEmpty())
+            assertEquals(Load.Ready(emptyList()), browser.feed.settled())
+
             browser.setFollowed(board, true)
+            browser.finishSetupIfNeeded()
             browser.followed.first { it.isNotEmpty() }
+            browser.feed.first { it is Load.Ready && it.value.isNotEmpty() }
             browser.setFavorite(board, false)
             browser.favorites.first { it.isEmpty() }
-            assertTrue(FollowedBoard(board.provider, board.board.id) in browser.followed.value)
+            assertTrue(key in browser.followed.value)
+            assertEquals(listOf(board.board.id.value), browser.feed.value.boardIds())
         }
 
     private companion object {

@@ -76,7 +76,7 @@ class BoardsDestinationContinuityTest {
                 NextTheme(platform = NextPlatform.IOS) { BoardsDestination(browser) }
             }
 
-            val remove = "Remove 4chan · /g/ from favorite boards"
+            val remove = "Unfollow 4chan · /g/"
             composeRule.onAllNodesWithContentDescription(remove)[0].assertIsSelected().assertIsDisplayed()
             assertEquals(Load.Loading, browser.boards.value)
 
@@ -90,7 +90,7 @@ class BoardsDestinationContinuityTest {
             browser.activeSite.first { it == FOURCHAN }
             composeRule.onAllNodesWithContentDescription(remove)[0].assertIsSelected().assertIsDisplayed()
 
-            // A legacy star can coexist with setup's subscription; the visible unfollow clears both.
+            // An independent star must not keep the subscription selected after Unfollow.
             preferences.favorites.value = mapOf(FOURCHAN to setOf(BOARD))
             runCurrent()
             composeRule.onAllNodesWithContentDescription(remove)[0].performClick()
@@ -101,12 +101,8 @@ class BoardsDestinationContinuityTest {
                     .orEmpty()
                     .isEmpty(),
             )
-            assertTrue(
-                preferences.favorites.value[FOURCHAN]
-                    .orEmpty()
-                    .isEmpty(),
-            )
-            composeRule.onAllNodesWithContentDescription("Add 4chan · /g/ to favorite boards")[0].assertIsDisplayed()
+            assertEquals(setOf(BOARD), preferences.favorites.value[FOURCHAN])
+            composeRule.onAllNodesWithContentDescription("Follow 4chan · /g/")[0].assertIsDisplayed()
         }
 
     private companion object {

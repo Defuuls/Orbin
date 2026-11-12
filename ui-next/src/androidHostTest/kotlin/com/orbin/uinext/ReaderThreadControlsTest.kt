@@ -82,7 +82,8 @@ class ReaderThreadControlsTest {
                     board = "/g/",
                     posts = emptyList(),
                     layout = ThreadLayout.FILES,
-                    files = listOf(MediaCell("site/g/1/file/0", "/g/", spoiler = true)),
+                    files =
+                        listOf(MediaCell("site/g/1/file/0", "/g/", spoiler = true, details = "WEBM 1920x1080 2 MB")),
                     onOpenFile = { opens++ },
                     fileTile = { _, modifier ->
                         SideEffect { compositions++ }
@@ -94,6 +95,7 @@ class ReaderThreadControlsTest {
         val tile = composeRule.onNodeWithTag(ThreadTags.FILE)
         assertEquals("Reveal spoiler", tile.fetchSemanticsNode().config[SemanticsActions.OnClick].label)
         composeRule.onNodeWithTag("semantic-file-preview", true).assertDoesNotExist()
+        composeRule.onNodeWithText("WEBM 1920x1080 2 MB", useUnmergedTree = true).assertExists()
         composeRule.runOnIdle { assertEquals(0, compositions) }
         tile.performSemanticsAction(SemanticsActions.OnClick) { assertTrue(it()) }
         composeRule.waitForIdle()

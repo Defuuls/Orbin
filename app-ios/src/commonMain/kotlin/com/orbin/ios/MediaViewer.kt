@@ -10,14 +10,18 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,6 +29,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -52,14 +57,20 @@ import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
 import com.orbin.ios.resources.ios_media_loop_off
 import com.orbin.ios.resources.ios_media_loop_on
+import com.orbin.ios.resources.ios_media_more_options
+import com.orbin.ios.resources.ios_media_mute
 import com.orbin.ios.resources.ios_media_not_saved
 import com.orbin.ios.resources.ios_media_not_viewable
 import com.orbin.ios.resources.ios_media_open_in_browser
-import com.orbin.ios.resources.ios_media_position
 import com.orbin.ios.resources.ios_media_save
 import com.orbin.ios.resources.ios_media_saving
+import com.orbin.ios.resources.ios_media_spoiler
 import com.orbin.ios.resources.ios_media_spoiler_reveal
-import com.orbin.uinext.NextIconAction
+import com.orbin.ios.resources.ios_media_unmute
+import com.orbin.uinext.ReaderMediaAction
+import com.orbin.uinext.ReaderMediaBack
+import com.orbin.uinext.ReaderMediaTitle
+import com.orbin.uinext.ReaderMediaToolbar
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.exp
 
@@ -67,6 +78,8 @@ internal object MediaViewerTags {
     const val PAGER = "ios-media-viewer-pager"
     const val ACTIVE_PAGE = "ios-media-viewer-active-page"
     const val PLAYER = "ios-media-viewer-player"
+    const val PREVIEW = "ios-media-viewer-preview"
+    const val EXTERNAL = "ios-media-viewer-external"
 }
 
 /**
@@ -110,6 +123,16 @@ internal fun MediaViewer(
             PencilGesture.SQUEEZE -> pencilMenu = true
         }
     }
+    val current = files[selection.index]
+    var muted by remember(playback.startMuted) { mutableStateOf(playback.startMuted && SessionAudio.muted) }
+    val loopOverrides = remember { mutableStateMapOf<String, Boolean>() }
+    val revealedFiles = remember { mutableStateMapOf<String, Boolean>() }
+    val currentRevealKey = "${selection.key}:${current.isSpoiler}"
+    val currentRevealed = revealedFiles[currentRevealKey] ?: !current.isSpoiler
+    val currentLoop = loopOverrides[selection.key] ?: playback.loopVideos
+    val currentPlayable = current.playsInApp || (current.isWebM && supportsWebM)
+    val uriHandler = LocalUriHandler.current
+    var moreMenu by remember(selection.key) { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         NativeMediaPreloadHost(preloader)
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
@@ -134,28 +157,86 @@ internal fun MediaViewer(
                         },
                     ),
             ) {
-                MediaPage(file, active = active, playback = playback, preloader = preloader)
+                val fileKey = selection.keys[page]
+                val revealKey = "$fileKey:${file.isSpoiler}"
+                MediaPage(
+                    file,
+                    active = active,
+                    playback = playback,
+                    preloader = preloader,
+                    revealed = revealedFiles[revealKey] ?: !file.isSpoiler,
+                    onReveal = { revealedFiles[revealKey] = true },
+                    looping = loopOverrides[fileKey] ?: playback.loopVideos,
+                    muted = muted,
+                    onMuteChange = { muted = it },
+                )
             }
         }
-        val current = files[selection.index]
-        Row(
-            modifier = Modifier.fillMaxWidth().safeDrawingPadding().padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = stringResource(Res.string.ios_media_position, selection.index + 1, files.size),
-                color = Color.White,
-                modifier = Modifier.padding(start = 8.dp),
+        ReaderMediaToolbar {
+            ReaderMediaBack(stringResource(Res.string.ios_media_close), close)
+            ReaderMediaTitle(
+                filename =
+                    if (currentRevealed) {
+                        current.originalFileName
+                    } else {
+                        stringResource(
+                            Res.string.ios_media_spoiler,
+                        )
+                    },
+                position = "${selection.index + 1}/${files.size}",
+                modifier = Modifier.weight(1f),
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                SaveButton(current, onSave)
-                NextIconAction(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = stringResource(Res.string.ios_media_close),
-                    onClick = close,
-                    tint = Color.White,
+            if (currentPlayable && currentRevealed) {
+                ReaderMediaAction(
+                    imageVector =
+                        if (muted) {
+                            Icons.AutoMirrored.Filled.VolumeOff
+                        } else {
+                            Icons.AutoMirrored.Filled.VolumeUp
+                        },
+                    label = stringResource(if (muted) Res.string.ios_media_unmute else Res.string.ios_media_mute),
+                    onClick = { muted = SessionAudio.toggle(muted) },
                 )
+            }
+            SaveButton(current, onSave)
+            Box {
+                ReaderMediaAction(
+                    imageVector = Icons.Filled.MoreVert,
+                    label = stringResource(Res.string.ios_media_more_options),
+                    onClick = { moreMenu = true },
+                    overflow = true,
+                )
+                DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                    val external = safeExternalLink(current.sourceUrl)
+                    if (external != null) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.ios_media_open_in_browser)) },
+                            onClick = {
+                                moreMenu = false
+                                uriHandler.openUri(external)
+                            },
+                        )
+                    }
+                    if (currentPlayable && currentRevealed) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (currentLoop) {
+                                            Res.string.ios_media_loop_on
+                                        } else {
+                                            Res.string.ios_media_loop_off
+                                        },
+                                    ),
+                                )
+                            },
+                            onClick = {
+                                moreMenu = false
+                                loopOverrides[selection.key] = !currentLoop
+                            },
+                        )
+                    }
+                }
             }
         }
         PencilMenu(
@@ -181,19 +262,19 @@ private fun SaveButton(
     onSave: (MediaAttachment) -> Boolean,
 ) {
     var result by remember(file.id, file.sourceUrl) { mutableStateOf<Boolean?>(null) }
-    TextButton(onClick = { result = onSave(file) }, enabled = result == null) {
-        Text(
-            text =
-                stringResource(
-                    when (result) {
-                        null -> Res.string.ios_media_save
-                        true -> Res.string.ios_media_saving
-                        false -> Res.string.ios_media_not_saved
-                    },
-                ),
-            color = Color.White,
-        )
-    }
+    ReaderMediaAction(
+        imageVector = Icons.Filled.FileDownload,
+        label =
+            stringResource(
+                when (result) {
+                    null -> Res.string.ios_media_save
+                    true -> Res.string.ios_media_saving
+                    false -> Res.string.ios_media_not_saved
+                },
+            ),
+        onClick = { result = onSave(file) },
+        enabled = result == null,
+    )
 }
 
 @Composable
@@ -202,72 +283,67 @@ private fun MediaPage(
     active: Boolean,
     playback: PlaybackSettings,
     preloader: NativeMediaPreloader,
+    revealed: Boolean,
+    onReveal: () -> Unit,
+    looping: Boolean,
+    muted: Boolean,
+    onMuteChange: (Boolean) -> Unit,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
-    var revealed by remember(file.id, file.sourceUrl, file.isSpoiler) { mutableStateOf(!file.isSpoiler) }
-    var looping by remember(file.id, file.sourceUrl, playback.loopVideos) { mutableStateOf(playback.loopVideos) }
     if (!revealed) {
         SpoilerCover(
-            modifier = Modifier.clickable { revealed = true },
+            modifier = Modifier.clickable(onClick = onReveal),
             text = stringResource(Res.string.ios_media_spoiler_reveal),
         )
         return
     }
     when {
         file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file, active)
-        // Below the top bar, so the player's own controls never sit under the close button.
         // Only the visible page owns a native player; pager neighbours need no decoder.
-        playable != null && active ->
-            Box(Modifier.fillMaxSize()) {
-                NativePlayer(
-                    url = playable,
-                    active = active,
-                    loop = looping,
-                    autoPlay = playback.autoplay,
-                    initiallyMuted = playback.startMuted && SessionAudio.muted,
-                    preloader = preloader,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .safeDrawingPadding()
-                            .padding(top = PLAYER_TOP_INSET)
-                            .testTag(MediaViewerTags.PLAYER),
-                )
-                TextButton(
-                    onClick = { looping = !looping },
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .safeDrawingPadding()
-                            .padding(top = PLAYER_TOP_INSET, start = 8.dp),
-                ) {
-                    Text(
-                        stringResource(
-                            if (looping) Res.string.ios_media_loop_on else Res.string.ios_media_loop_off,
-                        ),
-                        color = Color.White,
-                    )
-                }
-            }
-        webm != null && supportsWebM && active ->
+        playable != null && !active -> MediaPoster(file)
+        webm != null && supportsWebM && !active -> MediaPoster(file)
+        playable != null ->
+            NativePlayer(
+                url = playable,
+                active = active,
+                loop = looping,
+                autoPlay = playback.autoplay,
+                initiallyMuted = muted,
+                onMuteIntentChange = onMuteChange,
+                preloader = preloader,
+                modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
+            )
+        webm != null && supportsWebM ->
             NativeWebMPlayer(
                 url = webm,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .safeDrawingPadding()
-                        .padding(top = PLAYER_TOP_INSET)
-                        .testTag(MediaViewerTags.PLAYER),
+                modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
                 active = active,
                 autoPlay = playback.autoplay,
-                initiallyMuted = playback.startMuted && SessionAudio.muted,
+                initiallyMuted = muted,
+                onMuteIntentChange = onMuteChange,
                 loop = looping,
                 preloader = preloader,
             )
         else -> ExternalFile(file)
+    }
+}
+
+/** An inactive supported clip is a preview, never an unsupported-format browser fallback. */
+@Composable
+private fun MediaPoster(file: MediaAttachment) {
+    val preview = remember(file.thumbnailUrl) { safeExternalLink(file.thumbnailUrl) }
+    Box(Modifier.fillMaxSize().testTag(MediaViewerTags.PREVIEW), contentAlignment = Alignment.Center) {
+        if (preview != null) {
+            AsyncImage(
+                model = preview,
+                contentDescription = file.originalFileName,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -347,7 +423,7 @@ private fun ExternalFile(file: MediaAttachment) {
     val uriHandler = LocalUriHandler.current
     val link = remember(file) { safeExternalLink(file.sourceUrl) }
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp).testTag(MediaViewerTags.EXTERNAL),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -387,5 +463,4 @@ internal fun zoomedOffset(
 }
 
 private const val MAX_SCALE = 5f
-private val PLAYER_TOP_INSET = 48.dp
 private const val DOUBLE_TAP_SCALE = 2.5f

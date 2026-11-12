@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -80,10 +81,9 @@ class OnboardingViewModel
         private val followedBoards: StateFlow<Map<ProviderId, Set<BoardId>>> =
             combine(
                 providers.map { provider ->
-                    combine(
-                        boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
-                        boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id),
-                    ) { followed, favorite -> provider.metadata.id to (followed + favorite) }
+                    boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id).map { subscribed ->
+                        provider.metadata.id to subscribed
+                    }
                 },
             ) { it.toMap() }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
@@ -163,7 +163,6 @@ class OnboardingViewModel
                 try {
                     writes.withLock {
                         boardPreferencesRepository.setSubscribedBoard(provider, BoardId(boardId), subscribed)
-                        if (!subscribed) boardPreferencesRepository.setFavoriteBoard(provider, BoardId(boardId), false)
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
@@ -195,9 +194,7 @@ class OnboardingViewModel
                         val persisted =
                             providers.associate { provider ->
                                 val id = provider.metadata.id
-                                val followed =
-                                    boardPreferencesRepository.observeSubscribedBoards(id).first() +
-                                        boardPreferencesRepository.observeFavoriteBoards(id).first()
+                                val followed = boardPreferencesRepository.observeSubscribedBoards(id).first()
                                 id to followed.intersect(eligibleBoards.value[id].orEmpty())
                             }
                         val active =

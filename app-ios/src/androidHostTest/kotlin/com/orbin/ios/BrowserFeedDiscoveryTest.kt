@@ -17,10 +17,10 @@ import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
-/** Directory retry and cancellation use the real provider adapters, independent of catalog paging. */
+/** Subscribed Home directory retry and cancellation use the real provider adapters. */
 class BrowserFeedDiscoveryTest {
     @Test
-    fun retryRefreshesAnInitiallyUnavailableDirectoryAndStartsDiscovery() =
+    fun retryRefreshesAnInitiallyUnavailableDirectoryAndLoadsSubscribedHome() =
         runTest {
             var available = false
             var directoryRequests = 0
@@ -151,7 +151,11 @@ class BrowserFeedDiscoveryTest {
 
     private fun followedPreferences() =
         FakeBoardPreferences().apply {
-            subscribed.value = mapOf(ProviderId("fourchan") to setOf(BoardId("g")))
+            subscribed.value =
+                mapOf(
+                    ProviderId("fourchan") to setOf(BoardId("g")),
+                    ProviderId("bbwchan") to setOf(BoardId("b")),
+                )
         }
 
     companion object {

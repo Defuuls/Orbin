@@ -30,6 +30,9 @@ import platform.AVFAudio.AVAudioSessionCategoryAmbient
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
+import platform.AVFoundation.AVPlayerItemStatusReadyToPlay
+import platform.AVFoundation.AVPlayerItemStatusUnknown
+import platform.AVFoundation.AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
 import platform.AVFoundation.asset
 import platform.AVFoundation.cancelLoading
 import platform.AVFoundation.currentItem
@@ -41,6 +44,8 @@ import platform.AVFoundation.play
 import platform.AVFoundation.rate
 import platform.AVFoundation.replaceCurrentItemWithPlayerItem
 import platform.AVFoundation.seekToTime
+import platform.AVFoundation.status
+import platform.AVFoundation.timeControlStatus
 import platform.AVKit.AVPlayerViewController
 import platform.CoreGraphics.CGRectMake
 import platform.CoreMedia.CMTime
@@ -101,7 +106,8 @@ internal actual fun NativePlayer(
             )
         }
     var playRequested by remember(player) { mutableStateOf(active && autoPlay) }
-    var state by remember(player) { mutableStateOf(VideoState()) }
+    var state by remember(player) { mutableStateOf(VideoState(loading = active && autoPlay)) }
+    val duration = remember(player) { ReadyMediaDuration() }
     DisposableEffect(player) {
         val center = NSNotificationCenter.defaultCenter
         val observer =
@@ -164,8 +170,8 @@ internal actual fun NativePlayer(
     }
     LaunchedEffect(player, active, playRequested, foreground.value) {
         if (active && playRequested && foreground.value) {
-            val duration = player.currentItem?.let { seconds(it.duration) } ?: 0.0
-            if (duration > 0.0 && seconds(player.currentTime()) >= duration - 0.1) {
+            val knownDuration = state.duration
+            if (knownDuration > 0.0 && seconds(player.currentTime()) >= knownDuration - 0.1) {
                 player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
             }
             player.play()
@@ -182,11 +188,20 @@ internal actual fun NativePlayer(
                 reported = true
                 NSLog("OrbinVideo AVPlayer failed: %@ %ld", it.domain, it.code)
             }
+            val item = player.currentItem
+            val ready = item?.status == AVPlayerItemStatusReadyToPlay
             state =
                 VideoState(
                     playing = player.rate > 0f,
                     position = seconds(player.currentTime()),
-                    duration = player.currentItem?.let { seconds(it.duration) } ?: 0.0,
+                    duration = duration.read(ready) { item?.let { seconds(it.duration) } ?: 0.0 },
+                    loading =
+                        playRequested &&
+                            (
+                                item == null ||
+                                    item.status == AVPlayerItemStatusUnknown ||
+                                    player.timeControlStatus == AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
+                            ),
                 )
             delay(CONTROLS_REFRESH_MS)
         }
@@ -222,7 +237,7 @@ internal actual fun NativePlayer(
             properties = PASS_THROUGH,
         )
         val togglePlay: () -> Unit = {
-            playRequested = if (feedMode) !playRequested else player.rate <= 0f
+            playRequested = if (feedMode || state.loading) !playRequested else player.rate <= 0f
             if (!playRequested) {
                 player.pause()
             } else {
@@ -254,7 +269,6 @@ internal actual fun NativePlayer(
             VideoControls(
                 state = state.copy(muted = muted),
                 onTogglePlay = togglePlay,
-                onToggleMute = toggleMute,
                 onSeekTo = { target ->
                     player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
                 },
@@ -369,7 +383,7 @@ internal actual fun NativeWebMPlayer(
                 loadHTMLString(string = html, baseURL = null)
             }
         }
-    var state by remember(webView) { mutableStateOf(VideoState()) }
+    var state by remember(webView) { mutableStateOf(VideoState(loading = active && autoPlay)) }
     LaunchedEffect(webView, active, muted) {
         if (active) {
             val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
@@ -385,7 +399,7 @@ internal actual fun NativeWebMPlayer(
     LaunchedEffect(webView, playCommand, muted, loop) {
         val sent = request()
         webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
-            if (playCommand == sent.command) state = it
+            if (playCommand == sent.command) state = it.copy(loading = sent.play && !it.playing && !it.atEnd)
         }
     }
     LaunchedEffect(webView) {
@@ -393,7 +407,7 @@ internal actual fun NativeWebMPlayer(
             val sent = request()
             webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
                 if (playCommand == sent.command) {
-                    state = it
+                    state = it.copy(loading = sent.play && !it.playing && !it.atEnd)
                     val completedFeedClip = feedMode && !currentLoop && it.atEnd
                     if (completedFeedClip && playRequested) {
                         playRequested = false
@@ -472,9 +486,9 @@ internal actual fun NativeWebMPlayer(
             )
         }
         val togglePlay: () -> Unit = {
-            playRequested = if (feedMode) !playRequested else !state.playing
+            playRequested = if (feedMode || state.loading) !playRequested else !state.playing
             playCommand++
-            state = state.copy(playing = playRequested)
+            state = state.copy(playing = playRequested, loading = playRequested && state.duration <= 0.0)
             webView.evaluateJavaScript(
                 webMPlaybackScript(
                     WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
@@ -496,7 +510,6 @@ internal actual fun NativeWebMPlayer(
         } else {
             VideoControls(
                 state = state.copy(muted = muted),
-                onToggleMute = toggleMute,
                 onTogglePlay = togglePlay,
                 onSeekTo = { target ->
                     webView.evaluateJavaScript("document.getElementById('v').currentTime=$target", null)

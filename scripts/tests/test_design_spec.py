@@ -21,8 +21,8 @@ CODE_TOKENS = (
 )
 
 THEMES = ("Light", "Dark", "AMOLED")
-TOKEN_REF = re.compile(r"\b(?:color|type|space|size|radius)\.[A-Za-z][A-Za-z0-9]*\b")
-HEX = re.compile(r"#[0-9A-Fa-f]{6}\b")
+TOKEN_REF = re.compile(r"\b(?:color|type|space|size|radius|ratio)\.[A-Za-z][A-Za-z0-9]*\b")
+HEX = re.compile(r"#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})\b")
 SVG_NS = "{http://www.w3.org/2000/svg}"
 # Words that only a posting control would carry. Orbin is read-only.
 POSTING_WORDS = re.compile(r"\b(post a reply|post reply|write a reply|quick reply|compose|sage|new thread)\b", re.IGNORECASE)
@@ -39,7 +39,10 @@ def parse_tables(markdown: str) -> list[tuple[list[str], list[list[str]]]]:
             rows = []
             index += 2
             while index < len(lines) and lines[index].startswith("|"):
-                rows.append(_cells(lines[index]))
+                row = _cells(lines[index])
+                if len(row) != len(headers):
+                    raise ValueError(f"table row has {len(row)} cells for {len(headers)} headers: {lines[index]}")
+                rows.append(row)
                 index += 1
             tables.append((headers, rows))
         else:
@@ -59,14 +62,39 @@ def number(value: str) -> float:
     return float(match.group(1))
 
 
-def relative_luminance(hex_color: str) -> float:
-    channels = [int(hex_color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+def color_components(hex_color: str) -> tuple[tuple[float, float, float], float]:
+    """Read opaque #RRGGBB or Android #AARRGGBB, without losing its alpha."""
+    if not re.fullmatch(r"#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})", hex_color):
+        raise ValueError(f"not an RGB/ARGB color: {hex_color!r}")
+    alpha = int(hex_color[1:3], 16) / 255 if len(hex_color) == 9 else 1.0
+    offset = 3 if len(hex_color) == 9 else 1
+    channels = tuple(int(hex_color[i : i + 2], 16) / 255 for i in range(offset, offset + 6, 2))
+    return channels, alpha
+
+
+def composite_color(hex_color: str, background: tuple[float, float, float]) -> tuple[float, float, float]:
+    channels, alpha = color_components(hex_color)
+    return tuple(channel * alpha + ground * (1 - alpha) for channel, ground in zip(channels, background))
+
+
+def relative_luminance(color: str | tuple[float, float, float]) -> float:
+    if isinstance(color, str):
+        channels, alpha = color_components(color)
+        if alpha != 1:
+            raise ValueError("a translucent color needs its actual background before luminance can be measured")
+    else:
+        channels = color
     linear = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
     return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
 
 
-def contrast_ratio(first: str, second: str) -> float:
-    lighter, darker = sorted((relative_luminance(first), relative_luminance(second)), reverse=True)
+def contrast_ratio(foreground: str, background: str) -> float:
+    """Measure the drawn foreground after source-over compositing onto its stated ground."""
+    ground, alpha = color_components(background)
+    if alpha != 1:
+        raise ValueError("a translucent contrast background needs an explicit underlying ground")
+    drawn = composite_color(foreground, ground)
+    lighter, darker = sorted((relative_luminance(drawn), relative_luminance(ground)), reverse=True)
     return (lighter + 0.05) / (darker + 0.05)
 
 
@@ -90,9 +118,9 @@ class Spec:
         rows = self.one(["Token", "Light", "Dark", "AMOLED", "Use"])
         return {row[0]: dict(zip(THEMES, row[1:4])) for row in rows}
 
-    def types(self) -> dict[str, tuple[float, float, int]]:
+    def types(self) -> dict[str, tuple[float, float | None, int]]:
         rows = self.one(["Token", "Size", "Line height", "Weight", "Use"])
-        return {row[0]: (number(row[1]), number(row[2]), int(row[3])) for row in rows}
+        return {row[0]: (number(row[1]), None if row[2] == "natural" else number(row[2]), int(row[3])) for row in rows}
 
     def measures(self) -> dict[str, float]:
         values: dict[str, float] = {}
@@ -117,8 +145,9 @@ def parse_code_tokens(kotlin: str) -> dict[str, str]:
     themes: dict[str, dict[str, str]] = {}
     values: dict[str, str] = {}
     scope = None
-    for line in kotlin.splitlines():
-        opened = re.match(r"(?:val (Reader(?:Light|Dark|Amoled)Colors) =|object (Reader(?:Type|Space|Size|Radius)) \{)", line)
+    lines = iter(kotlin.splitlines())
+    for line in lines:
+        opened = re.match(r"(?:val (Reader(?:Light|Dark|Amoled)Colors) =|object (Reader(?:Type|Space|Size|Radius|Ratio)) \{)", line)
         if opened:
             scope = opened.group(1) or opened.group(2)
             continue
@@ -127,15 +156,64 @@ def parse_code_tokens(kotlin: str) -> dict[str, str]:
             continue
         if scope is None:
             continue
-        color = re.fullmatch(r"\s+(\w+) = Color\(0xFF([0-9A-F]{6})\),", line)
-        style = re.fullmatch(r"\s+val (\w+): TextStyle = readerType\((\d+), (\d+), (\d+)\)", line)
-        measure = re.fullmatch(r"\s+val (\w+): Dp = (\d+)\.dp", line)
+        color = re.fullmatch(r"\s+(\w+) = Color\(0x([0-9A-F]{8})\),", line)
         if scope.endswith("Colors") and color:
-            themes.setdefault(color.group(1), {})[scope] = f"#{color.group(2)}"
-        elif scope == "ReaderType" and style:
-            values[f"type.{style.group(1)}"] = f"{style.group(2)}sp/{style.group(3)}sp/{style.group(4)}"
-        elif scope in ("ReaderSpace", "ReaderSize", "ReaderRadius") and measure:
-            values[f"{scope[len('Reader'):].lower()}.{measure.group(1)}"] = f"{measure.group(2)}dp"
+            argb = color.group(2)
+            themes.setdefault(color.group(1), {})[scope] = f"#{argb[2:] if argb.startswith('FF') else argb}"
+        elif line.strip().startswith("val "):
+            # A natural TextStyle may span lines; consume its balanced expression as one token.
+            declaration = line.strip()
+            while declaration.endswith("=") or declaration.count("(") > declaration.count(")"):
+                try:
+                    declaration += " " + next(lines).strip()
+                except StopIteration as error:
+                    raise ValueError(f"unterminated token: {declaration}") from error
+            match = re.fullmatch(r"val (\w+): (TextStyle|Dp|Float)( get\(\))? = (.+)", declaration)
+            if match is None:
+                raise ValueError(f"unreadable token line in {scope}: {declaration}")
+            name, kind, accessor, expression = match.groups()
+            if accessor and (scope != "ReaderRatio" or kind != "Float"):
+                raise ValueError(f"unexpected token accessor in {scope}: {declaration}")
+            namespace = scope[len("Reader"):].lower()
+            key = f"{namespace}.{name}"
+            if key in values:
+                raise ValueError(f"duplicate token: {key}")
+            if scope == "ReaderType" and kind == "TextStyle":
+                fixed = re.fullmatch(r"readerType\((\d+), (\d+), (\d+)\)", expression)
+                natural = re.fullmatch(r"TextStyle\((.*)\)", expression)
+                if fixed:
+                    size, height, weight = fixed.groups()
+                    values[key] = f"{size}sp/{height}sp/{weight}"
+                elif natural:
+                    fields = {}
+                    for field in natural.group(1).split(","):
+                        if field.strip():
+                            field_name, separator, value = field.strip().partition(" = ")
+                            if not separator or field_name in fields:
+                                raise ValueError(f"unreadable natural style: {declaration}")
+                            fields[field_name] = value
+                    size = re.fullmatch(r"(\d+)\.sp", fields.get("fontSize", ""))
+                    weight = {"FontWeight.Normal": "400", "FontWeight.Medium": "500", "FontWeight.Bold": "700"}.get(
+                        fields.get("fontWeight")
+                    )
+                    if set(fields) != {"fontFamily", "fontSize", "fontWeight"} or fields.get("fontFamily") != "FontFamily.Default" or not size or not weight:
+                        raise ValueError(f"unreadable natural style: {declaration}")
+                    values[key] = f"{size.group(1)}sp/natural/{weight}"
+                else:
+                    raise ValueError(f"unreadable style: {declaration}")
+            elif scope in ("ReaderSpace", "ReaderSize", "ReaderRadius") and kind == "Dp":
+                measure = re.fullmatch(r"(\d+)\.dp", expression)
+                if measure is None:
+                    raise ValueError(f"unreadable dimension: {declaration}")
+                values[key] = f"{measure.group(1)}dp"
+            elif scope == "ReaderRatio" and kind == "Float":
+                ratio = re.fullmatch(r"(\d+(?:\.\d+)?)f(?: / (\d+(?:\.\d+)?)f)?", expression)
+                if ratio is None or (ratio.group(2) is not None and float(ratio.group(2)) == 0):
+                    raise ValueError(f"unreadable ratio: {declaration}")
+                value = float(ratio.group(1)) / (float(ratio.group(2)) if ratio.group(2) else 1)
+                values[key] = f"{value:.6f}".rstrip("0").rstrip(".")
+            else:
+                raise ValueError(f"unexpected token kind in {scope}: {declaration}")
         elif "=" in line and not line.lstrip().startswith(("/", "*")):
             raise ValueError(f"unreadable token line in {scope}: {line.strip()}")
     for name, by_theme in themes.items():
@@ -173,16 +251,55 @@ class CodeTokenTest(unittest.TestCase):
                 "object ReaderType {",
                 "    /** Body. */",
                 "    val body: TextStyle = readerType(15, 22, 400)",
+                "    val postBody: TextStyle = TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, fontWeight = FontWeight.Normal)",
+                "    val postDetails: TextStyle =",
+                "        TextStyle(",
+                "            fontFamily = FontFamily.Default,",
+                "            fontSize = 10.sp,",
+                "            fontWeight = FontWeight.Normal,",
+                "        )",
                 "}",
                 "object ReaderSize {",
                 "    val appBar: Dp = 56.dp",
+                "}",
+                "object ReaderRatio {",
+                "    val gridCard: Float = 9f / 18f",
+                "    val gridThumbnail: Float = 16f / 13f",
                 "}",
             ]
         )
         self.assertEqual(
             parse_code_tokens(sample),
-            {"type.body": "15sp/22sp/400", "size.appBar": "56dp", "color.ink": "#111111/#222222/#333333"},
+            {
+                "type.body": "15sp/22sp/400",
+                "type.postBody": "14sp/natural/400",
+                "type.postDetails": "10sp/natural/400",
+                "size.appBar": "56dp",
+                "ratio.gridCard": "0.5",
+                "ratio.gridThumbnail": "1.230769",
+                "color.ink": "#111111/#222222/#333333",
+            },
         )
+
+    def test_parser_preserves_translucent_argb_colors(self) -> None:
+        sample = "\n".join(
+            f"val Reader{theme}Colors =\n    ReaderColors(\n        ink = Color(0x{value}),\n    )"
+            for theme, value in (("Light", "DE000000"), ("Dark", "B2FFFFFF"), ("Amoled", "FFFFFFFF"))
+        )
+        self.assertEqual(parse_code_tokens(sample), {"color.ink": "#DE000000/#B2FFFFFF/#FFFFFF"})
+
+    def test_parser_rejects_dynamic_or_undefined_natural_styles_and_ratios(self) -> None:
+        bad_styles = (
+            "TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp)",
+            "TextStyle(fontFamily = FontFamily.Default, fontSize = POST_SIZE.sp, fontWeight = FontWeight.Normal)",
+            "TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal)",
+        )
+        for expression in bad_styles:
+            with self.assertRaises(ValueError, msg=expression):
+                parse_code_tokens(f"object ReaderType {{\n    val postBody: TextStyle = {expression}\n}}")
+        for expression in ("9f / 0f", "-1f", "WIDTH / HEIGHT", "0.5.toFloat()"):
+            with self.assertRaises(ValueError, msg=expression):
+                parse_code_tokens(f"object ReaderRatio {{\n    val gridCard: Float = {expression}\n}}")
 
     def test_parser_rejects_a_token_written_another_way(self) -> None:
         for bad in ("    val appBar = 56.dp", "    val appBar: Dp = 56.5.dp", "    val appBar: Dp = BAR"):
@@ -202,6 +319,23 @@ class ParserTest(unittest.TestCase):
         self.assertAlmostEqual(contrast_ratio("#FFFFFF", "#4CAF50"), 2.78, places=2)
         self.assertEqual(contrast_ratio("#123456", "#ABCDEF"), contrast_ratio("#ABCDEF", "#123456"))
 
+    def test_translucent_ink_is_composited_onto_its_actual_ground(self) -> None:
+        self.assertAlmostEqual(contrast_ratio("#80000000", "#FFFFFF"), contrast_ratio("#7F7F7F", "#FFFFFF"))
+        self.assertEqual(contrast_ratio("#00ABCDEF", "#232323"), 1.0)
+        self.assertAlmostEqual(contrast_ratio("#FFFFFFFF", "#000000"), 21.0)
+        white = color_components("#FFFFFF")[0]
+        selected = color_components("#444444")[0]
+        self.assertNotEqual(composite_color("#B2FFFFFF", white), composite_color("#B2FFFFFF", selected))
+        with self.assertRaises(ValueError):
+            relative_luminance("#B2FFFFFF")
+        with self.assertRaises(ValueError):
+            contrast_ratio("#FFFFFF", "#80000000")
+
+    def test_color_parser_rejects_invalid_or_css_shorthand_values(self) -> None:
+        for invalid in ("#FFF", "#12345", "#1234567", "#GG0000", "123456", "rgba(0,0,0,.5)"):
+            with self.assertRaises(ValueError, msg=invalid):
+                color_components(invalid)
+
     def test_number_rejects_values_that_are_not_dimensions(self) -> None:
         self.assertEqual(number("56dp"), 56.0)
         self.assertEqual(number("114.67dp"), 114.67)
@@ -212,6 +346,11 @@ class ParserTest(unittest.TestCase):
     def test_parse_tables_reads_headers_rows_and_backticks(self) -> None:
         tables = parse_tables("text\n\n| A | B |\n| --- | :-: |\n| `x.y` | 1dp |\n| z | 2dp |\n\nmore\n| not | a table |\n")
         self.assertEqual(tables, [(["A", "B"], [["x.y", "1dp"], ["z", "2dp"]])])
+
+    def test_parse_tables_rejects_rows_with_missing_or_extra_columns(self) -> None:
+        for row in ("| one |", "| one | two | three |"):
+            with self.assertRaises(ValueError, msg=row):
+                parse_tables("| A | B |\n| --- | --- |\n" + row)
 
 
 class TokenTest(unittest.TestCase):
@@ -229,21 +368,21 @@ class TokenTest(unittest.TestCase):
                 names += [row[0] for row in rows]
         self.assertEqual(len(names), len(set(names)), "a token is defined twice")
         for name in names:
-            self.assertRegex(name, r"^(color|type|space|size|radius)\.[a-z][A-Za-z0-9]*$")
+            self.assertRegex(name, r"^(color|type|space|size|radius|ratio)\.[a-z][A-Za-z0-9]*$")
         self.assertGreater(len(names), 40)
 
     def test_token_tables_hold_only_their_own_namespace(self) -> None:
         self.assertTrue(all(name.startswith("color.") for name in self.colors))
         self.assertTrue(all(name.startswith("type.") for name in self.types))
-        self.assertTrue(all(name.split(".")[0] in {"space", "size", "radius"} for name in self.m))
+        self.assertTrue(all(name.split(".")[0] in {"space", "size", "radius", "ratio"} for name in self.m))
 
-    def test_colors_are_six_digit_hex_in_every_theme(self) -> None:
+    def test_colors_are_rgb_or_argb_hex_in_every_theme(self) -> None:
         for name, themes in self.colors.items():
             for theme in THEMES:
-                self.assertRegex(themes[theme], r"^#[0-9A-F]{6}$", f"{name} {theme}")
+                self.assertRegex(themes[theme], r"^#(?:[0-9A-F]{6}|[0-9A-F]{8})$", f"{name} {theme}")
 
     def test_amoled_grounds_are_pure_black(self) -> None:
-        for name in ("color.appBar", "color.background"):
+        for name in ("color.appBar", "color.statusBar", "color.background"):
             self.assertEqual(self.colors[name]["AMOLED"], "#000000", name)
 
     def test_contrast_pairs_meet_their_minimum_in_every_theme(self) -> None:
@@ -260,7 +399,7 @@ class TokenTest(unittest.TestCase):
 
     def test_every_text_color_is_checked_against_the_main_ground(self) -> None:
         pairs = {(f, b) for f, b, _ in self.spec.one(["Foreground", "Background", "Minimum ratio"])}
-        grounds = {"color.appBar", "color.background", "color.surfaceVariant", "color.selected", "color.hairline"}
+        grounds = {"color.appBar", "color.statusBar", "color.background", "color.surfaceVariant", "color.selected", "color.hairline"}
         for name in self.colors:
             if name in grounds:
                 continue
@@ -268,11 +407,19 @@ class TokenTest(unittest.TestCase):
         for name in ("color.ink", "color.inkMuted"):
             for ground in ("color.background", "color.surfaceVariant", "color.selected"):
                 self.assertIn((name, ground), pairs)
+        for ground in ("color.background", "color.selected"):
+            self.assertIn(("color.subject", ground), pairs)
 
     def test_line_heights_and_weights_are_sane(self) -> None:
         for name, (size, line, weight) in self.types.items():
-            self.assertGreaterEqual(size, 12, f"{name} is smaller than 12sp")
-            self.assertGreaterEqual(line / size, 1.2, f"{name} line height is too tight")
+            if name == "type.postDetails":
+                self.assertEqual(size, 10, "Clover's verified phone post details use 10sp")
+            else:
+                self.assertGreaterEqual(size, 12, f"{name} is smaller than 12sp")
+            if line is None:
+                self.assertIn(name, {"type.postBody", "type.postBodyWide", "type.postDetails", "type.postDetailsWide"})
+            else:
+                self.assertGreaterEqual(line / size, 1.2, f"{name} line height is too tight")
             self.assertIn(weight, (400, 500, 700), name)
 
     def test_touch_targets(self) -> None:
@@ -284,6 +431,11 @@ class TokenTest(unittest.TestCase):
         self.assertGreaterEqual(m["size.pillMinWidth"], m["size.pillHeight"])
         self.assertEqual(m["radius.pill"] * 2, m["size.pillHeight"], "the pill is not fully rounded")
         self.assertGreaterEqual(m["size.cellMin"], m["size.touchTarget"])
+        self.assertGreaterEqual(m["size.appBarAction"], m["size.touchTarget"])
+        self.assertGreaterEqual(m["size.appBarNavigation"], m["size.touchTarget"])
+        # Clover's overflow is narrower, while retaining the full 56dp control height.
+        self.assertEqual(m["size.appBarOverflow"], 44)
+        self.assertGreaterEqual(m["size.appBarOverflow"], m["size.icon"])
 
 
 class LayoutTest(unittest.TestCase):
@@ -293,25 +445,39 @@ class LayoutTest(unittest.TestCase):
         cls.types = cls.spec.types()
         cls.m = cls.spec.measures()
 
-    def test_cell_minimum_is_thumbnail_plus_padding(self) -> None:
+    def test_legacy_shared_cell_minimum_is_thumbnail_plus_padding(self) -> None:
         m = self.m
         self.assertEqual(m["size.cellMin"], m["size.thumbnail"] + 2 * m["space.rowPadY"])
         self.assertEqual(m["size.cellMinWide"], m["size.thumbnailWide"] + 2 * m["space.rowPadY"])
-        self.assertEqual(m["space.rowPadY"], m["space.postPadY"], "a row and a post share one cell")
+        self.assertEqual(m["space.rowPadY"], m["space.postPadY"], "legacy shared cells retain matching vertical padding")
         self.assertGreater(m["size.thumbnailWide"], m["size.thumbnail"])
 
-    def test_single_line_row_text_fits_beside_the_thumbnail(self) -> None:
+    def test_legacy_fixed_height_text_fits_beside_the_thumbnail(self) -> None:
         text_height = (
             self.types["type.rowTitle"][1] + self.m["space.line"] + self.types["type.meta"][1]
             + self.m["space.line"] + self.types["type.preview"][1]
         )
         self.assertLessEqual(text_height, self.m["size.thumbnail"])
 
+    def test_compact_post_metrics_match_the_verified_phone_and_tablet_defaults(self) -> None:
+        for suffix, expected_size in (("", 14), ("Wide", 16)):
+            body = self.types[f"type.postBody{suffix}"]
+            details = self.types[f"type.postDetails{suffix}"]
+            inset = self.m[f"space.postInset{suffix}"]
+            self.assertEqual(body, (expected_size, None, 400))
+            self.assertEqual(details, (expected_size - 4, None, 400))
+            self.assertEqual(inset, expected_size - 6)
+        self.assertEqual(self.m["size.thumbnail"], 72)
+        self.assertEqual(self.m["size.thumbnailWide"], 100)
+        self.assertEqual(self.m["size.hairline"], 1)
+        self.assertEqual(self.m["size.threadStatus"], 88)
+
     def test_row_budgets_add_up_and_quote_their_tokens(self) -> None:
         budgets = self.spec.find(["Part", "Token", "Width"])
         self.assertEqual(len(budgets), 2)
         catalog_pane_at_960 = self._pane_row(960)[0]
-        for rows, total in zip(budgets, (360, catalog_pane_at_960)):
+        for rows, total, suffix in zip(budgets, (360, catalog_pane_at_960), ("", "Wide")):
+            self.assertEqual(len(rows), 4, "compact rows reserve only the image, two text insets and the text column")
             self.assertEqual(sum(number(row[2]) for row in rows), total)
             remainders = [row for row in rows if row[1] == "remainder"]
             self.assertEqual(len(remainders), 1)
@@ -319,8 +485,8 @@ class LayoutTest(unittest.TestCase):
             for part, token, width in rows:
                 if token != "remainder":
                     self.assertEqual(number(width), self.m[token], f"{part} does not match {token}")
-        self.assertEqual(budgets[0][1][1], "size.thumbnail")
-        self.assertEqual(budgets[1][1][1], "size.thumbnailWide")
+            self.assertEqual([row[1] for row in rows], [f"size.thumbnail{suffix}", f"space.postInset{suffix}", "remainder", f"space.postInset{suffix}"])
+            self.assertEqual(number(remainders[0][2]), total - self.m[f"size.thumbnail{suffix}"] - 2 * self.m[f"space.postInset{suffix}"])
 
     def _pane_row(self, window: int) -> tuple[float, float, float]:
         for row in self.spec.one(["Window width", "Catalog pane", "Divider", "Thread pane"]):
@@ -350,7 +516,19 @@ class LayoutTest(unittest.TestCase):
         m = self.m
         self.assertLess(m["size.wideMin"], m["size.twoPaneMinWidth"])
         self.assertLess(m["size.listPaneMax"], m["size.twoPaneMinWidth"] / 2 + 100)
-        self.assertLessEqual(m["size.drawerMax"], 360 - m["size.appBar"] + 16)
+        self.assertEqual(m["size.drawerMax"], 336)
+        for window in (360, 411, 960):
+            width = min(window - m["size.appBar"], m["size.drawerMax"])
+            self.assertGreater(width, 0)
+            self.assertLessEqual(width, window - m["size.appBar"])
+        self.assertEqual(min(360 - m["size.appBar"], m["size.drawerMax"]), 304)
+        self.assertEqual(min(411 - m["size.appBar"], m["size.drawerMax"]), 336)
+
+    def test_toolbar_uses_the_verified_control_widths(self) -> None:
+        self.assertEqual(
+            tuple(self.m[f"size.{name}"] for name in ("appBar", "appBarNavigation", "appBarAction", "appBarOverflow")),
+            (56, 56, 50, 44),
+        )
 
     def test_grid_examples_follow_the_rule(self) -> None:
         m = self.m
@@ -360,13 +538,44 @@ class LayoutTest(unittest.TestCase):
             width = number(pane)
             expected_columns = max(1, int(width // m["size.gridCardMin"]))
             self.assertEqual(int(columns), expected_columns, f"columns at {pane}")
-            expected_card = (width - (expected_columns + 1) * m["space.gridGap"]) / expected_columns
+            expected_card = (width - 2 * m["space.gridOuter"] - (expected_columns - 1) * m["space.gridGap"]) / expected_columns
             self.assertAlmostEqual(number(card), expected_card, places=2, msg=f"card width at {pane}")
 
-    def test_grid_card_text_block_fits_its_content(self) -> None:
+    def test_legacy_grid_card_text_helper_retains_its_fixed_height_budget(self) -> None:
         m, types = self.m, self.types
         content = 2 * m["space.cardPad"] + 2 * types["type.cardTitle"][1] + m["space.line"] + types["type.meta"][1]
         self.assertEqual(m["size.gridCardText"], content)
+
+    def test_active_grid_cards_use_clovers_two_ratios_and_elevation(self) -> None:
+        m = self.m
+        self.assertEqual(m["ratio.gridCard"], 9 / 18)
+        self.assertAlmostEqual(m["ratio.gridThumbnail"], 16 / 13, places=6)
+        self.assertEqual(m["space.gridOuter"], 2)
+        self.assertEqual(m["space.gridGap"], 4)
+        self.assertEqual(m["radius.card"], 2)
+        self.assertEqual(m["size.cardElevation"], 2)
+        for _, _, card in self.spec.one(["Pane width", "Columns", "Card width"]):
+            width = number(card)
+            height = width / m["ratio.gridCard"]
+            image_height = width / m["ratio.gridThumbnail"]
+            self.assertAlmostEqual(height, width * 2, places=4)
+            self.assertAlmostEqual(image_height, width * 13 / 16, places=4)
+            self.assertAlmostEqual(height - image_height, width * 19 / 16, places=4)
+            self.assertGreater(height - image_height, 2 * m["space.cardPad"])
+
+    def test_album_cells_have_one_dp_margins_and_the_32dp_metadata_strip(self) -> None:
+        m = self.m
+        self.assertEqual(m["space.albumPadding"], 1)
+        self.assertEqual(m["space.albumCellMargin"], 1)
+        self.assertEqual(m["size.albumDetails"], 32)
+        for pane in (360, 411, 600):
+            columns = max(1, int(pane // m["size.gridCardMin"]))
+            cell = (pane - 2 * m["space.albumPadding"] - 2 * columns * m["space.albumCellMargin"]) / columns
+            outside = m["space.albumPadding"] + m["space.albumCellMargin"]
+            gap = 2 * m["space.albumCellMargin"]
+            self.assertAlmostEqual(columns * cell + (columns - 1) * gap + 2 * outside, pane)
+            self.assertGreater(cell, m["size.touchTarget"])
+            self.assertAlmostEqual(cell + m["size.albumDetails"] - cell, 32)
 
 
 class ReferenceTest(unittest.TestCase):
@@ -442,6 +651,13 @@ class DiagramTest(unittest.TestCase):
         for path in self.svgs:
             used = {value.upper() for value in HEX.findall(path.read_text(encoding="utf-8"))}
             self.assertEqual(sorted(used - self.palette), [], f"{path.name} uses colors that are not tokens")
+
+    def test_diagrams_do_not_treat_android_argb_as_css_rgba(self) -> None:
+        # SVG/CSS eight-digit hex means RRGGBBAA, unlike the token tables' AARRGGBB.
+        # The companion diagrams use a token's RGB base with fill/stroke opacity instead.
+        css_argb = re.compile(r"\b(?:fill|stroke|color)\s*(?:=|:)\s*[\"']?#[0-9A-Fa-f]{8}\b")
+        for path in self.svgs:
+            self.assertIsNone(css_argb.search(path.read_text(encoding="utf-8")), path.name)
 
     def test_diagrams_carry_a_dark_variant(self) -> None:
         for path in self.svgs:

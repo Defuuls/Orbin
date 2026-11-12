@@ -205,10 +205,10 @@ class BoardReaderFrameTest {
         composeRule.onNodeWithContentDescription("Menu").performClick()
         composeRule.waitUntil(timeoutMillis = 1_000) {
             val bounds = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).getUnclippedBoundsInRoot()
-            kotlin.math.abs(bounds.left.value) <= 0.5f && kotlin.math.abs(bounds.right.value - 320f) <= 0.5f
+            kotlin.math.abs(bounds.left.value) <= 0.5f && kotlin.math.abs(bounds.right.value - 336f) <= 0.5f
         }
         val drawerBounds = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).getUnclippedBoundsInRoot()
-        assertEquals(320f, (drawerBounds.right - drawerBounds.left).value, 0.5f)
+        assertEquals(336f, (drawerBounds.right - drawerBounds.left).value, 0.5f)
 
         // A pointer tap on the detail hits the full-window modal scrim, not the thread underneath.
         composeRule.onRoot().performTouchInput { click(detailCenter) }
@@ -221,7 +221,7 @@ class BoardReaderFrameTest {
         composeRule.onNodeWithContentDescription("Menu").performClick()
         composeRule.waitUntil(timeoutMillis = 1_000) {
             val bounds = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).getUnclippedBoundsInRoot()
-            kotlin.math.abs(bounds.left.value) <= 0.5f && kotlin.math.abs(bounds.right.value - 320f) <= 0.5f
+            kotlin.math.abs(bounds.left.value) <= 0.5f && kotlin.math.abs(bounds.right.value - 336f) <= 0.5f
         }
         composeRule.runOnUiThread { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
         composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertIsNotDisplayed()

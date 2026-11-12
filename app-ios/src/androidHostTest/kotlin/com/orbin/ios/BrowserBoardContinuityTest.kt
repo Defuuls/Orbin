@@ -23,6 +23,38 @@ import kotlin.test.assertTrue
 /** Setup, the directory and Home share the same provider-qualified persisted follow membership. */
 class BrowserBoardContinuityTest {
     @Test
+    fun favoritesAloneNeverSelectSubscriptionsOrSkipMandatorySetup() =
+        runTest {
+            val favoriteBoards = mapOf(FOURCHAN to setOf(BOARD), BBWCHAN to setOf(BOARD))
+            val preferences = FakeBoardPreferences().apply { favorites.value = favoriteBoards }
+            val settings = FakeSettings().apply { settings.value = settings.value.copy(onboardingCompleted = true) }
+            val browser = browser(backgroundScope, preferences, settings)
+            val board = browser.board(FOURCHAN)
+            val setup = browser.firstRun.state.first { it.initialized }
+
+            assertTrue(setup.needed)
+            assertFalse(setup.canStart)
+            assertTrue(browser.followed.value.isEmpty())
+            assertEquals(favoriteBoards, preferences.favorites.value)
+            assertTrue(preferences.subscribed.value.isEmpty())
+            browser.completeFirstRun().join()
+            assertFalse(settings.settings.value.onboardingCompleted)
+
+            browser.setFollowed(board, true)
+            browser.firstRun.state.first { it.canStart }
+            browser.completeFirstRun().join()
+            assertTrue(settings.settings.value.onboardingCompleted)
+            assertEquals(setOf(FollowedBoard(FOURCHAN, BOARD)), browser.followed.first { it.isNotEmpty() })
+            assertEquals(favoriteBoards, preferences.favorites.value)
+            assertEquals(setOf(BOARD), preferences.subscribed.value[FOURCHAN])
+            assertTrue(
+                preferences.subscribed.value[BBWCHAN]
+                    .orEmpty()
+                    .isEmpty(),
+            )
+        }
+
+    @Test
     fun aSetupSubscriptionRemainsFollowedInBoardsAndAfterColdResume() =
         runTest {
             val preferences = FakeBoardPreferences()
@@ -54,7 +86,7 @@ class BrowserBoardContinuityTest {
         }
 
     @Test
-    fun unfollowRemovesTheChosenSourcesSubscriptionAndLegacyFavoriteOnly() =
+    fun unsubscribingOnlyRemovesTheChosenSourcesSubscriptionAndPreservesFavorites() =
         runTest {
             val preferences =
                 FakeBoardPreferences().apply {
@@ -76,11 +108,7 @@ class BrowserBoardContinuityTest {
                     .orEmpty()
                     .isEmpty(),
             )
-            assertTrue(
-                preferences.favorites.value[FOURCHAN]
-                    .orEmpty()
-                    .isEmpty(),
-            )
+            assertEquals(setOf(BOARD), preferences.favorites.value[FOURCHAN])
             assertEquals(setOf(BOARD), preferences.subscribed.value[BBWCHAN])
             assertEquals(setOf(BOARD), preferences.favorites.value[BBWCHAN])
 
@@ -141,7 +169,7 @@ class BrowserBoardContinuityTest {
             browser.firstRun.state.first { it.canStart }
 
             assertEquals(
-                listOf("fourchan/g/true", "bbwchan/g/true", "fourchan/g/false", "star:fourchan/g/false"),
+                listOf("fourchan/g/true", "bbwchan/g/true", "fourchan/g/false"),
                 writes,
             )
             assertEquals(

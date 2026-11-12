@@ -141,9 +141,10 @@ class SubscribedFeedViewModelTest {
         }
 
     @Test
-    fun `favorite boards populate Home while existing subscriptions remain`() =
+    fun `favorite only boards never populate Home or request their catalogs`() =
         runTest {
-            val provider = catalogProvider(listOf(catalogThread(1L)))
+            val catalogCalls = AtomicInteger()
+            val provider = catalogProvider(listOf(catalogThread(1L)), catalogCalls)
             val registry = FakeProviderRegistry(provider)
             val settingsRepository = FakeSettingsRepository()
             val viewModel =
@@ -163,12 +164,8 @@ class SubscribedFeedViewModelTest {
             viewModel.uiState.test {
                 var state = awaitItem()
                 while (state !is SubscribedFeedUiState.Success || state.isLoadingMore) state = awaitItem()
-                assertThat(
-                    state.boards
-                        .single()
-                        .board.id,
-                ).isEqualTo(healthyBoard)
-                assertThat(state.boards.single().threads).hasSize(1)
+                assertThat(state.boards).isEmpty()
+                assertThat(catalogCalls.get()).isEqualTo(0)
             }
         }
 

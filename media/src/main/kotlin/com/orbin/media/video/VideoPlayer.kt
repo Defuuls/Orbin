@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -103,6 +102,7 @@ fun VideoPlayer(
             PlaybackSession(autoPlay, lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
         }
     val currentSession by rememberUpdatedState(playbackSession)
+    var playRequested by remember(playbackSession) { mutableStateOf(playbackSession.requestedPlaying) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
     var isMuted by rememberSaveable(url, muted) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
@@ -354,6 +354,7 @@ fun VideoPlayer(
         val ended = exoPlayer.playbackState == Player.STATE_ENDED
         if (ended) exoPlayer.seekTo(0L)
         playbackSession.toggle(ended)
+        playRequested = playbackSession.requestedPlaying
         onPlayIntentChange?.invoke(playbackSession.requestedPlaying)
         if (!playbackSession.requestedPlaying) activity?.disableAutomaticVideoPip()
         exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = playbackError != null)
@@ -422,13 +423,6 @@ fun VideoPlayer(
                 playerView.useController = false
             },
         )
-        if (!feedMode) {
-            VideoPassiveProgress(
-                progress = progress,
-                bufferedProgress = bufferedProgress,
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-            )
-        }
         if (isBuffering) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 NextCircularProgress()
@@ -495,18 +489,18 @@ fun VideoPlayer(
         } else if (controlsVisible) {
             VideoControls(
                 isPlaying = isPlaying,
-                isMuted = isMuted,
-                progress = progress,
+                loading = isBuffering && playRequested,
                 positionMs = positionMs,
                 durationMs = durationMs,
+                bufferedProgress = bufferedProgress,
                 onPlayPause = togglePlayback,
-                onMuteToggle = toggleMute,
                 onSeek = { seekProgress ->
                     if (durationMs > 0) {
-                        exoPlayer.seekTo((durationMs * seekProgress).toLong())
+                        val target = (durationMs * seekProgress).toLong()
+                        exoPlayer.seekTo(target)
+                        positionMs = target
                     }
                 },
-                scrubbing = scrubbing,
                 onScrubbingChange = { scrubbing = it },
                 modifier = Modifier.fillMaxSize(),
             )
@@ -570,12 +564,6 @@ object SessionAudio {
 
 private const val TAG = "OrbinVideoPlayer"
 private const val ERROR_OVERLAY_ALPHA = 0.68f
-internal const val CONTROLS_OVERLAY_ALPHA = 0.38f
-internal const val PASSIVE_PROGRESS_ALPHA = 0.65f
-internal const val PASSIVE_PROGRESS_TRACK_ALPHA = 0.22f
-internal const val PLAY_BUTTON_FILL_ALPHA = 0.92f
-internal val PASSIVE_PROGRESS_HEIGHT = 3.dp
-internal val SCRUB_BUBBLE_WIDTH = 64.dp
 private const val PERCENT_DIVISOR = 100f
 private const val PROGRESS_UPDATE_MS = 250L
 private const val CONTROLS_AUTO_HIDE_MS = 2_500L

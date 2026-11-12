@@ -71,7 +71,7 @@ class SocialFeedInteractionTest {
     }
 
     @Test
-    fun `favorite and board navigation invoke distinct callbacks`() {
+    fun `following and board navigation invoke distinct callbacks`() {
         var opened = false
         var favorited = false
         composeRule.setContent {
@@ -83,7 +83,7 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Add 4chan · /g/ to favorite boards").performClick()
+        composeRule.onNodeWithContentDescription("Follow 4chan · /g/").performClick()
         composeRule.runOnIdle {
             assertTrue(favorited)
             assertTrue(!opened)

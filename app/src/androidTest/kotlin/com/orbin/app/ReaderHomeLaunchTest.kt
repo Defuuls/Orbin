@@ -74,6 +74,8 @@ class ReaderHomeLaunchTest {
             }
             composeRule.onNodeWithTag(ReaderFeedTags.ROOT).assertIsDisplayed()
             composeRule.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
+            composeRule.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertDoesNotExist()
+            composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
             composeRule.onNodeWithTag(ReaderAppBarTags.BAR).assertIsDisplayed()
             composeRule.onNodeWithContentDescription("Menu").assertExists()
             composeRule.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()

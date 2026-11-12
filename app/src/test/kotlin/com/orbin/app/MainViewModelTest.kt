@@ -201,7 +201,7 @@ class MainViewModelTest {
         }
 
     @Test
-    fun `favorite boards also count as initialized because Home includes them`() =
+    fun `favorite boards cannot bypass mandatory subscription setup`() =
         runTest {
             Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
             val fixture = StartupFixture()
@@ -210,8 +210,9 @@ class MainViewModelTest {
             val viewModel = fixture.viewModel()
             try {
                 runCurrent()
-                assertThat(viewModel.uiState.value.settings.onboardingCompleted).isTrue()
-                assertThat(fixture.persisted.value.onboardingCompleted).isTrue()
+                assertThat(viewModel.uiState.value.settings.onboardingCompleted).isFalse()
+                assertThat(fixture.persisted.value.onboardingCompleted).isFalse()
+                assertThat(fixture.follows.value).isEmpty()
             } finally {
                 viewModel.viewModelScope.cancel()
                 Dispatchers.resetMain()

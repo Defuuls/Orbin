@@ -7,7 +7,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import coil3.ColorImage
@@ -111,8 +110,7 @@ class ThreadThumbnailBindingTest {
         assertEquals(setOf(Precision.EXACT), requests.map { it.precision }.toSet())
 
         requests.clear()
-        composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Files").performClick()
+        composeRule.onNodeWithContentDescription("Files").performClick()
         val tiles = composeRule.onAllNodesWithTag(ThreadTags.FILE, useUnmergedTree = true)
         val expectedSizes =
             presentation.fileCells
