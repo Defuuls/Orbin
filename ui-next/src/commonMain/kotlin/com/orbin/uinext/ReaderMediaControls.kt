@@ -16,11 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,7 +81,16 @@ fun ReaderMediaControls(
     val seekable = durationSeconds.isFinite() && durationSeconds > 0.0
     val duration = if (seekable) durationSeconds else 0.0
     val position = positionSeconds.takeIf { it.isFinite() }?.coerceIn(0.0, duration) ?: 0.0
-    Column(modifier.fillMaxWidth().background(Color(0xCC000000)).testTag(ReaderMediaControlsTags.PANEL)) {
+    // Background may draw behind the navigation bar; the transport and time bar stay in the
+    // safe drawing area so they are not covered on edge-to-edge displays.
+    Column(
+        modifier
+            .fillMaxWidth()
+            .background(Color(0xCC000000))
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+            ).testTag(ReaderMediaControlsTags.PANEL),
+    ) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val transportWidth = minOf(71.dp, maxWidth / 5)
             Row(

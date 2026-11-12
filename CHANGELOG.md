@@ -16,8 +16,12 @@ All notable changes to Orbin are documented here. The format is based on
 ### Changed
 - Documented storage, DNS, and third-party disclosure accurately per platform in the privacy policy, README, user guides, website, and F-Droid metadata stub.
 
+### Fixed
+- Lifted the full-screen Android video transport, seek bar, and feed progress above the gesture and navigation bars on edge-to-edge displays, including tall 20:9 phones such as the Pixel 10 Pro XL, while letting the video itself draw behind the bars.
+
 ### Testing
 - Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
+- Added window-inset regressions that dispatch a tall-phone navigation bar and a landscape display cutout and require the gallery time bar, transport buttons, and feed progress to stay in the safe drawing area.
 
 ## [202-Arracacha] - 2026-11-12
 
