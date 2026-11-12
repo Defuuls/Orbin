@@ -123,6 +123,8 @@ and synthetic checkout `7af339359e2555c40c2b247444c992aaaf08e6bc` share tree
 contains the audited CPU/overrun quantiles and historical f1 checkpoint. Positive overruns are
 missed deadlines on a software emulator, not proof of hardware smoothness or a causal speedup.
 
+The isolated workers use `scripts/ensure_rooted_emulator.sh` before Gradle. An ADB root request can close its connection while adbd restarts; the helper permits that status only when a bounded reconnect subsequently confirms exact UID 0. Its outer 60-second deadline covers root, reconnect and UID calls. Seven black-box fake-ADB tests cover restart success and denied, malformed, unreachable or hung failures; with the existing suite, 55 script tests pass locally. The startup correction still requires a successful isolated CI run.
+
 Generate a shipping baseline profile on a rooted API 35 `google_apis` emulator or suitable device:
 
 ```bash

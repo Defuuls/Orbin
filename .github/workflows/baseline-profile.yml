@@ -80,7 +80,7 @@ jobs:
           disable-animations: true
           # One folded line: the action executes each script line in a separate shell.
           script: >-
-            adb root && timeout 60s adb wait-for-device &&
+            bash scripts/ensure_rooted_emulator.sh &&
             ./gradlew :app:assembleDebug &&
             ./gradlew :app:generateReleaseBaselineProfile
             '-Pandroid.testInstrumentationRunnerArguments.class=com.orbin.benchmark.BaselineProfileGenerator#${{ matrix.case }}'
