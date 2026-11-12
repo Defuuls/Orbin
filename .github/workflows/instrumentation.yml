@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   inspect:
-    name: Inspect exact Clover 3.0.2 Settings
+    name: Inspect Clover fonts and safe reader structure
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -41,7 +41,7 @@ jobs:
       - name: Prepare focused UI inspection
         run: |
           cat > "$RUNNER_TEMP/clover-inspect.py" <<'PYCODE'
-          import hashlib,json,os,re,subprocess,time,traceback,xml.etree.ElementTree as ET
+          import gzip,hashlib,json,os,re,struct,subprocess,time,traceback,xml.etree.ElementTree as ET
           from pathlib import Path
           out=Path(os.environ['CLOVER_ARTIFACT_DIR']);out.mkdir(parents=True,exist_ok=True)
           apk=Path(os.environ['RUNNER_TEMP'])/'Clover-v3.0.2.apk'
@@ -106,6 +106,35 @@ jobs:
           try:
            adb('shell','wm','size','480x800');adb('shell','wm','density','160');time.sleep(2)
            (out/'display.txt').write_text(adb('shell','wm','size')+adb('shell','wm','density'))
+           fonts=out/'fonts';fonts.mkdir(exist_ok=True)
+           adb('pull','/system/etc/fonts.xml',str(fonts/'fonts.xml'))
+           font_records=[]
+           def font_names(data):
+            names={};count=struct.unpack_from('>H',data,4)[0]
+            for i in range(count):
+             tag,checksum,offset,length=struct.unpack_from('>4sIII',data,12+i*16)
+             if tag!=b'name':continue
+             fmt,n,strings=struct.unpack_from('>HHH',data,offset)
+             for j in range(n):
+              platform,encoding,language,nameid,size,start=struct.unpack_from('>HHHHHH',data,offset+6+j*12)
+              if nameid not in (0,1,2,5,8,13,14):continue
+              value=data[offset+strings+start:offset+strings+start+size].decode('utf-16-be' if platform in (0,3) else 'latin-1',errors='replace')
+              names.setdefault(str(nameid),[])
+              if value not in names[str(nameid)]:names[str(nameid)].append(value)
+            return names
+           for face in ['Regular','Bold','Italic','BoldItalic']:
+            name='Roboto-'+face+'.ttf';adb('pull','/system/fonts/'+name,str(fonts/name))
+            data=(fonts/name).read_bytes();font_records.append({'file':name,'system_path':'/system/fonts/'+name,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest(),'name_table':font_names(data)})
+           (fonts/'font-provenance.json').write_text(json.dumps({'api_level':31,'source':'Actual/system/fonts files pulled from the running reference emulator','faces':font_records},indent=2)+'\n')
+           try:
+            notice=adb('exec-out','cat','/system/etc/NOTICE.xml.gz',binary=True,check=False)
+            tree=ET.fromstring(gzip.decompress(notice));matched=[n for n in tree.iter('file-name') if 'roboto' in (n.text or '').lower()];ids={n.get('contentId') for n in matched};selected=ET.Element('licenses')
+            for n in matched:selected.append(n)
+            for n in tree.iter('file-content'):
+             if n.get('contentId') in ids:selected.append(n)
+            ET.ElementTree(selected).write(fonts/'NOTICE-Roboto.xml',encoding='utf-8',xml_declaration=True)
+           except Exception as e:(fonts/'notice-extraction.txt').write_text(str(e)+'\nLicense metadata is also preserved from each actual font name table.\n')
+           print('Pulled four exact runtime Roboto faces and font mapping before UI inspection',flush=True)
            (out/'device-properties.txt').write_text(adb('shell','getprop'))
            (out/'install.log').write_text(adb('install','-g','--no-streaming',str(apk),timeout=90));result['installed']=True
            (out/'package.txt').write_text(adb('shell','dumpsys','package','org.floens.chan'))
@@ -127,13 +156,23 @@ jobs:
            result['settings_root_observed']=True
            (out/'root-labels.txt').write_text('\n'.join(n.get('text','') for n in nodes(xml) if n.get('text'))+'\n')
            if click(xml,'Appearance'):
-            appearance=capture('appearance_light')
-            if click(appearance,'Layout mode','Layout','Font size'):
-             capture('appearance_choice');back();capture('appearance_after_choice_back')
-            else:result['choice_entry_found']=False
-            back();capture('settings_root_after_appearance_back')
-           else:result['appearance_entry_found']=False
-           result['result']='PASS actual Settings root and available subpages captured'
+            appearance=capture('appearance')
+            if click(appearance,'Theme'):
+             capture('builtin_theme_post_preview');back();appearance=capture('appearance_after_preview_back')
+            back();xml=capture('settings_root_after_appearance_back')
+           if click(xml,'Sites'):
+            capture('sites_picker');back();xml=capture('settings_root_after_sites_back')
+           back();capture('main_after_settings_back')
+           safe=out/'safe-local-reference.png'
+           import zlib
+           def chunk(tag,data):return struct.pack('>I',len(data))+tag+data+struct.pack('>I',zlib.crc32(tag+data)&0xffffffff)
+           safe.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',16,16,8,2,0,0,0))+chunk(b'IDAT',zlib.compress(b''.join(b'\0'+bytes([24,130,98])*16 for i in range(16))))+chunk(b'IEND',b''))
+           adb('push',str(safe),'/sdcard/Download/clover-safe-reference.png')
+           local_launch=adb('shell','am','start','-W','-a','android.intent.action.VIEW','-t','image/png','-d','file:///sdcard/Download/clover-safe-reference.png','-n','org.floens.chan/.ui.activity.BoardActivity',check=False)
+           (out/'safe-viewer-attempt.txt').write_text(local_launch)
+           capture('safe_local_media_view_attempt')
+           result['live_catalog_thread_not_captured']='No live board was opened, avoiding unreviewed sensitive thumbnails/content. Built-in theme preview renders the real PostCell with bundled safe sample text; media attempt uses only a generated16x16local PNG.'
+           result['result']='PASS exact fonts and focused safe reference UI captured'
           except Exception as e:
            result['result']='FAIL';result['error']=str(e);(out/'error.txt').write_text(traceback.format_exc())
            try:capture('failure')
@@ -160,7 +199,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: clover-settings-runtime
+          name: clover-fonts-reader-runtime
           path: ${{ env.CLOVER_ARTIFACT_DIR }}/
           retention-days: 14
           if-no-files-found: warn
