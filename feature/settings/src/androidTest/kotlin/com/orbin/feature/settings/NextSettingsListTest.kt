@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -50,6 +51,7 @@ class NextSettingsListTest {
     fun togglingARowWritesItThrough() {
         setContent()
 
+        composeTestRule.onNodeWithContentDescription("Search settings").performClick()
         composeTestRule.onNode(hasSetTextAction()).performTextInput("Hide NSFW boards")
         scrollTo("Hide NSFW boards").performClick()
         composeTestRule.waitForIdle()

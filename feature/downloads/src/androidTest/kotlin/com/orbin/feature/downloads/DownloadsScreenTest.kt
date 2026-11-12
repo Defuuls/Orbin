@@ -3,7 +3,9 @@ package com.orbin.feature.downloads
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTouchWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -88,7 +90,8 @@ class DownloadsScreenTest {
         composeTestRule.runOnIdle { assertEquals(1, backCalls) }
         composeTestRule
             .onNodeWithTag(ReaderAppBarTags.OVERFLOW)
-            .assertWidthIsAtLeast(ReaderSize.touchTarget)
+            .assertTouchWidthIsEqualTo(ReaderSize.touchTarget)
+            .assertWidthIsEqualTo(ReaderSize.appBarOverflow)
             .assertHeightIsAtLeast(ReaderSize.touchTarget)
         openClearMenu()
             .assertWidthIsAtLeast(ReaderSize.touchTarget)

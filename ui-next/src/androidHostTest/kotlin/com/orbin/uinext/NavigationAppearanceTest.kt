@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertTouchWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -93,6 +94,7 @@ class NavigationAppearanceTest {
             .onNodeWithContentDescription(
                 "More options",
             ).assertWidthIsEqualTo(44.dp)
+            .assertTouchWidthIsEqualTo(ReaderSize.touchTarget)
             .assertHeightIsEqualTo(56.dp)
         assertThat(
             composeRule
