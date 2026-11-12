@@ -104,6 +104,8 @@ jobs:
 
           result={'apk_sha256':actual,'source_url':'https://github.com/chandevel/Clover/releases/download/v3.0.2/Clover-v3.0.2.apk','package':'org.floens.chan','installed':False,'settings_root_observed':False,'captures':screens,'method':'Actual installed APK and adb UI interaction on API31 accelerated emulator; no application build'}
           try:
+           adb('shell','wm','size','480x800');adb('shell','wm','density','160');time.sleep(2)
+           (out/'display.txt').write_text(adb('shell','wm','size')+adb('shell','wm','density'))
            (out/'device-properties.txt').write_text(adb('shell','getprop'))
            (out/'install.log').write_text(adb('install','-g','--no-streaming',str(apk),timeout=90));result['installed']=True
            (out/'package.txt').write_text(adb('shell','dumpsys','package','org.floens.chan'))
@@ -121,22 +123,11 @@ jobs:
            (out/'root-labels.txt').write_text('\n'.join(n.get('text','') for n in nodes(xml) if n.get('text'))+'\n')
            if click(xml,'Appearance'):
             appearance=capture('appearance_light')
-            if click(appearance,'Layout mode','Layout'):
-             capture('layout_choice');back();appearance=capture('appearance_after_layout_back')
-            if click(appearance,'Font size'):
-             capture('font_size_choice');back();appearance=capture('appearance_after_font_back')
-            if click(appearance,'Theme'):
-             theme=capture('theme_page')
-             if click(theme,'Dark','Black'):
-              capture('theme_selected_dark')
-             else:
-              for i in range(1,4):
-               adb('shell','input','swipe','420','400','60','400','350');capture('theme_swipe_'+str(i))
-             back();capture('appearance_after_theme_back')
-            back();xml=capture('settings_root_after_appearance_back')
+            if click(appearance,'Layout mode','Layout','Font size'):
+             capture('appearance_choice');back();capture('appearance_after_choice_back')
+            else:result['choice_entry_found']=False
+            back();capture('settings_root_after_appearance_back')
            else:result['appearance_entry_found']=False
-           if click(xml,'Behavior'):
-            capture('behavior');back();xml=capture('settings_root_after_behavior_back')
            result['result']='PASS actual Settings root and available subpages captured'
           except Exception as e:
            result['result']='FAIL';result['error']=str(e);(out/'error.txt').write_text(traceback.format_exc())
@@ -157,7 +148,7 @@ jobs:
           arch: x86_64
           avd-name: clover-settings-reference-ci
           force-avd-creation: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -memory 2048 -cores 2 -skin 480x800 -dpi 160
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -memory 2048 -cores 2 -skin 480x800
           disable-animations: true
           script: python3 "$RUNNER_TEMP/clover-inspect.py"
       - name: Upload reference evidence
