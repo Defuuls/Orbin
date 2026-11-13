@@ -10,18 +10,7 @@ name: Baseline profile
 on:
   pull_request:
     paths:
-      - 'app/**'
       - 'benchmark/**'
-      - 'core/model/**'
-      - 'core/data/**'
-      - 'core/reader/**'
-      - 'core/ui/**'
-      - 'core/designsystem/**'
-      - 'domain/**'
-      - 'feature/board/**'
-      - 'feature/thread/**'
-      - 'media/**'
-      - 'ui-next/**'
       - '.github/workflows/baseline-profile.yml'
       - 'scripts/ensure_rooted_emulator.sh'
       - 'scripts/tests/test_rooted_emulator.py'

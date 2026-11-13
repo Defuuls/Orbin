@@ -48,23 +48,6 @@ jobs:
       - name: Repository consistency
         run: python3 scripts/validate_repo.py
 
-      # Advice-only for now: the first clean `buildHealth` on a multi-module Android tree usually
-      # surfaces existing debt. Failures do not block merge; the report artifact is the signal.
-      - name: Dependency analysis (buildHealth)
-        continue-on-error: true
-        run: ./gradlew buildHealth --continue
-
-      - name: Upload buildHealth report
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: build-health-report
-          path: |
-            build/reports/dependency-analysis/**
-            **/build/reports/dependency-analysis/**
-          if-no-files-found: ignore
-
       - name: Spell check prose
         run: |
           python3 -m pip install --quiet codespell
