@@ -149,6 +149,11 @@ def adaptive_scale(geom) -> float:
     return (SAFE_RADIUS * SAFE_PAD) / geom["radius"]
 
 
+def mono_clip_d(geom) -> str:
+    """Cut the play notch through both overlapping cards."""
+    return "M0,0 H1024 V1024 H0 Z " + polygon_d(geom["play"])
+
+
 def mark_svg(geom, *, background=None, mono=False) -> str:
     """SVG in the original 1024 viewBox. background=None means transparent."""
     parts = [
@@ -157,36 +162,16 @@ def mark_svg(geom, *, background=None, mono=False) -> str:
     if background:
         parts.append(f'<rect width="1024" height="1024" fill="{background}"/>')
     if mono:
-        back_fill, back_op, front_fill, play_fill, line_fill = (
-            BLACK,
-            "0.5",
-            BLACK,
-            WHITE,
-            WHITE,
-        )
+        parts.append(_mark_paths(geom, mono=True))
     else:
-        back_fill, back_op, front_fill, play_fill, line_fill = (
-            DARK,
-            "1",
-            WHITE,
-            CORAL,
-            CORAL,
-        )
-    parts.append(
-        f'<path fill="{back_fill}" fill-opacity="{back_op}" d="{rect_d(geom["back"])}"/>'
-    )
-    if mono:
-        # Triangle is a hole so a tinted monochrome layer stays a notch.
-        combined = rect_d(geom["front"]) + " " + polygon_d(geom["play"])
         parts.append(
-            f'<path fill="{front_fill}" fill-rule="evenodd" d="{combined}"/>'
+            f'<path fill="{DARK}" fill-opacity="1" d="{rect_d(geom["back"])}"/>'
         )
-    else:
-        parts.append(f'<path fill="{front_fill}" d="{rect_d(geom["front"])}"/>')
-        parts.append(f'<path fill="{play_fill}" d="{polygon_d(geom["play"])}"/>')
+        parts.append(f'<path fill="{WHITE}" d="{rect_d(geom["front"])}"/>')
+        parts.append(f'<path fill="{CORAL}" d="{polygon_d(geom["play"])}"/>')
         for line in geom["lines"]:
             parts.append(
-                f'<path fill="{line_fill}" fill-opacity="{LINE_OPACITY}" d="{rect_d(line)}"/>'
+                f'<path fill="{CORAL}" fill-opacity="{LINE_OPACITY}" d="{rect_d(line)}"/>'
             )
     parts.append("</svg>")
     return "".join(parts) + "\n"
@@ -223,14 +208,17 @@ def vector_xml(geom, *, viewport=108.0, center=54.0, scale=None, mono=False, col
     if mono:
         fill = color or WHITE
         lines.append(
+            '                <clip-path android:fillType="evenOdd"'
+        )
+        lines.append(f'                    android:pathData="{mono_clip_d(geom)}" />')
+        lines.append(
             f'                <path android:fillColor="{fill}" android:fillAlpha="0.5"'
         )
         lines.append(f'                    android:pathData="{rect_d(geom["back"])}" />')
-        combined = rect_d(geom["front"]) + " " + polygon_d(geom["play"])
         lines.append(
-            f'                <path android:fillColor="{fill}" android:fillType="evenOdd"'
+            f'                <path android:fillColor="{fill}"'
         )
-        lines.append(f'                    android:pathData="{combined}" />')
+        lines.append(f'                    android:pathData="{rect_d(geom["front"])}" />')
     else:
         lines.append(
             f'                <path android:fillColor="{DARK}"'
@@ -276,10 +264,12 @@ def face_svg(geom, size_units=FACE, background=CORAL) -> str:
 
 def _mark_paths(geom, mono=False) -> str:
     if mono:
-        combined = rect_d(geom["front"]) + " " + polygon_d(geom["play"])
         return (
+            '<defs><clipPath id="play-notch-clip">'
+            f'<path clip-rule="evenodd" d="{mono_clip_d(geom)}"/>'
+            '</clipPath></defs><g clip-path="url(#play-notch-clip)">'
             f'<path fill="{BLACK}" fill-opacity="0.5" d="{rect_d(geom["back"])}"/>'
-            f'<path fill="{BLACK}" fill-rule="evenodd" d="{combined}"/>'
+            f'<path fill="{BLACK}" d="{rect_d(geom["front"])}"/></g>'
         )
     chunks = [
         f'<path fill="{DARK}" d="{rect_d(geom["back"])}"/>',
@@ -294,13 +284,14 @@ def _mark_paths(geom, mono=False) -> str:
 
 
 def launch_mark_svg(geom) -> str:
-    """Mark only, transparent ground, fitted to fill most of a 1024 canvas."""
+    """Coral tile keeps the white card visible on light and dark launch screens."""
     # Use a slightly tighter pad than the adaptive safe zone so the launch
     # logo has similar weight to the previous 80pt orbit artwork.
     s = (512 * 0.86) / geom["radius"]
     cx, cy = geom["cx"], geom["cy"]
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">'
+        f'<rect width="1024" height="1024" rx="225" fill="{CORAL}"/>'
         f'<g transform="translate(512 512) scale({s:.8f}) translate({-cx:.4f} {-cy:.4f})">'
         f"{_mark_paths(geom)}"
         f"</g></svg>"
@@ -447,12 +438,15 @@ def contact_sheet() -> Image.Image:
     dr.text((32, y - 24), "Launch mark, notification, iOS 1024 face, 24px small vs large", fill=color, font=label)
 
     lm = render_svg(launch_mark_svg(large), 192)
-    # On dark, transparent launch mark sits naturally
+    # Show the same launch tile on both launch-screen surfaces.
     sheet.paste(lm, (32, y + 16), lm)
-    dr.text((32, y + 16 + 192 + 4), "LaunchMark (large)", fill=color, font=caption)
+    dr.text((32, y + 16 + 192 + 4), "LaunchMark on dark", fill=color, font=caption)
+    dr.rectangle((1120, y + 16, 1311, y + 207), fill=WHITE)
+    sheet.paste(lm, (1120, y + 16), lm)
+    dr.text((1120, y + 16 + 192 + 4), "LaunchMark on light", fill=color, font=caption)
 
     # Notification-like 24 and 48 white silhouettes on dark
-    notif_svg_24 = vector_preview_notif(small, 192)
+    notif_svg_24 = vector_preview_notif(small, 96)
     sheet.paste(notif_svg_24, (260, y + 16 + (192 - 96) // 2), notif_svg_24)
     dr.text((260, y + 16 + 192 + 4), "notification 24 (shown 96)", fill=color, font=caption)
 
@@ -481,9 +475,12 @@ def vector_preview_notif(geom, size) -> Image.Image:
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
         f'<g transform="translate(12 12) scale({notif_scale:.8f}) '
         f'translate({-geom["cx"]:.4f} {-geom["cy"]:.4f})">'
+        '<defs><clipPath id="play-notch-clip">'
+        f'<path clip-rule="evenodd" d="{mono_clip_d(geom)}"/>'
+        '</clipPath></defs><g clip-path="url(#play-notch-clip)">'
         f'<path fill="#FFFFFF" fill-opacity="0.5" d="{rect_d(geom["back"])}"/>'
-        f'<path fill="#FFFFFF" fill-rule="evenodd" d="{rect_d(geom["front"])} {polygon_d(geom["play"])}"/>'
-        f"</g></svg>"
+        f'<path fill="#FFFFFF" d="{rect_d(geom["front"])}"/>'
+        f"</g></g></svg>"
     )
     return render_svg(svg, size)
 
@@ -538,7 +535,7 @@ def assets():
         encode_png(ios, rgb=True),
     )
 
-    # iOS LaunchMark: large mark, transparent ground, 80 / 160 / 240.
+    # iOS LaunchMark: large mark on a coral tile, 80 / 160 / 240.
     launch = launch_mark_svg(large)
     for name, size in (
         ("LaunchMark.png", 80),

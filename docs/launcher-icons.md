@@ -25,7 +25,9 @@ clearance). Both manifest launcher references use that vector and an opaque
 coral `#FF5D68` background (`@color/ic_launcher_background`). The monochrome
 vector uses the small mark in white, with the play triangle cut out as a hole
 so the launcher can apply its themed colors. The Android 12 splash icon
-(`windowSplashScreenAnimatedIcon`) points at the same foreground vector.
+(`windowSplashScreenAnimatedIcon`) points at the same foreground vector with
+`ic_launcher_background` behind it, so its white front card stays visible on
+the light and dark ReaderTokens splash surfaces.
 
 Legacy square and round PNGs cover 48, 72, 96, 144 and 192px (mdpi uses the
 small mark; hdpi and up use the large mark). Square PNGs are opaque; round
@@ -35,7 +37,8 @@ PNGs have transparent corners. The legacy and iOS artwork matches the central
 iOS keeps its existing universal 1024px asset-catalog entry (iOS 16 minimum,
 iPhone and iPad); Xcode generates the required device sizes. Its PNG is RGB,
 opaque and square, with no baked-in rounded corners and no alpha channel. The
-LaunchMark images (80 / 160 / 240) are the large mark on a transparent ground.
+LaunchMark images (80 / 160 / 240) are the large mark on a rounded coral tile
+with transparent corners, for contrast on both launch-screen surfaces.
 No asset-catalog or project setting changes are needed.
 
 The 24dp notification icon (`ic_stat_notify_thread`) is a white silhouette of

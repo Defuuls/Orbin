@@ -12,8 +12,9 @@
 
     <!-- Splash screen theme (androidx.core:core-splashscreen). Hands off to Theme.Orbin once the
          first frame is ready. -->
-    <style name="Theme.Orbin.Starting" parent="Theme.SplashScreen">
+    <style name="Theme.Orbin.Starting" parent="Theme.SplashScreen.IconBackground">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.Orbin</item>
     </style>

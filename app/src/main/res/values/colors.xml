@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Orbin-X design color scheme -->
-    <color name="orbinx_status_bar">#212121</color>
-    <color name="orbinx_navigation_bar">#212121</color>
-    <color name="orbinx_window_background">#212121</color>
+    <!-- Coral ReaderTokens light surfaces. Dark values live in values-night. -->
+    <!-- ReaderLightColors.background = #FFFFFF -->
+    <color name="orbinx_status_bar">#FFFFFF</color>
+    <color name="orbinx_navigation_bar">#FFFFFF</color>
+    <color name="orbinx_window_background">#FFFFFF</color>
 
     <!-- Adaptive-icon tile: Orbin coral. Splash ground is set separately. -->
     <color name="ic_launcher_background">#FF5D68</color>
-    <color name="splash_background">#142018</color>
+    <!-- Splash ground: the card-stack mark sits on the ReaderTokens surface. -->
+    <color name="splash_background">#FFFFFF</color>
 </resources>
