@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -28,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,7 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
@@ -43,6 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
@@ -53,6 +59,7 @@ import com.orbin.uinext.resources.next_boards_search
 import com.orbin.uinext.resources.next_boards_thread_count
 import com.orbin.uinext.resources.next_status_retry
 import com.orbin.uinext.resources.reader_board_follow
+import com.orbin.uinext.resources.reader_board_open
 import com.orbin.uinext.resources.reader_board_unfollow
 import com.orbin.uinext.resources.reader_followed_boards
 import com.orbin.uinext.resources.reader_menu
@@ -106,6 +113,7 @@ fun BoardsScreen(
     onOpenWatched: (() -> Unit)? = null,
     emptyMessage: String? = null,
     onRetry: (() -> Unit)? = null,
+    downloadBadge: Int = 0,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val visibleBoards =
@@ -161,7 +169,7 @@ fun BoardsScreen(
         }
     val boardsTitle = stringResource(Res.string.tiktok_boards_title)
     val allBoardsLabel = stringResource(Res.string.social_feed_all_boards)
-    val showBottomBar = showRail && hasTabs && railVisible
+    val showChrome = showRail && hasTabs
     NextScaffold(
         where = boardsTitle,
         modifier = modifier.fillMaxSize(),
@@ -180,6 +188,9 @@ fun BoardsScreen(
         drawAppBar = false,
     ) { bottomPad ->
         val openDrawer = LocalReaderOpenDrawer.current
+        val density = LocalDensity.current
+        var barHeightPx by remember { mutableIntStateOf(0) }
+        val barHeight = with(density) { barHeightPx.toDp() }
         Column(
             Modifier
                 .fillMaxSize()
@@ -205,7 +216,7 @@ fun BoardsScreen(
                         subtitle,
                         style = NextType.footnote,
                         color = next.muted,
-                        modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
                     )
                 }
                 if (onRandom != null) {
@@ -216,81 +227,99 @@ fun BoardsScreen(
                     )
                 }
             }
-            LazyColumn(
-                state = listState,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .background(reader.surfaceVariant)
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
-                        ),
-                contentPadding =
-                    PaddingValues(
-                        top = 8.dp,
-                        bottom =
-                            (if (showBottomBar) 0.dp else bottomPad.calculateBottomPadding()) +
-                                NextSpace.groupGap,
-                    ),
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
             ) {
-                if (visibleBoards.isEmpty()) {
-                    item(key = "boards-empty") {
-                        Text(
-                            (
-                                emptyMessage?.takeIf { boards.isEmpty() && query.isBlank() }
-                                    ?: stringResource(Res.string.next_boards_no_match)
+                LazyColumn(
+                    state = listState,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .background(if (next.dark) reader.background else reader.surfaceVariant)
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
                             ),
-                            style = NextType.body,
-                            color = next.muted,
-                            modifier = Modifier.padding(BOARD_DIRECTORY_GUTTER),
-                        )
-                        if (onRetry != null) {
-                            InlineAction(
-                                stringResource(Res.string.next_status_retry),
-                                onClick = onRetry,
-                                modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER),
+                    contentPadding =
+                        PaddingValues(
+                            top = 8.dp,
+                            bottom =
+                                (
+                                    if (showChrome && onDestination != null) {
+                                        barHeight
+                                    } else {
+                                        bottomPad.calculateBottomPadding()
+                                    }
+                                ) + NextSpace.groupGap,
+                        ),
+                ) {
+                    if (visibleBoards.isEmpty()) {
+                        item(key = "boards-empty") {
+                            Text(
+                                (
+                                    emptyMessage?.takeIf { boards.isEmpty() && query.isBlank() }
+                                        ?: stringResource(Res.string.next_boards_no_match)
+                                ),
+                                style = NextType.body,
+                                color = next.muted,
+                                modifier = Modifier.padding(BOARD_DIRECTORY_GUTTER),
+                            )
+                            if (onRetry != null) {
+                                InlineAction(
+                                    stringResource(Res.string.next_status_retry),
+                                    onClick = onRetry,
+                                    modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER),
+                                )
+                            }
+                        }
+                    } else {
+                        if (favorites.isNotEmpty()) {
+                            item(key = "favorite-heading") {
+                                BoardSectionTitle(stringResource(Res.string.reader_followed_boards))
+                            }
+                            boardRows(
+                                boards = favorites,
+                                keyPrefix = "favorite",
+                                onOpenBoard = onOpenBoard,
+                                onFollowBoard = onFollowBoard,
+                                showSite = true,
+                            )
+                        }
+                        siteGroups.forEach { (siteLabel, group) ->
+                            val heading = siteLabel.ifBlank { allBoardsLabel }
+                            item(key = "site-heading:$heading") { BoardSectionTitle(heading) }
+                            boardRows(
+                                boards = group,
+                                keyPrefix = "site:$heading",
+                                onOpenBoard = onOpenBoard,
+                                onFollowBoard = onFollowBoard,
+                                showSite = siteLabel.isBlank(),
                             )
                         }
                     }
-                } else {
-                    if (favorites.isNotEmpty()) {
-                        item(key = "favorite-heading") {
-                            BoardSectionTitle(stringResource(Res.string.reader_followed_boards))
-                        }
-                        boardRows(
-                            boards = favorites,
-                            keyPrefix = "favorite",
-                            onOpenBoard = onOpenBoard,
-                            onFollowBoard = onFollowBoard,
-                            showSite = true,
-                        )
-                    }
-                    siteGroups.forEach { (siteLabel, group) ->
-                        val heading = siteLabel.ifBlank { allBoardsLabel }
-                        item(key = "site-heading:$heading") { BoardSectionTitle(heading) }
-                        boardRows(
-                            boards = group,
-                            keyPrefix = "site:$heading",
-                            onOpenBoard = onOpenBoard,
-                            onFollowBoard = onFollowBoard,
-                            showSite = siteLabel.isBlank(),
-                        )
-                    }
                 }
-            }
-            if (showBottomBar && onDestination != null) {
-                OrbinBottomBar(
-                    selected = NextDestination.BOARDS,
-                    onSelect = onDestination,
-                    destinations =
-                        buildList {
-                            add(NextDestination.BOARDS)
-                            if (onOpenFeed != null) add(NextDestination.FEED)
-                            if (onOpenSettings != null) add(NextDestination.SETTINGS)
-                        },
-                )
-            }
+                if (showChrome && onDestination != null) {
+                    OrbinBottomBar(
+                        selected = NextDestination.BOARDS,
+                        onSelect = onDestination,
+                        destinations =
+                            buildList {
+                                add(NextDestination.BOARDS)
+                                if (onOpenFeed != null) add(NextDestination.FEED)
+                                if (onOpenDownloads != null) add(NextDestination.DOWNLOADS)
+                                if (onOpenSettings != null) add(NextDestination.SETTINGS)
+                            },
+                        downloadBadge = downloadBadge,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .onSizeChanged { barHeightPx = it.height }
+                                .offset { IntOffset(0, if (railVisible) 0 else barHeightPx) }
+                                .then(if (railVisible) Modifier else Modifier.clearAndSetSemantics {}),
+                    )
+                }
+            } // Box
         }
     }
 }
@@ -303,7 +332,7 @@ private fun BoardsHomeHeader(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 4.dp)
+            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp)
             .heightIn(min = MIN_TOUCH_TARGET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -329,7 +358,7 @@ private fun BoardsSearchRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 4.dp),
+            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -385,42 +414,67 @@ private fun BoardListRow(
     onFollow: ((Boolean) -> Unit)? = null,
     showSite: Boolean = true,
 ) {
+    val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
+    val openLabel = stringResource(Res.string.reader_board_open, identity)
+    val fontScale = LocalDensity.current.fontScale
+    val stacked = fontScale >= 1.5f
     OrbinCard(
         modifier =
             Modifier
-                .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 5.dp)
+                .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp)
                 .fillMaxWidth(),
-        onClick = onClick,
     ) {
         Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = MIN_TOUCH_TARGET)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column(Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .semantics { contentDescription = openLabel }
+                    .nextClickable(role = Role.Button, onClickLabel = openLabel, onClick = onClick),
+            ) {
+                if (stacked) {
                     Text(
                         board.path,
                         style = ReaderType.cardTitle.withReaderFont(),
                         color = reader.accent,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         board.title,
                         style = ReaderType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
                         color = reader.ink,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
                     )
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            board.path,
+                            style = ReaderType.cardTitle.withReaderFont(),
+                            color = reader.accent,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            board.title,
+                            style = ReaderType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                            color = reader.ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                    }
                 }
                 val metadata =
                     listOfNotNull(
@@ -431,9 +485,9 @@ private fun BoardListRow(
                 if (metadata.isNotBlank()) {
                     Text(
                         metadata,
-                        style = ReaderType.postDetails.withReaderFont(),
+                        style = ReaderType.meta.withReaderFont(),
                         color = reader.inkSecondary,
-                        maxLines = 1,
+                        maxLines = if (stacked) 2 else 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -445,7 +499,10 @@ private fun BoardListRow(
                 siteId = board.site ?: board.id.substringBefore('/'),
                 boardId = board.path,
                 title = board.title,
-                modifier = Modifier.size(BOARD_THUMBNAIL_SIZE),
+                modifier =
+                    Modifier
+                        .size(BOARD_THUMBNAIL_SIZE)
+                        .nextClickable(role = Role.Button, onClickLabel = openLabel, onClick = onClick),
                 shape = RoundedCornerShape(OrbinRadius.thumbnail),
                 size = BOARD_THUMBNAIL_SIZE,
             )

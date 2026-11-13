@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_clear_search
+import com.orbin.uinext.resources.next_provider_unknown
 import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.tokens.OrbinRadius
 import org.jetbrains.compose.resources.stringResource
@@ -332,7 +333,13 @@ private fun PlatformProviderMenu(
     if (labels.isEmpty()) return
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     var open by remember { mutableStateOf(false) }
-    val selectedLabel = labels.getOrElse(selected.coerceAtLeast(0)) { labels.first() }
+    val selectedInRange = selected in labels.indices
+    val selectedLabel =
+        if (selectedInRange) {
+            labels[selected]
+        } else {
+            stringResource(Res.string.next_provider_unknown)
+        }
     val menuShape = RoundedCornerShape(OrbinRadius.search)
     Box(modifier) {
         Row(

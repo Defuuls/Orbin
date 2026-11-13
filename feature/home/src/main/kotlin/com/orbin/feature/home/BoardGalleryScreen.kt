@@ -4,10 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.Board
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.feature.home.R
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.NextTheme
@@ -102,13 +104,13 @@ fun BoardGalleryScreen(
             onChromeVisibleChange = onChromeVisibleChange,
             emptyMessage =
                 when (val state = uiState) {
-                    HomeUiState.Loading -> "Loading…"
+                    HomeUiState.Loading -> stringResource(R.string.board_gallery_loading)
                     is HomeUiState.Error -> state.message
                     is HomeUiState.Success ->
                         if (state.boards.isEmpty()) {
-                            "No boards available"
+                            stringResource(R.string.board_gallery_empty)
                         } else {
-                            "Every board is hidden by your board filters"
+                            stringResource(R.string.board_gallery_filtered)
                         }
                 },
             onRetry = if (uiState is HomeUiState.Error) viewModel::load else null,

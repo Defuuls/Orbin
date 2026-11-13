@@ -33,6 +33,7 @@
 
     <string name="next_launchpad_boards">Boards</string>
     <string name="next_boards_search">Search boards...</string>
+    <string name="next_provider_unknown">Select a site</string>
     <string name="next_boards_discover">Discover</string>
     <string name="next_boards_following_tab">Following (%1$d)</string>
     <string name="next_boards_following">Following</string>

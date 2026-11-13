@@ -61,4 +61,7 @@
     </plurals>
     <!-- Thread count, then board count: "8 threads across 7 boards". -->
     <string name="next_feed_subtitle">%1$s across %2$s</string>
+    <string name="board_gallery_loading">Loading…</string>
+    <string name="board_gallery_empty">No boards available</string>
+    <string name="board_gallery_filtered">Every board is hidden by your board filters</string>
 </resources>

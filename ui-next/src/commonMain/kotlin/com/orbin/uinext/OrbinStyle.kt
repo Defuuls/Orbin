@@ -1,6 +1,8 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -32,8 +36,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_nav_boards
+import com.orbin.uinext.resources.reader_nav_downloads
 import com.orbin.uinext.resources.reader_nav_feed
 import com.orbin.uinext.resources.reader_nav_settings
 import com.orbin.uinext.tokens.NextType
@@ -146,7 +152,13 @@ fun OrbinBottomBar(
     onSelect: (NextDestination) -> Unit,
     modifier: Modifier = Modifier,
     destinations: List<NextDestination> =
-        listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.SETTINGS),
+        listOf(
+            NextDestination.BOARDS,
+            NextDestination.FEED,
+            NextDestination.DOWNLOADS,
+            NextDestination.SETTINGS,
+        ),
+    downloadBadge: Int = 0,
 ) {
     val shadow = if (next.dark) 0.dp else OrbinElevation.bar
     val tonal = if (next.dark) OrbinElevation.bar else 0.dp
@@ -186,12 +198,33 @@ fun OrbinBottomBar(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Icon(
-                        imageVector = orbinBottomIcon(destination, isSelected),
-                        contentDescription = null,
-                        tint = if (isSelected) reader.accent else next.muted,
-                        modifier = Modifier.size(24.dp),
-                    )
+                    Box {
+                        Icon(
+                            imageVector = orbinBottomIcon(destination, isSelected),
+                            contentDescription = null,
+                            tint = if (isSelected) reader.accent else next.muted,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        if (destination == NextDestination.DOWNLOADS && downloadBadge > 0) {
+                            val badgeLabel = if (downloadBadge > 99) "99+" else downloadBadge.toString()
+                            Box(
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .offset(x = 8.dp, y = (-4).dp)
+                                    .heightIn(min = 16.dp)
+                                    .background(reader.accent, CircleShape)
+                                    .padding(horizontal = 4.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    badgeLabel,
+                                    style = NextType.caption2.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                    color = reader.onAccent,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
+                    }
                     Text(
                         label,
                         style = NextType.caption1,
@@ -211,10 +244,10 @@ private fun orbinBottomLabel(destination: NextDestination): String =
         NextDestination.BOARDS -> stringResource(Res.string.reader_nav_boards)
         NextDestination.FEED -> stringResource(Res.string.reader_nav_feed)
         NextDestination.SETTINGS -> stringResource(Res.string.reader_nav_settings)
+        NextDestination.DOWNLOADS -> stringResource(Res.string.reader_nav_downloads)
         NextDestination.WATCHED,
         NextDestination.SAVED,
         NextDestination.SEARCH,
-        NextDestination.DOWNLOADS,
         -> destination.name.lowercase().replaceFirstChar { it.titlecase() }
     }
 
@@ -230,5 +263,5 @@ private fun orbinBottomIcon(
         NextDestination.WATCHED -> ReaderIcons.Watched
         NextDestination.SAVED -> ReaderIcons.Saved
         NextDestination.SEARCH -> ReaderIcons.Search
-        NextDestination.DOWNLOADS -> ReaderIcons.Settings
+        NextDestination.DOWNLOADS -> ReaderIcons.Download
     }

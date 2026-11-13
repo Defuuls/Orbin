@@ -90,7 +90,7 @@ class SocialFeedInteractionTest {
             assertTrue(favorited)
             assertTrue(!opened)
         }
-        composeRule.onNodeWithText("/g/").performClick()
+        composeRule.onNodeWithContentDescription("Open 4chan · /g/").performClick()
         composeRule.runOnIdle { assertTrue(opened) }
     }
 

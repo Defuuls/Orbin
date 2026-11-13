@@ -8,6 +8,7 @@
     <string name="reader_nav_search">Search</string>
     <string name="reader_nav_saved">Saved</string>
     <string name="reader_nav_settings">Settings</string>
+    <string name="reader_nav_downloads">Downloads</string>
     <string name="reader_catalog_filter">Filter this catalog</string>
     <string name="reader_close_filter">Close catalog search</string>
     <string name="reader_picker_empty">No boards available</string>

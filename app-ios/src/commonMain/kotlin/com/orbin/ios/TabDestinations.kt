@@ -207,7 +207,7 @@ internal fun BoardsDestination(browser: Browser) {
         }
     val byTile = remember(list) { list.associateBy { it.tileId } }
     BoardsScreen(
-        hideRailOnScroll = false,
+        hideRailOnScroll = true,
         subtitle = boardsSubtitle(list.size, unreachable),
         emptyMessage =
             when (boards) {
