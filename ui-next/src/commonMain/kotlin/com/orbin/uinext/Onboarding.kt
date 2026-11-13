@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -23,9 +24,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +46,8 @@ import com.orbin.uinext.resources.next_onboarding_start
 import com.orbin.uinext.resources.next_onboarding_subtitle
 import com.orbin.uinext.resources.next_onboarding_title
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -95,14 +100,31 @@ fun OnboardingScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(reader.background)
                 .windowInsetsPadding(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                 ),
     ) {
-        ScreenTitle(
-            text = stringResource(Res.string.next_onboarding_title),
-            subtitle = stringResource(Res.string.next_onboarding_subtitle),
-        )
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = NextSpace.gutter, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OrbinWordmark(logoSize = 32.dp)
+            Text(
+                text = stringResource(Res.string.next_onboarding_title),
+                style = ReaderType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                color = reader.ink,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
+                text = stringResource(Res.string.next_onboarding_subtitle),
+                style = ReaderType.stateBody.withReaderFont(),
+                color = reader.inkMuted,
+            )
+        }
         if (sites.size > 1) {
             SiteSelector(sites, selectedSite, enabled = !isSaving, onSelectSite)
         }
@@ -112,8 +134,8 @@ fun OnboardingScreen(
         if (errorMessage != null) {
             Text(
                 text = errorMessage,
-                style = NextType.footnote,
-                color = next.destructive,
+                style = ReaderType.meta.withReaderFont(),
+                color = reader.error,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -125,9 +147,11 @@ fun OnboardingScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
+                    .background(reader.background)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                    .padding(horizontal = NextSpace.gutter - 4.dp, vertical = 10.dp),
+                    .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 text =
@@ -141,13 +165,12 @@ fun OnboardingScreen(
                                 totalFollowing,
                             )
                     },
-                style = NextType.footnote,
-                color = next.muted,
-                modifier = Modifier.weight(1f).padding(start = 4.dp),
+                style = ReaderType.meta.withReaderFont(),
+                color = reader.inkMuted,
+                modifier = Modifier.weight(1f),
             )
-            InlineAction(
+            OrbinFilledButton(
                 label = stringResource(Res.string.next_onboarding_start),
-                accent = true,
                 enabled = canStart && totalFollowing > 0 && !isSaving,
                 onClick = { if (canStart && totalFollowing > 0 && !isSaving) onStart() },
             )
@@ -162,23 +185,47 @@ private fun SiteSelector(
     enabled: Boolean,
     onSelect: (Int) -> Unit,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = NextSpace.gutter, vertical = 4.dp)
-                .background(next.raised, RoundedCornerShape(12.dp))
-                .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    OrbinCard(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = NextSpace.gutter, vertical = 4.dp),
     ) {
-        sites.forEachIndexed { index, name ->
-            InlineAction(
-                label = name,
-                selected = index == selected,
-                enabled = enabled,
-                onClick = { onSelect(index) },
-                modifier = Modifier.weight(1f),
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            sites.forEachIndexed { index, name ->
+                val isSelected = index == selected
+                val shape = RoundedCornerShape(OrbinRadius.pill)
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = MIN_TOUCH_TARGET)
+                            .clip(shape)
+                            .background(if (isSelected) reader.accent else Color.Transparent)
+                            .nextClickable(
+                                enabled = enabled,
+                                role = Role.RadioButton,
+                                onClick = { onSelect(index) },
+                            ).padding(horizontal = 8.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = name,
+                        style =
+                            ReaderType.label.withReaderFont().copy(
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                            ),
+                        color =
+                            when {
+                                !enabled -> reader.inkMuted
+                                isSelected -> reader.onAccent
+                                else -> reader.ink
+                            },
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }
@@ -201,7 +248,8 @@ private fun BoardsList(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 6.dp),
+                    contentPadding = PaddingValues(horizontal = NextSpace.gutter, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     items(state.boards, key = { it.id }) { board ->
                         BoardRow(
@@ -211,7 +259,6 @@ private fun BoardsList(
                             enabled = enabled,
                             onFollow = onFollow,
                         )
-                        GroupedDivider()
                     }
                 }
             }
@@ -234,45 +281,53 @@ private fun BoardRow(
                 stringResource(Res.string.next_onboarding_catalog)
             }
         }
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .toggleable(
-                    value = isFollowed,
-                    enabled = enabled,
-                    role = Role.Switch,
-                    onValueChange = { onFollow(board.id, it) },
-                ).padding(horizontal = NextSpace.gutter, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        BoardIcon(siteId = siteId, boardId = board.id, title = board.title, modifier = Modifier.size(42.dp))
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    OrbinCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .toggleable(
+                        value = isFollowed,
+                        enabled = enabled,
+                        role = Role.Switch,
+                        onValueChange = { onFollow(board.id, it) },
+                    ).padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            BoardIcon(siteId = siteId, boardId = board.id, title = board.title, modifier = Modifier.size(48.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "/${board.id}/",
+                        color = reader.accent,
+                        fontWeight = FontWeight.Bold,
+                        style = ReaderType.rowTitle.withReaderFont(),
+                    )
+                    Text(
+                        text = board.title,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = ReaderType.body.withReaderFont(),
+                        color = reader.ink,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
                 Text(
-                    text = "/${board.id}/",
-                    color = next.accent,
-                    fontWeight = FontWeight.Bold,
-                    style = NextType.headline,
-                )
-                Text(
-                    text = board.title,
-                    maxLines = 1,
+                    text = description,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    style = NextType.body,
+                    color = reader.inkMuted,
+                    style = ReaderType.meta.withReaderFont(),
                 )
             }
-            Text(
-                text = description,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = next.muted,
-                style = NextType.footnote,
-            )
-        }
-        Box(Modifier.clearAndSetSemantics {}) {
-            NextToggle(checked = isFollowed, onCheckedChange = null)
+            Box(Modifier.clearAndSetSemantics {}) {
+                NextToggle(checked = isFollowed, onCheckedChange = null)
+            }
         }
     }
 }
