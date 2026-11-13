@@ -220,15 +220,15 @@ internal fun StringBuilder.appendEscaped(text: String): StringBuilder {
 
 private const val TITLE_LENGTH = 80
 
-/** The archive's stylesheet: Orbin's forest green dark theme, or light where the reader prefers it. */
+/** The archive's stylesheet: Orbin Coral, with a light and a dark scheme. */
 internal const val ARCHIVE_CSS = """:root {
-  --bg: #f7fbf7; --raised: #ffffff; --ink: #191c19; --muted: #404941; --line: #c0c9bf;
-  --accent: #276a3c; --green: #2f7d32; --pink: #b0306a;
+  --bg: #ffffff; --raised: #f5f5f5; --ink: #1a1a1a; --muted: #646464; --line: #e0e0e0;
+  --accent: #C73E4E; --green: #2e7d32; --pink: #b3261e;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #101a12; --raised: #1c271e; --ink: #e0e8e0; --muted: #c0c9bf; --line: #404941;
-    --accent: #a3d4af; --green: #8bc98d; --pink: #f08cb8; }
+  :root { --bg: #1c1c1e; --raised: #2c2c2e; --ink: #ffffff; --muted: #c5c8c6; --line: #3a3a3c;
+    --accent: #FF8A96; --green: #81c784; --pink: #f2b8b5; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
