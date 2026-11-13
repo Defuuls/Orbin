@@ -4,10 +4,15 @@ import android.content.ContentValues
 import android.content.Context
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.WorkRequest
 import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.worker.DownloadWorker
@@ -17,6 +22,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,12 +45,7 @@ class AndroidDownloadQueue
             }
 
         private fun schedule(id: Long) {
-            val inputData = Data.Builder().putLong(DownloadWorker.KEY_ID, id).build()
-            val workRequest =
-                OneTimeWorkRequestBuilder<DownloadWorker>()
-                    .setInputData(inputData)
-                    .build()
-            workManager.enqueueUniqueWork("download-$id", ExistingWorkPolicy.KEEP, workRequest).result.get()
+            workManager.enqueueUniqueWork("download-$id", ExistingWorkPolicy.KEEP, downloadWorkRequest(id)).result.get()
         }
 
         /** Retire pre-upgrade WorkSpecs rather than retaining plaintext input as a fallback. */
@@ -52,18 +53,40 @@ class AndroidDownloadQueue
             withContext(Dispatchers.IO) {
                 migrationMutex.withLock {
                     val migration = context.getSharedPreferences("download-security", Context.MODE_PRIVATE)
-                    if (migration.getBoolean("opaque-inputs", false)) return@withLock
-                    val oldWork = workManager.getWorkInfosByTag(DownloadWorker::class.java.name).get()
-                    oldWork.filterNot { it.state.isFinished }.forEach { workManager.cancelWorkById(it.id).result.get() }
-                    workManager.pruneWork().result.get()
-                    // Active encrypted records are the authority for re-creating interrupted work.
-                    dao
-                        .all()
-                        .filter { it.status in setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name) }
-                        .forEach { schedule(it.id) }
-                    check(
-                        migration.edit().putBoolean("opaque-inputs", true).commit(),
-                    ) { "Could not record download migration" }
+                    if (!migration.getBoolean("opaque-inputs", false)) {
+                        val oldWork = workManager.getWorkInfosByTag(DownloadWorker::class.java.name).get()
+                        oldWork.filterNot { it.state.isFinished }.forEach {
+                            workManager.cancelWorkById(it.id).result.get()
+                        }
+                        workManager.pruneWork().result.get()
+                        // Active encrypted records are the authority for re-creating interrupted work.
+                        dao
+                            .all()
+                            .filter { it.status in setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name) }
+                            .forEach { schedule(it.id) }
+                        check(
+                            migration
+                                .edit()
+                                .putBoolean("opaque-inputs", true)
+                                .putBoolean("retry-constraints", true)
+                                .commit(),
+                        ) { "Could not record download migration" }
+                    }
+                    // Re-enqueue unfinished work so it picks up network constraints and backoff.
+                    if (!migration.getBoolean("retry-constraints", false)) {
+                        val unfinished = workManager.getWorkInfosByTag(DownloadWorker::class.java.name).get()
+                        unfinished.filterNot { it.state.isFinished }.forEach {
+                            workManager.cancelWorkById(it.id).result.get()
+                        }
+                        workManager.pruneWork().result.get()
+                        dao
+                            .all()
+                            .filter { it.status in setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name) }
+                            .forEach { schedule(it.id) }
+                        check(
+                            migration.edit().putBoolean("retry-constraints", true).commit(),
+                        ) { "Could not record download retry migration" }
+                    }
                 }
             }
 
@@ -133,3 +156,20 @@ class AndroidDownloadQueue
             const val MIME_TEXT_PLAIN = "text/plain"
         }
     }
+
+/** A one-shot download that waits for a network connection and backs off between retries. */
+internal fun downloadWorkRequest(id: Long): OneTimeWorkRequest {
+    val inputData = Data.Builder().putLong(DownloadWorker.KEY_ID, id).build()
+    return OneTimeWorkRequestBuilder<DownloadWorker>()
+        .setInputData(inputData)
+        .setConstraints(
+            Constraints
+                .Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build(),
+        ).setBackoffCriteria(
+            BackoffPolicy.EXPONENTIAL,
+            WorkRequest.MIN_BACKOFF_MILLIS,
+            TimeUnit.MILLISECONDS,
+        ).build()
+}

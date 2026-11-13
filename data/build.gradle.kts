@@ -51,6 +51,7 @@ dependencies {
     testImplementation(libs.androidx.sqlite.framework)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.okhttp.mockwebserver)
 
     // SQLCipher's native library cannot load under Robolectric, so the encrypted-open path is
     // only reachable from an instrumentation test on a real device or emulator.
