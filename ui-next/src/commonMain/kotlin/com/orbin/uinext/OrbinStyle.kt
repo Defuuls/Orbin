@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -191,7 +192,11 @@ fun OrbinWordmark(
     contentDescription: String = OrbinStyle.WORDMARK,
 ) {
     Row(
-        modifier = modifier.semantics(mergeDescendants = true) { this.contentDescription = contentDescription },
+        modifier =
+            modifier.semantics(mergeDescendants = true) {
+                this.contentDescription = contentDescription
+                heading()
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -200,7 +205,8 @@ fun OrbinWordmark(
             text = OrbinStyle.WORDMARK,
             style = ReaderType.appBarTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
             color = onInk,
-            modifier = Modifier.semantics { heading() },
+            // The parent supplies the label; UIKit otherwise announces both as "Orbin, Orbin".
+            modifier = Modifier.clearAndSetSemantics {},
         )
     }
 }
