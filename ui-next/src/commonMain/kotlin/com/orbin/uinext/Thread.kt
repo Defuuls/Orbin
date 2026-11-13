@@ -26,6 +26,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
@@ -51,6 +54,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
@@ -82,6 +86,7 @@ import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_reply_link
 import com.orbin.uinext.resources.reader_thread_op
 import com.orbin.uinext.resources.reader_thread_share
+import com.orbin.uinext.resources.reader_view_card
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
@@ -93,6 +98,7 @@ import org.jetbrains.compose.resources.stringResource
 enum class ThreadLayout {
     POSTS,
     FILES,
+    CARDS,
 }
 
 /**
@@ -124,6 +130,7 @@ data class Post(
 object ThreadTags {
     const val LIST = "thread-list"
     const val POST = "thread-post"
+    const val CARD = "thread-post-card"
     const val THUMBNAIL = "thread-post-thumbnail"
     const val UNREAD = "thread-unread-marker"
     const val STATUS = "thread-status"
@@ -189,7 +196,8 @@ fun ThreadScreen(
     val state = listState ?: rememberLazyListState()
     val filesState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val showingPosts = layout == ThreadLayout.POSTS
+    val showingPosts = layout != ThreadLayout.FILES
+    val cardMode = layout == ThreadLayout.CARDS
 
     // Expands a collapsed post before bringing it into view, so the reader lands on its text.
     val reveal: (String) -> Unit = { id ->
@@ -241,7 +249,7 @@ fun ThreadScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(colors.background)
+                .background(if (cardMode && !next.dark) colors.surfaceVariant else colors.background)
                 .semantics { paneTitle = subject },
     ) {
         ReaderAppBar(
@@ -251,11 +259,13 @@ fun ThreadScreen(
             onNavigation = onBack ?: {},
             onTitleTap = { scope.launch { state.animateScrollToItem(0) } },
             titleTapLabel = stringResource(Res.string.next_thread_scroll_top),
-            actions = threadActions(watching, showingPosts, onWatch, onLayoutChange, onDownloadAll),
+            actions = threadActions(watching, layout, onWatch, onLayoutChange, onDownloadAll),
             overflow =
                 threadOverflow(
                     subject = subject,
                     showingPosts = showingPosts,
+                    layout = layout,
+                    onLayoutChange = onLayoutChange,
                     onReload = onReload,
                     saved = saved,
                     watching = watching,
@@ -292,19 +302,26 @@ fun ThreadScreen(
             ) {
                 val fileColumns = catalogGridColumns(maxWidth)
                 val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
+                val cardImageHeight = orbinCatalogCardSpec(maxWidth).imageHeight
                 LazyColumn(
                     state = if (showingPosts) state else filesState,
                     modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
+                    verticalArrangement = if (cardMode) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
                     contentPadding =
-                        if (showingPosts) {
-                            PaddingValues(bottom = bottomInset())
-                        } else {
-                            PaddingValues(
-                                start = ReaderSpace.albumPadding,
-                                end = ReaderSpace.albumPadding,
-                                top = ReaderSpace.albumPadding,
-                                bottom = bottomInset() + ReaderSpace.albumPadding,
-                            )
+                        when {
+                            cardMode ->
+                                PaddingValues(
+                                    top = ORBIN_CATALOG_GAP,
+                                    bottom = bottomInset() + ORBIN_CATALOG_GAP,
+                                )
+                            showingPosts -> PaddingValues(bottom = bottomInset())
+                            else ->
+                                PaddingValues(
+                                    start = ReaderSpace.albumPadding,
+                                    end = ReaderSpace.albumPadding,
+                                    top = ReaderSpace.albumPadding,
+                                    bottom = bottomInset() + ReaderSpace.albumPadding,
+                                )
                         },
                 ) {
                     item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
@@ -327,7 +344,7 @@ fun ThreadScreen(
                             post,
                             ->
                             post.stableKey
-                        }, contentType = { _, _ -> ThreadLayout.POSTS }) {
+                        }, contentType = { _, _ -> layout }) {
                             index,
                             post,
                             ->
@@ -338,6 +355,7 @@ fun ThreadScreen(
                                     original = index == 0,
                                     collapsed = post.id in collapsed,
                                     wideWindow = wideWindow,
+                                    cardImageHeight = if (cardMode) cardImageHeight else null,
                                     onToggleCollapse = onToggleCollapse,
                                     onClick = onPostClick,
                                     onReference = openReference,
@@ -440,21 +458,30 @@ const val MAX_REPLY_DEPTH = 3
 @Composable
 private fun threadActions(
     watching: Boolean,
-    showingPosts: Boolean,
+    layout: ThreadLayout,
     onWatch: (() -> Unit)?,
     onLayoutChange: ((ThreadLayout) -> Unit)?,
     onDownloadAll: (() -> Unit)?,
 ): List<ReaderAction> =
     buildList {
         if (onLayoutChange != null) {
+            val target =
+                when (layout) {
+                    ThreadLayout.POSTS -> ThreadLayout.FILES
+                    ThreadLayout.FILES -> ThreadLayout.CARDS
+                    ThreadLayout.CARDS -> ThreadLayout.POSTS
+                }
+            val icon =
+                when (target) {
+                    ThreadLayout.FILES -> ReaderIcons.Album
+                    ThreadLayout.CARDS -> Icons.Filled.ViewAgenda
+                    ThreadLayout.POSTS -> Icons.AutoMirrored.Filled.ViewList
+                }
             add(
                 ReaderAction(
-                    icon = ReaderIcons.Album,
-                    label =
-                        stringResource(
-                            if (showingPosts) Res.string.next_thread_files else Res.string.next_thread_posts,
-                        ),
-                    onClick = { onLayoutChange(if (showingPosts) ThreadLayout.FILES else ThreadLayout.POSTS) },
+                    icon = icon,
+                    label = stringResource(threadLayoutLabel(target)),
+                    onClick = { onLayoutChange(target) },
                 ),
             )
         }
@@ -481,10 +508,19 @@ private fun threadActions(
         }
     }
 
+private fun threadLayoutLabel(layout: ThreadLayout) =
+    when (layout) {
+        ThreadLayout.POSTS -> Res.string.next_thread_posts
+        ThreadLayout.FILES -> Res.string.next_thread_files
+        ThreadLayout.CARDS -> Res.string.reader_view_card
+    }
+
 @Composable
 private fun threadOverflow(
     subject: String,
     showingPosts: Boolean,
+    layout: ThreadLayout,
+    onLayoutChange: ((ThreadLayout) -> Unit)?,
     onReload: (() -> Unit)?,
     saved: Boolean,
     watching: Boolean,
@@ -495,6 +531,11 @@ private fun threadOverflow(
     onOpenBrowser: (() -> Unit)?,
 ): List<ReaderMenuItem> =
     buildList {
+        if (onLayoutChange != null) {
+            ThreadLayout.entries.filter { it != layout }.forEach { target ->
+                add(ReaderMenuItem(stringResource(threadLayoutLabel(target))) { onLayoutChange(target) })
+            }
+        }
         if (onToggleSaved != null) {
             when {
                 // A watched thread stays saved: say why rather than offer a control that does nothing.
@@ -541,6 +582,7 @@ private fun PostCell(
     original: Boolean,
     collapsed: Boolean,
     wideWindow: Boolean,
+    cardImageHeight: Dp?,
     onToggleCollapse: ((Post) -> Unit)?,
     onClick: ((Post) -> Unit)?,
     onReference: ((String) -> Unit)?,
@@ -559,43 +601,75 @@ private fun PostCell(
             OrbinType.postDetails
                 .withReaderFont()
         }
-    Column(
-        Modifier
-            .testTag(ThreadTags.POST)
-            .fillMaxWidth()
-            .background(colors.background)
-            .then(if (onClick != null) Modifier.nextClickable(role = null) { onClick(post) } else Modifier)
-            .semantics(mergeDescendants = true) {},
+    val clickModifier = if (onClick != null) Modifier.nextClickable(role = null) { onClick(post) } else Modifier
+    CompositionLocalProvider(
+        LocalReaderPostBodyStyle provides bodyStyle,
+        LocalTextStyle provides bodyStyle,
     ) {
-        CompositionLocalProvider(
-            LocalReaderPostBodyStyle provides bodyStyle,
-            LocalTextStyle provides bodyStyle,
-        ) {
-            ReaderPostLayout(
-                wideWindow = wideWindow,
-                indent = indent,
-                thumbnail =
+        if (cardImageHeight != null) {
+            OrbinCard(
+                modifier =
+                    Modifier
+                        .padding(horizontal = ORBIN_CATALOG_GUTTER)
+                        .testTag(ThreadTags.POST)
+                        .fillMaxWidth()
+                        .then(clickModifier)
+                        .semantics(mergeDescendants = true) {},
+                elevated = false,
+                shape = RoundedCornerShape(OrbinRadius.card),
+            ) {
+                Column(
+                    Modifier
+                        .testTag(ThreadTags.CARD)
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
                     if (showThumbnail) {
-                        { thumbnailModifier -> PostThumbnail(post, media, thumbnailModifier) }
-                    } else {
-                        null
-                    },
-            ) { contentModifier ->
-                Column(contentModifier) {
-                    Box(Modifier.padding(start = inset, end = inset, top = inset)) {
-                        PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                        PostThumbnail(post, media, Modifier.fillMaxWidth().height(cardImageHeight))
                     }
                     if (!collapsed) {
-                        Box(Modifier.padding(start = inset, end = inset, top = inset)) {
-                            PostBody(post, body)
-                        }
-                        PostReplies(post, onReference, Modifier.padding(start = inset, end = inset, top = inset))
+                        PostBody(post, body)
+                        PostReplies(post, onReference)
                     }
-                    Box(Modifier.height(inset))
                 }
             }
+        } else {
+            Column(
+                Modifier
+                    .testTag(ThreadTags.POST)
+                    .fillMaxWidth()
+                    .background(colors.background)
+                    .then(clickModifier)
+                    .semantics(mergeDescendants = true) {},
+            ) {
+                ReaderPostLayout(
+                    wideWindow = wideWindow,
+                    indent = indent,
+                    thumbnail =
+                        if (showThumbnail) {
+                            { thumbnailModifier -> PostThumbnail(post, media, thumbnailModifier) }
+                        } else {
+                            null
+                        },
+                ) { contentModifier ->
+                    Column(contentModifier) {
+                        Box(Modifier.padding(start = inset, end = inset, top = inset)) {
+                            PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                        }
+                        if (!collapsed) {
+                            Box(Modifier.padding(start = inset, end = inset, top = inset)) {
+                                PostBody(post, body)
+                            }
+                            PostReplies(post, onReference, Modifier.padding(start = inset, end = inset, top = inset))
+                        }
+                        Box(Modifier.height(inset))
+                    }
+                }
+                ReaderHairline(Modifier.padding(start = indent + inset, end = inset))
+            }
         }
-        ReaderHairline(Modifier.padding(start = indent + inset, end = inset))
     }
 }
 

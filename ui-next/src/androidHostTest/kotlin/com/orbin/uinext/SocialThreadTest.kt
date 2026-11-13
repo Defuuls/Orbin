@@ -226,8 +226,43 @@ class SocialThreadTest {
         composeRule.onNodeWithContentDescription("Files").assertDoesNotExist()
         composeRule.onNodeWithText("Download all").assertExists()
         composeRule.onNodeWithText("Download all").performClick()
+        composeRule.onNodeWithContentDescription("Card view").performClick()
+        composeRule.onNodeWithText("A post").assertIsDisplayed()
+        composeRule.onAllNodesWithTag(ThreadTags.CARD, useUnmergedTree = true).assertCountEquals(1)
         composeRule.onNodeWithContentDescription("Posts").performClick()
         composeRule.onNodeWithText("A post").assertIsDisplayed()
+        composeRule.onAllNodesWithTag(ThreadTags.CARD, useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun `card layout renders post media and text inside cards and switches from overflow`() {
+        composeRule.setContent {
+            var layout by remember { mutableStateOf(ThreadLayout.POSTS) }
+            NextTheme {
+                ThreadScreen(
+                    subject = "A thread",
+                    board = "/g/",
+                    posts =
+                        listOf(
+                            Post(number = "No. 1", time = "2m", body = "Opening post", hasMedia = true),
+                            Post(number = "No. 2", time = "1m", body = "Reply post"),
+                        ),
+                    layout = layout,
+                    onLayoutChange = { layout = it },
+                    media = { _, mod ->
+                        androidx.compose.foundation.layout
+                            .Box(mod)
+                    },
+                )
+            }
+        }
+        composeRule.onAllNodesWithTag(ThreadTags.CARD, useUnmergedTree = true).assertCountEquals(0)
+        composeRule.onNodeWithContentDescription("More options").performClick()
+        composeRule.onNodeWithText("Card view").performClick()
+        composeRule.onAllNodesWithTag(ThreadTags.CARD, useUnmergedTree = true).assertCountEquals(2)
+        composeRule.onAllNodesWithTag(ThreadTags.THUMBNAIL, useUnmergedTree = true).assertCountEquals(1)
+        composeRule.onNodeWithText("Opening post").assertIsDisplayed()
+        composeRule.onNodeWithText("Reply post").assertIsDisplayed()
     }
 
     @Test

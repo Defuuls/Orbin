@@ -197,7 +197,7 @@ private fun LoadedThread(
     var initialScrollRestored by rememberSaveable(thread.key) { mutableStateOf(false) }
 
     fun saveVisiblePost(flush: Boolean = false) {
-        if (layout != ThreadLayout.POSTS || rows.isEmpty()) return
+        if (layout == ThreadLayout.FILES || rows.isEmpty()) return
         val visibleItem = listState.firstVisibleItemIndex
         val postIndex = (visibleItem - 1).coerceIn(0, rows.lastIndex)
         val offset = if (visibleItem == 0) 0 else listState.firstVisibleItemScrollOffset
@@ -225,7 +225,7 @@ private fun LoadedThread(
 
     LaunchedEffect(mediaScrollIndex, rows, layout, initialScrollRestored) {
         val index = mediaScrollIndex ?: return@LaunchedEffect
-        if (!initialScrollRestored || layout != ThreadLayout.POSTS || rows.isEmpty()) return@LaunchedEffect
+        if (!initialScrollRestored || layout == ThreadLayout.FILES || rows.isEmpty()) return@LaunchedEffect
 
         val targetPostId = presentation.postIdForMediaIndex(index)
         val target = targetPostId?.let { postId -> rows.indexOfFirst { it.post.id == postId } } ?: -1
@@ -239,7 +239,7 @@ private fun LoadedThread(
     }
 
     LaunchedEffect(listState, rows, layout, initialScrollRestored) {
-        if (layout != ThreadLayout.POSTS || rows.isEmpty() || !initialScrollRestored) return@LaunchedEffect
+        if (layout == ThreadLayout.FILES || rows.isEmpty() || !initialScrollRestored) return@LaunchedEffect
         snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
             .collectLatest {
                 delay(SCROLL_TRACK_SETTLE_MS)
@@ -271,7 +271,7 @@ private fun LoadedThread(
                 onToggleSaved = viewModel::toggleBookmark,
                 layout = layout,
                 onLayoutChange = {
-                    if (layout == ThreadLayout.POSTS) saveVisiblePost(flush = true)
+                    if (layout != ThreadLayout.FILES) saveVisiblePost(flush = true)
                     layout = it
                 },
                 files = presentation.fileCells,
