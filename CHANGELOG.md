@@ -6,12 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Changed
-- Recolored the Android splash and system window (status bar, navigation bar, window background) to the Coral ReaderTokens surfaces: light `#FFFFFF`, dark `#1C1C1E`.
-- Recolored the iOS launch-screen background to the same light and dark ReaderTokens surfaces.
-- Updated the offline-archive HTML accent and page backgrounds to the Coral ReaderTokens colors (light accent `#C73E4E` on `#FFFFFF`, dark accent `#FF8A96` on `#1C1C1E`).
-- Replaced the forest-green benchmark thumbnail placeholder with a Coral-tinted one.
-
 ## [204-Moringa] - 2026-11-13
 
 ### Fixed
