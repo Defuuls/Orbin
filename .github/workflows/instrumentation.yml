@@ -57,8 +57,11 @@ jobs:
       # The emulator runner downloads the system image and platform itself, and a truncated
       # download fails the job with "Error on ZipFile unknown archive" before any test runs.
       # Cache them, and on a miss install them here with retries, clearing partial downloads.
+      # Caches are written only from main. Pull requests restore main's copy, so they no longer
+      # add multi-GB duplicates that push the repo past its 10 GB cache limit and evict the
+      # iOS job's Kotlin/Native cache.
       - name: System image cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: sysimg-cache
         with:
           path: |
@@ -81,8 +84,17 @@ jobs:
           done
           exit 1
 
+      - name: Save system image cache
+        if: steps.sysimg-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /usr/local/lib/android/sdk/system-images/android-${{ matrix.api-level }}
+            /usr/local/lib/android/sdk/platforms/android-${{ matrix.api-level }}
+          key: sysimg-${{ matrix.api-level }}-google_apis-x86_64
+
       - name: AVD cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
         with:
           path: |
@@ -103,6 +115,15 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
+
+      - name: Save AVD cache
+        if: steps.avd-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
 
       - name: Resolve modules with instrumentation tests
         run: |
