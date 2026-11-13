@@ -179,31 +179,36 @@ internal class HomeFeedCatalogLoader(
         cached: SubscribedFeedUiState.Success?,
     ): SubscribedFeedUiState.Success {
         val previous = cached?.boards.orEmpty().associateBy { it.board.id }
-        val completed =
-            results.toSortedMap().values.map { feed ->
-                val prior = previous[feed.board.id]
-                if (feed.failed && prior != null) {
-                    prior.copy(board = feed.board, failed = true).withLimit(inputs.limitOverrides[feed.board.id])
-                } else {
-                    SubscribedBoardFeed(
-                        feed.board,
-                        feed.threads.toImmutableList(),
-                        feed.limitOverride,
-                        inputs.providerId,
-                        feed.failed,
-                    )
+        val displayed =
+            inputs.boards.mapIndexedNotNull { index, board ->
+                val feed = results[index]
+                val prior = previous[board.id]
+                when {
+                    // A completed refresh replaces only its own board. Other requested boards
+                    // keep their cached rows until they settle, without reviving removed boards.
+                    feed == null -> prior?.copy(board = board)?.withLimit(inputs.limitOverrides[board.id])
+                    feed.failed && prior != null ->
+                        prior.copy(board = board, failed = true).withLimit(inputs.limitOverrides[board.id])
+                    else ->
+                        SubscribedBoardFeed(
+                            board,
+                            feed.threads.toImmutableList(),
+                            feed.limitOverride,
+                            inputs.providerId,
+                            feed.failed,
+                        )
                 }
             }
         return SubscribedFeedUiState.Success(
-            boards = completed.toImmutableList(),
-            failedBoards = completed.filter { it.failed }.map { it.board.id }.toImmutableList(),
+            boards = displayed.toImmutableList(),
+            failedBoards = displayed.filter { it.failed }.map { it.board.id }.toImmutableList(),
             loadedAtMillis = System.currentTimeMillis(),
-            stale = completed.any { it.failed },
+            stale = displayed.any { it.failed },
             isLoadingMore = results.size < inputs.boards.size,
             canLoadMore = inputs.canLoadMore,
             mode = inputs.mode,
             providerFilter = inputs.providerFilter,
-            errorMessage = "Some boards couldn't be loaded. Try again.".takeIf { completed.any { it.failed } },
+            errorMessage = "Some boards couldn't be loaded. Try again.".takeIf { displayed.any { it.failed } },
         )
     }
 }

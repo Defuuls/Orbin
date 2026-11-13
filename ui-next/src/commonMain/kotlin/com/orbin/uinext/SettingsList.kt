@@ -134,12 +134,12 @@ fun SettingsScreen(
                 else -> emptyList()
             }
         }
-    LaunchedEffect(page) { state.scrollToItem(0) }
     val closeLocalPage: () -> Unit = {
         if (choiceId != null) {
             choiceId = null
         } else if (page != null) {
             page = null
+            state.requestScrollToItem(0)
         } else {
             query = ""
             searchVisible = false
@@ -214,6 +214,7 @@ fun SettingsScreen(
                                             onNavigate?.invoke(destination)
                                         } else {
                                             page = if (destination == "boardPreferences") "playback" else destination
+                                            state.requestScrollToItem(0)
                                         }
                                     }
                                 }
