@@ -1,48 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <issues format="6" by="lint 9.4.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.4.1)" variant="all" version="9.4.1">
 
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="    val layoutInfo = listState.layoutInfo"
-        errorLine2="                               ~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
-            line="58"
-            column="32"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="        firstVisibleIndex = listState.firstVisibleItemIndex,"
-        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
-            line="63"
-            column="39"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="    val layoutInfo = gridState.layoutInfo"
-        errorLine2="                               ~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
-            line="85"
-            column="32"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="        firstVisibleIndex = gridState.firstVisibleItemIndex,"
-        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/commonMain/kotlin/com/orbin/core/ui/scrollbar/FastScrollbar.kt"
-            line="90"
-            column="39"/>
-    </issue>
-
 </issues>
