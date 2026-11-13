@@ -19,6 +19,8 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -32,7 +34,12 @@ import kotlinx.serialization.json.Json
 class SettingsStore(
     private val dataStore: DataStore<Preferences>,
 ) : SettingsRepository {
-    override val settings: Flow<AppSettings> = dataStore.data.map { it.toAppSettings() }
+    override val settings: Flow<AppSettings> =
+        flow {
+            // The first emission used by NextTheme must already have the leftover skin key gone.
+            LegacyThemeMigration.clear(dataStore)
+            emitAll(dataStore.data.map { it.toAppSettings() })
+        }
 
     override suspend fun setPlaybackSettings(
         scope: PlaybackScope,
