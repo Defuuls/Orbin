@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Forty-eight real reader captures: sixteen window/layout cases in three themes.
+ * Fifty-four real reader captures: eighteen window/layout cases in three themes.
  * Method qualifiers set the actual window; no oversized child is cropped to a phone root.
  * All text and local topic artwork are fixed. These fixtures do not exercise provider requests.
  * Bodies here are plain layout samples; :core:reader's ReaderRichThreadScreenshotTest captures
@@ -45,6 +45,9 @@ class ReaderCompletionScreenshotTest(
 
     @Test
     fun phoneCatalogGrid() = capture("phone_390_catalog_grid") { CompletionCatalog(mode = CatalogMode.GRID) }
+
+    @Test
+    fun phoneCatalogCard() = capture("phone_390_catalog_card") { CompletionCatalog(mode = CatalogMode.CARD) }
 
     @Test
     @Config(qualifiers = "en-rUS-w411dp-h891dp-mdpi")
@@ -101,6 +104,13 @@ class ReaderCompletionScreenshotTest(
     fun tabletGridAndThread() =
         capture("tablet_1280_grid_and_thread") {
             CompletionPanes(catalogWidth = 420.dp, threadOpen = true, mode = CatalogMode.GRID)
+        }
+
+    @Test
+    @Config(qualifiers = "en-rUS-w1280dp-h900dp-mdpi")
+    fun tabletCardAndThread() =
+        capture("tablet_1280_card_and_thread") {
+            CompletionPanes(catalogWidth = 420.dp, threadOpen = true, mode = CatalogMode.CARD)
         }
 
     @Test

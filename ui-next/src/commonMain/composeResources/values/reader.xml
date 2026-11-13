@@ -9,6 +9,7 @@
     <string name="reader_pick_board">Choose a board</string>
     <string name="reader_view_list">List view</string>
     <string name="reader_view_grid">Grid view</string>
+    <string name="reader_view_card">Card view</string>
     <string name="reader_sort">Sort: %1$s</string>
     <string name="reader_sort_catalog">Catalog</string>
     <string name="reader_sort_bump_order">Bump order</string>

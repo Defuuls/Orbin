@@ -160,16 +160,16 @@ class BoardViewModelTest {
         runTest {
             val settings = FakeSettingsRepository()
             val first = createViewModel(settingsRepository = settings)
-            first.setCatalogMode(CatalogMode.GRID)
-            assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.GRID)
+            first.setCatalogMode(CatalogMode.CARD)
+            assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.CARD)
             val reopened =
                 createViewModel(
                     settingsRepository = settings,
                     savedStateHandle =
                         SavedStateHandle(mapOf("provider" to PROVIDER, "board" to "v", "title" to "Video")),
                 )
-            assertThat(reopened.settings.first { it.catalogMode == CatalogMode.GRID }.catalogMode)
-                .isEqualTo(CatalogMode.GRID)
+            assertThat(reopened.settings.first { it.catalogMode == CatalogMode.CARD }.catalogMode)
+                .isEqualTo(CatalogMode.CARD)
             settings.setCatalogMode(CatalogMode.LIST)
             assertThat(reopened.settings.first { it.catalogMode == CatalogMode.LIST }.catalogMode)
                 .isEqualTo(CatalogMode.LIST)

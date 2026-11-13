@@ -6,6 +6,7 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.HomeFeedMode
+import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
@@ -65,6 +66,7 @@ sealed interface Load<out T> {
     data class Failed(
         val message: String,
         val cause: BrowserFailureCause = BrowserFailureCause.UNKNOWN,
+        val contentBlocked: Boolean = false,
     ) : Load<Nothing>
 }
 
@@ -131,6 +133,8 @@ sealed interface Route {
         val index: Int,
         val attachmentId: String? = null,
         val thumbnailUrl: String? = null,
+        /** The exact tapped file can start before its thread's remaining files arrive. */
+        val initialAttachment: MediaAttachment? = null,
     ) : Route
 }
 
@@ -517,6 +521,25 @@ class Browser(
         loadCurrent()
     }
 
+    /** A known original file need not wait for the thread request before opening its player. */
+    fun openMedia(
+        key: ThreadKey,
+        attachment: MediaAttachment,
+    ) {
+        mediaScroll.clear()
+        _backStack.update {
+            it +
+                Route.Media(
+                    key,
+                    index = 0,
+                    attachmentId = attachment.id,
+                    thumbnailUrl = attachment.thumbnailUrl,
+                    initialAttachment = attachment,
+                )
+        }
+        loadCurrent()
+    }
+
     /** Pops one destination. Returns false at a drawer root, where there is nothing to pop. */
     fun back(): Boolean {
         if (_backStack.value.size <= 1) return false
@@ -788,6 +811,15 @@ class Browser(
         if (retained == null) target.value = Load.Loading
         page.job =
             scope.launch {
+                suspend fun publishFailure(
+                    error: Exception,
+                    contentBlocked: Boolean = false,
+                ) {
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
+                    if (generation != page.generation) return
+                    val failure = Load.Failed(error.readable(), error.browserFailureCause(), contentBlocked)
+                    if (retained == null) target.value = failure else refreshFailure.value = failure
+                }
                 try {
                     val value = fetch()
                     val publishPrepared = preparePublication(value)
@@ -797,13 +829,12 @@ class Browser(
                     target.value = Load.Ready(value)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
+                } catch (blocked: ContentBlocked) {
+                    publishFailure(blocked, contentBlocked = true)
                 } catch (
                     @Suppress("TooGenericExceptionCaught") error: Exception,
                 ) {
-                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
-                    if (generation != page.generation) return@launch
-                    val failure = Load.Failed(error.readable(), error.browserFailureCause())
-                    if (retained == null) target.value = failure else refreshFailure.value = failure
+                    publishFailure(error)
                 } finally {
                     if (generation == page.generation) refreshing.value = false
                 }

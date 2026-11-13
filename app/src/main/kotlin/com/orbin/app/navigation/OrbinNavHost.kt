@@ -81,16 +81,8 @@ fun OrbinNavHost(
                 onOpenThreadVideos = { provider, board, thread, _ ->
                     navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
                 },
-                onOpenMedia = { provider, board, thread, attachmentId, thumbnailUrl ->
-                    navController.navigate(
-                        Route.SelectedMedia(
-                            provider,
-                            board,
-                            thread,
-                            attachmentId = attachmentId,
-                            thumbnailUrl = thumbnailUrl,
-                        ),
-                    )
+                onOpenMedia = { provider, board, thread, attachment ->
+                    navController.navigate(selectedMediaRoute(provider, board, thread, attachment))
                 },
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
@@ -151,17 +143,8 @@ fun OrbinNavHost(
             ) {
                 NextAllMediaScreen(
                     title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
-                    onOpenMedia = { provider, board, thread, attachmentId, thumbnailUrl ->
-                        navController.navigate(
-                            Route.SelectedMedia(
-                                provider = provider,
-                                board = board,
-                                thread = thread,
-                                startIndex = 0,
-                                attachmentId = attachmentId,
-                                thumbnailUrl = thumbnailUrl,
-                            ),
-                        )
+                    onOpenMedia = { provider, board, thread, attachment ->
+                        navController.navigate(selectedMediaRoute(provider, board, thread, attachment))
                     },
                     onOpenSaved = null,
                 )
@@ -253,6 +236,10 @@ fun OrbinNavHost(
         }
 
         composable<Route.SelectedMedia> {
+            GalleryScreen(onClose = navController::navigateUp)
+        }
+
+        composable<Route.SeededMedia> {
             GalleryScreen(onClose = navController::navigateUp)
         }
 

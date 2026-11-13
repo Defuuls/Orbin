@@ -9,6 +9,8 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.MediaType
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Test
@@ -79,6 +81,35 @@ class GalleryRouteTest {
         assertThat(entry.savedStateHandle.get<Long>("thread")).isEqualTo(92L)
     }
 
+    @Test
+    fun selectedOriginalSurvivesNavigationAndSerializationWithoutLosingUrlCharacters() {
+        val original =
+            MediaAttachment(
+                id = "clip/with?punctuation",
+                originalFileName = "A \"quiet\" clip.webm",
+                extension = "webm",
+                type = MediaType.VIDEO,
+                sourceUrl = "https://media.example/original.webm?name=a%20b&token=one%2Ftwo#clip",
+                thumbnailUrl = "https://media.example/preview.jpg?size=250&format=jpg",
+                width = 1920,
+                height = 1080,
+            )
+        val route = selectedMediaRoute("bbwchan", "g", 92L, original) as Route.SeededMedia
+        val encoded = route.encodedMediaSeed
+        assertThat(Json.decodeFromString<Route.SeededMedia>(Json.encodeToString(route))).isEqualTo(route)
+        val navigation = controller()
+        navigation.navigate(route)
+        assertThat(
+            navigation.currentBackStackEntry!!.savedStateHandle.get<String>("encodedMediaSeed"),
+        ).isEqualTo(encoded)
+        assertThat(
+            Json
+                .decodeFromString<Route.SelectedMedia>(
+                    """{"provider":"bbwchan","board":"g","thread":92,"attachmentId":"old"}""",
+                ).attachmentId,
+        ).isEqualTo("old")
+    }
+
     private fun controller(): NavHostController {
         val owner =
             object : LifecycleOwner {
@@ -94,6 +125,7 @@ class GalleryRouteTest {
                     composable<Route.Gallery> {}
                     composable<Route.ThreadVideos> {}
                     composable<Route.SelectedMedia> {}
+                    composable<Route.SeededMedia> {}
                 }
         }
     }

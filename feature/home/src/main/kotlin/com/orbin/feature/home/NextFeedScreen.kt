@@ -71,8 +71,7 @@ fun NextFeedScreen(
             provider: String,
             board: String,
             thread: Long,
-            attachmentId: String,
-            thumbnailUrl: String,
+            attachment: MediaAttachment,
         ) -> Unit
     )? = null,
     downloadBadge: Int? = null,
@@ -189,7 +188,12 @@ fun NextFeedScreen(
             onRefresh = viewModel::refresh,
             modifier = modifier.fillMaxSize(),
         ) {
-            val catalogMode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST
+            val catalogMode =
+                when (settings.catalogMode) {
+                    StoredCatalogMode.LIST -> CatalogMode.LIST
+                    StoredCatalogMode.GRID -> CatalogMode.GRID
+                    StoredCatalogMode.CARD -> CatalogMode.CARD
+                }
             FeedScreen(
                 rows = rows,
                 isLoading = loading,
@@ -216,7 +220,11 @@ fun NextFeedScreen(
                 downloadBadge = activeDownloads,
                 onModeChange = { selected ->
                     viewModel.setCatalogMode(
-                        if (selected == CatalogMode.GRID) StoredCatalogMode.GRID else StoredCatalogMode.LIST,
+                        when (selected) {
+                            CatalogMode.LIST -> StoredCatalogMode.LIST
+                            CatalogMode.GRID -> StoredCatalogMode.GRID
+                            CatalogMode.CARD -> StoredCatalogMode.CARD
+                        },
                     )
                 },
                 wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
@@ -275,8 +283,7 @@ fun NextFeedScreen(
                                 entry.key.provider.value,
                                 entry.key.board.value,
                                 entry.key.thread.value,
-                                attachment.id,
-                                attachment.thumbnailUrl,
+                                attachment,
                             )
                         } else {
                             onOpenThreadVideos(

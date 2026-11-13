@@ -26,8 +26,12 @@ internal fun nextMediaPreloadTarget(
     currentIndex: Int,
     enabled: Boolean,
     supportsWebM: Boolean,
+    currentReady: Boolean = true,
 ): MediaPreloadKey? {
     if (!enabled || currentIndex !in files.indices) return null
+    val current = files[currentIndex]
+    val currentPlayable = current.playsInApp || (current.isWebM && supportsWebM)
+    if (!currentReady && currentPlayable) return null
     for (index in currentIndex + 1 until files.size) {
         val file = files[index]
         if (file.isSpoiler) continue

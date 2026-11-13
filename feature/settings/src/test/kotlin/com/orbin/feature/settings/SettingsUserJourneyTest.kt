@@ -147,6 +147,9 @@ class SettingsUserJourneyTest {
         choose("Catalog view", "List")
         assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.LIST)
         assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
+        choose("Catalog view", "Card")
+        assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.CARD)
+        assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
     }
 
     /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */

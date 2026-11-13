@@ -28,6 +28,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,9 +62,16 @@ sealed interface GalleryContentState {
         val media: ImmutableList<MediaAttachment>,
         val threadMedia: ImmutableList<MediaAttachment>,
         val threadMediaIndices: ImmutableList<Int>,
+        val pageKeys: ImmutableList<String> =
+            threadMediaIndices.mapIndexed { page, index -> "thread:$index:${media[page].id}" }.toImmutableList(),
+        val isThreadResolved: Boolean = true,
     ) : GalleryContentState {
         /** Engines can reuse an attachment id/URL on different posts in the same thread. */
-        fun pageKey(page: Int): String = "${threadMediaIndices[page]}:${media[page].id}"
+        fun pageKey(page: Int): String = pageKeys[page]
+
+        /** A seeded original has no canonical thread position until the thread supplies it. */
+        fun threadMediaIndexAt(page: Int): Int? =
+            threadMediaIndices.getOrNull(page)?.takeIf { it in threadMedia.indices }
     }
 
     data class Error(
@@ -112,8 +120,14 @@ class GalleryViewModel
         private val thumbnailUrl: String? = savedStateHandle.get<String>("thumbnailUrl")
 
         /** Exact attachment identity wins; Lynx catalog IDs may differ, so a unique preview is next. */
-        fun initialPageIn(media: List<MediaAttachment>): Int =
-            galleryInitialPage(media, attachmentId, thumbnailUrl, startIndex)
+        fun initialPageIn(media: List<MediaAttachment>): Int {
+            val seed = selectedSeed ?: return galleryInitialPage(media, attachmentId, thumbnailUrl, startIndex)
+            val exact = media.indexOfFirst { it.id == seed.id && it.sourceUrl == seed.sourceUrl }
+            if (exact >= 0) return exact
+            // Some engines use different catalog/thread IDs. Only the same original URL may
+            // bridge that difference; a coincidentally reused id or poster must not change clips.
+            return media.indices.filter { media[it].sourceUrl == seed.sourceUrl }.singleOrNull() ?: -1
+        }
 
         /** Drives video autoplay / mute in the gallery from the user's media settings. */
         val settings: StateFlow<AppSettings> =
@@ -134,6 +148,21 @@ class GalleryViewModel
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
         private val threadKey = ThreadKey(provider, board, threadId)
+        private val selectedSeed =
+            decodeGalleryMediaSeed(savedStateHandle.get<String>("encodedMediaSeed"), threadKey, attachmentId)
+                ?.takeIf { !videosOnly || it.type == MediaType.VIDEO }
+        private val selectedPageKey = selectedSeed?.let { "selected:$threadKey:${it.id}:${it.sourceUrl}" }
+        private val initialContent =
+            selectedSeed?.let {
+                GalleryContentState.Ready(
+                    media = persistentListOf(it),
+                    threadMedia = persistentListOf(),
+                    threadMediaIndices = persistentListOf(-1),
+                    pageKeys = persistentListOf(checkNotNull(selectedPageKey)),
+                    isThreadResolved = false,
+                )
+            }
+        private var retainedContent: GalleryContentState.Ready? = initialContent
 
         fun playbackSettings() = settings.value.playbackPreferences.resolve(provider, board)
 
@@ -154,46 +183,105 @@ class GalleryViewModel
             reload
                 .flatMapLatest { attempt ->
                     observeThread(provider, board, threadId, forceRefresh = attempt > 0)
-                        .map(::contentFor)
-                        .onStart { emit(GalleryContentState.Loading) }
-                        .catch { emit(GalleryContentState.Error("Couldn't load the thread. Try again.")) }
-                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), GalleryContentState.Loading)
+                        .map { result ->
+                            val retained = retainedContent
+                            withContext(Dispatchers.Default) { contentFor(result, retained) }
+                                .also { retainedContent = it as? GalleryContentState.Ready }
+                        }.onStart { emit(retainedContent ?: GalleryContentState.Loading) }
+                        .catch {
+                            emit(
+                                retainedContent ?: GalleryContentState.Error("Couldn't load the thread. Try again."),
+                            )
+                        }
+                }.stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                    initialContent ?: GalleryContentState.Loading,
+                )
 
         val media: StateFlow<ImmutableList<MediaAttachment>> =
             content
                 .map { (it as? GalleryContentState.Ready)?.media ?: persistentListOf() }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), persistentListOf())
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                    initialContent?.media ?: persistentListOf(),
+                )
 
-        private suspend fun contentFor(result: OrbinResult<Thread>): GalleryContentState {
+        private suspend fun contentFor(
+            result: OrbinResult<Thread>,
+            retained: GalleryContentState.Ready?,
+        ): GalleryContentState {
             val thread =
                 when (result) {
                     is OrbinResult.Success -> result.data
                     is OrbinResult.Failure -> savedThreadRepository.load(threadKey)
                 }
             if (thread == null) {
-                return GalleryContentState.Error(
+                return retained ?: GalleryContentState.Error(
                     (result as? OrbinResult.Failure)?.error?.message ?: "Couldn't load the thread. Try again.",
                 )
             }
-            val allMedia =
+            if (thread.key != threadKey) {
+                return retained ?: GalleryContentState.Error("Couldn't load the thread. Try again.")
+            }
+            return loadedContentFor(thread)
+        }
+
+        private fun loadedContentFor(thread: Thread): GalleryContentState {
+            val seed = selectedSeed
+            val selectedIsFiltered =
+                seed != null &&
+                    (
+                        thread.isPermanentlyFiltered() ||
+                            thread.allPosts.any { post ->
+                                post.attachments.any { attachment ->
+                                    attachment.sourceUrl == seed.sourceUrl &&
+                                        (post.isPermanentlyFiltered() || attachment.isPermanentlyFiltered())
+                                }
+                            }
+                    )
+            if (selectedIsFiltered) return GalleryContentState.SelectedUnavailable
+            val canonicalFiles =
                 if (thread.isPermanentlyFiltered()) {
-                    persistentListOf()
+                    emptyList()
                 } else {
                     thread.allPosts
                         .filterNot { it.isPermanentlyFiltered() }
-                        .flatMap { it.attachments }
-                        .filterNot { it.isPermanentlyFiltered() }
-                        .toImmutableList()
+                        .flatMap { post ->
+                            val occurrences = mutableMapOf<Pair<String, String>, Int>()
+                            post.attachments.filterNot { it.isPermanentlyFiltered() }.map { attachment ->
+                                val identity = attachment.id to attachment.sourceUrl
+                                val occurrence = occurrences.getOrDefault(identity, 0)
+                                occurrences[identity] = occurrence + 1
+                                attachment to
+                                    "thread:$threadKey:${post.id}:${attachment.id}:${attachment.sourceUrl}:$occurrence"
+                            }
+                        }
                 }
-            val visibleIndices =
+            val allMedia = canonicalFiles.map { it.first }.toImmutableList()
+            var visibleIndices =
                 allMedia.indices
                     .filter { index -> !videosOnly || allMedia[index].type == MediaType.VIDEO }
                     .toImmutableList()
-            val visibleMedia = if (videosOnly) visibleIndices.map(allMedia::get).toImmutableList() else allMedia
-            if ((attachmentId != null || thumbnailUrl != null) && initialPageIn(visibleMedia) < 0) {
+            var visibleMedia = if (videosOnly) visibleIndices.map(allMedia::get).toImmutableList() else allMedia
+            var selectedPage = initialPageIn(visibleMedia)
+            if (selectedPage < 0 && seed != null) {
+                // A partial/stale thread response cannot take away an already known original.
+                // Its canonical index remains unknown until that exact source appears in a reply.
+                visibleMedia = (listOf(seed) + visibleMedia).toImmutableList()
+                visibleIndices = (listOf(-1) + visibleIndices).toImmutableList()
+                selectedPage = 0
+            }
+            if ((attachmentId != null || thumbnailUrl != null) && selectedPage < 0) {
                 return GalleryContentState.SelectedUnavailable
             }
-            return GalleryContentState.Ready(visibleMedia, allMedia, visibleIndices)
+            val pageKeys =
+                visibleIndices
+                    .mapIndexed { page, index ->
+                        selectedPageKey?.takeIf { page == selectedPage } ?: canonicalFiles[index].second
+                    }.toImmutableList()
+            return GalleryContentState.Ready(visibleMedia, allMedia, visibleIndices, pageKeys)
         }
 
         fun retry() {
@@ -203,7 +291,7 @@ class GalleryViewModel
         /** A filtered video page still points back to the correct file in its original thread. */
         fun threadMediaIndexAt(page: Int): Int? {
             val loaded = content.value as? GalleryContentState.Ready ?: return null
-            return loaded.threadMediaIndices.getOrNull(page)
+            return loaded.threadMediaIndexAt(page)
         }
 
         private var prefetchJob: Job? = null
@@ -304,6 +392,7 @@ internal fun galleryRemainingMedia(
     visiblePage: Int,
 ): List<MediaAttachment> {
     val current = ready.threadMediaIndices.getOrNull(visiblePage) ?: return emptyList()
+    if (current == -1) return ready.threadMedia
     if (current !in ready.threadMedia.indices) return emptyList()
     return ready.threadMedia.filterIndexed { index, _ -> index != current }
 }

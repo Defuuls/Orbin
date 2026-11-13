@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.MediaAttachment
 
 @Composable
 fun NextFeedWithSiteSwitcherScreen(
@@ -27,8 +28,7 @@ fun NextFeedWithSiteSwitcherScreen(
             provider: String,
             board: String,
             thread: Long,
-            attachmentId: String,
-            thumbnailUrl: String,
+            attachment: MediaAttachment,
         ) -> Unit
     )? = null,
     downloadBadge: Int? = null,

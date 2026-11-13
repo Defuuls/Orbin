@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [205 — Nopales](https://github.com/Defuuls/Orbin/releases/tag/v205-Nopales)
+**Current release:** [206 — Sea Beet](https://github.com/Defuuls/Orbin/releases/tag/v206-Sea-Beet)
 
-**What's new in 205:** Coral navigation, selected-media playback, and accessible reader controls across Android and iOS.
+**What's new in 206:** Full-width Card view and faster selected-video startup on Android and iOS.
 
 The reader follows the [reader design](docs/design-system/README.md). Its [implementation and verification record](docs/design-system/IMPLEMENTATION.md) tracks the results and remaining checks; physical iOS checks have a separate [device checklist](docs/ios-reader-checklist.md).
 

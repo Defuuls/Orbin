@@ -111,12 +111,6 @@ internal fun MediaViewer(
     DisposableEffect(preloader) {
         onDispose { preloader.close() }
     }
-    LaunchedEffect(preloader, files, selection.index, playback.preloadNextClip) {
-        prepareUpcomingAfterSettle(
-            nextMediaPreloadTarget(files, selection.index, playback.preloadNextClip, supportsWebM),
-            prepare = preloader::prepare,
-        )
-    }
     val close = {
         onPageChanged(selection.index)
         onClose()
@@ -143,10 +137,24 @@ internal fun MediaViewer(
     }
     val loopOverrides = remember { mutableStateMapOf<String, Boolean>() }
     val revealedFiles = remember { mutableStateMapOf<String, Boolean>() }
+    val playbackReady = remember { mutableStateMapOf<String, Boolean>() }
     val currentRevealKey = "${selection.key}:${current.isSpoiler}"
     val currentRevealed = revealedFiles[currentRevealKey] ?: !current.isSpoiler
     val currentLoop = loopOverrides[selection.key] ?: playback.loopVideos
     val currentPlayable = current.playsInApp || (current.isWebM && supportsWebM)
+    val currentReady = playbackReady[selection.key] == true
+    LaunchedEffect(preloader, files, selection.index, playback.preloadNextClip, currentReady) {
+        prepareUpcomingAfterSettle(
+            nextMediaPreloadTarget(
+                files,
+                selection.index,
+                playback.preloadNextClip,
+                supportsWebM,
+                currentReady = currentReady,
+            ),
+            prepare = preloader::prepare,
+        )
+    }
     val density = LocalDensity.current
     var toolbarHeight by remember { mutableStateOf(56.dp) }
     val uriHandler = LocalUriHandler.current
@@ -195,6 +203,7 @@ internal fun MediaViewer(
                     onMuteChange = { muted = it },
                     playbackSpeed = playbackSpeed,
                     onDoubleTapSave = if (active) ({ saveFile(file, fileKey) }) else null,
+                    onPlaybackReadyChange = { playbackReady[fileKey] = it },
                 )
             }
         }
@@ -326,6 +335,7 @@ private fun MediaPage(
     onMuteChange: (Boolean) -> Unit,
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
+    onPlaybackReadyChange: (Boolean) -> Unit,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
@@ -360,6 +370,7 @@ private fun MediaPage(
                 onDoubleTapSave = onDoubleTapSave,
                 preloader = preloader,
                 modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
+                onPlaybackReadyChange = onPlaybackReadyChange,
             )
         webm != null && supportsWebM ->
             NativeWebMPlayer(
@@ -373,6 +384,7 @@ private fun MediaPage(
                 onDoubleTapSave = onDoubleTapSave,
                 loop = looping,
                 preloader = preloader,
+                onPlaybackReadyChange = onPlaybackReadyChange,
             )
         else -> ExternalFile(file)
     }

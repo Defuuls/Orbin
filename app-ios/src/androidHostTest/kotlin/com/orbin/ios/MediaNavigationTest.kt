@@ -50,6 +50,51 @@ class MediaNavigationTest {
         assertNull(Route.Media(thread, 0).startIndexIn(emptyList()))
     }
 
+    @Test
+    fun aKnownSelectionIsAvailableBeforeTheThreadArrives() {
+        val route = Route.Media(thread, 0, reply.id, reply.thumbnailUrl, initialAttachment = reply)
+        val initial = route.viewerFiles(emptyList())
+        assertEquals(listOf(reply), initial)
+        assertEquals(0, route.startIndexIn(initial))
+    }
+
+    @Test
+    fun threadExpansionRetainsTheSeedKeyWhenTheProviderUsesADifferentAttachmentId() {
+        val route = Route.Media(thread, 0, reply.id, reply.thumbnailUrl, initialAttachment = reply)
+        val initialKey = mediaViewerKeys(route.viewerFiles(emptyList())).single()
+        val updated = reply.copy(id = "full-thread-reply", originalFileName = "updated.jpg")
+        val expanded = route.viewerFiles(listOf(first, updated))
+        assertEquals(2, expanded.size)
+        assertEquals(1, route.startIndexIn(expanded))
+        assertEquals(reply.sourceUrl, expanded[1].sourceUrl)
+        assertEquals("updated.jpg", expanded[1].originalFileName)
+        assertEquals(initialKey, mediaViewerKeys(expanded)[1])
+    }
+
+    @Test
+    fun anUnavailableSeedSourceStaysSelectedInsteadOfAnUnrelatedMatchingIdOrThumbnail() {
+        val route = Route.Media(thread, 0, reply.id, reply.thumbnailUrl, initialAttachment = reply)
+        val unrelated = reply.copy(sourceUrl = "https://media.example/unrelated.jpg")
+        val expanded = route.viewerFiles(listOf(first, unrelated))
+        assertEquals(reply, expanded.first())
+        assertEquals(0, route.startIndexIn(expanded))
+        assertEquals(reply.sourceUrl, expanded[route.startIndexIn(expanded)!!].sourceUrl)
+    }
+
+    @Test
+    fun aMismatchedOrUnsafeSeedCannotBypassExplicitSelection() {
+        val mismatchedId = Route.Media(thread, 0, "different-id", reply.thumbnailUrl, initialAttachment = reply)
+        val mismatchedThumbnail = Route.Media(thread, 0, reply.id, first.thumbnailUrl, initialAttachment = reply)
+        val unsafe = reply.copy(sourceUrl = "javascript:alert(1)")
+        val unsafeRoute = Route.Media(thread, 0, unsafe.id, unsafe.thumbnailUrl, initialAttachment = unsafe)
+        val filtered = reply.copy(originalFileName = "gore.mp4")
+        val filteredRoute = Route.Media(thread, 0, filtered.id, filtered.thumbnailUrl, initialAttachment = filtered)
+        listOf(mismatchedId, mismatchedThumbnail, unsafeRoute, filteredRoute).forEach { route ->
+            assertEquals(emptyList<MediaAttachment>(), route.viewerFiles(emptyList()))
+            assertNull(route.startIndexIn(listOf(reply)))
+        }
+    }
+
     private fun file(
         id: String,
         thumbnail: String,

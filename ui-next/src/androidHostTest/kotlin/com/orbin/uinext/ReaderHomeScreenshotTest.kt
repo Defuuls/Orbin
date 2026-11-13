@@ -26,8 +26,8 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * The production Home screen and its real reader app bar, in every canonical theme.
- * Eight window/type/direction cases replace the retained full-screen Home references.
- * Local artwork and thread metadata keep these 24 captures independent of live feeds.
+ * Nine window/type/direction cases replace the retained full-screen Home references.
+ * Local artwork and thread metadata keep these 27 captures independent of live feeds.
  */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -43,6 +43,9 @@ class ReaderHomeScreenshotTest(
 
     @Test
     fun phoneGrid() = capture("phone_390_grid", mode = CatalogMode.GRID)
+
+    @Test
+    fun phoneCard() = capture("phone_390_card", mode = CatalogMode.CARD)
 
     @Test
     @Config(qualifiers = "en-rUS-w960dp-h800dp-mdpi")

@@ -106,6 +106,9 @@ class FeedDestinationContinuityTest {
             composeRule.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("List view").performClick()
             runCurrent()
             assertEquals(CatalogMode.LIST, repository.settings.value.catalogMode)
+            composeRule.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("Card view").performClick()
+            runCurrent()
+            assertEquals(CatalogMode.CARD, repository.settings.value.catalogMode)
 
             composeRule.runOnIdle { visible = false }
             composeRule.waitForIdle()
@@ -116,6 +119,10 @@ class FeedDestinationContinuityTest {
                     ReaderFeedTags.MODE,
                 ).assertContentDescriptionEquals("Grid view")
                 .assertIsDisplayed()
+            assertEquals(CatalogMode.CARD, browser.settings.current.value.catalogMode)
+            composeRule.onNodeWithTag(ReaderFeedTags.MODE).performClick()
+            runCurrent()
+            assertEquals(CatalogMode.GRID, repository.settings.value.catalogMode)
         }
 
     @Test

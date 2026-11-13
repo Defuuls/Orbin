@@ -110,7 +110,12 @@ internal fun CatalogDestination(
         remember(availableBoards) {
             availableBoards.map { ReaderBoardOption(it.provider.value, it.siteName, it.board.id.value, it.board.title) }
         }
-    val mode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST
+    val mode =
+        when (settings.catalogMode) {
+            StoredCatalogMode.LIST -> CatalogMode.LIST
+            StoredCatalogMode.GRID -> CatalogMode.GRID
+            StoredCatalogMode.CARD -> CatalogMode.CARD
+        }
     val uriHandler = LocalUriHandler.current
     val webUrl = remember(board) { browser.boardWebUrl(board) }
     ReaderScaffold(
@@ -204,12 +209,10 @@ internal fun CatalogDestination(
                     mode = mode,
                     onModeChange = { selected ->
                         browser.settings.setCatalogMode(
-                            if (selected ==
-                                CatalogMode.GRID
-                            ) {
-                                StoredCatalogMode.GRID
-                            } else {
-                                StoredCatalogMode.LIST
+                            when (selected) {
+                                CatalogMode.LIST -> StoredCatalogMode.LIST
+                                CatalogMode.GRID -> StoredCatalogMode.GRID
+                                CatalogMode.CARD -> StoredCatalogMode.CARD
                             },
                         )
                     },
@@ -327,7 +330,7 @@ internal fun BoardMediaDestination(
                                 title = label,
                                 onOpen = { cell ->
                                     byId[cell.id]?.let {
-                                        browser.openMedia(it.key, it.attachment.id, it.attachment.thumbnailUrl)
+                                        browser.openMedia(it.key, it.attachment)
                                     }
                                 },
                                 tile = { cell, modifier ->

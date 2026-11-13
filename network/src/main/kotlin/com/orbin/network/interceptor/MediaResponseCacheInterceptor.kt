@@ -146,12 +146,25 @@ class MediaResponseCacheInterceptor(
     ): Response {
         val body = response.body
         var writer: MediaResponseCache.Write? = initial
+        val pending = Buffer()
         var received = 0L
         val input =
             object : ForwardingSource(body.source()) {
                 private fun abort() {
                     writer?.let { bestEffort { it.abort() } }
                     writer = null
+                    pending.clear()
+                }
+
+                private fun appendPending(flush: Boolean = false) {
+                    val active = writer ?: return
+                    while (pending.size >= CHUNK_BYTES || (flush && pending.size > 0L)) {
+                        val bytes = pending.readByteArray(minOf(pending.size, CHUNK_BYTES))
+                        if (bestEffort { active.append(bytes) } == null) {
+                            abort()
+                            return
+                        }
+                    }
                 }
 
                 override fun read(
@@ -162,18 +175,27 @@ class MediaResponseCacheInterceptor(
                         val count = super.read(sink, minOf(byteCount, CHUNK_BYTES))
                         if (count > 0) {
                             received += count
-                            writer?.let { active ->
-                                val copy = Buffer()
-                                sink.copyTo(copy, sink.size - count, count)
-                                if (bestEffort { active.append(copy.readByteArray()) } == null) abort()
+                            if (received > MAX_ENTRY_BYTES) {
+                                abort()
+                            } else if (writer != null) {
+                                // Deliver each network packet immediately, but batch the cache's
+                                // encrypted database transactions instead of writing every read.
+                                sink.copyTo(pending, sink.size - count, count)
+                                appendPending()
                             }
                         }
                         if (count == -1L || received == body.contentLength()) {
-                            writer?.let { active ->
-                                val complete = body.contentLength() < 0 || received == body.contentLength()
-                                if (!complete || bestEffort { active.commit() } == null) bestEffort { active.abort() }
+                            val complete = body.contentLength() < 0 || received == body.contentLength()
+                            if (complete) {
+                                appendPending(flush = true)
+                                writer?.let { active ->
+                                    if (bestEffort { active.commit() } == null) bestEffort { active.abort() }
+                                }
+                            } else {
+                                abort()
                             }
                             writer = null
+                            pending.clear()
                             release()
                         }
                         return count

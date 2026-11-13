@@ -71,10 +71,11 @@ class CatalogScreenTest {
     }
 
     @Test
-    fun `only grid cards ask hosts for a sharper image than the provider thumbnail`() {
+    fun `both card layouts ask hosts for a sharper image than the provider thumbnail`() {
         assertTrue(CatalogMode.GRID.sharpensThumbnails)
+        assertTrue(CatalogMode.CARD.sharpensThumbnails)
         assertTrue(!CatalogMode.LIST.sharpensThumbnails)
-        assertEquals(listOf(CatalogMode.LIST, CatalogMode.GRID), CatalogMode.entries)
+        assertEquals(listOf(CatalogMode.LIST, CatalogMode.GRID, CatalogMode.CARD), CatalogMode.entries)
     }
 
     @Test

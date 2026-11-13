@@ -83,13 +83,14 @@ enum class ThumbnailSize(
     FILL("Fill", THUMBNAIL_SIZE_FILL_DP),
 }
 
-/** Device-wide board catalog presentation; the grid derives its columns from the pane width. */
+/** Device-wide catalog presentation; cards fill the pane width and grids derive their columns from it. */
 @Serializable
 enum class CatalogMode(
     val label: String,
 ) {
     LIST("List"),
     GRID("Grid"),
+    CARD("Card"),
 }
 
 /**

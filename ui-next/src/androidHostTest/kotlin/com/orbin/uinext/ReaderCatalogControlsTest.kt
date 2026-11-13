@@ -3,8 +3,14 @@ package com.orbin.uinext
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
@@ -29,6 +35,39 @@ import org.robolectric.annotation.Config
 class ReaderCatalogControlsTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun homeModeControlCyclesAllThreeModesAndAnnouncesTheCurrentView() {
+        var mode by mutableStateOf(CatalogMode.GRID)
+        val choices = mutableListOf<CatalogMode>()
+        compose.setContent {
+            NextTheme {
+                FeedScreen(
+                    rows = emptyList(),
+                    mode = mode,
+                    onModeChange = {
+                        choices += it
+                        mode = it
+                    },
+                )
+            }
+        }
+        listOf(
+            "Grid view" to "List view",
+            "List view" to "Card view",
+            "Card view" to "Grid view",
+        ).forEach { (current, next) ->
+            compose
+                .onNodeWithTag(ReaderFeedTags.MODE)
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, current))
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf(next)))
+                .performClick()
+        }
+        compose.runOnIdle {
+            assertThat(mode).isEqualTo(CatalogMode.GRID)
+            assertThat(choices).containsExactly(CatalogMode.LIST, CatalogMode.CARD, CatalogMode.GRID).inOrder()
+        }
+    }
 
     @Test
     fun boardPickerKeepsSameNamedBoardsQualifiedBySiteAndMarksTheCurrentBoard() {

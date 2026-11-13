@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -40,6 +41,7 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_feed_choose_source
 import com.orbin.uinext.resources.reader_feed_done
 import com.orbin.uinext.resources.reader_feed_sources
+import com.orbin.uinext.resources.reader_view_card
 import com.orbin.uinext.resources.reader_view_grid
 import com.orbin.uinext.resources.reader_view_list
 import com.orbin.uinext.tokens.OrbinRadius
@@ -190,13 +192,37 @@ private fun ReaderFeedModeToggle(
     onChange: (CatalogMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val grid = mode == CatalogMode.GRID
-    val action = stringResource(if (grid) Res.string.reader_view_list else Res.string.reader_view_grid)
-    val current = stringResource(if (grid) Res.string.reader_view_grid else Res.string.reader_view_list)
+    val target =
+        when (mode) {
+            CatalogMode.GRID -> CatalogMode.LIST
+            CatalogMode.LIST -> CatalogMode.CARD
+            CatalogMode.CARD -> CatalogMode.GRID
+        }
+    val action =
+        stringResource(
+            when (target) {
+                CatalogMode.GRID -> Res.string.reader_view_grid
+                CatalogMode.LIST -> Res.string.reader_view_list
+                CatalogMode.CARD -> Res.string.reader_view_card
+            },
+        )
+    val current =
+        stringResource(
+            when (mode) {
+                CatalogMode.GRID -> Res.string.reader_view_grid
+                CatalogMode.LIST -> Res.string.reader_view_list
+                CatalogMode.CARD -> Res.string.reader_view_card
+            },
+        )
     NextIconAction(
-        imageVector = if (grid) Icons.AutoMirrored.Filled.ViewList else Icons.Filled.GridView,
+        imageVector =
+            when (target) {
+                CatalogMode.GRID -> Icons.Filled.GridView
+                CatalogMode.LIST -> Icons.AutoMirrored.Filled.ViewList
+                CatalogMode.CARD -> Icons.Filled.ViewAgenda
+            },
         contentDescription = action,
-        onClick = { onChange(if (grid) CatalogMode.LIST else CatalogMode.GRID) },
+        onClick = { onChange(target) },
         modifier = modifier.testTag(ReaderFeedTags.MODE).semantics { stateDescription = current },
         tint = reader.accent,
     )

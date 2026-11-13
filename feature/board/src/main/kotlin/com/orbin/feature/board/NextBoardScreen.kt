@@ -102,7 +102,12 @@ fun NextBoardScreen(
         if (sourceIndex in 0 until threads.itemCount) threads[sourceIndex]
         rows.getOrNull(sourceIndex)
     }
-    val mode = if (settings.catalogMode == StoredCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST
+    val mode =
+        when (settings.catalogMode) {
+            StoredCatalogMode.LIST -> CatalogMode.LIST
+            StoredCatalogMode.GRID -> CatalogMode.GRID
+            StoredCatalogMode.CARD -> CatalogMode.CARD
+        }
     val wide = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp)
     val load = boardCatalogLoadState(threads.itemCount, threads.loadState.refresh)
     val failure = (load.failure ?: retainedRefreshFailure)?.catalogFailure()
@@ -166,12 +171,10 @@ fun NextBoardScreen(
                         mode = mode,
                         onModeChange = { selected ->
                             viewModel.setCatalogMode(
-                                if (selected ==
-                                    CatalogMode.GRID
-                                ) {
-                                    StoredCatalogMode.GRID
-                                } else {
-                                    StoredCatalogMode.LIST
+                                when (selected) {
+                                    CatalogMode.LIST -> StoredCatalogMode.LIST
+                                    CatalogMode.GRID -> StoredCatalogMode.GRID
+                                    CatalogMode.CARD -> StoredCatalogMode.CARD
                                 },
                             )
                         },

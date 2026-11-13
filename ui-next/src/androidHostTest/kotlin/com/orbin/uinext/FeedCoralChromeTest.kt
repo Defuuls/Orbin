@@ -41,6 +41,17 @@ class FeedCoralChromeTest {
             }
         }
         compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Home")
+        compose.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("Card view").performClick()
+        compose.runOnIdle { assertEquals(CatalogMode.CARD, mode) }
+        val pane = compose.onNodeWithTag(ReaderFeedTags.GRID).getUnclippedBoundsInRoot()
+        val cardFirst = compose.onNodeWithTag(ReaderFeedTags.row(rows[0].id)).getUnclippedBoundsInRoot()
+        val cardSecond = compose.onNodeWithTag(ReaderFeedTags.row(rows[1].id)).getUnclippedBoundsInRoot()
+        assertEquals("Card mode fills the pane inside its gutters", pane.left.value + 16f, cardFirst.left.value, 0.5f)
+        assertEquals(pane.right.value - 16f, cardFirst.right.value, 0.5f)
+        assertEquals(cardFirst.left.value, cardSecond.left.value, 0.5f)
+        assertEquals(cardFirst.right.value, cardSecond.right.value, 0.5f)
+        assertEquals("Card mode stacks full-width cards", cardFirst.bottom.value + 8f, cardSecond.top.value, 0.5f)
+
         compose.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("Grid view").performClick()
         compose.runOnIdle { assertEquals(CatalogMode.GRID, mode) }
         val first = compose.onNodeWithTag(ReaderFeedTags.row(rows[0].id)).getUnclippedBoundsInRoot()

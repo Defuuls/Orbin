@@ -80,6 +80,7 @@ fun OrbinApp(
         currentEntry?.destination?.let {
             it.hasRoute(Route.Gallery::class) ||
                 it.hasRoute(Route.SelectedMedia::class) ||
+                it.hasRoute(Route.SeededMedia::class) ||
                 it.hasRoute(Route.ThreadVideos::class)
         } ?: false
     val readerBarVisible =
@@ -87,6 +88,7 @@ fun OrbinApp(
             !destination.hasRoute(Route.Onboarding::class) &&
                 !destination.hasRoute(Route.Gallery::class) &&
                 !destination.hasRoute(Route.SelectedMedia::class) &&
+                !destination.hasRoute(Route.SeededMedia::class) &&
                 !destination.hasRoute(Route.ThreadVideos::class)
         } ?: !startWithOnboarding
     SystemBarAppearance(immersive = immersive, readerBarVisible = readerBarVisible)

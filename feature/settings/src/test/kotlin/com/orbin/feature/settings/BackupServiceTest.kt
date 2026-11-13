@@ -43,7 +43,7 @@ class BackupServiceTest {
         AppSettings(
             hideNsfwBoards = true,
             themeMode = AppThemeMode.DARK,
-            catalogMode = CatalogMode.GRID,
+            catalogMode = CatalogMode.CARD,
             amoled = true,
             biometricLockEnabled = true,
             onboardingCompleted = true,
@@ -64,7 +64,7 @@ class BackupServiceTest {
                     .jsonObject
                     .getValue("settings")
                     .jsonObject
-            assertThat(exportedSettings.getValue("catalogMode").toString()).isEqualTo("\"GRID\"")
+            assertThat(exportedSettings.getValue("catalogMode").toString()).isEqualTo("\"CARD\"")
             assertThat(exportedSettings.keys)
                 .containsNoneOf("colorTheme", "color_theme", "tabletCatalogColumns", "tablet_catalog_columns")
 

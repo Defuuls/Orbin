@@ -78,7 +78,7 @@ internal fun ReaderFeedItem(
             listOf(row.sourceAndBoard, activity).filter(String::isNotBlank).joinToString(" · ")
         }
     val mediaAction = actions.onOpenMedia?.takeIf { row.hasPreview && !row.muted }
-    if (mode == CatalogMode.GRID) {
+    if (mode != CatalogMode.LIST) {
         Box(Modifier.fillMaxWidth()) {
             CatalogCard(
                 row = row,

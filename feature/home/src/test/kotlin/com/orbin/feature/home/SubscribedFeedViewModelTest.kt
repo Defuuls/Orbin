@@ -217,17 +217,17 @@ class SubscribedFeedViewModelTest {
                 while (loaded !is SubscribedFeedUiState.Success || loaded.isLoadingMore) loaded = awaitItem()
                 val callsAfterLoad = catalogCalls.get()
 
-                model.setCatalogMode(CatalogMode.GRID)
+                model.setCatalogMode(CatalogMode.CARD)
                 advanceUntilIdle()
 
-                assertThat(settings.settings.first().catalogMode).isEqualTo(CatalogMode.GRID)
+                assertThat(settings.settings.first().catalogMode).isEqualTo(CatalogMode.CARD)
                 assertThat(catalogCalls.get()).isEqualTo(callsAfterLoad)
                 assertThat(model.uiState.value).isSameInstanceAs(loaded)
             }
 
             val laterHome = createViewModel(registry, settings, subscribed = setOf(healthyBoard))
-            assertThat(laterHome.settings.first { it.catalogMode == CatalogMode.GRID }.catalogMode)
-                .isEqualTo(CatalogMode.GRID)
+            assertThat(laterHome.settings.first { it.catalogMode == CatalogMode.CARD }.catalogMode)
+                .isEqualTo(CatalogMode.CARD)
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)

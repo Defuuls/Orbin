@@ -16,6 +16,78 @@ SCRIPT_SOURCE = ROOT / "app-ios/src/commonMain/kotlin/com/orbin/ios/WebMPlayback
 
 @unittest.skipUnless(shutil.which("node"), "Node is required to execute the production media JavaScript")
 class WebMPlaybackScriptTest(unittest.TestCase):
+    def test_requested_play_is_not_display_ready_until_playing_event(self) -> None:
+        self.run_production_script(r"""
+            video = media();
+            video.readyState = 2;
+            const pending = deferred();
+            video.playResult = () => pending.promise;
+            const requested = run(0).split(',');
+            assert.equal(video.paused, false, 'play() can clear paused before any frame has been played');
+            assert.equal(requested[4], '1', 'A pending initial play remains buffering');
+            assert.equal(requested[5], '0', 'paused=false does not acknowledge the first frame');
+            video.emit('canplay');
+            video.emit('timeupdate');
+            assert.equal(run(0).split(',')[5], '0', 'Readiness events before playing cannot expose the player');
+            pending.resolve();
+            await flush();
+            assert.equal(run(0).split(',')[5], '0', 'A fulfilled play promise alone is not a rendered frame');
+            // HAVE_CURRENT_DATA (2) stays loading so upcoming work cannot compete with an underbuffered clip.
+            assert.equal(run(0).split(',')[4], '1');
+            video.readyState = 3;
+            video.emit('playing');
+            const playing = run(0).split(',');
+            assert.equal(playing[4], '0');
+            assert.equal(playing[5], '1', 'Playing with future data reveals the playback surface');
+            assert.equal(video.playCalls, 1, 'Readiness polling must not recreate or restart playback');
+            for (const callbacks of video.listeners.values()) {
+                assert.equal(callbacks.length, 1, 'Polling installs each media event listener only once');
+            }
+        """)
+
+    def test_buffering_and_seeking_hide_the_surface_until_playback_recovers(self) -> None:
+        self.run_production_script(r"""
+            video = media();
+            video.readyState = 3;
+            run(0);
+            await flush();
+            video.emit('playing');
+            assert.deepEqual(run(0).split(',').slice(4), ['0', '1']);
+
+            video.emit('stalled');
+            assert.deepEqual(
+                run(0).split(',').slice(4), ['0', '1'],
+                'A network stalled event does not hide frames while enough future data remains buffered'
+            );
+            video.emit('waiting');
+            assert.deepEqual(run(0).split(',').slice(4), ['1', '0'], 'An actual waiting event blocks readiness');
+            video.emit('timeupdate');
+            assert.deepEqual(run(0).split(',').slice(4), ['0', '1']);
+
+            for (const event of ['waiting', 'stalled']) {
+                video.readyState = 2;
+                video.emit(event);
+                assert.deepEqual(run(0).split(',').slice(4), ['1', '0'], event + ' keeps the poster visible');
+                video.readyState = 3;
+                video.emit('timeupdate');
+                assert.deepEqual(run(0).split(',').slice(4), ['0', '1'], 'Progress after ' + event + ' restores readiness');
+            }
+
+            video.seeking = true;
+            video.emit('seeking');
+            assert.deepEqual(run(0).split(',').slice(4), ['1', '0'], 'Seeking is a buffering transition');
+            video.seeking = false;
+            video.readyState = 3;
+            video.emit('seeked');
+            video.emit('timeupdate');
+            assert.deepEqual(run(0).split(',').slice(4), ['0', '1']);
+
+            video.readyState = 0;
+            video.emit('emptied');
+            assert.deepEqual(run(0).split(',').slice(4), ['1', '0'], 'An emptied source has no current frame');
+            assert.equal(video.playCalls, 1, 'Recovering readiness must reuse the same playback command');
+        """)
+
     def test_delayed_document_manual_pause_audio_loop_and_replay(self) -> None:
         self.run_production_script(r"""
             assert.equal(run(0), null, 'A delayed DOM must not acknowledge a command');
@@ -216,6 +288,8 @@ class WebMPlaybackScriptTest(unittest.TestCase):
         source = SCRIPT_SOURCE.read_text(encoding="utf-8")
         template = re.search(r'return """(.*?)"""\.trimIndent\(\)', source, re.DOTALL)
         self.assertIsNotNone(template, "The production script must remain an inspectable raw JavaScript string")
+        readiness = re.search(r'private const val WEBM_READINESS_SCRIPT = """(.*?)"""', source, re.DOTALL)
+        self.assertIsNotNone(readiness, "The production readiness events must remain inspectable")
         scripts = []
         for command, play, muted, loop, speed in [
             (1, True, True, True, 1.0),
@@ -233,6 +307,7 @@ class WebMPlaybackScriptTest(unittest.TestCase):
                 muted=str(muted).lower(),
                 loop=str(loop).lower(),
                 speed=speed,
+                WEBM_READINESS_SCRIPT=readiness.group(1),
             ))
         setup = r"""
             const assert = require('node:assert/strict');
@@ -250,10 +325,21 @@ class WebMPlaybackScriptTest(unittest.TestCase):
             function media() {
                 return {
                     paused: true, ended: false, currentTime: 0, duration: 10, playbackRate: 1.0,
+                    readyState: 0, seeking: false, listeners: new Map(),
                     playCalls: 0, pauseCalls: 0,
                     playResult: () => Promise.resolve(),
                     play() { this.playCalls++; this.paused=false; this.ended=false; return this.playResult(); },
-                    pause() { this.pauseCalls++; this.paused=true; }
+                    pause() { this.pauseCalls++; this.paused=true; },
+                    addEventListener(name, callback) {
+                        const callbacks = this.listeners.get(name) || [];
+                        callbacks.push(callback);
+                        this.listeners.set(name, callbacks);
+                    },
+                    emit(name) {
+                        for (const callback of this.listeners.get(name) || []) {
+                            callback.call(this, {type: name, target: this});
+                        }
+                    }
                 };
             }
         """

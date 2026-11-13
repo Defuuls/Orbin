@@ -41,8 +41,6 @@ import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.resources.reader_nav_boards
 import com.orbin.uinext.resources.reader_reload
-import com.orbin.uinext.resources.reader_view_grid
-import com.orbin.uinext.resources.reader_view_list
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -77,7 +75,7 @@ object TikTokFeedTags {
 }
 
 /**
- * Home uses the same list rows and grid cards as board catalogs. Source and feed membership
+ * Home uses the same list rows and cards as board catalogs. Source and feed membership
  * belong to the hosts; only the presentation changes. Media starts in its explicit viewer,
  * while the bounded Home thumbnails remain static in every theme and catalog mode.
  */
@@ -173,16 +171,6 @@ fun FeedScreen(
             if (onSettings != null) add(NextDestination.SETTINGS)
         }
     val showBottomBar = showRail && onDestination != null && bottomDestinations.size > 1
-    val modeLabel =
-        stringResource(
-            if (mode ==
-                CatalogMode.LIST
-            ) {
-                Res.string.reader_view_grid
-            } else {
-                Res.string.reader_view_list
-            },
-        )
     val downloadsLabel = stringResource(Res.string.next_downloads_tab)
     val rowActions =
         ReaderFeedRowActions(
@@ -211,22 +199,12 @@ fun FeedScreen(
                 },
             ),
         overflow =
-            listOfNotNull(
+            buildList {
                 onModeChange?.let { change ->
-                    ReaderMenuItem(modeLabel) {
-                        change(
-                            if (mode ==
-                                CatalogMode.LIST
-                            ) {
-                                CatalogMode.GRID
-                            } else {
-                                CatalogMode.LIST
-                            },
-                        )
-                    }
-                },
-                onOpenDownloads?.let { ReaderMenuItem(downloadsLabel, onClick = it) },
-            ),
+                    addAll(catalogModeMenuItems(mode, change))
+                }
+                onOpenDownloads?.let { add(ReaderMenuItem(downloadsLabel, onClick = it)) }
+            },
     ) { bottomPadding ->
         Column(Modifier.fillMaxSize().background(reader.background).testTag(ReaderFeedTags.ROOT)) {
             ReaderFeedControls(
@@ -308,7 +286,7 @@ private fun ReaderFeedGrid(
     actions: ReaderFeedRowActions,
     bottomPadding: PaddingValues,
 ) {
-    val state = rememberReaderFeedState(rows)
+    val state = rememberReaderFeedState(rows, mode)
     val loadMoreCallback by rememberUpdatedState(onLoadMore)
     LaunchedEffect(state, rows.size, onLoadMore != null, loadMoreKey) {
         snapshotFlow {
@@ -322,8 +300,9 @@ private fun ReaderFeedGrid(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val grid = mode == CatalogMode.GRID
         val gap = ORBIN_CATALOG_GAP
-        val outer = ORBIN_CATALOG_GUTTER
-        val gridSpec = orbinCatalogGridSpec(maxWidth)
+        // The first-load Card skeleton owns the same gutters as the loaded cards.
+        val outer = if (mode == CatalogMode.CARD && rows.isEmpty() && isLoading) 0.dp else ORBIN_CATALOG_GUTTER
+        val gridSpec = if (mode == CatalogMode.CARD) orbinCatalogCardSpec(maxWidth) else orbinCatalogGridSpec(maxWidth)
         val stateHeight = (maxHeight - outer * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         LazyVerticalGrid(
             columns = GridCells.Fixed(if (grid) gridSpec.columns else 1),
@@ -358,12 +337,16 @@ private fun ReaderFeedGrid(
 
 /** Empty asynchronous source loads must not replace the last content anchor with item zero. */
 @Composable
-private fun rememberReaderFeedState(rows: List<FeedRow>): LazyGridState {
+private fun rememberReaderFeedState(
+    rows: List<FeedRow>,
+    mode: CatalogMode,
+): LazyGridState {
     val state = rememberLazyGridState()
     var anchorId by rememberSaveable { mutableStateOf<String?>(null) }
     var anchorIndex by rememberSaveable { mutableIntStateOf(0) }
     var anchorOffset by rememberSaveable { mutableIntStateOf(0) }
     var awaitingData by rememberSaveable { mutableStateOf(false) }
+    PreserveCatalogScrollAnchor(state, mode, onModeChange = { anchorOffset = 0 })
     // Each restored source/mode scope must resolve its saved identity against its current rows.
     // This flag is deliberately not saveable: hidden data may have changed before re-entry.
     var restoredThisMount by remember { mutableStateOf(false) }
