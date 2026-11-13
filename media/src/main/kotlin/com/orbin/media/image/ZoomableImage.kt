@@ -60,6 +60,7 @@ fun ZoomableImage(
     active: Boolean = true,
     onTap: (() -> Unit)? = null,
     onLongPress: (() -> Unit)? = null,
+    onDoubleTapSave: (() -> Unit)? = null,
 ) {
     var scale by remember { mutableFloatStateOf(MIN_SCALE) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -113,11 +114,13 @@ fun ZoomableImage(
                     scaleY = scale
                     translationX = offset.x
                     translationY = offset.y
-                }.pointerInput(onTap, onLongPress) {
+                }.pointerInput(onTap, onLongPress, onDoubleTapSave) {
                     detectTapGestures(
                         onTap = onTap?.let { handler -> { handler() } },
                         onDoubleTap = { tap ->
-                            if (scale > MIN_SCALE) {
+                            if (onDoubleTapSave != null) {
+                                onDoubleTapSave()
+                            } else if (scale > MIN_SCALE) {
                                 scale = MIN_SCALE
                                 offset = Offset.Zero
                             } else {

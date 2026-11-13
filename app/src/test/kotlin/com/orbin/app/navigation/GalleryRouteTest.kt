@@ -64,6 +64,21 @@ class GalleryRouteTest {
         assertThat(arguments.get<Long>("thread")).isEqualTo(thread)
     }
 
+    @Test
+    fun selectedMediaCarriesThePreviewWithoutChangingOrdinaryGalleryState() {
+        val navigation = controller()
+        val preview = "https://media.example/g/preview.jpg?size=small"
+        val route = Route.SelectedMedia("bbwchan", "g", 92L, "catalog-id", preview)
+        assertThat(Json.decodeFromString<Route.SelectedMedia>(Json.encodeToString(route))).isEqualTo(route)
+        navigation.navigate(route)
+
+        val entry = navigation.currentBackStackEntry!!
+        assertThat(entry.destination.id).isNotEqualTo(1699187340)
+        assertThat(entry.savedStateHandle.get<String>("attachmentId")).isEqualTo("catalog-id")
+        assertThat(entry.savedStateHandle.get<String>("thumbnailUrl")).isEqualTo(preview)
+        assertThat(entry.savedStateHandle.get<Long>("thread")).isEqualTo(92L)
+    }
+
     private fun controller(): NavHostController {
         val owner =
             object : LifecycleOwner {
@@ -78,6 +93,7 @@ class GalleryRouteTest {
                     composable<Route.NextFeed> {}
                     composable<Route.Gallery> {}
                     composable<Route.ThreadVideos> {}
+                    composable<Route.SelectedMedia> {}
                 }
         }
     }

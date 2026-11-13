@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toPixelMap
@@ -72,16 +73,19 @@ class ReaderControlPaletteTest(
         compose.onNode(hasSetTextAction()).performTextInput("lock")
         val painted = compose.onNodeWithText("App lock").assertIsOn().paintedColors()
         assertTrue("$mode switch track must use reader accent", colors.accent.toArgb() in painted)
+        // Coral preference cards are tonally raised in dark modes; the track blends over that card.
+        val cardGround = if (mode == "light") colors.background else colors.surfaceVariant
+        assertTrue("$mode settings card must use its reader surface", cardGround.toArgb() in painted)
         val track =
             colors.accent
                 .copy(alpha = 0.3f)
-                .compositeOver(colors.background)
+                .compositeOver(cardGround)
                 .toArgb()
         assertTrue(
             "$mode compact switch track must use a 30 percent reader accent",
             painted.any { closeColor(it, track) },
         )
-        assertFalse("A settings control must not retain the former palette", TikTokDesign.Pink.toArgb() in painted)
+        assertFalse("A settings control must not retain the former palette", Color(0xFFFE2C55).toArgb() in painted)
     }
 
     @Test
@@ -113,7 +117,7 @@ class ReaderControlPaletteTest(
                 .assertIsSelected()
                 .paintedColors()
         assertTrue("Home's selected mark must use the current reader theme", colors.accent.toArgb() in painted)
-        assertFalse("Home must not retain the former selected-action color", TikTokDesign.Pink.toArgb() in painted)
+        assertFalse("Home must not retain the former selected-action color", Color(0xFFFE2C55).toArgb() in painted)
     }
 
     @Test
@@ -133,7 +137,7 @@ class ReaderControlPaletteTest(
         val painted = compose.onRoot().paintedColors()
         assertTrue("$mode focused cursor must use reader accent", colors.accent.toArgb() in painted)
         assertTrue("$mode search ground must use surfaceVariant", colors.surfaceVariant.toArgb() in painted)
-        assertFalse("Search must not retain the former cursor color", TikTokDesign.Pink.toArgb() in painted)
+        assertFalse("Search must not retain the former cursor color", Color(0xFFFE2C55).toArgb() in painted)
     }
 
     private fun closeColor(

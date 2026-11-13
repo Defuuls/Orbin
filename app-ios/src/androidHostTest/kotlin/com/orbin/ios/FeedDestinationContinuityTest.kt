@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -102,8 +103,7 @@ class FeedDestinationContinuityTest {
                 }
             }
             composeRule.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
-            composeRule.onNodeWithContentDescription("More options").performClick()
-            composeRule.onNodeWithText("List view").performClick()
+            composeRule.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("List view").performClick()
             runCurrent()
             assertEquals(CatalogMode.LIST, repository.settings.value.catalogMode)
 
@@ -111,12 +111,33 @@ class FeedDestinationContinuityTest {
             composeRule.waitForIdle()
             composeRule.runOnIdle { visible = true }
             composeRule.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
-            composeRule.onNodeWithContentDescription("More options").performClick()
-            composeRule.onNodeWithText("Grid view").assertIsDisplayed()
+            composeRule
+                .onNodeWithTag(
+                    ReaderFeedTags.MODE,
+                ).assertContentDescriptionEquals("Grid view")
+                .assertIsDisplayed()
         }
 
     @Test
-    fun theBoundedThumbnailOpensThreadVideosEvenWhenCommentsAreEnabled() =
+    fun repeatedPrimaryActionsFromTheRetainedFeedDoNotGrowUtilityBackStacks() =
+        runTest {
+            val repository =
+                FakeSettings().apply {
+                    settings.value = settings.value.copy(onboardingCompleted = true)
+                }
+            val browser = loadedBrowser(repository, backgroundScope)
+            // Keep the real outgoing Feed binding mounted, as during a destination transition.
+            showHome(browser)
+
+            repeat(2) { composeRule.onNodeWithContentDescription("Downloads").performClick() }
+            assertEquals(listOf(Route.Feed, Route.Downloads), browser.backStack.value)
+
+            repeat(2) { composeRule.onNodeWithContentDescription("Settings").performClick() }
+            assertEquals(listOf(Route.Feed, Route.Settings), browser.backStack.value)
+        }
+
+    @Test
+    fun theBoundedThumbnailOpensItsSelectedMediaEvenWhenCommentsAreEnabled() =
         runTest {
             val repository =
                 FakeSettings().apply {
@@ -133,8 +154,13 @@ class FeedDestinationContinuityTest {
             assertTrue(requestedImages.all { it == attachment.thumbnailUrl })
             assertNotEquals(attachment.sourceUrl, attachment.thumbnailUrl)
             composeRule.onNodeWithTag(ReaderFeedTags.thumbnail(entry.feedRowId), useUnmergedTree = true).performClick()
-            assertEquals(Route.ThreadVideos(THREAD), browser.backStack.value.last())
-            assertEquals(listOf(Route.Feed, Route.ThreadVideos(THREAD)), browser.backStack.value)
+            val destination = browser.backStack.value.last()
+            assertTrue(destination is Route.Media)
+            destination as Route.Media
+            assertEquals(THREAD, destination.thread)
+            assertEquals(attachment.id, destination.attachmentId)
+            assertEquals(attachment.thumbnailUrl, destination.thumbnailUrl)
+            assertEquals(listOf(Route.Feed, destination), browser.backStack.value)
         }
 
     @Test

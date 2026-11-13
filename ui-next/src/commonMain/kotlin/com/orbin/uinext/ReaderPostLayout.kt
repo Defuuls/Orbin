@@ -13,12 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 
 /** Rich host-rendered comments inherit the same post size as plain reader comments. */
-val LocalReaderPostBodyStyle = staticCompositionLocalOf { ReaderType.postBody }
+val LocalReaderPostBodyStyle = staticCompositionLocalOf { OrbinType.postBody }
 
 /**
  * Clover 3.0.2 post geometry: a leading 72/100dp thumbnail and an inset text column.

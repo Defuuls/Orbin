@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -84,14 +85,12 @@ import com.orbin.uinext.resources.reader_sort_reply_count
 import com.orbin.uinext.resources.reader_unread
 import com.orbin.uinext.resources.reader_view_grid
 import com.orbin.uinext.resources.reader_view_list
-import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderColors
-import com.orbin.uinext.tokens.ReaderRadius
 import com.orbin.uinext.tokens.ReaderRatio
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -453,6 +452,7 @@ internal fun CatalogRow(
     showDivider: Boolean = true,
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
+    containerColor: Color? = null,
 ) {
     val colors = reader
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
@@ -462,12 +462,12 @@ internal fun CatalogRow(
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val title = rowTitle(row)
     val inset = readerPostInset(wideWindow)
-    val bodyStyle = if (wideWindow) ReaderType.postBodyWide.withReaderFont() else ReaderType.postBody.withReaderFont()
+    val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.postBody.withReaderFont()
     val detailStyle =
         if (wideWindow) {
-            ReaderType.postDetailsWide.withReaderFont()
+            OrbinType.postDetailsWide.withReaderFont()
         } else {
-            ReaderType.postDetails
+            OrbinType.postDetails
                 .withReaderFont()
         }
     val summary = listOfNotNull(rowSummary(row, title), metadata).joinToString(", ")
@@ -476,7 +476,7 @@ internal fun CatalogRow(
         modifier
             .testTag(itemTag ?: CatalogTags.ROW)
             .fillMaxWidth()
-            .background(if (selected) colors.selected else colors.background)
+            .background(if (selected) colors.selected else containerColor ?: colors.background)
             .nextClickable(
                 role = Role.Button,
                 onLongClick = onLongClick,
@@ -515,7 +515,7 @@ internal fun CatalogRow(
                         Box(
                             imageModifier
                                 .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
-                                .clip(RoundedCornerShape(ReaderRadius.card))
+                                .clip(RoundedCornerShape(OrbinRadius.compact))
                                 .background(colors.surfaceVariant)
                                 .then(
                                     catalogThumbnailAction(
@@ -577,7 +577,7 @@ internal fun CatalogRow(
 @Composable
 private fun CatalogCounts(
     row: FeedRow,
-    style: TextStyle = ReaderType.postBody,
+    style: TextStyle = OrbinType.postBody,
 ) {
     val colors = reader
     // Match Clover's full-width TextViews so paragraph measurement and wrapping use the cell width.
@@ -600,7 +600,7 @@ private fun CatalogCounts(
             Text(
                 pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
                 modifier = Modifier.fillMaxWidth(),
-                style = ReaderType.meta.withReaderFont(),
+                style = OrbinType.meta.withReaderFont(),
                 color = colors.accent,
             )
         }
@@ -630,7 +630,7 @@ internal fun CatalogCard(
 ) {
     val colors = reader
     val title = rowTitle(row)
-    val bodyStyle = if (wideWindow) ReaderType.postBodyWide.withReaderFont() else ReaderType.postBody.withReaderFont()
+    val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.postBody.withReaderFont()
     val summary = listOfNotNull(rowSummary(row, title), metadata).joinToString(", ")
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
     var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
@@ -707,7 +707,7 @@ internal fun CatalogCard(
                             ?.toString() ?: "A"
                     Text(
                         initial,
-                        style = ReaderType.meta.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                        style = OrbinType.meta.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
                         color = colors.onAccent,
                         maxLines = 1,
                     )
@@ -716,7 +716,7 @@ internal fun CatalogCard(
                     if (row.poster.isNotBlank()) {
                         Text(
                             row.poster,
-                            style = ReaderType.meta.withReaderFont(),
+                            style = OrbinType.meta.withReaderFont(),
                             color = colors.ink,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -725,7 +725,7 @@ internal fun CatalogCard(
                     if (numberLabel.isNotEmpty()) {
                         Text(
                             numberLabel,
-                            style = ReaderType.meta.withReaderFont(),
+                            style = OrbinType.meta.withReaderFont(),
                             color = colors.inkMuted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -744,7 +744,7 @@ internal fun CatalogCard(
             if (metadata != null) {
                 Text(
                     metadata,
-                    style = ReaderType.meta.withReaderFont(),
+                    style = OrbinType.meta.withReaderFont(),
                     color = colors.inkMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -835,7 +835,7 @@ private fun CatalogIconCounts(
             Text(
                 pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
                 modifier = Modifier.fillMaxWidth(),
-                style = ReaderType.meta.withReaderFont(),
+                style = OrbinType.meta.withReaderFont(),
                 color = colors.accent,
             )
         }
@@ -865,7 +865,7 @@ private fun CatalogTitle(
             }
         }
     val placeholder =
-        Placeholder(ReaderType.meta.lineHeight, ReaderType.meta.lineHeight, PlaceholderVerticalAlign.Center)
+        Placeholder(OrbinType.meta.lineHeight, OrbinType.meta.lineHeight, PlaceholderVerticalAlign.Center)
     Text(
         text = text,
         style = style.withReaderFont(),
@@ -986,7 +986,7 @@ private fun CatalogSortTabRow(
             ) {
                 Text(
                     tab.label,
-                    style = if (largeText) NextType.caption1 else NextType.bodyMedium,
+                    style = if (largeText) OrbinType.caption1 else OrbinType.bodyMedium,
                     fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                     color = if (selected) reader.accent else next.muted,
                     maxLines = if (largeText) 2 else 1,

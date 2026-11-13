@@ -1,12 +1,15 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Description
@@ -16,14 +19,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
+import com.orbin.uinext.tokens.ReaderSize
+
+object DownloadTags {
+    const val LIST = "orbin-download-list"
+
+    fun row(id: Long): String = "orbin-download:$id"
+}
 
 /**
  * One saved file in the downloads list, the same on Android and iOS: its name, its [status] with a
@@ -42,52 +54,76 @@ fun DownloadRow(
     retryDescription: String = retryLabel,
     onRetry: (() -> Unit)? = null,
 ) {
-    val iconShape = RoundedCornerShape(NextRadius.control)
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = NextSpace.rowX, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Description,
-            contentDescription = null,
-            tint = if (active) next.onAccentContainer else next.muted,
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(iconShape)
-                    .background(if (active) next.accentContainer else next.elevated)
-                    .border(1.dp, if (active) next.accent else next.hairline, iconShape)
-                    .padding(12.dp),
-        )
-        WidthSpacer(12)
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = fileName,
-                style = NextType.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = next.ink,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+    val iconShape = RoundedCornerShape(OrbinRadius.thumbnail)
+    val boundedProgress = progress?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
+    val stackRetry = LocalDensity.current.fontScale >= 1.6f
+    OrbinCard(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Description,
+                contentDescription = null,
+                tint = reader.accent,
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(iconShape)
+                        .background(next.accentContainer)
+                        .padding(12.dp),
             )
-            MetaLine(
-                if (active && progress != null) "$status · ${(progress * PERCENT).toInt()}%" else status,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-            if (active) {
-                NextLinearProgress(progress = progress, modifier = Modifier.padding(top = 6.dp))
+            WidthSpacer(12)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = fileName,
+                    style = OrbinType.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = reader.ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                MetaLine(
+                    if (active &&
+                        boundedProgress != null
+                    ) {
+                        "$status · ${(boundedProgress * PERCENT).toInt()}%"
+                    } else {
+                        status
+                    },
+                )
+                if (active) NextLinearProgress(progress = boundedProgress)
+                if (stackRetry && onRetry != null) DownloadRetry(retryLabel, retryDescription, onRetry)
+            }
+            if (!stackRetry && onRetry != null) {
+                DownloadRetry(retryLabel, retryDescription, onRetry)
             }
         }
-        if (onRetry != null) {
-            InlineAction(
-                label = retryLabel,
-                accent = true,
-                onClick = onRetry,
-                modifier = Modifier.semantics { contentDescription = retryDescription },
-            )
-        }
+    }
+}
+
+@Composable
+private fun DownloadRetry(
+    label: String,
+    description: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .heightIn(min = ReaderSize.touchTarget)
+                .widthIn(min = ReaderSize.touchTarget)
+                .nextClickable(role = Role.Button, onClick = onClick)
+                .semantics { contentDescription = description }
+                .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            style = OrbinType.label.withReaderFont(),
+            color = reader.accent,
+            modifier = Modifier.clearAndSetSemantics {},
+        )
     }
 }
 

@@ -3,7 +3,6 @@ package com.orbin.uinext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,10 +41,10 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.tiktok_mute_video
-import com.orbin.uinext.resources.tiktok_pause_video
-import com.orbin.uinext.resources.tiktok_play_video
-import com.orbin.uinext.resources.tiktok_unmute_video
+import com.orbin.uinext.resources.reader_mute_video
+import com.orbin.uinext.resources.reader_pause_video
+import com.orbin.uinext.resources.reader_play_video
+import com.orbin.uinext.resources.reader_unmute_video
 import org.jetbrains.compose.resources.stringResource
 
 /** The same media controls on both hosts; drags remain available to the vertical feed pager. */
@@ -61,9 +60,9 @@ fun FeedPlaybackControls(
 ) {
     val toggle by rememberUpdatedState(onPlayPause)
     val doubleTap by rememberUpdatedState(onDoubleTap)
-    val playbackLabel = stringResource(if (playing) Res.string.tiktok_pause_video else Res.string.tiktok_play_video)
+    val playbackLabel = stringResource(if (playing) Res.string.reader_pause_video else Res.string.reader_play_video)
     val progressValue = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
-    BoxWithConstraints(
+    Box(
         modifier
             .testTag(FeedPlaybackTags.SURFACE)
             .windowInsetsPadding(
@@ -84,7 +83,6 @@ fun FeedPlaybackControls(
                 )
             },
     ) {
-        val headerGeometry = rememberTikTokFeedGeometry(maxWidth)
         if (!playing) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
@@ -97,19 +95,17 @@ fun FeedPlaybackControls(
             onClick = onMuteToggle,
             modifier =
                 Modifier
-                    .align(if (headerGeometry.stackedTabs) Alignment.TopCenter else Alignment.TopStart)
+                    .align(Alignment.TopStart)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-                    .padding(
-                        start = if (headerGeometry.stackedTabs) 0.dp else 8.dp,
-                        top = if (headerGeometry.stackedTabs) 0.dp else headerGeometry.headerHeight + 16.dp,
-                    ).size(48.dp)
+                    .padding(8.dp)
+                    .size(48.dp)
                     .testTag(FeedPlaybackTags.MUTE),
         ) {
             Icon(
                 imageVector = if (muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
                 contentDescription =
                     stringResource(
-                        if (muted) Res.string.tiktok_unmute_video else Res.string.tiktok_mute_video,
+                        if (muted) Res.string.reader_unmute_video else Res.string.reader_mute_video,
                     ),
                 tint = Color.White,
                 modifier = Modifier.size(28.dp).background(Color.Black.copy(alpha = 0.3f), CircleShape).padding(2.dp),

@@ -83,9 +83,7 @@ class ReaderMediaChromeScreenshotTest {
 private fun MediaChromeFixture(playing: Boolean) {
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         MediaChromePoster(Modifier.align(Alignment.Center).fillMaxWidth().aspectRatio(16f / 9f))
-        ReaderMediaToolbar {
-            ReaderMediaBack("Close") {}
-            ReaderMediaTitle("orbin-landscape.mp4", "2/7", Modifier.weight(1f))
+        ReaderMediaToolbar("orbin-landscape.mp4", "2/7", "Close", {}) {
             ReaderMediaAction(Icons.AutoMirrored.Filled.VolumeOff, "Unmute", {})
             ReaderMediaAction(Icons.Filled.FileDownload, "Save", {})
             ReaderMediaAction(Icons.Filled.MoreVert, "More options", {}, overflow = true)

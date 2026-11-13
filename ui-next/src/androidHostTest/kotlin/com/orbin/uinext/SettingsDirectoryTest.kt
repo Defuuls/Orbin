@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -43,6 +44,33 @@ import org.robolectric.annotation.GraphicsMode
 class SettingsDirectoryTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun appNavigationBelongsToTheDirectoryAndReturnsAfterLocalBack() {
+        composeRule.setContent {
+            NextTheme {
+                SettingsScreen(
+                    groups =
+                        listOf(
+                            "Appearance" to listOf(SettingItem("amoled", "AMOLED black", "Off", checked = false)),
+                        ),
+                    onBack = {},
+                    bottomBar = { Text("App navigation") },
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("App navigation").assertIsDisplayed()
+        composeRule.onNodeWithText("Appearance").performClick()
+        composeRule.onNodeWithText("App navigation").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("App navigation").assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("Search settings").performClick()
+        composeRule.onNodeWithText("App navigation").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("App navigation").assertIsDisplayed()
+    }
 
     @Test
     fun directoryOpensSubpageAndReturnsWithoutLeavingSettings() {

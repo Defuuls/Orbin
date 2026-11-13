@@ -60,18 +60,17 @@ import com.orbin.uinext.resources.next_boards_search
 import com.orbin.uinext.resources.next_boards_thread_count
 import com.orbin.uinext.resources.next_status_retry
 import com.orbin.uinext.resources.reader_board_follow
+import com.orbin.uinext.resources.reader_board_follow_label
+import com.orbin.uinext.resources.reader_board_following
 import com.orbin.uinext.resources.reader_board_open
 import com.orbin.uinext.resources.reader_board_unfollow
+import com.orbin.uinext.resources.reader_boards_title
+import com.orbin.uinext.resources.reader_feed_all_boards
 import com.orbin.uinext.resources.reader_followed_boards
 import com.orbin.uinext.resources.reader_menu
-import com.orbin.uinext.resources.social_feed_all_boards
-import com.orbin.uinext.resources.tiktok_board_follow
-import com.orbin.uinext.resources.tiktok_board_following
-import com.orbin.uinext.resources.tiktok_boards_title
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -172,8 +171,8 @@ fun BoardsScreen(
         } else {
             null
         }
-    val boardsTitle = stringResource(Res.string.tiktok_boards_title)
-    val allBoardsLabel = stringResource(Res.string.social_feed_all_boards)
+    val boardsTitle = stringResource(Res.string.reader_boards_title)
+    val allBoardsLabel = stringResource(Res.string.reader_feed_all_boards)
     val showChrome = showRail && hasTabs
     NextScaffold(
         where = boardsTitle,
@@ -219,7 +218,7 @@ fun BoardsScreen(
                 if (!subtitle.isNullOrBlank()) {
                     Text(
                         subtitle,
-                        style = NextType.footnote,
+                        style = OrbinType.footnote,
                         color = next.muted,
                         modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
                     )
@@ -266,7 +265,7 @@ fun BoardsScreen(
                                     emptyMessage?.takeIf { boards.isEmpty() && query.isBlank() }
                                         ?: stringResource(Res.string.next_boards_no_match)
                                 ),
-                                style = NextType.body,
+                                style = OrbinType.body,
                                 color = next.muted,
                                 modifier = Modifier.padding(BOARD_DIRECTORY_GUTTER),
                             )
@@ -399,7 +398,7 @@ private fun LazyListScope.boardRows(
 private fun BoardSectionTitle(label: String) {
     Text(
         label,
-        style = NextType.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+        style = OrbinType.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
         color = next.ink,
         modifier =
             Modifier
@@ -447,14 +446,14 @@ private fun BoardListRow(
                 if (stacked) {
                     Text(
                         board.path,
-                        style = ReaderType.cardTitle.withReaderFont(),
+                        style = OrbinType.cardTitle.withReaderFont(),
                         color = reader.accent,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         board.title,
-                        style = ReaderType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                        style = OrbinType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
                         color = reader.ink,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -466,14 +465,14 @@ private fun BoardListRow(
                     ) {
                         Text(
                             board.path,
-                            style = ReaderType.cardTitle.withReaderFont(),
+                            style = OrbinType.cardTitle.withReaderFont(),
                             color = reader.accent,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             board.title,
-                            style = ReaderType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                            style = OrbinType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
                             color = reader.ink,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -490,7 +489,7 @@ private fun BoardListRow(
                 if (metadata.isNotBlank()) {
                     Text(
                         metadata,
-                        style = ReaderType.meta.withReaderFont(),
+                        style = OrbinType.meta.withReaderFont(),
                         color = reader.inkSecondary,
                         maxLines = if (stacked) 2 else 1,
                         overflow = TextOverflow.Ellipsis,
@@ -548,10 +547,10 @@ private fun FollowChip(
     ) {
         Text(
             stringResource(
-                if (followed) Res.string.tiktok_board_following else Res.string.tiktok_board_follow,
+                if (followed) Res.string.reader_board_following else Res.string.reader_board_follow_label,
             ),
             style =
-                NextType.bodyMedium.copy(
+                OrbinType.bodyMedium.copy(
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     fontWeight = FontWeight.SemiBold,

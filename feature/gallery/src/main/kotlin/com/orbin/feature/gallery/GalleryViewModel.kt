@@ -27,7 +27,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class GalleryDownloadUiState(
@@ -49,6 +54,8 @@ data class GalleryDownloadUiState(
 /** Loading and unavailable threads must not look like successfully loaded, empty media lists. */
 sealed interface GalleryContentState {
     data object Loading : GalleryContentState
+
+    data object SelectedUnavailable : GalleryContentState
 
     data class Ready(
         val media: ImmutableList<MediaAttachment>,
@@ -102,20 +109,11 @@ class GalleryViewModel
          * attachment falls in the thread. Resolved against the loaded media in [initialPageIn].
          */
         private val attachmentId: String? = savedStateHandle.get<String>("attachmentId")
+        private val thumbnailUrl: String? = savedStateHandle.get<String>("thumbnailUrl")
 
-        /**
-         * Which page the pager should open on, given the thread's [media].
-         *
-         * An index alone is only meaningful to a caller that built the same list this screen shows
-         * — the thread view and the gallery browser do, the all-media wall does not: it holds a
-         * catalog's files, which is a different list from the thread's. So an attachment id, when
-         * one was passed, wins over the index, and falls back to it if the file is no longer in the
-         * thread (deleted, or filtered out of this list).
-         */
-        fun initialPageIn(media: List<MediaAttachment>): Int {
-            val byId = attachmentId?.let { id -> media.indexOfFirst { it.id == id } } ?: -1
-            return if (byId >= 0) byId else startIndex
-        }
+        /** Exact attachment identity wins; Lynx catalog IDs may differ, so a unique preview is next. */
+        fun initialPageIn(media: List<MediaAttachment>): Int =
+            galleryInitialPage(media, attachmentId, thumbnailUrl, startIndex)
 
         /** Drives video autoplay / mute in the gallery from the user's media settings. */
         val settings: StateFlow<AppSettings> =
@@ -141,6 +139,7 @@ class GalleryViewModel
 
         private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
         val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
+        private val downloadMutex = Mutex()
 
         /**
          * The thread's media, in reading order. Filtered exactly as the thread view filters it, so
@@ -191,6 +190,9 @@ class GalleryViewModel
                     .filter { index -> !videosOnly || allMedia[index].type == MediaType.VIDEO }
                     .toImmutableList()
             val visibleMedia = if (videosOnly) visibleIndices.map(allMedia::get).toImmutableList() else allMedia
+            if ((attachmentId != null || thumbnailUrl != null) && initialPageIn(visibleMedia) < 0) {
+                return GalleryContentState.SelectedUnavailable
+            }
             return GalleryContentState.Ready(visibleMedia, allMedia, visibleIndices)
         }
 
@@ -246,23 +248,48 @@ class GalleryViewModel
             super.onCleared()
         }
 
-        fun download(attachment: MediaAttachment) {
-            viewModelScope.launch {
-                _downloadState.value =
-                    GalleryDownloadUiState(
-                        isBusy = true,
-                        label = buildProgressMessage(1, 1, attachment.originalFileName),
-                        progressValue = 0.2f,
-                    )
-                runCatching {
-                    downloadRepository.enqueue(
-                        url = attachment.sourceUrl,
-                        fileName = attachment.originalFileName,
-                        boardId = board.value,
-                        threadId = threadId.value,
-                    )
+        /** Queues all other thread media, including files before the visible page. */
+        fun downloadRestOfThread(visiblePage: Int) {
+            val ready = content.value as? GalleryContentState.Ready ?: return
+            enqueueDownloads(galleryRemainingMedia(ready, visiblePage))
+        }
+
+        fun download(attachment: MediaAttachment) = enqueueDownloads(listOf(attachment))
+
+        private fun enqueueDownloads(attachments: List<MediaAttachment>) {
+            if (attachments.isEmpty()) return
+            viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                // Persist the confirmed queue even if the viewer closes. Actual transfers remain
+                // owned by the repository/WorkManager, never by this screen or its player.
+                withContext(NonCancellable) {
+                    downloadMutex.withLock {
+                        try {
+                            attachments.forEachIndexed { index, attachment ->
+                                _downloadState.value =
+                                    GalleryDownloadUiState(
+                                        isBusy = true,
+                                        label =
+                                            buildProgressMessage(
+                                                index + 1,
+                                                attachments.size,
+                                                attachment.originalFileName,
+                                            ),
+                                        progressValue = (index + 1f) / attachments.size,
+                                    )
+                                runCatching {
+                                    downloadRepository.enqueue(
+                                        url = attachment.sourceUrl,
+                                        fileName = attachment.originalFileName,
+                                        boardId = board.value,
+                                        threadId = threadId.value,
+                                    )
+                                }
+                            }
+                        } finally {
+                            _downloadState.value = GalleryDownloadUiState()
+                        }
+                    }
                 }
-                _downloadState.value = GalleryDownloadUiState()
             }
         }
 
@@ -270,3 +297,33 @@ class GalleryViewModel
             const val STOP_TIMEOUT_MS = 5_000L
         }
     }
+
+/** The viewer may show videos only; its index must first map back to the complete thread. */
+internal fun galleryRemainingMedia(
+    ready: GalleryContentState.Ready,
+    visiblePage: Int,
+): List<MediaAttachment> {
+    val current = ready.threadMediaIndices.getOrNull(visiblePage) ?: return emptyList()
+    if (current !in ready.threadMedia.indices) return emptyList()
+    return ready.threadMedia.filterIndexed { index, _ -> index != current }
+}
+
+/** Explicit anchors never fall through to an unrelated first file; index-only thread entries retain their index. */
+internal fun galleryInitialPage(
+    media: List<MediaAttachment>,
+    attachmentId: String?,
+    thumbnailUrl: String?,
+    startIndex: Int,
+): Int {
+    val byId = attachmentId?.takeIf(String::isNotBlank)?.let { id -> media.indexOfFirst { it.id == id } } ?: -1
+    if (byId >= 0) return byId
+    val byPreview =
+        thumbnailUrl?.takeIf(String::isNotBlank)?.let { preview ->
+            media.indices
+                .filter {
+                    media[it].thumbnailUrl ==
+                        preview
+                }.singleOrNull()
+        }
+    return byPreview ?: if (attachmentId == null && thumbnailUrl == null) startIndex else -1
+}

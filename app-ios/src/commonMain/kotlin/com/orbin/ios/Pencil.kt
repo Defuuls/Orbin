@@ -3,12 +3,15 @@ package com.orbin.ios
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,14 +27,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberConstraintsSizeResolver
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.uinext.tokens.ReaderRadius
+import com.orbin.uinext.MIN_TOUCH_TARGET
+import com.orbin.uinext.OrbinCard
+import com.orbin.uinext.nextClickable
+import com.orbin.uinext.reader
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
+import com.orbin.uinext.withReaderFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -126,7 +137,8 @@ internal fun PencilHoverPreview(
     thumbnailOnly: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val density = LocalDensity.current.density
+    val contentDensity = LocalDensity.current
+    val density = contentDensity.density
     // Where the picture is, kept out of Compose state: written on every layout pass while a list
     // scrolls, as state it recomposed every picture on screen every frame.
     val bounds = remember { BoundsHolder() }
@@ -146,23 +158,26 @@ internal fun PencilHoverPreview(
         // A spoiler stays covered: hovering must not show what a tap would still ask about.
         if (showing && !attachment.isSpoiler) {
             Popup(alignment = Alignment.Center) {
-                if (thumbnailOnly) {
-                    ReaderThumbnailHover(attachment)
-                } else {
-                    AsyncImage(
-                        // A still image previews whole; anything else has only its thumbnail.
-                        model =
-                            if (attachment.type ==
-                                MediaType.IMAGE
-                            ) {
-                                attachment.sourceUrl
-                            } else {
-                                attachment.thumbnailUrl
-                            },
-                        contentDescription = attachment.originalFileName,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(12.dp)),
-                    )
+                CompositionLocalProvider(LocalDensity provides contentDensity) {
+                    if (thumbnailOnly) {
+                        ReaderThumbnailHover(attachment)
+                    } else {
+                        AsyncImage(
+                            // A still image previews whole; anything else has only its thumbnail.
+                            model =
+                                if (attachment.type ==
+                                    MediaType.IMAGE
+                                ) {
+                                    attachment.sourceUrl
+                                } else {
+                                    attachment.thumbnailUrl
+                                },
+                            contentDescription = attachment.originalFileName,
+                            contentScale = ContentScale.Fit,
+                            modifier =
+                                Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(OrbinRadius.thumbnail)),
+                        )
+                    }
                 }
             }
         }
@@ -178,7 +193,7 @@ private fun ReaderThumbnailHover(attachment: MediaAttachment) {
         remember(context, attachment.thumbnailUrl, sizeResolver) {
             readerThumbnailRequest(context, attachment, sizeResolver)
         }
-    Box(Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(ReaderRadius.small))) {
+    Box(Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(OrbinRadius.thumbnail))) {
         AsyncImage(
             model = request,
             contentDescription = attachment.originalFileName,
@@ -203,16 +218,40 @@ internal fun PencilMenu(
     actions: List<Pair<String, () -> Unit>>,
     modifier: Modifier = Modifier,
 ) {
+    val contentDensity = LocalDensity.current
     Box(modifier) {
-        DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-            actions.forEach { (label, action) ->
-                DropdownMenuItem(
-                    text = { Text(label) },
-                    onClick = {
-                        onDismiss()
-                        action()
-                    },
-                )
+        if (expanded) {
+            Popup(
+                alignment = Alignment.Center,
+                onDismissRequest = onDismiss,
+                properties = PopupProperties(focusable = true),
+            ) {
+                CompositionLocalProvider(LocalDensity provides contentDensity) {
+                    OrbinCard(modifier = Modifier.widthIn(min = 220.dp, max = 320.dp)) {
+                        actions.forEach { (label, action) ->
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = MIN_TOUCH_TARGET)
+                                        .nextClickable(
+                                            role = Role.Button,
+                                            onClick = {
+                                                onDismiss()
+                                                action()
+                                            },
+                                        ).padding(horizontal = 16.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = OrbinType.readerBody.withReaderFont(),
+                                    color = reader.ink,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -2,11 +2,6 @@ package com.orbin.feature.gallery
 
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,10 +27,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -47,6 +44,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -63,22 +61,20 @@ import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.SessionAudio
 import com.orbin.media.video.VideoPlayer
-import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextEmpty
 import com.orbin.uinext.NextError
 import com.orbin.uinext.NextLinearProgress
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderMediaAction
-import com.orbin.uinext.ReaderMediaBack
+import com.orbin.uinext.ReaderMediaClose
 import com.orbin.uinext.ReaderMediaTitle
 import com.orbin.uinext.ReaderMediaToolbar
 import com.orbin.uinext.next
 import com.orbin.uinext.nextElevatedSurface
-import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.readerMediaSwipeToClose
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -101,9 +97,12 @@ fun GalleryScreen(
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val playback = remember(settings) { viewModel.playbackSettings() }
+    var playbackSpeed by rememberSaveable { mutableFloatStateOf(1f) }
     var viewerMuted by remember(playback.startMuted) {
         mutableStateOf(playback.startMuted && SessionAudio.muted)
     }
+    val density = LocalDensity.current
+    var toolbarHeight by remember { mutableStateOf(ReaderSize.appBar) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val mediaPageChanged by rememberUpdatedState(onMediaPageChanged)
@@ -113,6 +112,11 @@ fun GalleryScreen(
             Box(Modifier.fillMaxSize().background(Color.Black)) {
                 when (val state = content) {
                     GalleryContentState.Loading -> NextLoading()
+                    GalleryContentState.SelectedUnavailable ->
+                        NextError(
+                            stringResource(R.string.gallery_selected_media_unavailable),
+                            onRetry = viewModel::retry,
+                        )
                     is GalleryContentState.Error -> NextError(state.message, onRetry = viewModel::retry)
                     is GalleryContentState.Ready ->
                         NextEmpty(
@@ -122,18 +126,10 @@ fun GalleryScreen(
                             Modifier.fillMaxSize(),
                         )
                 }
-                InlineAction(
-                    label = stringResource(R.string.gallery_close),
-                    onClick = onClose,
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .windowInsetsPadding(
-                                WindowInsets.safeDrawing.only(
-                                    WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-                                ),
-                            ).padding(horizontal = NextSpace.gutter, vertical = 8.dp),
-                )
+                ReaderMediaToolbar(Modifier.align(Alignment.TopCenter)) {
+                    ReaderMediaClose(stringResource(R.string.gallery_close), onClose)
+                    ReaderMediaTitle(stringResource(R.string.next_media_title), "", Modifier.weight(1f))
+                }
             }
             return@NextTheme
         }
@@ -150,30 +146,12 @@ fun GalleryScreen(
                 .collect { page -> threadMediaIndices.getOrNull(page)?.let(mediaPageChanged) }
         }
 
-        // Top bar auto-hides after a period of inactivity for uninterrupted media viewing,
-        // and reveals upon tapping media or switching pages.
-        var chromeVisible by remember { mutableStateOf(true) }
-
-        // Hide the gallery chrome while a video plays in fullscreen; reset on every page change so a
-        // swipe away always brings the top bar back.
-        var videoFullscreen by remember { mutableStateOf(false) }
-        LaunchedEffect(pagerState.settledPage) {
-            videoFullscreen = false
-            chromeVisible = true
-        }
-
+        // Exit and download remain visible while viewing or playing media.
         val closeLabel = stringResource(R.string.gallery_close)
         val downloadLabel = stringResource(R.string.gallery_download)
         val imageCopiedMessage = stringResource(R.string.gallery_image_copied)
         val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
-
-        LaunchedEffect(chromeVisible, pagerState.settledPage, actionsFor != null, downloadState.isBusy) {
-            if (chromeVisible && actionsFor == null && !downloadState.isBusy) {
-                delay(AUTO_HIDE_DELAY_MS)
-                chromeVisible = false
-            }
-        }
 
         LaunchedEffect(pagerState.settledPage, media, playback.preloadNextClip) {
             viewModel.prefetchAround(pagerState.settledPage, media)
@@ -191,7 +169,9 @@ fun GalleryScreen(
                 Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
             }
         }
-        val closeThresholdPx = with(LocalDensity.current) { CLOSE_PULL_THRESHOLD.toPx() }
+        val closeThresholdPx = with(density) { CLOSE_PULL_THRESHOLD.toPx() }
+        val currentType = media.getOrNull(pagerState.settledPage)?.type
+        val hasTransport = currentType == MediaType.VIDEO || currentType == MediaType.AUDIO
         val pullToClose = remember(closeThresholdPx) { PullPastEndToClose(closeThresholdPx) { close() } }
 
         Box(
@@ -199,8 +179,9 @@ fun GalleryScreen(
                 Modifier
                     .fillMaxSize()
                     .background(Color.Black)
-                    // Pulling past the first or last item closes the viewer.
-                    .nestedScroll(pullToClose),
+                    // Vertical paging and pull-past-end coexist with deliberate sideways close.
+                    .nestedScroll(pullToClose)
+                    .readerMediaSwipeToClose(close, toolbarHeight, if (hasTransport) 160.dp else 0.dp),
         ) {
             VerticalPager(
                 state = pagerState,
@@ -224,7 +205,7 @@ fun GalleryScreen(
                             Text(
                                 text = stringResource(R.string.gallery_spoiler_reveal),
                                 color = Color.White,
-                                style = NextType.labelMedium,
+                                style = OrbinType.labelMedium,
                             )
                         }
                     } else if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
@@ -237,9 +218,9 @@ fun GalleryScreen(
                                 muted = viewerMuted,
                                 loop = playback.loopVideos,
                                 active = true,
-                                onFullscreenChange = { videoFullscreen = it },
-                                onControlsToggle = { chromeVisible = it },
                                 onLongPress = { actionsFor = item },
+                                playbackSpeed = playbackSpeed,
+                                onDoubleTapSave = { save(item) },
                             )
                         } else {
                             MediaThumbnail(
@@ -255,28 +236,26 @@ fun GalleryScreen(
                             modifier = Modifier.fillMaxSize(),
                             placeholderUrl = item.thumbnailUrl,
                             active = isActive || (playback.preloadNextClip && isNear),
-                            onTap = { chromeVisible = !chromeVisible },
                             onLongPress = { actionsFor = item },
+                            onDoubleTapSave = { save(item) },
                         )
                     }
                 }
             }
 
-            AnimatedVisibility(
-                visible = chromeVisible && !videoFullscreen,
-                enter = slideInVertically { -it } + fadeIn(),
-                exit = slideOutVertically { -it } + fadeOut(),
-                modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(),
+            Box(
+                Modifier.align(Alignment.TopCenter).fillMaxWidth().onSizeChanged {
+                    toolbarHeight = with(density) { it.height.toDp() }
+                },
             ) {
-                ReaderMediaToolbar {
-                    ReaderMediaBack(closeLabel, close)
-                    val currentIndex = pagerState.settledPage.coerceIn(0, media.lastIndex)
-                    val currentItem = media[currentIndex]
-                    ReaderMediaTitle(
-                        filename = currentItem.originalFileName,
-                        position = "${currentIndex + 1}/${media.size}",
-                        modifier = Modifier.weight(1f),
-                    )
+                val currentIndex = pagerState.settledPage.coerceIn(0, media.lastIndex)
+                val currentItem = media[currentIndex]
+                ReaderMediaToolbar(
+                    filename = currentItem.originalFileName,
+                    position = "${currentIndex + 1}/${media.size}",
+                    closeLabel = closeLabel,
+                    onClose = close,
+                ) {
                     if (currentItem.type == MediaType.VIDEO || currentItem.type == MediaType.AUDIO) {
                         ReaderMediaAction(
                             imageVector =
@@ -311,6 +290,18 @@ fun GalleryScreen(
                     attachment = attachment,
                     onSave = viewModel::download,
                     onDismiss = { actionsFor = null },
+                    onSaveRemaining =
+                        if (checkNotNull(loaded).threadMedia.size > 1) {
+                            { viewModel.downloadRestOfThread(pagerState.settledPage) }
+                        } else {
+                            null
+                        },
+                    playbackSpeed =
+                        playbackSpeed.takeIf {
+                            attachment.type == MediaType.VIDEO ||
+                                attachment.type == MediaType.AUDIO
+                        },
+                    onPlaybackSpeedChange = { playbackSpeed = it },
                     onCopyImage = { attachment ->
                         scope.launch {
                             val result = viewModel.copyImage(attachment.sourceUrl)
@@ -334,8 +325,8 @@ fun GalleryScreen(
                         Modifier
                             .align(Alignment.TopCenter)
                             .windowInsetsPadding(
-                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                            ).padding(top = ReaderSize.appBar + 8.dp)
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                            ).padding(top = toolbarHeight + 8.dp)
                             .fillMaxWidth(0.92f)
                             .nextElevatedSurface(RoundedCornerShape(12.dp))
                             .padding(12.dp),
@@ -344,7 +335,7 @@ fun GalleryScreen(
                     Text(
                         text = downloadState.label ?: stringResource(R.string.gallery_preparing_media),
                         color = next.ink,
-                        style = NextType.footnote,
+                        style = OrbinType.footnote,
                     )
                     NextLinearProgress(progress = downloadState.progressValue)
                 }
@@ -383,4 +374,3 @@ private class PullPastEndToClose(
 }
 
 private val CLOSE_PULL_THRESHOLD = 96.dp
-private const val AUTO_HIDE_DELAY_MS = 3_000L

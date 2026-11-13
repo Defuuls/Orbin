@@ -4,14 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
-import com.orbin.uinext.tokens.ReaderSize
-import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -28,7 +25,7 @@ class ReaderAlbumPresentationTest {
     val compose = createComposeRule()
 
     @Test
-    fun allMediaUsesOneDpMarginsWidthPlusMetadataAndQualifiedSourceLabels() {
+    fun allMediaUsesCoralCardGuttersSquarePreviewsAndQualifiedSourceLabels() {
         val cells =
             listOf(
                 MediaCell("fourchan/g/7/file", "fourchan /g/", details = "JPG 640x480 2 KB"),
@@ -42,14 +39,12 @@ class ReaderAlbumPresentationTest {
         }
         val first = compose.onNodeWithTag(ReaderAlbumTags.cell(cells[0].id)).getUnclippedBoundsInRoot()
         val second = compose.onNodeWithTag(ReaderAlbumTags.cell(cells[1].id)).getUnclippedBoundsInRoot()
-        assertEquals((ReaderSpace.albumPadding + ReaderSpace.albumCellMargin).value, first.left.value, 0.5f)
-        assertEquals(
-            ((first.right - first.left) + ReaderSize.albumDetails).value,
-            (first.bottom - first.top).value,
-            0.5f,
-        )
-        assertEquals((ReaderSpace.albumCellMargin * 2).value, (second.left - first.right).value, 0.5f)
-        compose.onNodeWithTag(ReaderAlbumTags.details(cells[0].id), true).assertHeightIsEqualTo(ReaderSize.albumDetails)
+        assertEquals(12f, first.left.value, 0.5f)
+        assertEquals(12f, (second.left - first.right).value, 0.5f)
+        val preview = compose.onNodeWithTag(ReaderAlbumTags.thumbnail(cells[0].id), true).getUnclippedBoundsInRoot()
+        assertEquals((preview.right - preview.left).value, (preview.bottom - preview.top).value, 0.5f)
+        val details = compose.onNodeWithTag(ReaderAlbumTags.details(cells[0].id), true).getUnclippedBoundsInRoot()
+        assertTrue((details.bottom - details.top).value >= 40f)
         compose.onNodeWithText("fourchan /g/\nJPG 640x480 2 KB", true).assertExists()
         compose.onNodeWithTag(ReaderAlbumTags.cell(cells[1].id)).performSemanticsAction(SemanticsActions.OnClick) {
             assertTrue(it())

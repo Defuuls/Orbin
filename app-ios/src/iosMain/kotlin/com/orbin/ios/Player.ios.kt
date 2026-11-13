@@ -20,6 +20,7 @@ import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
 import com.orbin.uinext.FeedPlaybackControls
+import com.orbin.uinext.mediaPlaybackSpeed
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
@@ -37,6 +38,7 @@ import platform.AVFoundation.asset
 import platform.AVFoundation.cancelLoading
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
+import platform.AVFoundation.defaultRate
 import platform.AVFoundation.duration
 import platform.AVFoundation.muted
 import platform.AVFoundation.pause
@@ -84,6 +86,8 @@ internal actual fun NativePlayer(
     onFeedLike: (() -> Unit)?,
     onPlayIntentChange: ((Boolean) -> Unit)?,
     onMuteIntentChange: ((Boolean) -> Unit)?,
+    playbackSpeed: Float,
+    onDoubleTapSave: (() -> Unit)?,
 ) {
     val player =
         remember(url, preloader) {
@@ -92,6 +96,7 @@ internal actual fun NativePlayer(
         } ?: return
     var muted by remember(player) { mutableStateOf(player.muted) }
     val currentLoop = rememberUpdatedState(loop)
+    val currentSpeed = rememberUpdatedState(mediaPlaybackSpeed(playbackSpeed))
     val reportIntent by rememberUpdatedState(onPlayIntentChange)
     val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
     val currentActive = rememberUpdatedState(active)
@@ -116,6 +121,7 @@ internal actual fun NativePlayer(
                 if (currentLoop.value && visibleAndForeground && playRequested) {
                     player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
                     player.play()
+                    player.rate = currentSpeed.value
                 } else if (!currentLoop.value) {
                     playRequested = false
                     reportIntent?.invoke(false)
@@ -178,9 +184,15 @@ internal actual fun NativePlayer(
                 player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
             }
             player.play()
+            player.rate = currentSpeed.value
         } else {
             player.pause()
         }
+    }
+    LaunchedEffect(player, playbackSpeed) {
+        player.defaultRate = currentSpeed.value
+        // Changing speed must not resume a clip paused by controls or the system.
+        if (active && foreground.value && player.rate > 0f) player.rate = currentSpeed.value
     }
     LaunchedEffect(player, active) {
         if (!active) return@LaunchedEffect
@@ -239,6 +251,7 @@ internal actual fun NativePlayer(
                     player.seekToTime(CMTimeMakeWithSeconds(seconds = 0.0, preferredTimescale = SEEK_TIMESCALE))
                 }
                 player.play()
+                player.rate = currentSpeed.value
             }
             reportIntent?.invoke(playRequested)
         }
@@ -267,6 +280,7 @@ internal actual fun NativePlayer(
                     player.seekToTime(CMTimeMakeWithSeconds(seconds = target, preferredTimescale = SEEK_TIMESCALE))
                 },
                 modifier = Modifier.matchParentSize(),
+                onDoubleTapSave = onDoubleTapSave,
             )
         }
     }
@@ -311,6 +325,8 @@ internal actual fun NativeWebMPlayer(
     onFeedLike: (() -> Unit)?,
     onPlayIntentChange: ((Boolean) -> Unit)?,
     onMuteIntentChange: ((Boolean) -> Unit)?,
+    playbackSpeed: Float,
+    onDoubleTapSave: (() -> Unit)?,
 ) {
     var muted by remember(url, initiallyMuted) { mutableStateOf(initiallyMuted) }
     var playRequested by remember(url) { mutableStateOf(active && autoPlay) }
@@ -326,7 +342,7 @@ internal actual fun NativeWebMPlayer(
     val currentLoop by rememberUpdatedState(loop)
     // Read mutable intent when dispatching, including notifications before another UI frame.
     val request by rememberUpdatedState {
-        WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop)
+        WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop, playbackSpeed)
     }
     val live = remember(url) { LiveWebMSession() }
     val navigation =
@@ -380,7 +396,7 @@ internal actual fun NativeWebMPlayer(
     }
     // Apply controls immediately, then retry the same command after document/media loading.
     // Repeated polling only reports state once that command has been acknowledged by the page.
-    LaunchedEffect(webView, playCommand, muted, loop) {
+    LaunchedEffect(webView, playCommand, muted, loop, playbackSpeed) {
         val sent = request()
         webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
             if (playCommand == sent.command) state = it.copy(loading = sent.play && !it.playing && !it.atEnd)
@@ -469,7 +485,7 @@ internal actual fun NativeWebMPlayer(
             AVAudioSession.sharedInstance().setCategory(category, error = null)
             webView.evaluateJavaScript(
                 webMPlaybackScript(
-                    WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
+                    WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop, playbackSpeed),
                 ),
                 null,
             )
@@ -480,7 +496,7 @@ internal actual fun NativeWebMPlayer(
             state = state.copy(playing = playRequested, loading = playRequested && state.duration <= 0.0)
             webView.evaluateJavaScript(
                 webMPlaybackScript(
-                    WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop),
+                    WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop, playbackSpeed),
                 ),
                 null,
             )
@@ -504,6 +520,7 @@ internal actual fun NativeWebMPlayer(
                     webView.evaluateJavaScript("document.getElementById('v').currentTime=$target", null)
                 },
                 modifier = Modifier.matchParentSize(),
+                onDoubleTapSave = onDoubleTapSave,
             )
         }
     }

@@ -160,7 +160,7 @@ class AllMediaScreenshotTest {
                             uiState = case.uiState,
                             isRefreshing = false,
                             onRefresh = {},
-                            onOpenMedia = { _, _, _, _ -> },
+                            onOpenMedia = { _, _, _, _, _ -> },
                         )
                     }
                 }

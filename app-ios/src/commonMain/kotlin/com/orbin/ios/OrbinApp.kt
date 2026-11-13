@@ -30,7 +30,7 @@ import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.canonicalNextPalette
-import com.orbin.uinext.next
+import com.orbin.uinext.reader
 import kotlinx.coroutines.flow.map
 
 /**
@@ -201,12 +201,12 @@ private fun Destination(
     pages: ThreadPages?,
 ) {
     when (route) {
-        Route.Feed -> FeedDestination(browser)
-        Route.Boards -> BoardsDestination(browser)
+        Route.Feed -> FeedDestination(browser, downloads)
+        Route.Boards -> BoardsDestination(browser, downloads)
         Route.Downloads -> DownloadsDestination(browser, downloads)
         Route.Saved, Route.History, Route.Watched -> ThreadCollectionsDestination(browser, route)
         Route.Search -> SearchDestination(browser)
-        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version)
+        Route.Settings -> SettingsDestination(browser, lock, backup, formFactor, version, downloads)
         is Route.Catalog -> CatalogDestination(browser, route.board)
         is Route.BoardMedia -> BoardMediaDestination(browser, route.board)
         is Route.ThreadPage -> ThreadDestination(browser, downloads, pages)
@@ -223,7 +223,7 @@ private fun LockCover(
 ) {
     if (!state.locked && !state.obscured) return
     // Taps stop here rather than reaching the app underneath.
-    Box(Modifier.fillMaxSize().background(next.background).pointerInput(Unit) {}) {
+    Box(Modifier.fillMaxSize().background(reader.background).pointerInput(Unit) {}) {
         if (state.locked) LockScreen(message = state.message, unlocking = state.unlocking, onUnlock = { lock.unlock() })
     }
 }

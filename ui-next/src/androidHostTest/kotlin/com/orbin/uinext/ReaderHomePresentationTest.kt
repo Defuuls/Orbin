@@ -450,7 +450,7 @@ class ReaderHomePresentationTest {
     }
 
     @Test
-    fun readerHomeGridShowsOneFullWidthCardWithAnImageHalfTheViewport() {
+    fun readerHomeGridShowsTwoInsetCoralColumnsWithCompactThumbnails() {
         val rows = rows("fourchan")
         compose.setContent {
             NextTheme {
@@ -466,16 +466,23 @@ class ReaderHomePresentationTest {
         }
 
         val grid = compose.onNodeWithTag(ReaderFeedTags.GRID).getUnclippedBoundsInRoot()
-        val expected = catalogGridSpec(grid.right - grid.left, grid.bottom - grid.top)
         val card = compose.onNodeWithTag(ReaderFeedTags.row(rows[0].id)).getUnclippedBoundsInRoot()
         val next = compose.onNodeWithTag(ReaderFeedTags.row(rows[1].id)).getUnclippedBoundsInRoot()
+        val third = compose.onNodeWithTag(ReaderFeedTags.row(rows[2].id)).getUnclippedBoundsInRoot()
         val image =
             compose
                 .onNodeWithTag(ReaderFeedTags.thumbnail(rows[0].id), useUnmergedTree = true)
                 .getUnclippedBoundsInRoot()
-        assertEquals("a portrait phone is one column", 1, expected.columns)
-        assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
-        assertEquals((grid.bottom - grid.top).value / 2, expected.imageHeight.value, 0.5f)
+        // The Coral reference uses two phone columns, 16dp outer gutters, and an 8dp gap.
+        val expectedCardWidth = ((grid.right - grid.left).value - 32f - 8f) / 2f
+        assertEquals(grid.left.value + 16f, card.left.value, 0.5f)
+        assertEquals(grid.right.value - 16f, next.right.value, 0.5f)
+        assertEquals(expectedCardWidth, (card.right - card.left).value, 0.5f)
+        assertEquals(expectedCardWidth, (next.right - next.left).value, 0.5f)
+        assertEquals(card.right.value + 8f, next.left.value, 0.5f)
+        assertEquals(card.top.value, next.top.value, 0.5f)
+        assertEquals(maxOf(card.bottom, next.bottom).value + 8f, third.top.value, 0.5f)
+        assertEquals(expectedCardWidth * 0.75f, (image.bottom - image.top).value, 0.5f)
         // CatalogCard insets the thumbnail by 12.dp on each side (Coral review).
         assertEquals(
             "the image is inset 12.dp from the card",
@@ -483,7 +490,8 @@ class ReaderHomePresentationTest {
             (image.right - image.left).value,
             0.5f,
         )
-        assertTrue("the second card starts below the first", next.top >= card.bottom)
+        assertEquals(card.left.value + 12f, image.left.value, 0.5f)
+        assertEquals(card.right.value - 12f, image.right.value, 0.5f)
     }
 
     private fun assertNoFeedSelectors() {

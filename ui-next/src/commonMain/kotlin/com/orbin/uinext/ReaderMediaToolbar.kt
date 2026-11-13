@@ -2,13 +2,16 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -18,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,36 +29,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 
 object ReaderMediaToolbarTags {
     const val BAR = "reader-media-toolbar"
     const val CONTENT = "reader-media-toolbar-content"
+    const val ACTIONS = "reader-media-toolbar-actions"
 }
 
 /**
- * The standalone viewer's flat, full-width toolbar: Clover 3.0.2's
- * controller_navigation_image_viewer.xml uses toolbar_height (56dp) on #87000000.
- * ImageViewerController and ToolbarMenuView bind filename/subtitle, Back, volume, download and overflow.
+ * Compact media chrome with safe insets, an explicit Close action and persistent download.
+ * Normal text fits 56dp; larger device text grows the title and its toolbar together.
  */
 @Composable
 fun ReaderMediaToolbar(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {
-    Box(
-        modifier
-            .testTag(ReaderMediaToolbarTags.BAR)
-            .fillMaxWidth()
-            .background(MEDIA_TOOLBAR_BACKGROUND)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
-    ) {
+    ReaderMediaToolbarFrame(modifier) {
         Row(
             Modifier
                 .testTag(ReaderMediaToolbarTags.CONTENT)
@@ -67,11 +65,70 @@ fun ReaderMediaToolbar(
     }
 }
 
-private val MEDIA_TOOLBAR_BACKGROUND = Color(0x87000000)
-
-/** Exact 56dp navigation cell from Clover's Toolbar.java. */
+/** Narrow windows give the filename its own row without shrinking type or action targets. */
 @Composable
-fun ReaderMediaBack(
+fun ReaderMediaToolbar(
+    filename: String,
+    position: String,
+    closeLabel: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    ReaderMediaToolbarFrame(modifier) {
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < MEDIA_TOOLBAR_STACKED_WIDTH) {
+                Column(Modifier.fillMaxWidth().testTag(ReaderMediaToolbarTags.CONTENT)) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(
+                                min = ReaderSize.appBar,
+                            ).testTag(ReaderMediaToolbarTags.ACTIONS),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ReaderMediaClose(closeLabel, onClose)
+                        Spacer(Modifier.weight(1f))
+                        actions()
+                    }
+                    ReaderMediaTitle(filename, position, Modifier.fillMaxWidth().padding(end = 16.dp))
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = ReaderSize.appBar).testTag(ReaderMediaToolbarTags.CONTENT),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ReaderMediaClose(closeLabel, onClose)
+                    ReaderMediaTitle(filename, position, Modifier.weight(1f))
+                    actions()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReaderMediaToolbarFrame(
+    modifier: Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier
+            .testTag(ReaderMediaToolbarTags.BAR)
+            .fillMaxWidth()
+            .background(MEDIA_TOOLBAR_BACKGROUND)
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
+    ) {
+        content()
+    }
+}
+
+private val MEDIA_TOOLBAR_BACKGROUND = Color(0x87000000)
+private val MEDIA_TOOLBAR_STACKED_WIDTH = 360.dp
+
+/** A persistent, explicit exit for the full-screen viewer. */
+@Composable
+fun ReaderMediaClose(
     label: String,
     onClick: () -> Unit,
 ) {
@@ -79,39 +136,42 @@ fun ReaderMediaBack(
         Modifier.size(56.dp).clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, label, tint = Color.White, modifier = Modifier.size(24.dp))
+        Icon(Icons.Filled.Close, label, tint = Color.White, modifier = Modifier.size(24.dp))
     }
 }
 
-/** Clover's title container uses 20dp/14dp text, with title at 5dp and subtitle at 29dp. */
+/** A scalable two-line title; large device text grows the toolbar instead of overlapping it. */
 @Composable
 fun ReaderMediaTitle(
     filename: String,
     position: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.height(56.dp).padding(start = 16.dp)) {
+    Column(
+        modifier.heightIn(min = 56.dp).padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+        verticalArrangement = Arrangement.Center,
+    ) {
         Text(
             filename,
+            modifier = Modifier.fillMaxWidth(),
             color = Color.White,
-            fontSize = with(LocalDensity.current) { 20.dp.toSp() },
+            style = OrbinType.appBarTitle.withReaderFont().copy(fontSize = 20.sp, lineHeight = 24.sp),
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 5.dp),
         )
         Text(
             position,
+            modifier = Modifier.fillMaxWidth(),
             color = Color.White,
-            fontSize = with(LocalDensity.current) { 14.dp.toSp() },
+            style = OrbinType.appBarSubtitle.withReaderFont().copy(fontSize = 14.sp, lineHeight = 20.sp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 29.dp),
         )
     }
 }
 
-/** Source-bound action targets: 50dp ordinary, 44dp overflow, all 56dp high with 24dp icons. */
+/** Viewer actions keep at least 48dp targets; ordinary actions remain 50dp wide. */
 @Composable
 fun ReaderMediaAction(
     imageVector: ImageVector,
@@ -123,8 +183,8 @@ fun ReaderMediaAction(
 ) {
     Box(
         modifier
-            .width(if (overflow) 44.dp else 50.dp)
-            .height(56.dp)
+            .width(if (overflow) maxOf(44.dp, ReaderSize.touchTarget) else 50.dp)
+            .heightIn(min = 56.dp)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .then(if (overflow) Modifier.padding(start = 8.dp, end = 16.dp) else Modifier),
         contentAlignment = Alignment.Center,

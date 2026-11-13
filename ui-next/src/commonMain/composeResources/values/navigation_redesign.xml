@@ -1,0 +1,6 @@
+<resources>
+    <plurals name="reader_downloads_active">
+        <item quantity="one">%1$d download in progress</item>
+        <item quantity="other">%1$d downloads in progress</item>
+    </plurals>
+</resources>

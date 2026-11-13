@@ -323,8 +323,13 @@ internal fun BoardMediaDestination(
                                         }
                                     },
                                 showRail = false,
+                                showHeader = false,
                                 title = label,
-                                onOpen = { cell -> byId[cell.id]?.let { browser.openThread(it.key) } },
+                                onOpen = { cell ->
+                                    byId[cell.id]?.let {
+                                        browser.openMedia(it.key, it.attachment.id, it.attachment.thumbnailUrl)
+                                    }
+                                },
                                 tile = { cell, modifier ->
                                     byId[cell.id]?.let { item ->
                                         Box(modifier) {

@@ -2,18 +2,14 @@ package com.orbin.uinext.tokens
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /*
  * The reader design's tokens, copied from docs/design-system/README.md.
  *
  * That document is the source of truth. scripts/tests/test_design_spec.py reads its tables and
- * this file and fails when a value differs, so change the document first and this file with it.
+ * the canonical token files and fails when a value differs, so change the document first and this file with it.
  * Keep one token per line in the shapes used below; the test reads them line by line.
  */
 
@@ -130,72 +126,6 @@ fun readerColors(
         else -> ReaderLightColors
     }
 
-private fun readerType(
-    size: Int,
-    lineHeight: Int,
-    weight: Int,
-): TextStyle =
-    TextStyle(
-        fontFamily = FontFamily.Default,
-        fontSize = size.sp,
-        lineHeight = lineHeight.sp,
-        fontWeight = FontWeight(weight),
-    )
-
-/** Type styles, in sp so text follows the reader's font scale. */
-object ReaderType {
-    /** App bar title. */
-    val appBarTitle: TextStyle = readerType(20, 28, 500)
-
-    /** Board line under a thread title. */
-    val appBarSubtitle: TextStyle = readerType(14, 20, 400)
-
-    /** Catalog row title. */
-    val rowTitle: TextStyle = readerType(16, 22, 700)
-
-    /** Post number, date, file details, backlinks. */
-    val meta: TextStyle = readerType(12, 16, 400)
-
-    /** Catalog row preview line. */
-    val preview: TextStyle = readerType(14, 20, 400)
-
-    /** Post body. */
-    val body: TextStyle = readerType(15, 22, 400)
-
-    /** Grid card title. */
-    val cardTitle: TextStyle = readerType(14, 20, 700)
-
-    /** Post author name. */
-    val postAuthor: TextStyle = readerType(12, 16, 700)
-
-    /** Clover's default post size; natural Roboto metrics supply its line spacing. */
-    val postBody: TextStyle =
-        TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, fontWeight = FontWeight.Normal)
-
-    /** The sw600dp post size from Clover's tablet resource configuration. */
-    val postBodyWide: TextStyle =
-        TextStyle(fontFamily = FontFamily.Default, fontSize = 16.sp, fontWeight = FontWeight.Normal)
-
-    /** Post number, time and attachment metadata are four sp smaller than the body. */
-    val postDetails: TextStyle =
-        TextStyle(fontFamily = FontFamily.Default, fontSize = 10.sp, fontWeight = FontWeight.Normal)
-
-    val postDetailsWide: TextStyle =
-        TextStyle(fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Normal)
-
-    /** Reply count in the pill. */
-    val pill: TextStyle = readerType(14, 20, 500)
-
-    /** Empty and error state title. */
-    val stateTitle: TextStyle = readerType(24, 32, 400)
-
-    /** State helper text and the empty detail pane message. */
-    val stateBody: TextStyle = readerType(16, 24, 400)
-
-    /** Text buttons. */
-    val label: TextStyle = readerType(14, 20, 500)
-}
-
 object ReaderSpace {
     /** Left and right screen edge inset. */
     val gutter: Dp = 16.dp
@@ -310,17 +240,6 @@ object ReaderSize {
 
     /** Divider between the two panes. */
     val paneDivider: Dp = 1.dp
-}
-
-object ReaderRadius {
-    /** Thumbnails and skeleton bars. */
-    val small: Dp = 4.dp
-
-    /** Grid card. */
-    val card: Dp = 2.dp
-
-    /** Reply count pill. */
-    val pill: Dp = 18.dp
 }
 
 /** Proportions the reader layout derives from its viewport. */

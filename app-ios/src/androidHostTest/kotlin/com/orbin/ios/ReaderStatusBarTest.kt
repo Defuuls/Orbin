@@ -9,12 +9,12 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** The green reader app bar and black media viewer require light system icons in a light theme. */
+/** White Coral reader bars use dark icons; only the full-screen black media chrome uses light. */
 class ReaderStatusBarTest {
     @Test
-    fun everyPrimaryAndChildReaderRouteUsesLightIconsWithTheLightPalette() {
+    fun everyPrimaryAndChildReaderRouteUsesDarkIconsWithTheLightPalette() {
         readerRoutes.forEach { route ->
-            assertTrue(
+            assertFalse(
                 lightStatusBarIcons(route, darkTheme = false, firstRun = false, lockState = unlocked),
                 "$route must keep readable status icons over the reader frame",
             )
@@ -22,8 +22,18 @@ class ReaderStatusBarTest {
     }
 
     @Test
+    fun fullScreenMediaLoadingErrorAndReadyRoutesKeepLightIconsOverTheirBlackChrome() {
+        mediaRoutes.forEach { route ->
+            assertTrue(
+                lightStatusBarIcons(route, darkTheme = false, firstRun = false, lockState = unlocked),
+                "$route keeps black chrome while loading, failed, empty or ready",
+            )
+        }
+    }
+
+    @Test
     fun onboardingAndPrivacyCoversUseDarkIconsWithTheLightPalette() {
-        readerRoutes.forEach { route ->
+        (readerRoutes + mediaRoutes).forEach { route ->
             assertFalse(
                 lightStatusBarIcons(route, darkTheme = false, firstRun = true, lockState = unlocked),
                 "Onboarding over $route uses its own light ground",
@@ -39,7 +49,7 @@ class ReaderStatusBarTest {
 
     @Test
     fun readerOnboardingAndPrivacyCoversKeepLightIconsWithTheDarkPalette() {
-        readerRoutes.forEach { route ->
+        (readerRoutes + mediaRoutes).forEach { route ->
             listOf(unlocked, LockState(locked = true), LockState(obscured = true)).forEach { lock ->
                 listOf(false, true).forEach { firstRun ->
                     assertTrue(
@@ -68,8 +78,7 @@ class ReaderStatusBarTest {
                 Route.Catalog(board),
                 Route.BoardMedia(board),
                 Route.ThreadPage(thread),
-                Route.Media(thread, index = 0),
-                Route.ThreadVideos(thread),
             )
+        val mediaRoutes = listOf(Route.Media(thread, index = 0), Route.ThreadVideos(thread))
     }
 }

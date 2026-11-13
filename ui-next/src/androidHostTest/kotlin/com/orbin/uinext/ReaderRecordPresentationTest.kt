@@ -19,7 +19,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 
-/** Actual Search/Saved/Watched/history routes share compact cells while retaining their own data. */
+/** Actual Search/Saved/Watched/history routes share accessible Coral cards and retain their data. */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-mdpi")
 class ReaderRecordPresentationTest(
@@ -29,11 +29,11 @@ class ReaderRecordPresentationTest(
     val compose = createComposeRule()
 
     @Test
-    fun phoneRowsUseCompactPostTextAndOpenTheCompleteRecord() = verifyRow(wide = false)
+    fun phoneCardsUseReadableTextAndOpenTheCompleteRecord() = verifyRow(wide = false)
 
     @Test
     @Config(qualifiers = "w960dp-h800dp-mdpi")
-    fun tabletRowsUseTheActualLargerPostTypesAndInset() = verifyRow(wide = true)
+    fun tabletCardsKeepTheLargerBodyAndOpenTheCompleteRecord() = verifyRow(wide = true)
 
     private fun verifyRow(wide: Boolean) {
         val record =
@@ -90,12 +90,12 @@ class ReaderRecordPresentationTest(
         val row = compose.onNodeWithTag(rowTag).getUnclippedBoundsInRoot()
         val title = compose.onNodeWithText(record.title, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val source = compose.onNodeWithText(record.source, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(if (wide) 10f else 8f, (title.left - row.left).value, 0.5f)
+        assertEquals(12f, (title.left - row.left).value, 0.5f)
         assertEquals(title.left.value, source.left.value, 0.5f)
-        assertEquals(if (wide) 16.sp else 14.sp, layout(record.title).layoutInput.style.fontSize)
-        assertEquals(FontWeight.Normal, layout(record.title).layoutInput.style.fontWeight)
-        assertEquals(if (wide) 12.sp else 10.sp, layout(record.source).layoutInput.style.fontSize)
-        assertEquals(if (wide) 16.sp else 14.sp, layout(record.detail).layoutInput.style.fontSize)
+        assertEquals(16.sp, layout(record.title).layoutInput.style.fontSize)
+        assertEquals(FontWeight.Bold, layout(record.title).layoutInput.style.fontWeight)
+        assertEquals(12.sp, layout(record.source).layoutInput.style.fontSize)
+        assertEquals(if (wide) 16.sp else 15.sp, layout(record.detail).layoutInput.style.fontSize)
         compose.onNodeWithText(record.detail, useUnmergedTree = true).assertExists()
         if (destination != "Search") {
             compose.onNodeWithText("No.7 · ${record.time}", useUnmergedTree = true).assertExists()

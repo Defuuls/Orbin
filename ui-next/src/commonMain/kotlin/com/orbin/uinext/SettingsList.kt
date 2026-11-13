@@ -4,15 +4,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -20,10 +25,12 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +52,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -57,11 +65,12 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_done
 import com.orbin.uinext.resources.next_settings_no_matches
 import com.orbin.uinext.resources.next_settings_search
-import com.orbin.uinext.resources.social_settings_downloads
-import com.orbin.uinext.resources.social_settings_search_options
-import com.orbin.uinext.resources.social_settings_title
-import com.orbin.uinext.resources.social_settings_view_history
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.resources.reader_settings_downloads
+import com.orbin.uinext.resources.reader_settings_search_options
+import com.orbin.uinext.resources.reader_settings_title
+import com.orbin.uinext.resources.reader_settings_view_history
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 data class SettingItem(
@@ -105,6 +114,8 @@ fun SettingsScreen(
     onBack: (() -> Unit)? = null,
     onNavigate: ((String) -> Unit)? = null,
     enabledSiteCount: Int? = null,
+    /** Hosts supply the app navigation for the directory; local settings pages keep their Back action. */
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
     val state = rememberLazyListState()
     var query by rememberSaveable { mutableStateOf("") }
@@ -125,7 +136,7 @@ fun SettingsScreen(
     val choice = groups.flatMap { it.second }.firstOrNull { it.id == choiceId }
     val labels = settingsPageLabels()
     val fullPageChoice = choice?.takeIf { it.id == "playbackScope" || it.options.size > 8 }
-    val title = fullPageChoice?.label ?: page?.let { labels[it] } ?: stringResource(Res.string.social_settings_title)
+    val title = fullPageChoice?.label ?: page?.let { labels[it] } ?: stringResource(Res.string.reader_settings_title)
     val visibleGroups =
         remember(groups, query, page) {
             when {
@@ -146,6 +157,8 @@ fun SettingsScreen(
         }
     }
     val localBack = choiceId != null || page != null || query.isNotBlank() || searchVisible
+    val showBottomBar = bottomBar != null && !localBack
+    val bottomPadding = if (showBottomBar) 24.dp else 24.dp + bottomInset()
     val backAction = if (localBack) closeLocalPage else onBack
     NavigationBackHandler(
         state = rememberNavigationEventState(NavigationEventInfo.None),
@@ -156,18 +169,23 @@ fun SettingsScreen(
         if (item.kind == SettingKind.CHOICE) choiceId = item.id
         onActivate(item)
     }
-    Column(modifier = modifier.fillMaxSize().background(reader.surfaceVariant).testTag("reader-settings-root")) {
+    Column(modifier = modifier.fillMaxSize().background(reader.background).testTag("reader-settings-root")) {
         SettingsNavigationBar(title, backAction, if (page == null) ({ searchVisible = true }) else null)
         if (fullPageChoice != null) {
-            SettingsChoiceList(fullPageChoice) { index ->
+            SettingsChoiceList(fullPageChoice, modifier = Modifier.weight(1f)) { index ->
                 onSelectOption(fullPageChoice, index)
                 choiceId = null
             }
         } else {
             LazyColumn(
                 state = state,
-                modifier = Modifier.weight(1f).imePadding().testTag("settings-list"),
-                contentPadding = PaddingValues(bottom = 24.dp + bottomInset()),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                        .imePadding()
+                        .testTag("settings-list"),
+                contentPadding = PaddingValues(top = 8.dp, bottom = bottomPadding),
             ) {
                 if (page == null && searchVisible) {
                     item(key = "search") {
@@ -177,6 +195,7 @@ fun SettingsScreen(
                                 value = query,
                                 onValueChange = { query = it },
                                 placeholder = searchLabel,
+                                shape = RoundedCornerShape(OrbinRadius.search),
                                 modifier =
                                     Modifier.padding(horizontal = GUTTER).semantics {
                                         contentDescription =
@@ -186,7 +205,7 @@ fun SettingsScreen(
                             if (subtitle != null) {
                                 Text(
                                     subtitle,
-                                    style = NextType.footnote,
+                                    style = OrbinType.footnote,
                                     color = next.muted,
                                     modifier = Modifier.padding(GUTTER),
                                 )
@@ -195,13 +214,9 @@ fun SettingsScreen(
                     }
                 }
                 if (page == null && query.isBlank()) {
-                    settingsDirectory(pages.keys, onNavigate != null).forEachIndexed { index, (heading, entries) ->
+                    settingsDirectory(pages.keys, onNavigate != null).forEach { (heading, entries) ->
                         item(key = "directory:$heading") {
-                            Column(Modifier.background(reader.background)) {
-                                if (index > 0) {
-                                    Box(Modifier.fillMaxWidth().height(12.dp).background(reader.surfaceVariant))
-                                }
-                                SettingsSectionHeading(directorySectionLabel(heading))
+                            SettingsSection(directorySectionLabel(heading), "directory:$heading") {
                                 entries.forEach { destination ->
                                     SettingsDirectoryRow(
                                         destination,
@@ -226,7 +241,7 @@ fun SettingsScreen(
                         item(key = "empty") {
                             Text(
                                 stringResource(Res.string.next_settings_no_matches),
-                                style = NextType.body,
+                                style = OrbinType.body,
                                 color = next.muted,
                                 modifier = Modifier.padding(GUTTER),
                             )
@@ -234,15 +249,11 @@ fun SettingsScreen(
                     }
                     visibleGroups.forEachIndexed { index, (heading, rows) ->
                         item(key = "group:$index") {
-                            Column(Modifier.background(reader.background)) {
-                                if (index > 0) {
-                                    Box(Modifier.fillMaxWidth().height(12.dp).background(reader.surfaceVariant))
-                                }
-                                SettingsSectionHeading(heading.ifBlank { page?.let { labels[it] }.orEmpty() })
+                            SettingsSection(heading.ifBlank { page?.let { labels[it] }.orEmpty() }, "group:$index") {
                                 if (page == "history" && onNavigate != null && query.isBlank()) {
                                     SettingsDirectoryRow(
                                         "history",
-                                        stringResource(Res.string.social_settings_view_history),
+                                        stringResource(Res.string.reader_settings_view_history),
                                     ) {
                                         onNavigate("history")
                                     }
@@ -250,7 +261,7 @@ fun SettingsScreen(
                                 if (page == "storage" && onNavigate != null && query.isBlank()) {
                                     SettingsDirectoryRow(
                                         "downloads",
-                                        stringResource(Res.string.social_settings_downloads),
+                                        stringResource(Res.string.reader_settings_downloads),
                                     ) {
                                         onNavigate("downloads")
                                     }
@@ -275,6 +286,21 @@ fun SettingsScreen(
                 }
             }
         }
+        if (showBottomBar) {
+            Box(Modifier.fillMaxWidth().testTag("settings-bottom-navigation")) { bottomBar.invoke() }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSection(
+    label: String,
+    id: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 8.dp)) {
+        if (label.isNotBlank()) SettingsSectionHeading(label)
+        OrbinCard(modifier = Modifier.fillMaxWidth().testTag("settings-section:$id"), content = content)
     }
 }
 
@@ -302,9 +328,9 @@ private fun SettingsNavigationBar(
 private fun SettingsSectionHeading(label: String) {
     Text(
         text = label,
-        style = preferenceTitleStyle,
-        color = reader.inkSecondary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp).semantics { heading() },
+        style = preferenceTitleStyle.copy(fontWeight = FontWeight.SemiBold),
+        color = reader.accent,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp).semantics { heading() },
     )
 }
 
@@ -315,28 +341,39 @@ private fun SettingsDirectoryRow(
     value: String? = null,
     onClick: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().background(reader.background)) {
-        Column(
+    Column(Modifier.fillMaxWidth()) {
+        Row(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp)
                 .nextClickable(role = Role.Button, onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(label, style = preferenceTitleStyle, color = preferencePrimaryColor)
-            Text(
-                value ?: settingsDirectorySummary(destination),
-                style = preferenceSummaryStyle,
-                color = reader.inkSecondary,
+            Column(Modifier.weight(1f)) {
+                Text(label, style = preferenceTitleStyle, color = preferencePrimaryColor)
+                Text(
+                    value ?: settingsDirectorySummary(destination),
+                    style = preferenceSummaryStyle,
+                    color = reader.inkSecondary,
+                )
+            }
+            Icon(
+                imageVector = ReaderIcons.ChevronRight,
+                contentDescription = null,
+                tint = reader.accent,
+                modifier = Modifier.size(20.dp),
             )
         }
-        ReaderHairline()
+        ReaderHairline(Modifier.padding(horizontal = 16.dp))
     }
 }
 
 @Composable
 private fun SettingsChoiceList(
     item: SettingItem,
+    modifier: Modifier = Modifier,
     onSelect: (Int) -> Unit,
 ) {
     var optionQuery by rememberSaveable(item.id) { mutableStateOf("") }
@@ -346,9 +383,10 @@ private fun SettingsChoiceList(
         }
     LazyColumn(
         modifier =
-            Modifier
-                .fillMaxSize()
+            modifier
+                .fillMaxWidth()
                 .background(reader.background)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                 .imePadding()
                 .testTag("settings-list")
                 .selectableGroup(),
@@ -359,8 +397,9 @@ private fun SettingsChoiceList(
                 SchematicSearch(
                     optionQuery,
                     { optionQuery = it },
-                    stringResource(Res.string.social_settings_search_options),
+                    stringResource(Res.string.reader_settings_search_options),
                     modifier = Modifier.padding(horizontal = GUTTER, vertical = 8.dp),
+                    shape = RoundedCornerShape(OrbinRadius.search),
                 )
             }
         }
@@ -375,31 +414,37 @@ private fun SettingsChoiceList(
             }
         }
         items(options, key = { it.index }) { (index, option) ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .selectable(
-                        selected = index == item.selected,
-                        role = Role.RadioButton,
-                        onClick = { onSelect(index) },
-                    ).padding(horizontal = GUTTER, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            OrbinCard(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 4.dp),
+                elevated = false,
             ) {
-                Text(
-                    option,
-                    style = preferenceTitleStyle,
-                    color = preferencePrimaryColor,
-                    modifier = Modifier.weight(1f),
-                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .selectable(
+                            selected = index == item.selected,
+                            role = Role.RadioButton,
+                            onClick = { onSelect(index) },
+                        ).padding(horizontal = GUTTER, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        option,
+                        style = preferenceTitleStyle,
+                        color = preferencePrimaryColor,
+                        modifier = Modifier.weight(1f),
+                    )
+                    ReaderSettingsChoiceMark(selected = index == item.selected)
+                }
             }
         }
         if (options.isEmpty()) {
             item(key = "empty-options") {
                 Text(
                     stringResource(Res.string.next_settings_no_matches),
-                    style = NextType.body,
+                    style = OrbinType.body,
                     color = reader.inkSecondary,
                     modifier = Modifier.padding(GUTTER),
                 )
@@ -433,7 +478,7 @@ private fun SettingRow(
                 }
         }
     ReaderSettingAnchor(item, choiceVisible, onSelectOption, onDismissChoice) {
-        Column(Modifier.bringIntoViewRequester(bringIntoView).background(reader.background)) {
+        Column(Modifier.bringIntoViewRequester(bringIntoView)) {
             Row(
                 Modifier
                     .testTag("reader-setting-row-${item.id}")
@@ -488,7 +533,7 @@ private fun SettingRow(
                 }
                 SettingTextEditor(item, onCommitText)
             }
-            ReaderHairline()
+            ReaderHairline(Modifier.padding(horizontal = 16.dp))
         }
     }
 }
@@ -511,7 +556,7 @@ private fun SettingTextEditor(
             if (draft.isEmpty()) {
                 Text(
                     text = item.value,
-                    style = NextType.body,
+                    style = OrbinType.body,
                     color = next.faint,
                     maxLines = 1,
                 )
@@ -522,7 +567,7 @@ private fun SettingTextEditor(
                 value = draft,
                 onValueChange = { draft = it },
                 singleLine = true,
-                textStyle = NextType.body.copy(color = next.ink),
+                textStyle = OrbinType.body.copy(color = next.ink),
                 cursorBrush = SolidColor(next.accent),
                 keyboardOptions =
                     KeyboardOptions(

@@ -42,19 +42,22 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_downloads_active
 import com.orbin.uinext.resources.reader_nav_boards
 import com.orbin.uinext.resources.reader_nav_downloads
 import com.orbin.uinext.resources.reader_nav_feed
 import com.orbin.uinext.resources.reader_nav_settings
-import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -203,7 +206,7 @@ fun OrbinWordmark(
         OrbinLogo(size = logoSize, contentDescription = null)
         Text(
             text = OrbinStyle.WORDMARK,
-            style = ReaderType.appBarTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+            style = OrbinType.appBarTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
             color = onInk,
             // The parent supplies the label; UIKit otherwise announces both as "Orbin, Orbin".
             modifier = Modifier.clearAndSetSemantics {},
@@ -273,6 +276,12 @@ fun OrbinBottomBar(
         ),
     downloadBadge: Int = 0,
 ) {
+    val activeDownloads =
+        if (downloadBadge > 0) {
+            pluralStringResource(Res.plurals.reader_downloads_active, downloadBadge, downloadBadge)
+        } else {
+            null
+        }
     val shadow = if (next.dark) 0.dp else OrbinElevation.bar
     val tonal = if (next.dark) OrbinElevation.bar else 0.dp
     Surface(
@@ -307,7 +316,12 @@ fun OrbinBottomBar(
                                 selected = isSelected,
                                 role = Role.Tab,
                                 onClick = { if (!isSelected) onSelect(destination) },
-                            ).semantics { contentDescription = label },
+                            ).semantics {
+                                contentDescription = label
+                                if (destination == NextDestination.DOWNLOADS && activeDownloads != null) {
+                                    stateDescription = activeDownloads
+                                }
+                            },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -331,19 +345,21 @@ fun OrbinBottomBar(
                             ) {
                                 Text(
                                     badgeLabel,
-                                    style = NextType.caption2.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                    style = OrbinType.caption2.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                                     color = reader.onAccent,
                                     maxLines = 1,
+                                    modifier = Modifier.clearAndSetSemantics {},
                                 )
                             }
                         }
                     }
                     Text(
                         label,
-                        style = NextType.caption1,
+                        modifier = Modifier.clearAndSetSemantics {},
+                        style = OrbinType.caption1,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                         color = if (isSelected) reader.accent else next.muted,
-                        maxLines = 1,
+                        textAlign = TextAlign.Center,
                     )
                 }
             }

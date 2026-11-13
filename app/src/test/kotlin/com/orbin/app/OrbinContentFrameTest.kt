@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
 import com.orbin.uinext.NextDestination
@@ -38,6 +39,56 @@ import org.robolectric.annotation.Config
 class OrbinContentFrameTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun systemIconsFollowCoralBrightnessAndRestoreThePaletteAfterBlackMedia() {
+        var dark by mutableStateOf(false)
+        var amoled by mutableStateOf(false)
+        var immersive by mutableStateOf(false)
+        var readerBarVisible by mutableStateOf(true)
+        composeRule.setContent {
+            NextTheme(darkTheme = dark, amoled = amoled) {
+                SystemBarAppearance(immersive = immersive, readerBarVisible = readerBarVisible)
+            }
+        }
+
+        fun assertDarkIcons(expected: Boolean) {
+            composeRule.runOnIdle {
+                val window = composeRule.activity.window
+                val controller = WindowCompat.getInsetsController(window, window.decorView)
+                assertThat(controller.isAppearanceLightStatusBars).isEqualTo(expected)
+                assertThat(controller.isAppearanceLightNavigationBars).isEqualTo(expected)
+            }
+        }
+
+        // Exercise the reader flag that previously forced white icons over Coral's white bar.
+        assertDarkIcons(true)
+        composeRule.runOnIdle {
+            readerBarVisible = false
+            immersive = true
+        }
+        assertDarkIcons(false)
+        composeRule.runOnIdle { immersive = false }
+        assertDarkIcons(true)
+        composeRule.runOnIdle { readerBarVisible = true }
+        assertDarkIcons(true)
+        composeRule.runOnIdle { dark = true }
+        assertDarkIcons(false)
+        composeRule.runOnIdle { amoled = true }
+        assertDarkIcons(false)
+        composeRule.runOnIdle {
+            readerBarVisible = false
+            immersive = true
+        }
+        assertDarkIcons(false)
+        composeRule.runOnIdle { immersive = false }
+        assertDarkIcons(false)
+        composeRule.runOnIdle {
+            dark = false
+            amoled = false
+        }
+        assertDarkIcons(true)
+    }
 
     @Test
     fun offlineOnboardingHeadingStartsBelowTheBannerWithoutSystemInsets() {

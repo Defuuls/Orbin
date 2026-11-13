@@ -22,7 +22,7 @@ import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SafeModeScreen
 import com.orbin.uinext.SafeModeText
-import com.orbin.uinext.next
+import com.orbin.uinext.reader
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -38,7 +38,7 @@ internal fun IosSafeMode(
 ) {
     NextTheme(platform = NextPlatform.IOS) {
         val noDetails = stringResource(Res.string.ios_safe_mode_no_details)
-        Box(Modifier.fillMaxSize().background(next.background).safeDrawingPadding()) {
+        Box(Modifier.fillMaxSize().background(reader.background).safeDrawingPadding()) {
             SafeModeScreen(
                 text =
                     SafeModeText(

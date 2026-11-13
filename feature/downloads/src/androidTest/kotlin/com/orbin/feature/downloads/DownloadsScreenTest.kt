@@ -14,10 +14,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.testing.repository.FakeDownloadRepository
+import com.orbin.domain.repository.DownloadRepository
+import com.orbin.uinext.DownloadTags
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderAppBarTags
 import com.orbin.uinext.tokens.ReaderSize
@@ -74,6 +77,26 @@ class DownloadsScreenTest {
         )
 
         composeTestRule.onNodeWithContentDescription("Retry download").assertDoesNotExist()
+    }
+
+    @Test
+    fun longHistoriesComposeVisibleCardsAndRetryTheCorrectOffscreenRecord() {
+        val records =
+            List(200) { index ->
+                record(
+                    index.toLong(),
+                    "clip-$index.webm",
+                    if (index == 199) DownloadStatus.FAILED else DownloadStatus.COMPLETED,
+                )
+            }
+        var retried = -1L
+        setContent(*records.toTypedArray(), onRetry = { retried = it })
+
+        composeTestRule.onNodeWithTag(DownloadTags.row(199L)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DownloadTags.LIST).performScrollToIndex(199)
+        composeTestRule.onNodeWithTag(DownloadTags.row(199L)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Retry download").performClick()
+        composeTestRule.runOnIdle { assertEquals(199L, retried) }
     }
 
     @Test
@@ -156,9 +179,17 @@ class DownloadsScreenTest {
     private fun setContent(
         vararg records: DownloadRecord,
         onBack: () -> Unit = {},
+        onRetry: (Long) -> Unit = {},
     ): FakeDownloadRepository {
         val repository = FakeDownloadRepository(records.toList())
-        val viewModel = DownloadsViewModel(repository)
+        val tracked =
+            object : DownloadRepository by repository {
+                override suspend fun retry(id: Long): Long {
+                    onRetry(id)
+                    return repository.retry(id)
+                }
+            }
+        val viewModel = DownloadsViewModel(tracked)
         composeTestRule.setContent {
             NextTheme {
                 DownloadsScreen(onBack = onBack, viewModel = viewModel)

@@ -62,9 +62,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderDarkColors
 
 /** Drawer roots and secondary destinations shared by the Android and iOS hosts. */
@@ -98,7 +98,7 @@ val COMPACT_TITLE_CLEARANCE = 56.dp
 @Composable
 fun compactTitleClearance(): Dp {
     if (LocalReaderFramePresent.current) return 0.dp
-    val textHeight = with(LocalDensity.current) { NextType.headline.lineHeight.toDp() }
+    val textHeight = with(LocalDensity.current) { OrbinType.headline.lineHeight.toDp() }
     return maxOf(24.dp, textHeight) + 32.dp
 }
 
@@ -145,7 +145,7 @@ fun CompactTitleBar(
         ) {
             Text(
                 text = title,
-                style = NextType.titleLarge,
+                style = OrbinType.titleLarge,
                 color = next.ink,
                 modifier = Modifier.semantics { heading() },
             )
@@ -180,14 +180,14 @@ fun ScreenTitle(
     ) {
         Text(
             text = text,
-            style = if (size >= 32) NextType.largeTitle else NextType.titleLarge,
+            style = if (size >= 32) OrbinType.largeTitle else OrbinType.titleLarge,
             color = next.ink,
             modifier = Modifier.testTag(NextTitleTags.LARGE).semantics { heading() },
         )
         if (!subtitle.isNullOrBlank()) {
             Text(
                 text = subtitle,
-                style = NextType.footnote,
+                style = OrbinType.footnote,
                 color = next.muted,
                 modifier = Modifier.padding(top = 4.dp),
             )
@@ -223,7 +223,7 @@ fun GroupedSection(
         if (header != null) {
             Text(
                 text = header,
-                style = NextType.sectionHeader,
+                style = OrbinType.sectionHeader,
                 color = next.muted,
                 modifier = Modifier.padding(top = 16.dp, bottom = 8.dp).semantics { heading() },
             )
@@ -232,7 +232,7 @@ fun GroupedSection(
         if (footer != null) {
             Text(
                 text = footer,
-                style = NextType.footnote,
+                style = OrbinType.footnote,
                 color = next.muted,
                 modifier = Modifier.padding(top = 8.dp),
             )
@@ -259,9 +259,13 @@ fun groupedCardShape(
     count: Int,
 ): Shape =
     when {
-        count <= 1 -> RoundedCornerShape(NextRadius.card)
-        index == 0 -> RoundedCornerShape(topStart = NextRadius.card, topEnd = NextRadius.card)
-        index == count - 1 -> RoundedCornerShape(bottomStart = NextRadius.card, bottomEnd = NextRadius.card)
+        count <= 1 -> RoundedCornerShape(OrbinRadius.compactCard)
+        index == 0 -> RoundedCornerShape(topStart = OrbinRadius.compactCard, topEnd = OrbinRadius.compactCard)
+        index == count - 1 ->
+            RoundedCornerShape(
+                bottomStart = OrbinRadius.compactCard,
+                bottomEnd = OrbinRadius.compactCard,
+            )
         else -> RectangleShape
     }
 
@@ -311,7 +315,7 @@ fun MetaLine(
 ) {
     Text(
         text = text,
-        style = NextType.footnote,
+        style = OrbinType.footnote,
         color = color ?: next.muted,
         maxLines = maxLines,
         minLines = minLines,
@@ -331,7 +335,7 @@ fun BoardDot(
         modifier =
             modifier
                 .size(size)
-                .clip(RoundedCornerShape(NextRadius.tight))
+                .clip(RoundedCornerShape(OrbinRadius.compact))
                 .background(boardHue(board)),
     )
 }
@@ -350,14 +354,14 @@ fun InlineAction(
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
 ) {
-    val shape = RoundedCornerShape(NextRadius.control)
+    val shape = RoundedCornerShape(OrbinRadius.control)
     val filled = selected ?: accent
     val interaction = remember { MutableInteractionSource() }
     val text =
         @Composable {
             Text(
                 text = label,
-                style = NextType.callout,
+                style = OrbinType.callout,
                 fontWeight = if (filled) FontWeight.SemiBold else FontWeight.Medium,
                 color =
                     if (!enabled) {
@@ -419,13 +423,13 @@ fun Pill(
     val hue = tint ?: next.accent
     Text(
         text = text,
-        style = NextType.caption2,
+        style = OrbinType.caption2,
         color = hue,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier =
             modifier
-                .clip(RoundedCornerShape(NextRadius.tight))
+                .clip(RoundedCornerShape(OrbinRadius.compact))
                 .background(hue.copy(alpha = if (next.dark) 0.18f else 0.12f))
                 .padding(horizontal = 7.dp, vertical = 3.dp),
     )
@@ -442,13 +446,13 @@ fun MediaBadge(
 ) {
     Text(
         text = text,
-        style = NextType.caption2,
+        style = OrbinType.caption2,
         color = Color.White,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier =
             modifier
-                .clip(RoundedCornerShape(NextRadius.tight))
+                .clip(RoundedCornerShape(OrbinRadius.compact))
                 .background(Color.Black.copy(alpha = MEDIA_BADGE_SCRIM))
                 .padding(horizontal = 7.dp, vertical = 3.dp),
     )
@@ -462,7 +466,7 @@ fun MediaTile(
     modifier: Modifier = Modifier,
     seed: Int = 0,
     badge: String? = null,
-    radius: Dp = NextRadius.tile,
+    radius: Dp = OrbinRadius.small,
 ) {
     Box(
         modifier =
@@ -532,8 +536,8 @@ fun NextScaffold(
                         Modifier
                     },
                 ),
-            containerColor = if (immersive) TikTokDesign.Black else next.background,
-            contentColor = if (immersive) TikTokDesign.White else next.ink,
+            containerColor = if (immersive) Color.Black else next.background,
+            contentColor = if (immersive) Color.White else next.ink,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
         ) { padding ->
             Box(Modifier.fillMaxSize().padding(padding)) { content(PaddingValues(bottom = bottomInset())) }
@@ -622,8 +626,8 @@ fun MessageScreen(
                     if (!LocalReaderFramePresent.current) {
                         Text(
                             title,
-                            style = NextType.titleMedium,
-                            color = TikTokDesign.White,
+                            style = OrbinType.titleMedium,
+                            color = Color.White,
                             modifier = Modifier.align(Alignment.TopCenter).padding(16.dp).semantics { heading() },
                         )
                     }
@@ -635,7 +639,7 @@ fun MessageScreen(
                         if (skeleton) NextCircularProgress()
                         Text(
                             subtitle,
-                            style = NextType.body,
+                            style = OrbinType.body,
                             color = ReaderDarkColors.inkMuted,
                             textAlign = TextAlign.Center,
                         )
@@ -657,7 +661,7 @@ fun MessageScreen(
                 Text(
                     subtitle,
                     style =
-                        com.orbin.uinext.tokens.ReaderType.stateBody
+                        com.orbin.uinext.tokens.OrbinType.stateBody
                             .withReaderFont(),
                     color = reader.inkMuted,
                     modifier = Modifier.padding(com.orbin.uinext.tokens.ReaderSpace.gutter),

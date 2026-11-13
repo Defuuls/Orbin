@@ -1,16 +1,20 @@
 package com.orbin.ios
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,15 +25,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.readerThreadStatus
 import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_media_close
+import com.orbin.ios.resources.ios_media_loading
+import com.orbin.ios.resources.ios_media_viewer
 import com.orbin.ios.resources.ios_pencil_download_all
 import com.orbin.ios.resources.ios_pencil_share
 import com.orbin.ios.resources.ios_pencil_unwatch
@@ -38,11 +48,16 @@ import com.orbin.ios.resources.ios_reader_thread
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.ReaderAppBar
 import com.orbin.uinext.ReaderErrorState
+import com.orbin.uinext.ReaderFailureCause
+import com.orbin.uinext.ReaderMediaClose
+import com.orbin.uinext.ReaderMediaTitle
+import com.orbin.uinext.ReaderMediaToolbar
 import com.orbin.uinext.ReaderNavigation
 import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderThreadSkeleton
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.reader
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -312,12 +327,54 @@ internal fun MediaDestination(
     val settings by browser.settings.current.collectAsState()
     val open = (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }
     val files = remember(open) { open?.files.orEmpty() }
-    MediaViewer(
-        playback = settings.playbackPreferences.resolve(route.thread.provider, route.thread.board),
-        files = files,
-        startIndex = route.index,
-        onPageChanged = { browser.mediaScroll.select(route, it) },
-        onClose = { browser.back() },
-        onSave = { file -> downloads.save(file, route.thread, open?.subject) },
-    )
+    val startIndex = remember(route, files) { route.startIndexIn(files) }
+    if (open == null || startIndex == null) {
+        // The viewer closes an empty playlist. Keep loading/error presentation outside it so a
+        // direct catalog entry cannot dismiss itself before its thread has arrived.
+        val loadingLabel = stringResource(Res.string.ios_media_loading)
+        // Keep the status-bar ground black under the translucent viewer toolbar in every state.
+        Column(Modifier.fillMaxSize().background(Color.Black)) {
+            ReaderMediaToolbar {
+                ReaderMediaClose(stringResource(Res.string.ios_media_close)) { browser.back() }
+                ReaderMediaTitle(stringResource(Res.string.ios_media_viewer), "", Modifier.weight(1f))
+            }
+            when (val state = thread) {
+                is Load.Failed ->
+                    ReaderErrorState(
+                        cause = state.cause.toReaderCause(),
+                        onRetry = browser::retry,
+                        message = state.message.takeIf { state.cause == BrowserFailureCause.UNKNOWN },
+                    )
+                is Load.Ready -> ReaderErrorState(ReaderFailureCause.NOT_FOUND, onRetry = browser::retry)
+                else ->
+                    Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            color = reader.accent,
+                            modifier = Modifier.semantics { contentDescription = loadingLabel },
+                        )
+                    }
+            }
+        }
+        return
+    }
+    key(route) {
+        MediaViewer(
+            playback = settings.playbackPreferences.resolve(route.thread.provider, route.thread.board),
+            files = files,
+            startIndex = startIndex,
+            onPageChanged = { browser.mediaScroll.select(route, it) },
+            onClose = { browser.back() },
+            onSave = { file -> downloads.save(file, route.thread, open.subject) },
+            onDownloadRest =
+                if (files.size > 1) {
+                    { current ->
+                        files.forEachIndexed { index, file ->
+                            if (index != current) downloads.save(file, route.thread, open.subject)
+                        }
+                    }
+                } else {
+                    null
+                },
+        )
+    }
 }

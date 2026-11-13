@@ -1,6 +1,0 @@
-<resources>
-    <string name="tiktok_play_video">Play video</string>
-    <string name="tiktok_pause_video">Pause video</string>
-    <string name="tiktok_mute_video">Mute video</string>
-    <string name="tiktok_unmute_video">Unmute video</string>
-</resources>

@@ -24,9 +24,9 @@ import androidx.compose.ui.unit.isSpecified
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_spoiler_reveal
 import com.orbin.uinext.resources.reader_spoiler
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -117,7 +117,7 @@ fun ReaderSpoilerCover(
     ) {
         Text(
             text = stringResource(Res.string.reader_spoiler),
-            style = ReaderType.meta.withReaderFont(),
+            style = OrbinType.meta.withReaderFont(),
             color = colors.ink,
             textAlign = TextAlign.Center,
         )

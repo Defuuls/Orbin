@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
+import com.orbin.uinext.ReaderMediaSpeedOptions
 import com.orbin.uinext.next
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.ReaderSize
@@ -35,6 +36,9 @@ internal fun MediaActionsMenu(
     onSave: (MediaAttachment) -> Unit,
     onDismiss: () -> Unit,
     onCopyImage: ((MediaAttachment) -> Unit)? = null,
+    onSaveRemaining: (() -> Unit)? = null,
+    playbackSpeed: Float? = null,
+    onPlaybackSpeedChange: ((Float) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val actions =
@@ -64,6 +68,21 @@ internal fun MediaActionsMenu(
                 containerColor = if (next.dark) reader.surfaceVariant else reader.background,
                 shadowElevation = 8.dp,
             ) {
+                onSaveRemaining?.let { downloadRest ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gallery_download_rest), color = reader.ink) },
+                        onClick = {
+                            onDismiss()
+                            downloadRest()
+                        },
+                    )
+                }
+                if (playbackSpeed != null && onPlaybackSpeedChange != null) {
+                    ReaderMediaSpeedOptions(playbackSpeed) { speed ->
+                        onDismiss()
+                        onPlaybackSpeedChange(speed)
+                    }
+                }
                 actions.forEach { (label, action) ->
                     DropdownMenuItem(
                         text = { Text(label, color = reader.ink) },

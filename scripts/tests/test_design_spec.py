@@ -15,10 +15,11 @@ DESIGN_DIR = Path(__file__).resolve().parents[2] / "docs" / "design-system"
 SPEC = DESIGN_DIR / "README.md"
 PAGE = DESIGN_DIR / "schematic.html"
 DIAGRAMS = DESIGN_DIR / "diagrams"
-CODE_TOKENS = (
+TOKEN_SOURCE_DIR = (
     Path(__file__).resolve().parents[2]
-    / "ui-next" / "src" / "commonMain" / "kotlin" / "com" / "orbin" / "uinext" / "tokens" / "ReaderTokens.kt"
+    / "ui-next" / "src" / "commonMain" / "kotlin" / "com" / "orbin" / "uinext" / "tokens"
 )
+CODE_TOKEN_SOURCES = tuple(TOKEN_SOURCE_DIR / name for name in ("ReaderTokens.kt", "Tokens.kt", "OrbinTypography.kt"))
 
 THEMES = ("Light", "Dark", "AMOLED")
 TOKEN_REF = re.compile(r"\b(?:color|type|space|size|radius|ratio)\.[A-Za-z][A-Za-z0-9]*\b")
@@ -141,13 +142,16 @@ class Spec:
 
 
 def parse_code_tokens(kotlin: str) -> dict[str, str]:
-    """ReaderTokens.kt as {token: value}, in the same form as Spec.raw_values()."""
+    """Canonical reader metrics and radius roles as {token: value}, matching Spec.raw_values()."""
     themes: dict[str, dict[str, str]] = {}
     values: dict[str, str] = {}
     scope = None
     lines = iter(kotlin.splitlines())
     for line in lines:
-        opened = re.match(r"(?:val (Reader(?:Light|Dark|Amoled)Colors) =|object (Reader(?:Type|Space|Size|Radius|Ratio)) \{)", line)
+        opened = re.match(
+            r"(?:val (Reader(?:Light|Dark|Amoled)Colors) =|(?:private )?object (OrbinReaderStyles|OrbinRadius|Reader(?:Space|Size|Ratio)) \{)",
+            line,
+        )
         if opened:
             scope = opened.group(1) or opened.group(2)
             continue
@@ -174,11 +178,13 @@ def parse_code_tokens(kotlin: str) -> dict[str, str]:
             name, kind, accessor, expression = match.groups()
             if accessor and (scope != "ReaderRatio" or kind != "Float"):
                 raise ValueError(f"unexpected token accessor in {scope}: {declaration}")
-            namespace = scope[len("Reader"):].lower()
+            namespace = {"OrbinReaderStyles": "type", "OrbinRadius": "radius"}.get(scope, scope[len("Reader"):].lower())
+            if scope == "OrbinReaderStyles" and name == "body":
+                name = "readerBody"
             key = f"{namespace}.{name}"
             if key in values:
                 raise ValueError(f"duplicate token: {key}")
-            if scope == "ReaderType" and kind == "TextStyle":
+            if scope == "OrbinReaderStyles" and kind == "TextStyle":
                 fixed = re.fullmatch(r"readerType\((\d+), (\d+), (\d+)\)", expression)
                 natural = re.fullmatch(r"TextStyle\((.*)\)", expression)
                 if fixed:
@@ -201,7 +207,7 @@ def parse_code_tokens(kotlin: str) -> dict[str, str]:
                     values[key] = f"{size.group(1)}sp/natural/{weight}"
                 else:
                     raise ValueError(f"unreadable style: {declaration}")
-            elif scope in ("ReaderSpace", "ReaderSize", "ReaderRadius") and kind == "Dp":
+            elif scope in ("ReaderSpace", "ReaderSize", "OrbinRadius") and kind == "Dp":
                 measure = re.fullmatch(r"(\d+)\.dp", expression)
                 if measure is None:
                     raise ValueError(f"unreadable dimension: {declaration}")
@@ -227,11 +233,25 @@ class CodeTokenTest(unittest.TestCase):
     """The Kotlin tokens the app draws with must equal the document's tables."""
 
     def test_code_tokens_equal_the_spec(self) -> None:
-        code = parse_code_tokens(CODE_TOKENS.read_text(encoding="utf-8"))
+        code = parse_code_tokens("\n".join(path.read_text(encoding="utf-8") for path in CODE_TOKEN_SOURCES))
         spec = Spec().raw_values()
         self.assertEqual(sorted(set(spec) - set(code)), [], "tokens in the spec that the code lacks")
         self.assertEqual(sorted(set(code) - set(spec)), [], "tokens in the code that the spec lacks")
         self.assertEqual({name: code[name] for name in spec}, spec)
+
+    def test_canonical_reader_metrics_back_the_public_type_roles(self) -> None:
+        source = (TOKEN_SOURCE_DIR / "OrbinTypography.kt").read_text(encoding="utf-8")
+        metrics = parse_code_tokens(source)
+        expected = {
+            name.removeprefix("type."): "body" if name == "type.readerBody" else name.removeprefix("type.")
+            for name in metrics
+        }
+        bindings = re.findall(r"val (\w+): TextStyle\s+get\(\) = OrbinReaderStyles\.(\w+)", source)
+        self.assertEqual(len(bindings), len(set(name for name, _ in bindings)), "duplicate public reader role")
+        self.assertEqual(dict(bindings), expected, "public roles must expose the exact verified reader metrics")
+        combined = "\n".join(path.read_text(encoding="utf-8") for path in CODE_TOKEN_SOURCES)
+        self.assertEqual(re.findall(r"(?m)^object (?:ReaderType|NextType|OrbinType)\b", combined), ["object OrbinType"])
+        self.assertEqual(re.findall(r"(?m)^object (?:ReaderRadius|NextRadius|OrbinRadius)\b", combined), ["object OrbinRadius"])
 
     def test_parser_reads_each_token_shape(self) -> None:
         sample = "\n".join(
@@ -248,7 +268,7 @@ class CodeTokenTest(unittest.TestCase):
                 "    ReaderColors(",
                 "        ink = Color(0xFF333333),",
                 "    )",
-                "object ReaderType {",
+                "private object OrbinReaderStyles {",
                 "    /** Body. */",
                 "    val body: TextStyle = readerType(15, 22, 400)",
                 "    val postBody: TextStyle = TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, fontWeight = FontWeight.Normal)",
@@ -258,6 +278,10 @@ class CodeTokenTest(unittest.TestCase):
                 "            fontSize = 10.sp,",
                 "            fontWeight = FontWeight.Normal,",
                 "        )",
+                "}",
+                "object OrbinRadius {",
+                "    val compact: Dp = 2.dp",
+                "    val card: Dp = 16.dp",
                 "}",
                 "object ReaderSize {",
                 "    val appBar: Dp = 56.dp",
@@ -271,9 +295,11 @@ class CodeTokenTest(unittest.TestCase):
         self.assertEqual(
             parse_code_tokens(sample),
             {
-                "type.body": "15sp/22sp/400",
+                "type.readerBody": "15sp/22sp/400",
                 "type.postBody": "14sp/natural/400",
                 "type.postDetails": "10sp/natural/400",
+                "radius.compact": "2dp",
+                "radius.card": "16dp",
                 "size.appBar": "56dp",
                 "ratio.gridCard": "0.5",
                 "ratio.gridThumbnail": "1.230769",
@@ -296,7 +322,7 @@ class CodeTokenTest(unittest.TestCase):
         )
         for expression in bad_styles:
             with self.assertRaises(ValueError, msg=expression):
-                parse_code_tokens(f"object ReaderType {{\n    val postBody: TextStyle = {expression}\n}}")
+                parse_code_tokens(f"private object OrbinReaderStyles {{\n    val postBody: TextStyle = {expression}\n}}")
         for expression in ("9f / 0f", "-1f", "WIDTH / HEIGHT", "0.5.toFloat()"):
             with self.assertRaises(ValueError, msg=expression):
                 parse_code_tokens(f"object ReaderRatio {{\n    val gridCard: Float = {expression}\n}}")
@@ -429,7 +455,8 @@ class TokenTest(unittest.TestCase):
         self.assertLessEqual(m["size.icon"], m["size.touchTarget"])
         self.assertLessEqual(m["size.pillHeight"], m["size.touchTarget"])
         self.assertGreaterEqual(m["size.pillMinWidth"], m["size.pillHeight"])
-        self.assertEqual(m["radius.pill"] * 2, m["size.pillHeight"], "the pill is not fully rounded")
+        # Rounded rectangles clamp a radius above half their height to the same full capsule.
+        self.assertGreaterEqual(m["radius.pill"] * 2, m["size.pillHeight"], "the pill is not fully rounded")
         self.assertGreaterEqual(m["size.cellMin"], m["size.touchTarget"])
         self.assertGreaterEqual(m["size.appBarAction"], m["size.touchTarget"])
         self.assertGreaterEqual(m["size.appBarNavigation"], m["size.touchTarget"])
@@ -569,7 +596,7 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(m["ratio.gridImageHeight"], 1 / 2)
         self.assertEqual(m["space.gridOuter"], 2)
         self.assertEqual(m["space.gridGap"], 4)
-        self.assertEqual(m["radius.card"], 2)
+        self.assertEqual(m["radius.compact"], 2)
         self.assertEqual(m["size.cardElevation"], 2)
         for row in self.spec.one(self.GRID_HEADERS):
             height, columns, image, card = number(row[1]), int(row[2]), number(row[3]), number(row[4])

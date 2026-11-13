@@ -17,7 +17,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.orbin.core.designsystem.theme.OrbinShapes
 import com.orbin.uinext.tokens.LocalNextFontFamily
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 
 /**
  * The palette the entire interface is drawn from.
@@ -137,7 +137,7 @@ fun NextTheme(
     ) {
         MaterialTheme(
             colorScheme = m3Scheme,
-            typography = NextType.material,
+            typography = OrbinType.material,
             shapes = OrbinShapes,
         ) {
             // Press: highlight flash on iOS (HIG list-row feel); Material ripple on Android.

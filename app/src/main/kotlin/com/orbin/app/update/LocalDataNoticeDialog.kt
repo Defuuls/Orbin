@@ -11,6 +11,8 @@ import com.orbin.data.crypto.LocalDataNotices
 /**
  * Tells the reader, once, when the database key could not be kept: either their local data was
  * reset (with a way to the backup import in Settings) or this session is not being saved.
+ *
+ * Drawn with the same Coral [UpdateCard] chrome as the in-app update dialog.
  */
 @Composable
 internal fun LocalDataNoticeDialog(

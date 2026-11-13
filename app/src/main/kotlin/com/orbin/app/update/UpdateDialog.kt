@@ -1,31 +1,23 @@
 package com.orbin.app.update
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.orbin.app.R
 import com.orbin.core.model.AppUpdateState
-import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextLinearProgress
-import com.orbin.uinext.next
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.OrbinDialog
+import com.orbin.uinext.OrbinDialogMessage
+import com.orbin.uinext.OrbinDialogTitle
+import com.orbin.uinext.OrbinFilledButton
+import com.orbin.uinext.OrbinTextButton
 import kotlin.math.roundToInt
 
 /** What each button in the update dialog does. */
@@ -90,7 +82,7 @@ fun UpdateDialog(
     }
 }
 
-/** The grouped card every ui-next dialog uses, as in `NextConfirmDialog`, with room for a progress bar. */
+/** The Coral card every update and local-data notice uses, with room for a progress bar. */
 @Composable
 internal fun UpdateCard(
     title: String,
@@ -103,33 +95,22 @@ internal fun UpdateCard(
     dismissOnOutsideTap: Boolean = true,
     extra: @Composable ColumnScope.() -> Unit = {},
 ) {
-    Dialog(
+    OrbinDialog(
         onDismissRequest = onOutsideTap,
-        properties =
-            DialogProperties(
-                dismissOnBackPress = dismissOnOutsideTap,
-                dismissOnClickOutside = dismissOnOutsideTap,
-            ),
+        dismissOnBackPress = dismissOnOutsideTap,
+        dismissOnClickOutside = dismissOnOutsideTap,
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(NextRadius.card))
-                    .background(next.raised)
-                    .padding(horizontal = NextSpace.gutter, vertical = NextSpace.section),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        OrbinDialogTitle(title)
+        OrbinDialogMessage(message)
+        extra()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = title, style = NextType.title3, fontWeight = FontWeight.SemiBold, color = next.ink)
-            Text(text = message, style = NextType.body, color = next.muted)
-            extra()
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                InlineAction(label = dismissLabel, onClick = onDismiss)
-                if (confirmLabel != null) InlineAction(label = confirmLabel, accent = true, onClick = onConfirm)
+            OrbinTextButton(label = dismissLabel, onClick = onDismiss)
+            if (confirmLabel != null) {
+                OrbinFilledButton(label = confirmLabel, onClick = onConfirm)
             }
         }
     }

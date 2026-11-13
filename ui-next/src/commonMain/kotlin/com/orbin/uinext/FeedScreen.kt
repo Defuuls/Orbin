@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.feed_redesign_empty_hint
+import com.orbin.uinext.resources.feed_redesign_empty_title
 import com.orbin.uinext.resources.next_downloads_tab
 import com.orbin.uinext.resources.next_feed_title
 import com.orbin.uinext.resources.next_search_title
@@ -41,11 +43,8 @@ import com.orbin.uinext.resources.reader_nav_boards
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_view_grid
 import com.orbin.uinext.resources.reader_view_list
-import com.orbin.uinext.resources.tiktok_feed_following_empty
-import com.orbin.uinext.resources.tiktok_feed_following_hint
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
-import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.stringResource
 
@@ -55,6 +54,8 @@ object ReaderFeedTags {
     const val GRID = "reader-feed-grid"
     const val FOLLOWING = "reader-feed-following"
     const val FOR_YOU = "reader-feed-for-you"
+    const val MODE = "reader-feed-mode"
+    const val SOURCE = "reader-feed-source"
 
     fun row(id: String): String = "reader-feed-row:$id"
 
@@ -69,8 +70,8 @@ object TikTokFeedTags {
     const val HEADER = "tiktok_feed_header"
     const val CAPTION = "tiktok_feed_caption"
     const val ACTIONS = "tiktok_feed_actions"
-    const val FOLLOWING = "tiktok_feed_following"
-    const val FOR_YOU = "tiktok_feed_for_you"
+    const val FOLLOWING = "reader_feed_following"
+    const val FOR_YOU = "reader_feed_for_you"
 
     fun page(id: String): String = "tiktok_feed_page:$id"
 }
@@ -128,6 +129,7 @@ fun FeedScreen(
     mode: CatalogMode = CatalogMode.LIST,
     onModeChange: ((CatalogMode) -> Unit)? = null,
     wideWindow: Boolean = false,
+    downloadBadge: Int = 0,
     onOpenMedia: ((FeedRow) -> Unit)? = null,
 ) {
     val previewCallback by rememberUpdatedState(onActivePreviewChanged)
@@ -146,7 +148,7 @@ fun FeedScreen(
     }
     val destinations = readerFeedDestinations(onSettings, onOpenBoards, onOpenSearch, onOpenSaved, onOpenWatched)
     val onDestination: ((NextDestination) -> Unit)? =
-        if (destinations.size > 1) {
+        if (destinations.size > 1 || onOpenDownloads != null) {
             { destination ->
                 when (destination) {
                     NextDestination.FEED -> Unit
@@ -163,6 +165,14 @@ fun FeedScreen(
         }
     val staticThumbnail: (@Composable (FeedRow, Modifier) -> Unit)? =
         thumbnail ?: mediaContent?.let { content -> { row, imageModifier -> content(row, imageModifier, false) } }
+    val bottomDestinations =
+        buildList {
+            if (onOpenBoards != null) add(NextDestination.BOARDS)
+            add(NextDestination.FEED)
+            if (onOpenDownloads != null) add(NextDestination.DOWNLOADS)
+            if (onSettings != null) add(NextDestination.SETTINGS)
+        }
+    val showBottomBar = showRail && onDestination != null && bottomDestinations.size > 1
     val modeLabel =
         stringResource(
             if (mode ==
@@ -226,6 +236,8 @@ fun FeedScreen(
                 subtitle = subtitle,
                 statusMessage = statusMessage,
                 headerContent = headerContent,
+                mode = mode,
+                onModeChange = onModeChange,
             )
             if (query.isNotEmpty()) ReaderCatalogSearch(query, onQueryChange, { onQueryChange("") })
             ReaderRefreshProgress(refreshing = isLoading && rows.isNotEmpty())
@@ -245,12 +257,20 @@ fun FeedScreen(
                         thumbnail = staticThumbnail,
                         activityText = activityText,
                         actions = rowActions,
-                        bottomPadding = bottomPadding,
+                        bottomPadding = if (showBottomBar) PaddingValues() else bottomPadding,
                     )
                 }
             }
             if (rows.isNotEmpty() && errorMessage != null && !isLoading) {
                 ReaderRefreshFailure(ReaderFailureCause.UNKNOWN, onRetry = onRetry, message = errorMessage)
+            }
+            if (showBottomBar) {
+                OrbinBottomBar(
+                    selected = NextDestination.FEED,
+                    onSelect = checkNotNull(onDestination),
+                    destinations = bottomDestinations,
+                    downloadBadge = downloadBadge,
+                )
             }
         }
     }
@@ -301,9 +321,9 @@ private fun ReaderFeedGrid(
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val grid = mode == CatalogMode.GRID
-        val gap = if (grid) ReaderSpace.gridGap else 0.dp
-        val outer = if (grid) ReaderSpace.gridOuter else 0.dp
-        val gridSpec = catalogGridSpec(maxWidth, maxHeight)
+        val gap = ORBIN_CATALOG_GAP
+        val outer = ORBIN_CATALOG_GUTTER
+        val gridSpec = orbinCatalogGridSpec(maxWidth)
         val stateHeight = (maxHeight - outer * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         LazyVerticalGrid(
             columns = GridCells.Fixed(if (grid) gridSpec.columns else 1),
@@ -399,8 +419,8 @@ private fun ReaderFeedEmpty(
         else ->
             Column(Modifier.fillMaxSize()) {
                 ReaderEmptyState(
-                    title = stringResource(Res.string.tiktok_feed_following_empty),
-                    message = stringResource(Res.string.tiktok_feed_following_hint),
+                    title = stringResource(Res.string.feed_redesign_empty_title),
+                    message = stringResource(Res.string.feed_redesign_empty_hint),
                     onReload = onRetry,
                     modifier = Modifier.weight(1f),
                 )
@@ -411,7 +431,7 @@ private fun ReaderFeedEmpty(
                     ) {
                         Text(
                             stringResource(Res.string.reader_nav_boards),
-                            style = ReaderType.label.withReaderFont(),
+                            style = OrbinType.label.withReaderFont(),
                             color = reader.accent,
                         )
                     }

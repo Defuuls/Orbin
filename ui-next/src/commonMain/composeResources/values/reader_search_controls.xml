@@ -1,0 +1,4 @@
+<resources>
+    <string name="reader_search_submit">Search</string>
+    <string name="reader_search_all">All</string>
+</resources>

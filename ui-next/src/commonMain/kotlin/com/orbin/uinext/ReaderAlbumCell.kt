@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -22,13 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_media_actions
 import com.orbin.uinext.resources.next_open_file
 import com.orbin.uinext.resources.reader_reveal_spoiler
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 object ReaderAlbumTags {
@@ -50,6 +52,7 @@ internal fun ReaderAlbumCell(
     details: String = cell.details,
     cellTag: String = ReaderAlbumTags.cell(cell.id),
     detailsTag: String = ReaderAlbumTags.details(cell.id),
+    coral: Boolean = false,
 ) {
     var revealed by rememberSaveable(cell.id) { mutableStateOf(false) }
     val covered = cell.spoiler && !revealed
@@ -74,7 +77,7 @@ internal fun ReaderAlbumCell(
         modifier
             .fillMaxWidth()
             .testTag(cellTag)
-            .background(reader.surfaceVariant)
+            .background(if (coral && !next.dark) reader.background else reader.surfaceVariant)
             .then(clickable),
     ) {
         Box(
@@ -93,18 +96,19 @@ internal fun ReaderAlbumCell(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(ReaderSize.albumDetails)
-                    .background(Color(0x8A000000))
-                    .padding(horizontal = ReaderSpace.postInset)
+                    .then(
+                        if (coral) Modifier.heightIn(min = 40.dp) else Modifier.height(ReaderSize.albumDetails),
+                    ).background(if (coral) reader.surfaceVariant else Color(0x8A000000))
+                    .padding(horizontal = ReaderSpace.postInset, vertical = if (coral) 8.dp else 0.dp)
                     .testTag(detailsTag),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                val style = ReaderType.postDetails.withReaderFont()
+                val style = if (coral) OrbinType.meta.withReaderFont() else OrbinType.postDetails.withReaderFont()
                 CompositionLocalProvider(LocalTextStyle provides style) {
                     Text(
                         details,
                         style = style,
-                        color = Color.White,
+                        color = if (coral) reader.ink else Color.White,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )

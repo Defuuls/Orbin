@@ -1,0 +1,4 @@
+<resources>
+    <string name="gallery_download_rest">Download rest of thread</string>
+    <string name="gallery_selected_media_unavailable">The selected file is no longer available in this thread.</string>
+</resources>

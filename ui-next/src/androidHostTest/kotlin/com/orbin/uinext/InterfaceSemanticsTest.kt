@@ -7,7 +7,6 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -189,11 +188,16 @@ class InterfaceSemanticsTest {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
         }
         composeRule.onNodeWithContentDescription("Menu").performClick()
-        listOf("Home", "Boards", "Settings").forEach { label ->
-            composeRule.onNode(hasText(label) and hasRole(Role.Tab)).assertExists()
+        listOf(NextDestination.FEED, NextDestination.BOARDS, NextDestination.SETTINGS).forEach { destination ->
+            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertExists()
         }
-        listOf("Watched", "Search", "Saved", "Downloads").forEach { label ->
-            composeRule.onNode(hasText(label) and hasRole(Role.Tab)).assertDoesNotExist()
+        listOf(
+            NextDestination.WATCHED,
+            NextDestination.SEARCH,
+            NextDestination.SAVED,
+            NextDestination.DOWNLOADS,
+        ).forEach { destination ->
+            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertDoesNotExist()
         }
     }
 
@@ -204,7 +208,7 @@ class InterfaceSemanticsTest {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onSettings = { opened++ }) }
         }
         composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.SETTINGS.name).performClick()
         composeRule.waitForIdle()
         composeRule.runOnIdle { assertEquals(1, opened) }
     }

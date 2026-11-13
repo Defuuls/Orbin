@@ -122,7 +122,7 @@ class SettingsChoiceAccessibilityTest {
             "The plain preference menu must use the neutral primary text",
             Color(0xDE000000).compositeOver(ReaderLightColors.background).toArgb() in colors,
         )
-        assertFalse("The removed palette must not color the choice", TikTokDesign.Pink.toArgb() in colors)
+        assertFalse("The removed palette must not color the choice", Color(0xFFFE2C55).toArgb() in colors)
     }
 
     private fun popupOption(label: String) =

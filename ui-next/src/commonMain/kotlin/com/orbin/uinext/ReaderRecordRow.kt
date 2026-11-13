@@ -1,6 +1,5 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,12 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
-import com.orbin.uinext.tokens.ReaderType
 
-/** Text-only records use the same compact post geometry without fabricating attachment previews. */
+/** Source-qualified local records use Coral cards without inventing attachment previews. */
 @Composable
 internal fun ReaderRecordRow(
     title: String,
@@ -28,32 +29,40 @@ internal fun ReaderRecordRow(
     detail: String = "",
     unread: String = "",
 ) {
-    val inset = readerPostInset(wideWindow)
-    val bodyStyle = if (wideWindow) ReaderType.postBodyWide.withReaderFont() else ReaderType.postBody.withReaderFont()
-    val detailStyle =
-        if (wideWindow) ReaderType.postDetailsWide.withReaderFont() else ReaderType.postDetails.withReaderFont()
-    Column(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = ReaderSize.touchTarget)
-            .background(reader.background)
-            .nextClickable(role = Role.Button, onClick = onOpen)
-            .semantics(mergeDescendants = true) {},
+    val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.readerBody.withReaderFont()
+    val detailStyle = OrbinType.meta.withReaderFont()
+    OrbinCard(
+        modifier = modifier.fillMaxWidth().heightIn(min = ReaderSize.touchTarget).semantics(mergeDescendants = true) {},
+        onClick = onOpen,
     ) {
-        ReaderPostLayout(wideWindow = wideWindow) { textModifier ->
-            Column(textModifier.padding(inset), verticalArrangement = Arrangement.spacedBy(inset)) {
-                Text(title, style = bodyStyle, color = reader.subject)
-                Text(source, style = detailStyle, color = reader.inkMuted)
-                if (metadata.isNotBlank()) Text(metadata, style = detailStyle, color = reader.inkMuted)
-                if (detail.isNotBlank()) Text(detail, style = bodyStyle, color = reader.ink)
-                if (unread.isNotBlank()) Text(unread, style = detailStyle, color = reader.accent)
+        Column(Modifier.padding(RECORD_INSET), verticalArrangement = Arrangement.spacedBy(RECORD_GAP)) {
+            Text(
+                title,
+                style = OrbinType.rowTitle.withReaderFont(),
+                color = reader.ink,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(source, style = detailStyle, color = reader.accent)
+            if (metadata.isNotBlank()) Text(metadata, style = detailStyle, color = reader.inkMuted)
+            if (detail.isNotBlank()) {
+                Text(detail, style = bodyStyle, color = reader.ink, maxLines = 4, overflow = TextOverflow.Ellipsis)
+            }
+            if (unread.isNotBlank()) {
+                Text(
+                    unread,
+                    style = detailStyle.copy(fontWeight = FontWeight.SemiBold),
+                    color = reader.accent,
+                )
             }
         }
-        ReaderHairline(Modifier.padding(horizontal = inset))
     }
 }
 
-/** Clover selects larger post text for a smallest window side of at least 600dp. */
+private val RECORD_INSET = 12.dp
+private val RECORD_GAP = 6.dp
+
+/** Tablet records retain the larger reading size when the shortest window side is at least 600dp. */
 @Composable
 internal fun readerRecordUsesWideText(): Boolean {
     val window = LocalWindowInfo.current.containerSize

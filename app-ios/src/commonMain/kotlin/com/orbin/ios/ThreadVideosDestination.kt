@@ -36,7 +36,7 @@ import com.orbin.uinext.NextCircularProgress
 import com.orbin.uinext.NextIconAction
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.next
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /** The feed's chat action opens videos from every post, without first showing comments. */
@@ -78,6 +78,24 @@ internal fun ThreadVideosDestination(
                         startIndex = 0,
                         onClose = close,
                         onSave = { file -> downloads.save(file, thread.key, thread.subject) },
+                        onDownloadRest =
+                            if (thread.files.size > 1) {
+                                { index ->
+                                    val current =
+                                        thread.files.indices
+                                            .filter { thread.files[it].type == MediaType.VIDEO }
+                                            .getOrNull(
+                                                index,
+                                            )
+                                    if (current != null) {
+                                        thread.files.forEachIndexed { fileIndex, file ->
+                                            if (fileIndex != current) downloads.save(file, thread.key, thread.subject)
+                                        }
+                                    }
+                                }
+                            } else {
+                                null
+                            },
                         playback = settings.playbackPreferences.resolve(thread.key.provider, thread.key.board),
                     )
             }
@@ -113,12 +131,12 @@ private fun ThreadVideosStatus(
             ) {
                 Text(
                     title,
-                    style = NextType.titleMedium,
+                    style = OrbinType.titleMedium,
                     color = Color.White,
                     modifier = Modifier.semantics { heading() },
                 )
                 if (loading) NextCircularProgress()
-                Text(message, style = NextType.body, color = next.muted, textAlign = TextAlign.Center)
+                Text(message, style = OrbinType.body, color = next.muted, textAlign = TextAlign.Center)
                 if (onRetry != null) {
                     InlineAction(stringResource(Res.string.ios_downloads_retry), accent = true, onClick = onRetry)
                 }

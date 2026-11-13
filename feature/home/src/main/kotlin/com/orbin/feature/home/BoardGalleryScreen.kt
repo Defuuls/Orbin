@@ -31,6 +31,7 @@ fun BoardGalleryScreen(
     onOpenSearch: (() -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    downloadBadge: Int = 0,
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
@@ -71,6 +72,7 @@ fun BoardGalleryScreen(
 
     NextTheme {
         BoardsScreen(
+            downloadBadge = downloadBadge,
             boards = tiles,
             headerContent = {
                 if (viewModel.sites.size > 1) {

@@ -183,14 +183,13 @@ class GalleryViewModelTest {
         }
 
     @Test
-    fun `an attachment no longer in the thread falls back to the index`() =
+    fun `an explicit missing attachment shows unavailable instead of a different first file`() =
         runTest {
             val viewModel = createViewModel(FakeSettingsRepository(), attachmentId = "deleted")
-
-            viewModel.media.test {
-                var media = awaitItem()
-                while (media.isEmpty()) media = awaitItem()
-                assertThat(viewModel.initialPageIn(media)).isEqualTo(0)
+            viewModel.content.test {
+                var content = awaitItem()
+                while (content is GalleryContentState.Loading) content = awaitItem()
+                assertThat(content).isEqualTo(GalleryContentState.SelectedUnavailable)
             }
         }
 

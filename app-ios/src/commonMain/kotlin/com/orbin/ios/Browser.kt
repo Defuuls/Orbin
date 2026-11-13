@@ -125,10 +125,12 @@ sealed interface Route {
         val key: ThreadKey,
     ) : Route
 
-    /** The full-screen viewer over the files of the open thread, starting at file [index]. */
+    /** Full-screen media, optionally anchored by the catalog's attachment and thumbnail identity. */
     data class Media(
         val thread: ThreadKey,
         val index: Int,
+        val attachmentId: String? = null,
+        val thumbnailUrl: String? = null,
     ) : Route
 }
 
@@ -439,6 +441,18 @@ class Browser(
         loadCurrent()
     }
 
+    /** Switches primary utility pages without growing a Settings/Downloads trail above the reader. */
+    fun openPrimaryPage(page: Route) {
+        require(page == Route.Settings || page == Route.Downloads) { "Not a primary page: $page" }
+        if (_backStack.value.last() == page) return
+        mediaScroll.clear()
+        _backStack.update { stack ->
+            val reader = stack.dropLastWhile { it == Route.Settings || it == Route.Downloads }
+            reader.ifEmpty { listOf(Route.Feed) } + page
+        }
+        loadCurrent()
+    }
+
     fun openBoard(board: SiteBoard) {
         if (board != catalogShown) _catalogSort.value = CatalogSort.BUMP_ORDER
         _backStack.update { it + Route.Catalog(board) }
@@ -490,6 +504,17 @@ class Browser(
         mediaScroll.clear()
         _backStack.update { it + Route.Media(thread, index) }
         cancelHiddenPages()
+    }
+
+    /** Opens a selected catalog file directly, with no hidden comments destination beneath it. */
+    fun openMedia(
+        key: ThreadKey,
+        attachmentId: String,
+        thumbnailUrl: String? = null,
+    ) {
+        mediaScroll.clear()
+        _backStack.update { it + Route.Media(key, index = 0, attachmentId = attachmentId, thumbnailUrl = thumbnailUrl) }
+        loadCurrent()
     }
 
     /** Pops one destination. Returns false at a drawer root, where there is nothing to pop. */
@@ -620,7 +645,6 @@ class Browser(
             Route.Watched,
             Route.Search,
             Route.Settings,
-            is Route.Media,
             -> Unit
             is Route.Catalog, is Route.BoardMedia -> {
                 val board = route.catalogBoard ?: return
@@ -633,6 +657,10 @@ class Browser(
             is Route.ThreadVideos ->
                 if (force || threadShown != route.key || _thread.value !is Load.Ready) {
                     loadThread(route.key)
+                }
+            is Route.Media ->
+                if (force || threadShown != route.thread || _thread.value !is Load.Ready) {
+                    loadThread(route.thread)
                 }
         }
     }
@@ -671,7 +699,10 @@ class Browser(
     private fun cancelHiddenPages() {
         val route = _backStack.value.last()
         if (visibleCatalogBoard() == null) cancelPage(catalogLoad, _catalogRefreshing)
-        if (route !is Route.ThreadPage && route !is Route.ThreadVideos) cancelPage(threadLoad, _threadRefreshing)
+        val loadingDirectMedia = route is Route.Media && route.attachmentId != null
+        if (route !is Route.ThreadPage && route !is Route.ThreadVideos && !loadingDirectMedia) {
+            cancelPage(threadLoad, _threadRefreshing)
+        }
         if (boardReaderRoute(_backStack.value) == null) readerLayoutWide = false
     }
 

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="social_thread_back">Back</string>
-    <string name="social_thread_anonymous">Anonymous</string>
-    <string name="social_thread_op">OP</string>
-    <string name="social_thread_share">Share thread</string>
-</resources>

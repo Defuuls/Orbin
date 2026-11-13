@@ -15,7 +15,9 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import org.junit.Assert.assertEquals
@@ -127,6 +129,7 @@ class ControlsAccessibilityTest {
         composeRule.onNodeWithContentDescription("Saved").assert(
             SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite),
         )
+        composeRule.onAllNodesWithText("Saved", useUnmergedTree = true).assertCountEquals(0)
         composeRule.runOnIdle {
             assertEquals(4_000L, requestedTimeout)
             assertFalse(requestedIcons)

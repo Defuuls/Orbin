@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,8 +44,7 @@ import com.orbin.uinext.resources.next_media_size_small
 import com.orbin.uinext.resources.next_sweep_progress
 import com.orbin.uinext.resources.next_sweep_reading
 import com.orbin.uinext.resources.next_sweep_unreachable
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.ReaderSpace
+import com.orbin.uinext.tokens.OrbinRadius
 import org.jetbrains.compose.resources.stringResource
 
 data class MediaCell(
@@ -77,12 +77,14 @@ fun MediaWallScreen(
     tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
+    showHeader: Boolean = true,
 ) {
     val gridState = rememberLazyGridState()
     var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
     val imageCellMinSize = imageCellSize.dp
     val imageSizeDescription = stringResource(Res.string.next_media_size_control)
     val hasScanStatus = scanning || deepScanning || failed > 0
+    val hasWallControls = onOpenSaved != null || showSizeControl || hasScanStatus
     val railVisible =
         if (hideRailOnScroll) {
             scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
@@ -98,7 +100,7 @@ fun MediaWallScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().background(next.background)) {
         NextScaffold(
             where = mediaTitle.takeIf { showRail },
             modifier = Modifier.fillMaxSize(),
@@ -107,131 +109,150 @@ fun MediaWallScreen(
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(imageCellMinSize),
                 state = gridState,
+                horizontalArrangement = Arrangement.spacedBy(MEDIA_WALL_GAP),
+                verticalArrangement = Arrangement.spacedBy(MEDIA_WALL_GAP),
                 modifier = Modifier.fillMaxSize().contentInsets(),
                 contentPadding =
                     PaddingValues(
-                        start = ReaderSpace.albumPadding,
-                        end = ReaderSpace.albumPadding,
-                        top = ReaderSpace.albumPadding,
-                        bottom = bottomPad.calculateBottomPadding() + ReaderSpace.albumPadding,
+                        start = MEDIA_WALL_GUTTER,
+                        end = MEDIA_WALL_GUTTER,
+                        top = MEDIA_WALL_GUTTER,
+                        bottom = bottomPad.calculateBottomPadding() + MEDIA_WALL_GUTTER,
                     ),
             ) {
-                fullWidthItem {
-                    Column {
-                        ScreenTitle(
-                            text = mediaTitle,
-                            subtitle =
-                                stringResource(
-                                    if (title ==
-                                        null
-                                    ) {
-                                        Res.string.next_all_media_subtitle
-                                    } else {
-                                        Res.string.next_board_media_subtitle
-                                    },
-                                ),
-                            inset = 0.dp,
-                        )
-                        if (onOpenSaved != null) {
-                            Box(Modifier.padding(horizontal = 16.dp)) {
-                                InlineAction(stringResource(Res.string.next_media_saved), onClick = onOpenSaved)
-                            }
-                            Gap(8)
-                        }
-                        if (showSizeControl || hasScanStatus) {
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .background(reader.surfaceVariant)
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                            ) {
-                                if (showSizeControl) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        MetaLine(stringResource(Res.string.next_media_size_small))
-                                        NextSlider(
-                                            value = imageCellSize,
-                                            onValueChange = {
-                                                imageCellSize =
-                                                    it.coerceIn(
-                                                        MEDIA_CELL_MIN_DP,
-                                                        MEDIA_CELL_MAX_DP,
-                                                    )
-                                            },
-                                            valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
-                                            steps = MEDIA_CELL_STEPS,
-                                            modifier =
-                                                Modifier
-                                                    .weight(1f)
-                                                    .padding(horizontal = 12.dp)
-                                                    .semantics { contentDescription = imageSizeDescription },
+                if (showHeader || hasWallControls) {
+                    fullWidthItem {
+                        Column {
+                            if (showHeader) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    OrbinLogo(size = 32.dp, contentDescription = null)
+                                    Spacer(Modifier.width(12.dp))
+                                    Box(Modifier.weight(1f)) {
+                                        ScreenTitle(
+                                            text = mediaTitle,
+                                            subtitle =
+                                                stringResource(
+                                                    if (title ==
+                                                        null
+                                                    ) {
+                                                        Res.string.next_all_media_subtitle
+                                                    } else {
+                                                        Res.string.next_board_media_subtitle
+                                                    },
+                                                ),
+                                            inset = 0.dp,
                                         )
-                                        MetaLine(stringResource(Res.string.next_media_size_large))
                                     }
-                                    Gap(8)
-                                }
-                                if (hasScanStatus) {
-                                    FlowRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        if (deepScanning) {
-                                            SweepBar(scanned = deepScanned, total = deepTotal)
-                                            MetaLine(
-                                                stringResource(Res.string.next_sweep_reading, deepScanned, deepTotal),
-                                                maxLines = 2,
-                                            )
-                                        } else if (scanning) {
-                                            SweepBar(scanned = scanned, total = total)
-                                            MetaLine(
-                                                stringResource(Res.string.next_sweep_progress, scanned, total),
-                                                maxLines = 2,
-                                            )
-                                        }
-                                        if (failed > 0) {
-                                            MetaLine(
-                                                stringResource(Res.string.next_sweep_unreachable, failed),
-                                                color = next.accent,
-                                            )
-                                        }
-                                    }
-                                    Gap(16)
                                 }
                             }
-                            Gap(12)
+                            if (onOpenSaved != null) {
+                                Box(Modifier.padding(horizontal = 16.dp)) {
+                                    InlineAction(stringResource(Res.string.next_media_saved), onClick = onOpenSaved)
+                                }
+                                Gap(8)
+                            }
+                            if (showSizeControl || hasScanStatus) {
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(OrbinRadius.card))
+                                            .background(if (next.dark) reader.surfaceVariant else reader.background)
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                ) {
+                                    if (showSizeControl) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            MetaLine(stringResource(Res.string.next_media_size_small))
+                                            NextSlider(
+                                                value = imageCellSize,
+                                                onValueChange = {
+                                                    imageCellSize =
+                                                        it.coerceIn(
+                                                            MEDIA_CELL_MIN_DP,
+                                                            MEDIA_CELL_MAX_DP,
+                                                        )
+                                                },
+                                                valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
+                                                steps = MEDIA_CELL_STEPS,
+                                                modifier =
+                                                    Modifier
+                                                        .weight(1f)
+                                                        .padding(horizontal = 12.dp)
+                                                        .semantics { contentDescription = imageSizeDescription },
+                                            )
+                                            MetaLine(stringResource(Res.string.next_media_size_large))
+                                        }
+                                        Gap(8)
+                                    }
+                                    if (hasScanStatus) {
+                                        FlowRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            if (deepScanning) {
+                                                SweepBar(scanned = deepScanned, total = deepTotal)
+                                                MetaLine(
+                                                    stringResource(
+                                                        Res.string.next_sweep_reading,
+                                                        deepScanned,
+                                                        deepTotal,
+                                                    ),
+                                                    maxLines = 2,
+                                                )
+                                            } else if (scanning) {
+                                                SweepBar(scanned = scanned, total = total)
+                                                MetaLine(
+                                                    stringResource(Res.string.next_sweep_progress, scanned, total),
+                                                    maxLines = 2,
+                                                )
+                                            }
+                                            if (failed > 0) {
+                                                MetaLine(
+                                                    stringResource(Res.string.next_sweep_unreachable, failed),
+                                                    color = next.accent,
+                                                )
+                                            }
+                                        }
+                                        Gap(16)
+                                    }
+                                }
+                                Gap(12)
+                            }
                         }
                     }
                 }
                 itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
                     val description =
                         stringResource(Res.string.next_media_cell_description, cell.board)
-                    ReaderAlbumCell(
-                        cell = cell,
-                        modifier =
-                            Modifier
-                                .padding(ReaderSpace.albumCellMargin)
-                                .semantics { contentDescription = description },
-                        onOpen = onOpen,
-                        onLongPress = onLongPress,
-                        details = listOf(cell.board, cell.details).filter(String::isNotBlank).joinToString("\n"),
-                        tile = { item, shape ->
-                            if (tile != null) {
-                                tile(item, shape)
-                            } else {
-                                MediaTile(modifier = shape, seed = index, radius = 0.dp)
-                            }
-                        },
-                    )
+                    OrbinCard(elevated = false) {
+                        ReaderAlbumCell(
+                            cell = cell,
+                            coral = true,
+                            modifier =
+                                Modifier
+                                    .semantics { contentDescription = description },
+                            onOpen = onOpen,
+                            onLongPress = onLongPress,
+                            details = listOf(cell.board, cell.details).filter(String::isNotBlank).joinToString("\n"),
+                            tile = { item, shape ->
+                                if (tile != null) {
+                                    tile(item, shape)
+                                } else {
+                                    MediaTile(modifier = shape, seed = index, radius = 0.dp)
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
         CompactTitleBar(
             title = mediaTitle,
-            visible = showCompactTitle,
+            visible = showHeader && showCompactTitle,
             modifier = Modifier.align(Alignment.TopCenter),
         )
     }
@@ -242,7 +263,7 @@ internal fun SweepBar(
     scanned: Int,
     total: Int,
 ) {
-    val barShape = RoundedCornerShape(NextRadius.tight)
+    val barShape = RoundedCornerShape(OrbinRadius.compact)
     Box(
         modifier =
             Modifier
@@ -265,3 +286,6 @@ internal fun SweepBar(
 private const val MEDIA_CELL_MIN_DP = MEDIA_SIZE_MIN_DP
 private const val MEDIA_CELL_MAX_DP = MEDIA_SIZE_MAX_DP
 private const val MEDIA_CELL_STEPS = MEDIA_SIZE_STEPS
+
+internal val MEDIA_WALL_GUTTER = 12.dp
+internal val MEDIA_WALL_GAP = 12.dp

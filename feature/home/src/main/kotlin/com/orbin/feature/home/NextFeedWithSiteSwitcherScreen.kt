@@ -22,12 +22,24 @@ fun NextFeedWithSiteSwitcherScreen(
     onOpenWatched: (() -> Unit)? = null,
     onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
     onOpenThreadVideos: (provider: String, board: String, thread: Long, title: String) -> Unit = onOpenThread,
+    onOpenMedia: (
+        (
+            provider: String,
+            board: String,
+            thread: Long,
+            attachmentId: String,
+            thumbnailUrl: String,
+        ) -> Unit
+    )? = null,
+    downloadBadge: Int? = null,
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
     NextFeedScreen(
         onOpenThread = onOpenThread,
         onOpenThreadVideos = onOpenThreadVideos,
+        onOpenMedia = onOpenMedia,
+        downloadBadge = downloadBadge,
         onOpenSettings = onOpenSettings,
         modifier = modifier,
         showRail = showRail,
