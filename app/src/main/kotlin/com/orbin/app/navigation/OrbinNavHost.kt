@@ -290,7 +290,7 @@ fun OrbinNavHost(
                         "boards", "favorites" -> navController.navigateToTab(Route.BoardGallery)
                         "history" -> navController.navigate(Route.History)
                         "watched" -> navController.navigateToTab(Route.Watched)
-                        "downloads" -> navController.navigate(Route.Downloads)
+                        "downloads" -> navController.openPrimaryDestination(NextDestination.DOWNLOADS)
                         "help" -> uriHandler.openUri("https://github.com/Defuuls/Orbin/wiki")
                     }
                 },

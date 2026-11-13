@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_status_loading
@@ -145,7 +146,7 @@ fun NextLinearProgress(
                     Modifier
                         .fillMaxHeight()
                         .width(barWidth)
-                        .offset(x = -barWidth + travel * shift)
+                        .offset { IntOffset((-barWidth + travel * shift).roundToPx(), 0) }
                         .background(next.accent),
             )
         }

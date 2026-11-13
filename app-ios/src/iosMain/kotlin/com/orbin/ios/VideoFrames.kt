@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.autoreleasepool
@@ -91,7 +92,7 @@ internal object VideoFrames {
     private const val MAX_FRAMES = 60
 }
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 private fun nativeFrameExtraction(url: String): VideoFrameExtraction? =
     // Pools cannot span suspension: completion runs on AVFoundation's own callback queue.
     autoreleasepool {

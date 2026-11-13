@@ -13,8 +13,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -93,7 +94,21 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
-    val configuration = LocalConfiguration.current
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
+    val wideWindow =
+        with(density) {
+            isWideWindow(
+                windowSize.width
+                    .toDp()
+                    .value
+                    .toInt(),
+                windowSize.height
+                    .toDp()
+                    .value
+                    .toInt(),
+            )
+        }
     // Home now draws bounded catalog thumbnails. Only the dedicated media viewer owns a
     // player; a retained feed model must not keep the former inline preview prefetch alive.
     DisposableEffect(viewModel) {
@@ -227,7 +242,7 @@ fun NextFeedScreen(
                         },
                     )
                 },
-                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
+                wideWindow = wideWindow,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onCompactTitleVisibleChange = onCompactTitleVisibleChange,

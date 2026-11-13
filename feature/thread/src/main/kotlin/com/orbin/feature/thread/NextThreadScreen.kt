@@ -23,9 +23,10 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -64,7 +65,21 @@ fun NextThreadScreen(
     viewModel: ThreadViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null,
 ) {
-    val configuration = LocalConfiguration.current
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
+    val wideWindow =
+        with(density) {
+            isWideWindow(
+                windowSize.width
+                    .toDp()
+                    .value
+                    .toInt(),
+                windowSize.height
+                    .toDp()
+                    .value
+                    .toInt(),
+            )
+        }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val isWatching by viewModel.isWatching.collectAsStateWithLifecycle()
@@ -86,7 +101,7 @@ fun NextThreadScreen(
             is ThreadUiState.Loading ->
                 ThreadStateFrame(viewModel.title, onBack, modifier) {
                     ReaderThreadSkeleton(
-                        wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
+                        wideWindow = wideWindow,
                     )
                 }
             is ThreadUiState.Blocked ->
@@ -139,7 +154,21 @@ private fun LoadedThread(
     onBack: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
+    val wideWindow =
+        with(density) {
+            isWideWindow(
+                windowSize.width
+                    .toDp()
+                    .value
+                    .toInt(),
+                windowSize.height
+                    .toDp()
+                    .value
+                    .toInt(),
+            )
+        }
     val haptics = LocalHapticFeedback.current
     val thread = state.thread
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
@@ -336,7 +365,7 @@ private fun LoadedThread(
                     collapsed.remove(id)
                     scrollTarget = id
                 },
-                wideWindow = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp),
+                wideWindow = wideWindow,
             )
             state.refreshFailure?.let { failure ->
                 ReaderRefreshFailure(

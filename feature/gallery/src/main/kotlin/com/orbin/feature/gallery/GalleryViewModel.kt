@@ -50,6 +50,7 @@ data class GalleryDownloadUiState(
     val isBusy: Boolean = false,
     val label: String? = null,
     val progressValue: Float = 0f,
+    val errorMessage: String? = null,
 )
 
 /** Loading and unavailable threads must not look like successfully loaded, empty media lists. */
@@ -344,6 +345,10 @@ class GalleryViewModel
 
         fun download(attachment: MediaAttachment) = enqueueDownloads(listOf(attachment))
 
+        fun consumeDownloadError() {
+            _downloadState.value = _downloadState.value.copy(errorMessage = null)
+        }
+
         private fun enqueueDownloads(attachments: List<MediaAttachment>) {
             if (attachments.isEmpty()) return
             viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
@@ -351,6 +356,7 @@ class GalleryViewModel
                 // owned by the repository/WorkManager, never by this screen or its player.
                 withContext(NonCancellable) {
                     downloadMutex.withLock {
+                        var failedCount = 0
                         try {
                             attachments.forEachIndexed { index, attachment ->
                                 _downloadState.value =
@@ -371,10 +377,16 @@ class GalleryViewModel
                                         boardId = board.value,
                                         threadId = threadId.value,
                                     )
-                                }
+                                }.onFailure { failedCount++ }
                             }
                         } finally {
-                            _downloadState.value = GalleryDownloadUiState()
+                            val errorMessage =
+                                if (failedCount > 0) {
+                                    "Couldn't queue $failedCount of ${attachments.size} download(s)."
+                                } else {
+                                    null
+                                }
+                            _downloadState.value = GalleryDownloadUiState(errorMessage = errorMessage)
                         }
                     }
                 }
