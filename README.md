@@ -6,9 +6,9 @@ Orbin is a privacy-focused, read-only **Android and iOS imageboard browser** bui
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Authentication](docs/authentication.md) · [Brand](docs/brand.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md)
 
-**Current release:** [203 — Chaya](https://github.com/Defuuls/Orbin/releases/tag/v203-Chaya)
+**Current release:** [204 — Moringa](https://github.com/Defuuls/Orbin/releases/tag/v204-Moringa)
 
-**What's new in 203:** Cached Home boards stay visible during refresh, with restored Settings scrolling and steadier iOS video playback.
+**What's new in 204:** iOS text applies the system size once and stays synchronized when the preferred size changes.
 
 The reader follows the [reader design](docs/design-system/README.md). Its [implementation and verification record](docs/design-system/IMPLEMENTATION.md) tracks the results and remaining checks; physical iOS checks have a separate [device checklist](docs/ios-reader-checklist.md).
 
