@@ -10,8 +10,10 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -140,6 +142,8 @@ class SettingsInteractionAccessibilityTest {
             }
         }
         composeRule.onNodeWithText("1 following").assertExists()
+        composeRule.onNodeWithText("4chan").assertIsNotSelected()
+        composeRule.onNodeWithText("BBWChan").assertIsSelected()
         composeRule.onNodeWithText("Start browsing").assertIsEnabled().performClick()
         assertEquals(1, startCalls)
     }

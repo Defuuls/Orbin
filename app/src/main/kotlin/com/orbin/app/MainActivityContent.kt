@@ -23,6 +23,7 @@ import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.canonicalNextPalette
 import com.orbin.uinext.next
+import com.orbin.uinext.reader
 import kotlinx.coroutines.launch
 
 // What MainActivity draws once it is past safe mode and the version guard: the app itself, its
@@ -130,7 +131,7 @@ internal fun AppContent(
             if (ready && shouldLock && !unlocked) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = next.background,
+                    color = reader.background,
                 ) {
                     LockScreen(
                         message = unlockMessage,

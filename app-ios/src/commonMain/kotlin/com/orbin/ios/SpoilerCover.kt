@@ -2,8 +2,11 @@ package com.orbin.ios
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,13 +16,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_spoiler
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.ReaderIcons
+import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.withReaderFont
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * What a spoilered file shows until it is opened: a blackout over its thumbnail, as Android's
- * `SpoilerOverlay` draws. Posts the violent-media cover marks (`ViolentMediaCoverProvider`) arrive
- * spoilered too, so this is also that cover.
+ * What a spoilered file shows until it is opened: a solid blackout over its thumbnail, as
+ * Android's `SpoilerOverlay` draws. Posts the violent-media cover marks
+ * (`ViolentMediaCoverProvider`) arrive spoilered too, so this is also that cover.
+ *
+ * The fill is fully opaque so shape and colour cannot be guessed through it.
  */
 @Composable
 internal fun SpoilerCover(
@@ -27,18 +34,23 @@ internal fun SpoilerCover(
     text: String = stringResource(Res.string.ios_media_spoiler),
 ) {
     Box(
-        modifier = modifier.fillMaxSize().background(Color.Black.copy(alpha = SPOILER_SCRIM_ALPHA)),
+        modifier = modifier.fillMaxSize().background(Color.Black),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = text,
-            color = Color.White,
-            style = NextType.labelMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(8.dp),
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = ReaderIcons.Hide,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp),
+            )
+            Text(
+                text = text,
+                color = Color.White,
+                style = ReaderType.label.withReaderFont(),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp),
+            )
+        }
     }
 }
-
-// Opaque enough that shape and colour do not read through, the same as Android's.
-private const val SPOILER_SCRIM_ALPHA = 0.85f

@@ -1,12 +1,12 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,9 +25,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +59,7 @@ import com.orbin.uinext.resources.reader_refresh_failure
 import com.orbin.uinext.resources.reader_refreshing
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_retry
+import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.ReaderRadius
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
@@ -347,7 +346,7 @@ private fun ReaderCenteredState(
     }
 }
 
-/** Place at the bottom of the host's retained content, or use the localized helpers in a SnackbarHost. */
+/** Place at the bottom of the host's retained content, as a Coral [OrbinCard] toast. */
 @Composable
 fun ReaderRefreshFailure(
     cause: ReaderFailureCause,
@@ -355,15 +354,7 @@ fun ReaderRefreshFailure(
     modifier: Modifier = Modifier,
     message: String? = null,
 ) {
-    val colors = reader
-    val shape = RoundedCornerShape(ReaderRadius.small)
-    val action: (@Composable () -> Unit)? =
-        if (onRetry == null) {
-            null
-        } else {
-            { ReaderStateAction(stringResource(Res.string.reader_retry), onRetry) }
-        }
-    Snackbar(
+    OrbinCard(
         modifier =
             Modifier
                 .testTag(ReaderStateTags.REFRESH_FAILURE)
@@ -373,17 +364,32 @@ fun ReaderRefreshFailure(
                         WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
                     ),
                 ).padding(ReaderSpace.gapSmall)
-                .border(ReaderSize.hairline, colors.hairline, shape)
                 .semantics { liveRegion = LiveRegionMode.Polite },
-        shape = shape,
-        containerColor = colors.background,
-        contentColor = colors.ink,
-        action = action,
+        shape = RoundedCornerShape(OrbinRadius.card),
     ) {
-        Text(
-            message ?: stringResource(Res.string.reader_refresh_failure, readerFailureTitle(cause)),
-            style = ReaderType.stateBody.withReaderFont(),
-        )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                message ?: stringResource(Res.string.reader_refresh_failure, readerFailureTitle(cause)),
+                style = ReaderType.stateBody.withReaderFont(),
+                color = reader.ink,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            if (onRetry != null) {
+                OrbinTextButton(
+                    label = stringResource(Res.string.reader_retry),
+                    onClick = onRetry,
+                    modifier = Modifier.testTag(ReaderStateTags.ACTION),
+                )
+            }
+        }
     }
 }
 
@@ -392,15 +398,14 @@ private fun ReaderStateAction(
     label: String,
     onClick: () -> Unit,
 ) {
-    TextButton(
+    OrbinTextButton(
+        label = label,
         onClick = onClick,
         modifier =
             Modifier
                 .testTag(ReaderStateTags.ACTION)
-                .heightIn(min = ReaderSize.touchTarget)
-                .widthIn(min = ReaderSize.touchTarget),
-        contentPadding = PaddingValues(horizontal = ReaderSpace.gapSmall, vertical = ReaderSpace.line),
-    ) { Text(label, color = reader.accent, style = ReaderType.label.withReaderFont()) }
+                .widthIn(min = MIN_TOUCH_TARGET),
+    )
 }
 
 @Composable

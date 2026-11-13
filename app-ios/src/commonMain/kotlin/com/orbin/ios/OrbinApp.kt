@@ -30,7 +30,7 @@ import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.canonicalNextPalette
-import com.orbin.uinext.next
+import com.orbin.uinext.reader
 import kotlinx.coroutines.flow.map
 
 /**
@@ -223,7 +223,7 @@ private fun LockCover(
 ) {
     if (!state.locked && !state.obscured) return
     // Taps stop here rather than reaching the app underneath.
-    Box(Modifier.fillMaxSize().background(next.background).pointerInput(Unit) {}) {
+    Box(Modifier.fillMaxSize().background(reader.background).pointerInput(Unit) {}) {
         if (state.locked) LockScreen(message = state.message, unlocking = state.unlocking, onUnlock = { lock.unlock() })
     }
 }
