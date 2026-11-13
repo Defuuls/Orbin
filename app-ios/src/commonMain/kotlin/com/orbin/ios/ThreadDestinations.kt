@@ -179,7 +179,7 @@ internal fun ThreadContent(
         ) { mutableStateListOf<String>() }
     val listState = rememberLazyListState()
     LaunchedEffect(mediaPostId, posts, layout) {
-        if (mediaPostId == null || layout != ThreadLayout.POSTS) return@LaunchedEffect
+        if (mediaPostId == null || layout == ThreadLayout.FILES) return@LaunchedEffect
         val index = posts.indexOfFirst { it.id == mediaPostId }
         // Item zero is the thread header. Files mode keeps its position until Posts is selected.
         if (index >= 0) {
