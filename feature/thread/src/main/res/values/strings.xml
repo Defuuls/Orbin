@@ -31,4 +31,7 @@
     <string name="next_thread_try_again">Try again</string>
     <string name="next_thread_blocked_title">Not shown</string>
     <string name="next_thread_blocked">This thread is caught by the built-in content filter.</string>
+    <string name="thread_download_title">Download</string>
+    <string name="thread_download_videos">Videos only</string>
+    <string name="thread_download_everything">Everything</string>
 </resources>

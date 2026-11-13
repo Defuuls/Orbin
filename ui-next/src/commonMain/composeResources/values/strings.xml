@@ -92,6 +92,15 @@
     <string name="next_thread_posts">Posts</string>
     <string name="next_thread_files">Files</string>
     <string name="next_thread_download_all">Download all</string>
+    <string name="next_thread_download_title">Download</string>
+    <string name="next_thread_download_videos">Videos only</string>
+    <string name="next_thread_download_everything">Everything</string>
+    <string name="next_thread_back_to">Back to No.%1$s</string>
+    <string name="next_thread_scroll_top">Scroll to top</string>
+    <plurals name="next_thread_new_posts">
+        <item quantity="one">%1$d new</item>
+        <item quantity="other">%1$d new</item>
+    </plurals>
     <string name="next_thread_save_page">Save page</string>
     <string name="next_thread_share">Save links as text</string>
     <string name="next_thread_jump_top">Top</string>

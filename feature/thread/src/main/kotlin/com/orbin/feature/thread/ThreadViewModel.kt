@@ -10,6 +10,7 @@ import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
+import com.orbin.core.model.MediaType
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
@@ -224,15 +225,17 @@ class ThreadViewModel
             }
         }
 
-        fun downloadAllMedia() {
+        fun downloadAllMedia(videosOnly: Boolean = false) {
             // Read from the state backing the screen instead of loadedThread. The latter is only
             // populated by a successful network result, so a thread restored from its saved copy
             // rendered normally but made this action silently return without downloading anything.
+            // Duplicate skips are handled when the download is queued.
             val thread = (uiState.value as? ThreadUiState.Success)?.thread ?: return
             val threadTitle = title.ifBlank { thread.subject }
             val attachments =
                 thread.allPosts
                     .flatMap { it.attachments }
+                    .filter { !videosOnly || it.type == MediaType.VIDEO }
             viewModelScope.launch {
                 attachments.forEach { attachment ->
                     downloadRepository.enqueue(

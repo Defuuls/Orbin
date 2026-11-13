@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -102,6 +103,8 @@ fun ReaderAppBar(
     onNavigation: (() -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
     titleClickLabel: String? = null,
+    onTitleTap: (() -> Unit)? = null,
+    titleTapLabel: String? = null,
     actions: List<ReaderAction> = emptyList(),
     overflow: List<ReaderMenuItem> = emptyList(),
 ) {
@@ -191,6 +194,20 @@ fun ReaderAppBar(
                                     role = Role.Button,
                                     onClickLabel = titleClickLabel,
                                     onClick = onTitleClick,
+                                ),
+                        contentAlignment = Alignment.CenterStart,
+                    ) { titleRow() }
+                } else if (onTitleTap != null) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .widthIn(min = ReaderSize.touchTarget)
+                                .heightIn(min = ReaderSize.appBar)
+                                .semantics { titleTapLabel?.let { contentDescription = it } }
+                                .nextClickable(
+                                    role = Role.Button,
+                                    onClickLabel = titleTapLabel,
+                                    onClick = onTitleTap,
                                 ),
                         contentAlignment = Alignment.CenterStart,
                     ) { titleRow() }

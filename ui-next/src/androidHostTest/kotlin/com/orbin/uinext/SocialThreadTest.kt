@@ -277,7 +277,7 @@ class SocialThreadTest {
     }
 
     @Test
-    fun `the first unseen post is marked and can be jumped to from the overflow`() {
+    fun `the first unseen post is marked and can be jumped to from the new pill`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -289,8 +289,8 @@ class SocialThreadTest {
             }
         }
         composeRule.onAllNodesWithTag(ThreadTags.UNREAD).assertCountEquals(0)
-        composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("First new post").performClick()
+        composeRule.onNodeWithTag(ThreadTags.NEW_PILL).assertExists()
+        composeRule.onNodeWithText("6 new").performClick()
         composeRule.onNodeWithText("Post 25").assertIsDisplayed()
         composeRule.onNodeWithTag(ThreadTags.UNREAD, useUnmergedTree = true).assertIsDisplayed()
     }

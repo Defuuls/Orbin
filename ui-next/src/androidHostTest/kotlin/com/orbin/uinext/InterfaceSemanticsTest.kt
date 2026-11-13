@@ -133,8 +133,9 @@ class InterfaceSemanticsTest {
                 )
             }
         }
-        composeRule.onAllNodesWithText("Technology", substring = true).assertCountEquals(1)
-        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(0)
+        composeRule.onAllNodesWithText("/g/ - Technology").assertCountEquals(1)
+        // The path appears in the heading only, not again on each row.
+        composeRule.onAllNodesWithText("/g/", substring = true).assertCountEquals(1)
     }
 
     @Test
@@ -160,7 +161,7 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `a thread shows its title once and offers the top and bottom jumps from its overflow`() {
+    fun `a thread shows its title once and jumps to the top from the app bar`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -175,11 +176,9 @@ class InterfaceSemanticsTest {
             }
         }
         composeRule.onAllNodesWithText("Weekly desktop thread").assertCountEquals(1)
+        composeRule.onNodeWithContentDescription("Scroll to top").assertExists()
         composeRule.onNodeWithText("Top").assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Top").assertExists()
-        composeRule.onNodeWithText("Bottom").assertExists()
-        // With nothing unread there is no third jump.
+        composeRule.onNodeWithText("Bottom").assertDoesNotExist()
         composeRule.onNodeWithText("First new post").assertDoesNotExist()
     }
 
