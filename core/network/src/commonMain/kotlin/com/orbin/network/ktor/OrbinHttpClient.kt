@@ -8,6 +8,7 @@ import io.ktor.client.call.HttpClientCall
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.HttpTimeoutConfig
 import io.ktor.client.plugins.api.createClientPlugin
 import io.ktor.client.plugins.plugin
 import io.ktor.client.request.HttpRequest
@@ -63,7 +64,9 @@ fun orbinHttpClient(
     return HttpClient(engine) {
         install(HttpTimeout) {
             connectTimeoutMillis = config.connectTimeoutSeconds * MILLIS_PER_SECOND
-            requestTimeoutMillis = config.readTimeoutSeconds * MILLIS_PER_SECOND
+            // No overall cap: a large media download or image can run longer than a
+            // catalog request. Stalled connections still fail at [socketTimeoutMillis].
+            requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
             socketTimeoutMillis = config.readTimeoutSeconds * MILLIS_PER_SECOND
         }
         install(requestPolicyPlugin(configProvider))

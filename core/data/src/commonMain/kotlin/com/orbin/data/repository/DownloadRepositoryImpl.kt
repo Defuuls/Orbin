@@ -34,6 +34,15 @@ interface DownloadPlatformQueue {
         fileName: String,
         mimeType: String,
     ): Boolean = false
+
+    /**
+     * Whether a completed download of [fileName] under [relativeDir] is still on the device.
+     * Defaults to true so a missing platform check does not re-fetch a file that is already saved.
+     */
+    fun downloadedFileExists(
+        fileName: String,
+        relativeDir: String,
+    ): Boolean = true
 }
 
 class DownloadRepositoryImpl(
@@ -44,12 +53,11 @@ class DownloadRepositoryImpl(
     private var lastId = 0L
     private val idMutex = Mutex()
 
-    private suspend fun nextId(): Long =
-        idMutex.withLock {
-            val now = Clock.System.now().toEpochMilliseconds()
-            lastId = maxOf(now, lastId + 1)
-            lastId
-        }
+    private fun nextIdLocked(): Long {
+        val now = Clock.System.now().toEpochMilliseconds()
+        lastId = maxOf(now, lastId + 1)
+        return lastId
+    }
 
     override fun observeDownloads(): Flow<List<DownloadRecord>> =
         dao.observeAll().map { entities ->
@@ -72,23 +80,47 @@ class DownloadRepositoryImpl(
             val safeName = sanitizeFileName(fileName)
             val relativeDir =
                 buildRelativeDir(DownloadOrganization.BY_BOARD_THEN_THREAD, boardId, threadId, threadTitle)
-
-            val id = nextId()
-
-            dao.upsert(
-                DownloadEntity(
-                    id = id,
-                    url = url,
-                    fileName = safeName,
-                    status = DownloadStatus.QUEUED.name,
-                    createdAtMillis = id,
-                    relativeDir = relativeDir,
-                ),
-            )
-
-            queue?.enqueue(id)
-            id
+            enqueueExistingOrNew(url, safeName, relativeDir)
         }
+
+    private suspend fun enqueueExistingOrNew(
+        url: String,
+        safeName: String,
+        relativeDir: String,
+    ): Long =
+        idMutex.withLock {
+            val existing = dao.findByTarget(url, safeName, relativeDir)
+            val filePresent = queue?.downloadedFileExists(safeName, relativeDir) != false
+            when (val decision = decideEnqueue(existing, filePresent)) {
+                is EnqueueDecision.ReturnExisting -> decision.id
+                is EnqueueDecision.Requeue -> {
+                    dao.updateStatus(decision.id, DownloadStatus.QUEUED.name)
+                    queue?.enqueue(decision.id)
+                    decision.id
+                }
+                is EnqueueDecision.InsertNew -> insertNew(url, safeName, relativeDir)
+            }
+        }
+
+    private suspend fun insertNew(
+        url: String,
+        safeName: String,
+        relativeDir: String,
+    ): Long {
+        val id = nextIdLocked()
+        dao.upsert(
+            DownloadEntity(
+                id = id,
+                url = url,
+                fileName = safeName,
+                status = DownloadStatus.QUEUED.name,
+                createdAtMillis = id,
+                relativeDir = relativeDir,
+            ),
+        )
+        queue?.enqueue(id)
+        return id
+    }
 
     override suspend fun refreshStatuses() = Unit
 
@@ -103,8 +135,10 @@ class DownloadRepositoryImpl(
             val uri = runCatching { Url(entity.url) }.getOrNull()
             if (uri?.protocol?.name?.lowercase() !in ALLOWED_SCHEMES) return@withContext SKIPPED_ID
 
-            dao.updateStatus(id, DownloadStatus.QUEUED.name)
-            queue?.enqueue(id)
+            idMutex.withLock {
+                dao.updateStatus(id, DownloadStatus.QUEUED.name)
+                queue?.enqueue(id)
+            }
             id
         }
 
