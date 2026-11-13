@@ -7,8 +7,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -39,7 +38,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -60,9 +58,9 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_refresh
 import com.orbin.uinext.resources.next_snackbar_dismiss
 import com.orbin.uinext.tokens.NextMotion
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.ReaderType
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -314,11 +312,11 @@ class NextSnackbarData internal constructor(
 }
 
 /**
- * Matte bottom toast host — replaces Material [androidx.compose.material3.SnackbarHost].
+ * Coral bottom toast host — replaces Material [androidx.compose.material3.SnackbarHost].
  *
- * Opaque [next.elevated] fill + hairline — not frosted glass. CMP has no portable UIBlurEffect
- * / RenderEffect blur path that is safe on both Android and iOS for this chrome, so the toast
- * stays solid matte (same vocabulary as [nextElevatedSurface]) rather than faking translucency.
+ * An [OrbinCard] fill (white on light, [reader.surfaceVariant] on dark) with soft elevation,
+ * not a hairline outline and not frosted glass. CMP has no portable UIBlurEffect path that is
+ * safe on both platforms for this chrome, so the toast stays a solid elevated card.
  */
 @Composable
 fun NextSnackbarHost(
@@ -363,40 +361,40 @@ fun NextSnackbarHost(
 
 @Composable
 private fun NextSnackbarToast(data: NextSnackbarData) {
-    val shape = RoundedCornerShape(NextRadius.continuous)
-    Row(
-        modifier =
-            Modifier
-                .widthIn(max = 480.dp)
-                .clip(shape)
-                .background(next.elevated)
-                .border(0.5.dp, next.hairline, shape)
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .semantics {
-                    contentDescription = data.message
-                    liveRegion = LiveRegionMode.Polite
-                },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    OrbinCard(
+        modifier = Modifier.widthIn(max = 480.dp),
+        shape = RoundedCornerShape(OrbinRadius.card),
     ) {
-        Text(
-            text = data.message,
-            style = NextType.footnote,
-            color = next.ink,
-            modifier = Modifier.weight(1f, fill = false),
-        )
-        if (data.actionLabel != null) {
-            InlineAction(
-                label = data.actionLabel,
-                accent = true,
-                onClick = data::performAction,
+        Row(
+            modifier =
+                Modifier
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .semantics {
+                        contentDescription = data.message
+                        liveRegion = LiveRegionMode.Polite
+                    },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = data.message,
+                style = ReaderType.body.withReaderFont(),
+                color = reader.ink,
+                modifier = Modifier.weight(1f, fill = false),
             )
-        }
-        if (data.withDismissAction) {
-            InlineAction(
-                label = stringResource(Res.string.next_snackbar_dismiss),
-                onClick = data::dismiss,
-            )
+            if (data.actionLabel != null) {
+                OrbinTextButton(
+                    label = data.actionLabel,
+                    onClick = data::performAction,
+                )
+            }
+            if (data.withDismissAction) {
+                OrbinTextButton(
+                    label = stringResource(Res.string.next_snackbar_dismiss),
+                    onClick = data::dismiss,
+                )
+            }
         }
     }
 }
