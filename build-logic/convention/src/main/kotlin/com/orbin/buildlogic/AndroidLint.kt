@@ -27,7 +27,10 @@ internal fun Project.configureLint(commonExtension: CommonExtension) {
 /** The same settings for a multiplatform module's Android target, which has no [CommonExtension]. */
 internal fun Project.configureAndroidLint(lint: Lint) {
     lint.apply {
-        baseline = file("lint-baseline.xml")
+        val baselineFile = file("lint-baseline.xml")
+        if (baselineFile.exists()) {
+            baseline = baselineFile
+        }
 
         // Fail on errors; warnings stay visible in the report without gating the build.
         abortOnError = true

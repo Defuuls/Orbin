@@ -2,8 +2,8 @@ package com.orbin.core.common.link
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import java.net.URI
 
 /**
@@ -54,7 +54,7 @@ object SafeExternalLinks {
         url: String,
     ): Boolean {
         val safe = sanitizeHttps(url) ?: return false
-        val uri = Uri.parse(safe)
+        val uri = safe.toUri()
         return runCatching {
             CustomTabsIntent
                 .Builder()

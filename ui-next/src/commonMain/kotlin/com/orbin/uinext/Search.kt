@@ -44,5 +44,5 @@ fun SearchScreen(
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
 ) {
-    TikTokSearchScreen(query, onQueryChange, onSearch, state, onOpenRow, modifier, onBack)
+    ReaderSearchScreen(query, onQueryChange, onSearch, state, onOpenRow, modifier, onBack)
 }

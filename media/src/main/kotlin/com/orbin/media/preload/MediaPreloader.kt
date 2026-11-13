@@ -2,6 +2,7 @@ package com.orbin.media.preload
 
 import android.app.ActivityManager
 import android.content.Context
+import androidx.core.net.toUri
 import co.touchlab.kermit.Logger
 import coil3.ImageLoader
 import coil3.request.CachePolicy
@@ -196,9 +197,6 @@ private fun String.isCdnBlocked(): Boolean {
 /** Host-only form for logs so release builds do not retain full media paths. */
 private fun String.redactForLog(): String =
     runCatching {
-        val host =
-            android.net.Uri
-                .parse(this)
-                .host ?: return "[media]"
+        val host = toUri().host ?: return "[media]"
         "$host/…"
     }.getOrDefault("[media]")

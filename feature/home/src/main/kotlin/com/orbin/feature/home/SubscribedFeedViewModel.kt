@@ -180,7 +180,6 @@ class SubscribedFeedViewModel
         override fun onCleared() {
             clearFeedImagePrefetch()
             clearFeedVideoPrefetch()
-            super.onCleared()
         }
 
         private val activeProvider: StateFlow<ImageBoardProvider> =
