@@ -1,46 +1,24 @@
-# Orbin 203 - Chaya
+# Orbin 204 - Moringa
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 203
-codename = "Chaya"
-version_code = 221
+number = 204
+codename = "Moringa"
+version_code = 222
 
-highlight = "Cached Home boards stay visible during refresh, with restored Settings scrolling and steadier iOS video playback."
+highlight = "iOS text applies the system size once and stays synchronized when the preferred size changes."
 
 summary = [
-  "bump Orbin to 203-Chaya / versionCode 221",
-  "preserve cached boards, restored Settings, and unobstructed offline navigation",
-  "cancel obsolete iOS video work and keep completed clips stopped",
-  "include prior iOS protections, responsive grids, and Android video control fixes",
+  "bump Orbin to 204-Moringa / versionCode 222",
+  "apply iOS Dynamic Type once and synchronize live text-size changes",
+  "add native host and installed-app text-size regression coverage",
 ]
 
 [changelog]
-Security = [
-  "Applied the saved DNS-over-HTTPS provider and Strict encrypted DNS setting on iOS, matching Android, instead of always requiring Cloudflare.",
-  "Stored iOS crash reports in Application Support files with complete Data Protection, migrating and clearing the previous UserDefaults records, and dropped the device model from those reports.",
-  "Strengthened the iOS app lock with a this-device-only Keychain item that requires Face ID, Touch ID or the passcode (`userPresence`), created on the first successful unlock so existing users are not locked out.",
-  "Restricted the WebM WKWebView to the local player document: navigation away is cancelled, window.open and link previews are disabled, and file-URL access is not granted.",
-  "Removed private vulnerability-reporting instructions from SECURITY.md, the bug-report template, and related docs.",
-]
-Changed = [
-  "Documented storage, DNS, and third-party disclosure accurately per platform in the privacy policy, README, user guides, website, and F-Droid metadata stub.",
-  "Sized grid thumbnails from the window: on a phone each catalog and Home card spans the full width with an image half the height of the area below the app bar, and landscape or wide windows split into columns that keep each image at least as wide as it is tall.",
-  "Drew still images in grid cards from the original file, decoded to the card's size, so large thumbnails stay sharp; GIFs and videos keep the provider thumbnail.",
-]
 Fixed = [
-  "Lifted the full-screen Android video transport, seek bar, and feed progress above the gesture and navigation bars on edge-to-edge displays, including tall 20:9 phones such as the Pixel 10 Pro XL, while letting the video itself draw behind the bars.",
-  "Stopped iOS from bursting video CDN requests when scrolling quickly: first-frame decodes and next-clip preloads wait until the page has settled, and at most two frame decodes run at once with spacing between starts, so a card that has scrolled away is cancelled before it opens the file. Fast scrolling through videos had been tripping the server's rate limit. Player observers are now removed before the item is released, and WebM JavaScript callbacks no longer resume a disposed player.",
-  "Kept cached Home board results visible while staggered refreshes complete.",
-  "Preserved Settings scroll position after saved screen state is restored.",
-  "Kept the Android offline banner from covering setup headings and navigation controls.",
-  "Kept finished, non-looping iOS WebM videos ended after returning to the foreground.",
-  "Cancelled iOS video thumbnail extraction promptly when its card leaves the screen.",
-  "Stopped cancelled iOS video loads from blocking later videos.",
+  "Applied the iOS system text size once, preventing extra shrinking or enlargement from duplicate Dynamic Type scaling.",
+  "Kept live iOS text-size changes synchronized with the system without requiring an app relaunch.",
 ]
 Testing = [
-  "Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.",
-  "Added regressions for the iOS video load gate: a third caller waits for a free slot, starts are spaced, and cancelling during the wait or the settle delay never starts a request; upcoming preload is released immediately when turned off.",
-  "Added window-inset regressions that dispatch a tall-phone navigation bar and a landscape display cutout and require the gallery time bar, transport buttons, and feed progress to stay in the safe drawing area.",
-  "Added regressions for the grid sizing rule across portrait, landscape, tablet, short and unmeasured windows, for catalog, Home and loading-grid layouts, and for sharp grid image requests on iOS.",
-  "Added regressions for staggered Home refreshes, restored Settings, offline navigation, cancelled media loads, and finished-video foregrounding.",
+  "Added native composable regressions for live text-size changes and host scaling.",
+  "Added installed-app checks for Small and Large text sizes and a cold relaunch.",
 ]
