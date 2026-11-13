@@ -2,13 +2,21 @@ package com.orbin.ios
 
 import com.orbin.core.model.MediaType
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,6 +24,53 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VideoLoadGateTest {
+    @Test
+    fun cancellationReleasesPermitWhenAnotherCallerHoldsTheGateMutex() =
+        runBlocking {
+            val clockCalls = AtomicInteger()
+            val mutexHeld = CountDownLatch(1)
+            val releaseMutex = CountDownLatch(1)
+            val gate =
+                VideoLoadGate(
+                    maxInFlight = 1,
+                    spacingMs = 0L,
+                    nowMs = {
+                        if (clockCalls.incrementAndGet() == 2) {
+                            mutexHeld.countDown()
+                            check(releaseMutex.await(5, TimeUnit.SECONDS)) { "Test did not release the gate mutex" }
+                        }
+                        0L
+                    },
+                )
+            val holderStarted = CompletableDeferred<Unit>()
+            // Unconfined cancellation enters the holder's cleanup synchronously, while the
+            // other thread is still inside the clock callback holding the gate's mutex.
+            val holder =
+                launch(Dispatchers.Unconfined) {
+                    gate.withPermit {
+                        holderStarted.complete(Unit)
+                        awaitCancellation()
+                    }
+                }
+            holderStarted.await()
+            val next = async(Dispatchers.Default) { gate.withPermit { "next" } }
+            try {
+                assertTrue(mutexHeld.await(2, TimeUnit.SECONDS), "The waiting caller must hold the mutex")
+                holder.cancel()
+                releaseMutex.countDown()
+                withTimeout(2_000) {
+                    holder.join()
+                    assertEquals("next", next.await(), "Cancellation must release the permit despite contention")
+                }
+                assertEquals(0, gate.inFlightCount())
+            } finally {
+                releaseMutex.countDown()
+                holder.cancel()
+                next.cancel()
+                withTimeout(2_000) { listOf(holder, next).joinAll() }
+            }
+        }
+
     @Test
     fun aThirdCallerWaitsUntilOnePermitIsReleased() =
         runTest {

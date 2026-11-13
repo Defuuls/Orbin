@@ -1,20 +1,22 @@
 package com.orbin.ios
 
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Clock
 
 /**
- * Caps and spaces iOS video CDN work (first-frame decodes, next-clip preload). Android's
- * video request pacer does the same for ExoPlayer: at most [DEFAULT_MAX_IN_FLIGHT] loads in
- * flight and [DEFAULT_SPACING_MS] between starts. Waiting is cancellable, so a card that has
- * scrolled off screen never starts its request.
+ * Caps and spaces iOS video thumbnail decodes: at most [DEFAULT_MAX_IN_FLIGHT] loads in flight
+ * and [DEFAULT_SPACING_MS] between starts. Waiting is cancellable, so a card that has scrolled
+ * off screen never starts its request.
  *
- * The visible player is not gated; it must start as soon as its page settles.
+ * Upcoming clip preloads use a separate settle delay. The visible player is not gated; it must
+ * start as soon as its page settles.
  */
 internal class VideoLoadGate(
     private val maxInFlight: Int = DEFAULT_MAX_IN_FLIGHT,
@@ -45,8 +47,11 @@ internal class VideoLoadGate(
         try {
             return block()
         } finally {
-            mutex.withLock { inFlight-- }
-            released.tryEmit(Unit)
+            // A cancelled load must still wait for the mutex to return its permit.
+            withContext(NonCancellable) {
+                mutex.withLock { inFlight-- }
+                released.tryEmit(Unit)
+            }
         }
     }
 
@@ -83,7 +88,7 @@ internal class VideoLoadGate(
     }
 }
 
-/** Shared session gate for iOS video thumbnail decodes and next-clip preload. */
+/** Shared session gate for iOS video thumbnail decodes. */
 internal val iosVideoLoadGate = VideoLoadGate()
 
 /**

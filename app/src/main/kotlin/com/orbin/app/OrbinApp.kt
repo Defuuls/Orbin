@@ -6,17 +6,20 @@ import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.MutableWindowInsets
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
@@ -34,7 +37,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,8 +55,11 @@ import com.orbin.app.navigation.navigateToTab
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.next
+import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextType
+
+internal const val OFFLINE_BANNER_TAG = "orbin-offline-banner"
 
 /**
  * Root composable. Home, Boards, Watched, Search and Saved use the shared drawer and app bar;
@@ -82,45 +92,85 @@ fun OrbinApp(
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val twoPaneBoardDetail = showsTwoPanes(maxWidth.value.toInt(), maxHeight.value.toInt())
         val snackbarHostState = LocalOrbinSnackbarHostState.current
-        // The five primary destinations stay reachable while their content scrolls.
-        // The banner floats over the top of whatever screen is showing rather than pushing it
-        // down: losing the network should not make the whole layout jump, twice.
-        val statusBarInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
         Box(modifier = Modifier.fillMaxSize()) {
-            // Each destination owns its insets via its own top bar / chrome; the root no longer
-            // uses Material Scaffold — NextSnackbarHost is the toast layer.
-            OnboardingNavigation(
-                navController = navController,
-                startWithOnboarding = startWithOnboarding,
-                pendingRoute = pendingRoute,
-                onPendingRouteHandled = onPendingRouteHandled,
-                onOnboardingCompleted = onOnboardingCompleted,
-            ) { acknowledgeCompletion ->
-                OrbinNavHost(
-                    navController = navController,
-                    modifier = Modifier.fillMaxSize(),
-                    startDestination = initialStartDestination,
-                    chromeHidesOnScroll = false,
-                    twoPaneBoardDetail = twoPaneBoardDetail,
-                    onOnboardingCompleted = acknowledgeCompletion,
-                )
-            }
-            AnimatedVisibility(
-                visible = !isOnline,
-                modifier = Modifier.align(Alignment.TopCenter),
-                enter =
-                    fadeIn(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)) +
-                        slideInVertically(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)),
-                exit =
-                    slideOutVertically(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)) +
-                        fadeOut(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)),
+            OrbinContentFrame(
+                isOnline = isOnline,
+                statusBarColor =
+                    when {
+                        readerBarVisible -> reader.statusBar
+                        immersive -> Color.Black
+                        else -> next.background
+                    },
             ) {
-                OfflineBanner(modifier = Modifier.windowInsetsPadding(statusBarInset))
+                // Each destination owns its insets via its own top bar / chrome.
+                OnboardingNavigation(
+                    navController = navController,
+                    startWithOnboarding = startWithOnboarding,
+                    pendingRoute = pendingRoute,
+                    onPendingRouteHandled = onPendingRouteHandled,
+                    onOnboardingCompleted = onOnboardingCompleted,
+                ) { acknowledgeCompletion ->
+                    OrbinNavHost(
+                        navController = navController,
+                        modifier = Modifier.fillMaxSize(),
+                        startDestination = initialStartDestination,
+                        chromeHidesOnScroll = false,
+                        twoPaneBoardDetail = twoPaneBoardDetail,
+                        onOnboardingCompleted = acknowledgeCompletion,
+                    )
+                }
             }
             NextSnackbarHost(
                 hostState = snackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
+        }
+    }
+}
+
+/** Keeps connection feedback and destination content in the same app frame. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun OrbinContentFrame(
+    isOnline: Boolean,
+    modifier: Modifier = Modifier,
+    statusBarColor: Color = next.background,
+    content: @Composable () -> Unit,
+) {
+    val statusBarInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+    val density = LocalDensity.current
+    val coveredTopInset = remember { MutableWindowInsets(WindowInsets(0, 0, 0, 0)) }
+    Column(modifier.fillMaxSize()) {
+        // The holder stays mounted at zero height online, so its measured height also clears
+        // consumption after exit. During animation the destination keeps any uncovered inset.
+        Box(
+            Modifier
+                .testTag(OFFLINE_BANNER_TAG)
+                .fillMaxWidth()
+                .background(statusBarColor)
+                .onSizeChanged { size ->
+                    coveredTopInset.insets = WindowInsets(top = minOf(size.height, statusBarInset.getTop(density)))
+                },
+        ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !isOnline,
+                enter =
+                    fadeIn(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)) +
+                        expandVertically(
+                            animationSpec = tween(NextMotion.CHROME_MS, easing = NextMotion.Ease),
+                            expandFrom = Alignment.Top,
+                        ),
+                exit =
+                    shrinkVertically(
+                        animationSpec = tween(NextMotion.CHROME_MS, easing = NextMotion.Ease),
+                        shrinkTowards = Alignment.Top,
+                    ) + fadeOut(tween(NextMotion.CHROME_MS, easing = NextMotion.Ease)),
+            ) {
+                OfflineBanner(modifier = Modifier.windowInsetsPadding(statusBarInset))
+            }
+        }
+        Box(Modifier.weight(1f).consumeWindowInsets(coveredTopInset)) {
+            content()
         }
     }
 }

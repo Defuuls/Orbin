@@ -1,22 +1,27 @@
 package com.orbin.uinext
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
@@ -62,6 +67,47 @@ class SettingsDirectoryTest {
         assertEquals(0, exits)
         composeRule.onNodeWithContentDescription("Back").performClick()
         assertEquals(1, exits)
+    }
+
+    @Test
+    fun restoringAScrolledSettingsSubpageKeepsItsPosition() {
+        val restoration = StateRestorationTester(composeRule)
+        restoration.setContent {
+            NextTheme {
+                SettingsScreen(
+                    modifier = Modifier.height(320.dp),
+                    groups =
+                        listOf(
+                            "Playback" to
+                                listOf(
+                                    SettingItem("openThreadComments", "Open comments from chat button", "Off"),
+                                    SettingItem("playbackScope", "Scope", "App defaults", SettingKind.INFO),
+                                    SettingItem("autoplay", "Autoplay", "On"),
+                                    SettingItem("startMuted", "Start muted", "On"),
+                                    SettingItem("loopVideos", "Loop videos", "On"),
+                                    SettingItem("preloadNextClip", "Preload next clip", "On"),
+                                ),
+                        ),
+                )
+            }
+        }
+        composeRule.onNodeWithText("Playback").performClick()
+        composeRule.onNodeWithTag("reader-setting-row-preloadNextClip").performScrollTo().assertIsDisplayed()
+        val list = composeRule.onNodeWithTag("settings-list")
+        val before = list.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertTrue("The playback page must be scrolled before restoration", before > 0f)
+
+        restoration.emulateSavedInstanceStateRestore()
+
+        composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Playback")
+        composeRule.onNodeWithTag("reader-setting-row-preloadNextClip").assertIsDisplayed()
+        val restored = list.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertEquals("Restoring a subpage must retain its saved scroll position", before, restored, 0.001f)
+
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithText("Playback").performClick()
+        val reopened = list.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value()
+        assertEquals("Explicitly opening a subpage still starts at the top", 0f, reopened, 0.001f)
     }
 
     @Test

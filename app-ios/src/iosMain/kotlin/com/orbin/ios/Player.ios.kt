@@ -392,8 +392,8 @@ internal actual fun NativeWebMPlayer(
             webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
                 if (playCommand == sent.command) {
                     state = it.copy(loading = sent.play && !it.playing && !it.atEnd)
-                    val completedFeedClip = feedMode && !currentLoop && it.atEnd
-                    if (completedFeedClip && playRequested) {
+                    val completedClip = !currentLoop && it.atEnd
+                    if (completedClip && playRequested) {
                         playRequested = false
                         playCommand++
                         reportIntent?.invoke(false)
