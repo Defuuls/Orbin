@@ -116,12 +116,12 @@ class SettingsStoreTest {
                 it[stringPreferencesKey("theme_mode")] = "DARK"
             }
             val restored = SettingsStore(dataStore).settings.first()
-            assertEquals(CatalogMode.LIST, restored.catalogMode)
+            assertEquals(CatalogMode.GRID, restored.catalogMode)
             assertEquals(AppThemeMode.DARK, restored.themeMode)
         }
 
     @Test
-    fun unknownCatalogModeFallsBackToListWithoutLosingOtherSettings() =
+    fun unknownCatalogModeFallsBackToGridWithoutLosingOtherSettings() =
         runTest {
             val dataStore = backgroundScope.dataStore()
             dataStore.edit {
@@ -131,7 +131,7 @@ class SettingsStoreTest {
 
             val restored = SettingsStore(dataStore).settings.first()
 
-            assertEquals(CatalogMode.LIST, restored.catalogMode)
+            assertEquals(CatalogMode.GRID, restored.catalogMode)
             assertTrue(restored.screenPrivacyEnabled)
         }
 
@@ -210,7 +210,7 @@ class SettingsStoreTest {
             val settings = SettingsStore(dataStore).settings.first()
             assertTrue(settings.hideNsfwBoards)
             assertEquals(AppThemeMode.LIGHT, settings.themeMode)
-            assertEquals(CatalogMode.LIST, settings.catalogMode)
+            assertEquals(CatalogMode.GRID, settings.catalogMode)
         }
 
     @Test

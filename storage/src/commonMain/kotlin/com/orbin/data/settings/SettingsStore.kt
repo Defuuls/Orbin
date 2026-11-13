@@ -143,7 +143,7 @@ class SettingsStore(
             onboardingCompleted = this[Keys.onboardingCompleted] ?: false,
             unfoldedFeedColumns = this[Keys.unfoldedFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
             tabletFeedColumns = this[Keys.tabletFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
-            catalogMode = CatalogMode.entries.firstOrNull { it.name == this[Keys.catalogMode] } ?: CatalogMode.LIST,
+            catalogMode = CatalogMode.entries.firstOrNull { it.name == this[Keys.catalogMode] } ?: CatalogMode.GRID,
         )
 
     private fun Preferences.playbackPreferences(): PlaybackPreferences =
