@@ -6,6 +6,8 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [203-Chaya] - 2026-11-13
+
 ### Security
 - Applied the saved DNS-over-HTTPS provider and Strict encrypted DNS setting on iOS, matching Android, instead of always requiring Cloudflare.
 - Stored iOS crash reports in Application Support files with complete Data Protection, migrating and clearing the previous UserDefaults records, and dropped the device model from those reports.
@@ -21,12 +23,20 @@ All notable changes to Orbin are documented here. The format is based on
 ### Fixed
 - Lifted the full-screen Android video transport, seek bar, and feed progress above the gesture and navigation bars on edge-to-edge displays, including tall 20:9 phones such as the Pixel 10 Pro XL, while letting the video itself draw behind the bars.
 - Stopped iOS from bursting video CDN requests when scrolling quickly: first-frame decodes and next-clip preloads wait until the page has settled, and at most two frame decodes run at once with spacing between starts, so a card that has scrolled away is cancelled before it opens the file. Fast scrolling through videos had been tripping the server's rate limit. Player observers are now removed before the item is released, and WebM JavaScript callbacks no longer resume a disposed player.
+- Kept cached Home board results visible while staggered refreshes complete.
+- Preserved Settings scroll position after saved screen state is restored.
+- Kept the Android offline banner from covering setup headings and navigation controls.
+- Kept finished, non-looping iOS WebM videos ended after returning to the foreground.
+- Cancelled iOS video thumbnail extraction promptly when its card leaves the screen.
+- Stopped cancelled iOS video loads from blocking later videos.
 
 ### Testing
 - Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
 - Added regressions for the iOS video load gate: a third caller waits for a free slot, starts are spaced, and cancelling during the wait or the settle delay never starts a request; upcoming preload is released immediately when turned off.
 - Added window-inset regressions that dispatch a tall-phone navigation bar and a landscape display cutout and require the gallery time bar, transport buttons, and feed progress to stay in the safe drawing area.
 - Added regressions for the grid sizing rule across portrait, landscape, tablet, short and unmeasured windows, for catalog, Home and loading-grid layouts, and for sharp grid image requests on iOS.
+- Added regressions for staggered Home refreshes, restored Settings, offline navigation, cancelled media loads, and finished-video foregrounding.
+
 
 ## [202-Arracacha] - 2026-11-12
 
@@ -3067,7 +3077,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v202-Arracacha...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v203-Chaya...HEAD
+[203-Chaya]: https://github.com/Defuuls/Orbin/compare/v202-Arracacha...v203-Chaya
 [202-Arracacha]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...v202-Arracacha
 [201-Huauzontle]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...v201-Huauzontle
 [200-Shungiku]: https://github.com/Defuuls/Orbin/compare/v199-Komatsuna...v200-Shungiku
