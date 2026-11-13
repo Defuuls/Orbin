@@ -135,11 +135,11 @@ fun NextBoardScreen(
                         },
                         navigation =
                             when {
-                                openDrawer != null -> ReaderNavigation.MENU
                                 onBack != null -> ReaderNavigation.BACK
+                                openDrawer != null -> ReaderNavigation.MENU
                                 else -> ReaderNavigation.NONE
                             },
-                        onNavigation = openDrawer ?: onBack ?: {},
+                        onNavigation = onBack ?: openDrawer ?: {},
                         onPickBoard =
                             onOpenBoard?.let {
                                 {

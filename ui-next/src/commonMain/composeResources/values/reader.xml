@@ -14,6 +14,7 @@
     <string name="reader_sort_bump_order">Bump order</string>
     <string name="reader_sort_reply_count">Reply count</string>
     <string name="reader_muted">Muted</string>
+    <string name="reader_post_number">No.%1$s</string>
     <string name="reader_row_meta">No.%1$s · %2$s</string>
     <string name="reader_row_summary">%1$s, %2$s, %3$s</string>
     <string name="reader_count_thousands">%1$sk</string>

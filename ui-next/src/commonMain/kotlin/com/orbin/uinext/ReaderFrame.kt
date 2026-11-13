@@ -228,7 +228,7 @@ fun ReaderAppBar(
                             Modifier
                                 .testTag(
                                     ReaderAppBarTags.OVERFLOW,
-                                ).size(ReaderSize.appBarOverflow, ReaderSize.appBar),
+                                ).size(48.dp, maxOf(ReaderSize.appBar, 48.dp)),
                     )
                     DropdownMenu(
                         expanded = open,

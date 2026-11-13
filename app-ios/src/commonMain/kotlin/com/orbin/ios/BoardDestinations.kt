@@ -73,6 +73,7 @@ internal fun CatalogDestination(
     // True when the caller already knows the window is wide, as the two-pane split does.
     wideWindow: Boolean = false,
     selectedThread: ThreadKey? = null,
+    onBack: (() -> Unit)? = null,
 ) {
     val reload = remember(browser, board) { { browser.refreshCatalog(board) } }
     val catalog by browser.catalog.collectAsState()
@@ -170,8 +171,13 @@ internal fun CatalogDestination(
                     }
                 BoardScreen(
                     wideWindow = wide,
-                    navigation = ReaderNavigation.MENU,
-                    onNavigation = { openDrawer?.invoke() },
+                    navigation =
+                        when {
+                            onBack != null -> ReaderNavigation.BACK
+                            openDrawer != null -> ReaderNavigation.MENU
+                            else -> ReaderNavigation.NONE
+                        },
+                    onNavigation = onBack ?: { openDrawer?.invoke() },
                     onPickBoard = { pickerVisible = true },
                     onSearch = {
                         searchVisible = !searchVisible
