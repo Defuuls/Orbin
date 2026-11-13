@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Orbin — a modern imageboard browser for Android and iOS</title>
   <meta name="description" content="Orbin is a modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
-  <meta name="theme-color" content="#276A3C" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#FF5D68" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#15161B" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Orbin — a modern imageboard reader for Android and iOS">
@@ -14,12 +14,12 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Orbin — a modern imageboard reader for Android and iOS">
   <meta name="twitter:description" content="A modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23276A3C'/%3E%3Ccircle cx='32' cy='32' r='13' fill='%23F7FBF7'/%3E%3Ccircle cx='49' cy='19' r='6' fill='%23C8EAD4'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23FF5D68%22%2F%3E%3Cg%20transform%3D%22translate%2832%2032%29%20scale%280.06328340%29%20translate%28-499.5000%20-535.0000%29%22%3E%3Cpath%20fill%3D%22%23B8323F%22%20d%3D%22M414.000%2C140.000%20H754.000%20A80.000%2C80.000%200%200%201%20834.000%2C220.000%20V660.000%20A80.000%2C80.000%200%200%201%20754.000%2C740.000%20H414.000%20A80.000%2C80.000%200%200%201%20334.000%2C660.000%20V220.000%20A80.000%2C80.000%200%200%201%20414.000%2C140.000%20Z%22%2F%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M253.000%2C270.000%20H627.000%20A88.000%2C88.000%200%200%201%20715.000%2C358.000%20V842.000%20A88.000%2C88.000%200%200%201%20627.000%2C930.000%20H253.000%20A88.000%2C88.000%200%200%201%20165.000%2C842.000%20V358.000%20A88.000%2C88.000%200%200%201%20253.000%2C270.000%20Z%22%2F%3E%3Cpath%20fill%3D%22%23FF5D68%22%20d%3D%22M363.220%2C614.300%20L363.220%2C823.300%20L555.500%2C718.800%20Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
   <style>
     :root {
-      --accent: #276A3C;
-      --accent-strong: #1F5D3A;
-      --accent-soft: #C8EAD4;
+      --accent: #C73E4E;
+      --accent-strong: #B8323F;
+      --accent-soft: #FFD4D7;
       --bg: #F7FBF7;
       --bg-alt: #ECF2EC;
       --surface: #FFFFFF;
@@ -31,9 +31,9 @@
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --accent: #A3D4AF;
-        --accent-strong: #C8EAD4;
-        --accent-soft: #1F5D3A;
+        --accent: #FF8A96;
+        --accent-strong: #FFB0B6;
+        --accent-soft: #5A2228;
         --bg: #15161B;
         --bg-alt: #1B1D25;
         --surface: #202431;
@@ -155,7 +155,7 @@
 <header class="topbar">
   <div class="wrap">
     <a class="brand" href="#">
-      <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#276A3C"/><circle cx="32" cy="32" r="13" fill="#F7FBF7"/><circle cx="49" cy="19" r="6" fill="#C8EAD4"/></svg>
+      <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" fill="#FF5D68"/><g transform="translate(32 32) scale(0.06328340) translate(-499.5000 -535.0000)"><path fill="#B8323F" d="M414.000,140.000 H754.000 A80.000,80.000 0 0 1 834.000,220.000 V660.000 A80.000,80.000 0 0 1 754.000,740.000 H414.000 A80.000,80.000 0 0 1 334.000,660.000 V220.000 A80.000,80.000 0 0 1 414.000,140.000 Z"/><path fill="#FFFFFF" d="M253.000,270.000 H627.000 A88.000,88.000 0 0 1 715.000,358.000 V842.000 A88.000,88.000 0 0 1 627.000,930.000 H253.000 A88.000,88.000 0 0 1 165.000,842.000 V358.000 A88.000,88.000 0 0 1 253.000,270.000 Z"/><path fill="#FF5D68" d="M363.220,614.300 L363.220,823.300 L555.500,718.800 Z"/></g></svg>
       Orbin
     </a>
     <nav>
