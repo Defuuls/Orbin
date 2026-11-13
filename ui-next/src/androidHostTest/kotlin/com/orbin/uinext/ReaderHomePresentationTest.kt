@@ -476,7 +476,13 @@ class ReaderHomePresentationTest {
         assertEquals("a portrait phone is one column", 1, expected.columns)
         assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
         assertEquals((grid.bottom - grid.top).value / 2, expected.imageHeight.value, 0.5f)
-        assertEquals("the image spans the card", (card.right - card.left).value, (image.right - image.left).value, 0.5f)
+        // CatalogCard insets the thumbnail by 12.dp on each side (Coral review).
+        assertEquals(
+            "the image is inset 12.dp from the card",
+            (card.right - card.left).value - 24f,
+            (image.right - image.left).value,
+            0.5f,
+        )
         assertTrue("the second card starts below the first", next.top >= card.bottom)
     }
 
