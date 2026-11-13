@@ -10,6 +10,9 @@
     <string name="reader_view_list">List view</string>
     <string name="reader_view_grid">Grid view</string>
     <string name="reader_sort">Sort: %1$s</string>
+    <string name="reader_sort_catalog">Catalog</string>
+    <string name="reader_sort_bump_order">Bump order</string>
+    <string name="reader_sort_reply_count">Reply count</string>
     <string name="reader_muted">Muted</string>
     <string name="reader_row_meta">No.%1$s · %2$s</string>
     <string name="reader_row_summary">%1$s, %2$s, %3$s</string>

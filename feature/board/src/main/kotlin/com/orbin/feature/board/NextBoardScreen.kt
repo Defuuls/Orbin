@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.isWideWindow
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
@@ -40,6 +41,7 @@ import com.orbin.uinext.ReaderErrorState
 import com.orbin.uinext.ReaderNavigation
 import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderScaffold
+import com.orbin.uinext.catalogSortTabs
 import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 /** A paged catalog keeps its frame and loaded rows through refresh failures. */
@@ -126,6 +128,11 @@ fun NextBoardScreen(
                         rowKey = { index -> catalogItemKey(matching[index]) },
                         sortLabel = catalogSort.label,
                         onSort = viewModel::cycleCatalogSort,
+                        sortTabs = catalogSortTabs(),
+                        selectedSortId = catalogSort.name,
+                        onSelectSort = { id ->
+                            runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(viewModel::setCatalogSort)
+                        },
                         navigation =
                             when {
                                 openDrawer != null -> ReaderNavigation.MENU

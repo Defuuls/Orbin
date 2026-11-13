@@ -321,7 +321,7 @@ class CatalogScreenTest {
         )
         assertTrue("the text sits below the image", first.bottom > image.bottom)
         assertTrue("the next card starts a new line", second.top >= first.bottom)
-        composeRule.onNodeWithText("23R 4I", useUnmergedTree = true).assertExists()
+        composeRule.onNodeWithText("23 replies, 4 files", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -485,7 +485,7 @@ class CatalogScreenTest {
         var picks = 0
         composeRule.setContent { NextTheme { Catalog(onPickBoard = { picks += 1 }) } }
 
-        composeRule.onNodeWithText("Technology").performClick()
+        composeRule.onNodeWithText("/g/ - Technology").performClick()
 
         assertEquals(1, picks)
     }

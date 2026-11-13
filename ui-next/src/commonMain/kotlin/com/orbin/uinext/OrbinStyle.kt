@@ -109,11 +109,12 @@ fun OrbinCard(
     onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
     shape: Shape = RoundedCornerShape(OrbinRadius.card),
+    containerColor: Color? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shadow = if (next.dark) 0.dp else OrbinElevation.card
     val tonal = if (next.dark) OrbinElevation.card else 0.dp
-    val color = if (next.dark) next.elevated else next.raised
+    val color = containerColor ?: if (next.dark) next.elevated else next.raised
     Surface(
         modifier =
             if (onClick != null) {

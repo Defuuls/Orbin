@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
@@ -58,6 +59,7 @@ import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderRefreshProgress
 import com.orbin.uinext.ReaderScaffold
 import com.orbin.uinext.ReaderTwoPane
+import com.orbin.uinext.catalogSortTabs
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 import com.orbin.core.model.CatalogMode as StoredCatalogMode
@@ -184,6 +186,11 @@ internal fun CatalogDestination(
                     rowAt = { index -> rows.getOrNull(index) },
                     sortLabel = sort.label,
                     onSort = browser::cycleCatalogSort,
+                    sortTabs = catalogSortTabs(),
+                    selectedSortId = sort.name,
+                    onSelectSort = { id ->
+                        runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(browser::setCatalogSort)
+                    },
                     mode = mode,
                     onModeChange = { selected ->
                         browser.settings.setCatalogMode(

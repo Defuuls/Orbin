@@ -81,13 +81,13 @@ class ScrollingHeaderTest {
             }
         }
 
-        composeRule.onNodeWithText("Technology").assertIsDisplayed()
+        composeRule.onNodeWithText("/g/ - Technology").assertIsDisplayed()
         composeRule
             .onNodeWithTag(CatalogTags.GRID)
             .performScrollToNode(hasContentDescription(LAST_SUBJECT, substring = true))
 
         composeRule.onNodeWithContentDescription(LAST_SUBJECT, substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("Technology").assertIsDisplayed()
+        composeRule.onNodeWithText("/g/ - Technology").assertIsDisplayed()
     }
 
     @Test
