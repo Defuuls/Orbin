@@ -16,8 +16,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -79,11 +79,10 @@ fun ZoomableImage(
         }
 
     val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
+    val windowSize = LocalWindowInfo.current.containerSize
     val maxEdgePx =
-        remember(configuration, density) {
-            val longerDp = maxOf(configuration.screenWidthDp, configuration.screenHeightDp)
-            val longerPx = with(density) { longerDp.dp.roundToPx() }
+        remember(windowSize, density) {
+            val longerPx = maxOf(windowSize.width, windowSize.height)
             val capPx = with(density) { GALLERY_MAX_DECODE_DP.dp.roundToPx() }
             longerPx.coerceAtMost(capPx).coerceAtLeast(1)
         }

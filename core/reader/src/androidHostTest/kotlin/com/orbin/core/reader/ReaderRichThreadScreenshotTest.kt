@@ -19,6 +19,8 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +28,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.util.TimeZone
 
 /** Real model-to-prepared-body coverage complements ui-next's plain layout/window fixtures. */
 @RunWith(ParameterizedRobolectricTestRunner::class)
@@ -36,6 +39,19 @@ class ReaderRichThreadScreenshotTest(
 ) {
     @get:Rule
     val composeRule = createComposeRule()
+
+    private var savedTimeZone: TimeZone? = null
+
+    @Before
+    fun pinUtcTimeZone() {
+        savedTimeZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+    }
+
+    @After
+    fun restoreTimeZone() {
+        savedTimeZone?.let(TimeZone::setDefault)
+    }
 
     @Test
     fun productionRichThread() {

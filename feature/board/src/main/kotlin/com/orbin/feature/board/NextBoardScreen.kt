@@ -12,8 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -78,7 +79,8 @@ fun NextBoardScreen(
     val retainedRefreshFailure by viewModel.catalogRefreshFailure.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val boardOptions by picker.options.collectAsStateWithLifecycle()
-    val configuration = LocalConfiguration.current
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
     val uriHandler = LocalUriHandler.current
     var query by rememberSaveable { mutableStateOf("") }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
@@ -108,7 +110,19 @@ fun NextBoardScreen(
             StoredCatalogMode.GRID -> CatalogMode.GRID
             StoredCatalogMode.CARD -> CatalogMode.CARD
         }
-    val wide = isWideWindow(configuration.screenWidthDp, configuration.screenHeightDp)
+    val wide =
+        with(density) {
+            isWideWindow(
+                windowSize.width
+                    .toDp()
+                    .value
+                    .toInt(),
+                windowSize.height
+                    .toDp()
+                    .value
+                    .toInt(),
+            )
+        }
     val load = boardCatalogLoadState(threads.itemCount, threads.loadState.refresh)
     val failure = (load.failure ?: retainedRefreshFailure)?.catalogFailure()
     val browserUrl = picker.boardWebUrl(viewModel.providerId, viewModel.boardId)

@@ -101,6 +101,12 @@ fun GalleryScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val mediaPageChanged by rememberUpdatedState(onMediaPageChanged)
+    LaunchedEffect(downloadState.errorMessage) {
+        downloadState.errorMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.consumeDownloadError()
+        }
+    }
 
     NextTheme(darkTheme = true) {
         if (media.isEmpty()) {
