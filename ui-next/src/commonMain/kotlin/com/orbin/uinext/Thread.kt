@@ -390,7 +390,9 @@ private fun ThreadJumpPills(
     onBackTo: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    if ((newLabel == null || onNew == null) && (backLabel == null || onBackTo == null)) return
+    val hasNewPill = newLabel != null && onNew != null
+    val hasBackPill = backLabel != null && onBackTo != null
+    if (!hasNewPill && !hasBackPill) return
     Row(
         modifier =
             modifier

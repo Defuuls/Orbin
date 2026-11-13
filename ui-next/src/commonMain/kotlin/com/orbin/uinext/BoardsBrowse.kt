@@ -572,11 +572,15 @@ private fun threadCountLabel(count: Int): String {
 }
 
 /** Whole thousands use "42k"; one decimal place is kept above 10,000 ("42.1k"). */
+private const val COMPACT_THREAD_COUNT_THRESHOLD = 10_000
+private const val THREAD_COUNT_TENTHS_DIVISOR = 100
+private const val THREAD_COUNT_DECIMAL_BASE = 10
+
 internal fun formatThreadCount(count: Int): String {
-    if (count < 10_000) return count.toString()
-    val tenths = count / 100
-    val whole = tenths / 10
-    val fraction = tenths % 10
+    if (count < COMPACT_THREAD_COUNT_THRESHOLD) return count.toString()
+    val tenths = count / THREAD_COUNT_TENTHS_DIVISOR
+    val whole = tenths / THREAD_COUNT_DECIMAL_BASE
+    val fraction = tenths % THREAD_COUNT_DECIMAL_BASE
     return if (fraction == 0) "${whole}k" else "$whole.${fraction}k"
 }
 
