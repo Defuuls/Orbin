@@ -32,6 +32,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
@@ -55,6 +57,7 @@ import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_close
+import com.orbin.ios.resources.ios_media_download_rest
 import com.orbin.ios.resources.ios_media_loop_off
 import com.orbin.ios.resources.ios_media_loop_on
 import com.orbin.ios.resources.ios_media_more_options
@@ -68,9 +71,9 @@ import com.orbin.ios.resources.ios_media_spoiler
 import com.orbin.ios.resources.ios_media_spoiler_reveal
 import com.orbin.ios.resources.ios_media_unmute
 import com.orbin.uinext.ReaderMediaAction
-import com.orbin.uinext.ReaderMediaBack
-import com.orbin.uinext.ReaderMediaTitle
+import com.orbin.uinext.ReaderMediaSpeedOptions
 import com.orbin.uinext.ReaderMediaToolbar
+import com.orbin.uinext.readerMediaSwipeToClose
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.exp
 
@@ -83,8 +86,8 @@ internal object MediaViewerTags {
 }
 
 /**
- * The thread's files full screen, one per page: swipe up or down between them, pinch or double-tap to zoom an
- * image, back (the edge swipe) or the close button to leave. Video and audio in a format the system
+ * The thread's files full screen, one per page: swipe vertically between files, pinch images to zoom,
+ * double-tap to save, and swipe sideways or use Close to leave. Video and audio in a format the system
  * player handles play on their page ([NativePlayer]). WebM uses WebKit on iOS 17.4+; older
  * systems offer the file in the browser.
  */
@@ -96,6 +99,7 @@ internal fun MediaViewer(
     onSave: (MediaAttachment) -> Boolean = { false },
     onPageChanged: (Int) -> Unit = {},
     playback: PlaybackSettings = PlaybackSettings(),
+    onDownloadRest: ((Int) -> Unit)? = null,
 ) {
     if (files.isEmpty()) {
         LaunchedEffect(Unit) { onClose() }
@@ -128,15 +132,32 @@ internal fun MediaViewer(
     }
     val current = files[selection.index]
     var muted by remember(playback.startMuted) { mutableStateOf(playback.startMuted && SessionAudio.muted) }
+    var playbackSpeed by rememberSaveable { mutableFloatStateOf(1f) }
+    val saveResults = remember { mutableStateMapOf<String, Boolean>() }
+
+    fun saveFile(
+        file: MediaAttachment,
+        key: String,
+    ) {
+        if (saveResults[key] == null) saveResults[key] = onSave(file)
+    }
     val loopOverrides = remember { mutableStateMapOf<String, Boolean>() }
     val revealedFiles = remember { mutableStateMapOf<String, Boolean>() }
     val currentRevealKey = "${selection.key}:${current.isSpoiler}"
     val currentRevealed = revealedFiles[currentRevealKey] ?: !current.isSpoiler
     val currentLoop = loopOverrides[selection.key] ?: playback.loopVideos
     val currentPlayable = current.playsInApp || (current.isWebM && supportsWebM)
+    val density = LocalDensity.current
+    var toolbarHeight by remember { mutableStateOf(56.dp) }
     val uriHandler = LocalUriHandler.current
     var moreMenu by remember(selection.key) { mutableStateOf(false) }
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Color.Black,
+            ).readerMediaSwipeToClose(close, toolbarHeight, if (currentPlayable) 160.dp else 0.dp),
+    ) {
         NativeMediaPreloadHost(preloader)
         // Files stack top to bottom, as in the Android viewer: swipe up for the next one.
         VerticalPager(
@@ -172,23 +193,23 @@ internal fun MediaViewer(
                     looping = loopOverrides[fileKey] ?: playback.loopVideos,
                     muted = muted,
                     onMuteChange = { muted = it },
+                    playbackSpeed = playbackSpeed,
+                    onDoubleTapSave = if (active) ({ saveFile(file, fileKey) }) else null,
                 )
             }
         }
-        ReaderMediaToolbar {
-            ReaderMediaBack(stringResource(Res.string.ios_media_close), close)
-            ReaderMediaTitle(
-                filename =
-                    if (currentRevealed) {
-                        current.originalFileName
-                    } else {
-                        stringResource(
-                            Res.string.ios_media_spoiler,
-                        )
-                    },
-                position = "${selection.index + 1}/${files.size}",
-                modifier = Modifier.weight(1f),
-            )
+        ReaderMediaToolbar(
+            filename =
+                if (currentRevealed) {
+                    current.originalFileName
+                } else {
+                    stringResource(Res.string.ios_media_spoiler)
+                },
+            position = "${selection.index + 1}/${files.size}",
+            closeLabel = stringResource(Res.string.ios_media_close),
+            onClose = close,
+            modifier = Modifier.onSizeChanged { toolbarHeight = with(density) { it.height.toDp() } },
+        ) {
             if (currentPlayable && currentRevealed) {
                 ReaderMediaAction(
                     imageVector =
@@ -201,7 +222,7 @@ internal fun MediaViewer(
                     onClick = { muted = SessionAudio.toggle(muted) },
                 )
             }
-            SaveButton(current, onSave)
+            SaveButton(saveResults[selection.key]) { saveFile(current, selection.key) }
             Box {
                 ReaderMediaAction(
                     imageVector = Icons.Filled.MoreVert,
@@ -220,7 +241,20 @@ internal fun MediaViewer(
                             },
                         )
                     }
+                    onDownloadRest?.let { downloadRest ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.ios_media_download_rest)) },
+                            onClick = {
+                                moreMenu = false
+                                downloadRest(selection.index)
+                            },
+                        )
+                    }
                     if (currentPlayable && currentRevealed) {
+                        ReaderMediaSpeedOptions(playbackSpeed) { speed ->
+                            playbackSpeed = speed
+                            moreMenu = false
+                        }
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -247,7 +281,7 @@ internal fun MediaViewer(
             onDismiss = { pencilMenu = false },
             actions =
                 listOf<Pair<String, () -> Unit>>(
-                    stringResource(Res.string.ios_media_save) to { onSave(current) },
+                    stringResource(Res.string.ios_media_save) to { saveFile(current, selection.key) },
                     stringResource(Res.string.ios_media_close) to close,
                 ),
             modifier = Modifier.align(Alignment.Center),
@@ -261,10 +295,9 @@ internal fun MediaViewer(
  */
 @Composable
 private fun SaveButton(
-    file: MediaAttachment,
-    onSave: (MediaAttachment) -> Boolean,
+    result: Boolean?,
+    onSave: () -> Unit,
 ) {
-    var result by remember(file.id, file.sourceUrl) { mutableStateOf<Boolean?>(null) }
     ReaderMediaAction(
         imageVector = Icons.Filled.FileDownload,
         label =
@@ -275,7 +308,7 @@ private fun SaveButton(
                     false -> Res.string.ios_media_not_saved
                 },
             ),
-        onClick = { result = onSave(file) },
+        onClick = onSave,
         enabled = result == null,
     )
 }
@@ -291,6 +324,8 @@ private fun MediaPage(
     looping: Boolean,
     muted: Boolean,
     onMuteChange: (Boolean) -> Unit,
+    playbackSpeed: Float,
+    onDoubleTapSave: (() -> Unit)?,
 ) {
     val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
     val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
@@ -304,7 +339,12 @@ private fun MediaPage(
         return
     }
     when {
-        file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE -> ZoomableImage(file, active)
+        file.type == MediaType.IMAGE || file.type == MediaType.ANIMATED_IMAGE ->
+            ZoomableImage(
+                file,
+                active,
+                onDoubleTapSave,
+            )
         // Only the visible page owns a native player; pager neighbours need no decoder.
         playable != null && !active -> MediaPoster(file)
         webm != null && supportsWebM && !active -> MediaPoster(file)
@@ -316,6 +356,8 @@ private fun MediaPage(
                 autoPlay = playback.autoplay,
                 initiallyMuted = muted,
                 onMuteIntentChange = onMuteChange,
+                playbackSpeed = playbackSpeed,
+                onDoubleTapSave = onDoubleTapSave,
                 preloader = preloader,
                 modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
             )
@@ -327,6 +369,8 @@ private fun MediaPage(
                 autoPlay = playback.autoplay,
                 initiallyMuted = muted,
                 onMuteIntentChange = onMuteChange,
+                playbackSpeed = playbackSpeed,
+                onDoubleTapSave = onDoubleTapSave,
                 loop = looping,
                 preloader = preloader,
             )
@@ -354,6 +398,7 @@ private fun MediaPoster(file: MediaAttachment) {
 private fun ZoomableImage(
     file: MediaAttachment,
     active: Boolean,
+    onDoubleTapSave: (() -> Unit)?,
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -370,11 +415,15 @@ private fun ZoomableImage(
             Modifier
                 .fillMaxSize()
                 .onSizeChanged { size = it }
-                .pointerInput(Unit) {
+                .pointerInput(onDoubleTapSave) {
                     detectTapGestures(
                         onDoubleTap = {
-                            scale = if (scale > 1f) 1f else DOUBLE_TAP_SCALE
-                            offset = Offset.Zero
+                            if (onDoubleTapSave != null) {
+                                onDoubleTapSave()
+                            } else {
+                                scale = if (scale > 1f) 1f else DOUBLE_TAP_SCALE
+                                offset = Offset.Zero
+                            }
                         },
                     )
                 }.pointerInput(Unit) {

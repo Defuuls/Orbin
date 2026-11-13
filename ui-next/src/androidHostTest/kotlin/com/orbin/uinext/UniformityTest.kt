@@ -4,8 +4,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.OrbinRadius
 import org.junit.Test
 import kotlin.math.pow
 
@@ -16,13 +16,12 @@ import kotlin.math.pow
 class UniformityTest {
     @Test
     fun `corner radius tokens maintain consistent social interface geometry`() {
-        assertThat(NextRadius.tight).isEqualTo(2.dp)
-        assertThat(NextRadius.control).isEqualTo(10.dp)
-        assertThat(NextRadius.tile).isEqualTo(4.dp)
-        assertThat(NextRadius.card).isEqualTo(6.dp)
-        assertThat(NextRadius.sheet).isEqualTo(16.dp)
-        assertThat(NextRadius.continuous).isEqualTo(6.dp)
-        assertThat(NextRadius.pill).isEqualTo(20.dp)
+        assertThat(OrbinRadius.compact).isEqualTo(2.dp)
+        assertThat(OrbinRadius.control).isEqualTo(10.dp)
+        assertThat(OrbinRadius.small).isEqualTo(4.dp)
+        assertThat(OrbinRadius.compactCard).isEqualTo(6.dp)
+        assertThat(OrbinRadius.sheet).isEqualTo(16.dp)
+        assertThat(OrbinRadius.pill).isEqualTo(20.dp)
     }
 
     @Test

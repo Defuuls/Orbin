@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,16 +17,20 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -42,7 +46,7 @@ import com.orbin.uinext.tokens.NextMaterials
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -60,6 +64,7 @@ fun OrbinDialog(
     dismissOnClickOutside: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val contentDensity = LocalDensity.current
     Dialog(
         onDismissRequest = onDismissRequest,
         properties =
@@ -69,12 +74,20 @@ fun OrbinDialog(
                 usePlatformDefaultWidth = true,
             ),
     ) {
-        OrbinCard(modifier = modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                content = content,
-            )
+        // A platform dialog installs its own density. Keep the already resolved text scale,
+        // including the iOS Dynamic Type correction, without multiplying it a second time.
+        CompositionLocalProvider(LocalDensity provides contentDensity) {
+            OrbinCard(modifier = modifier.fillMaxWidth()) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    content = content,
+                )
+            }
         }
     }
 }
@@ -87,7 +100,7 @@ fun OrbinDialogTitle(
 ) {
     Text(
         text = text,
-        style = ReaderType.appBarTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+        style = OrbinType.appBarTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
         color = reader.ink,
         modifier = modifier.semantics { heading() },
     )
@@ -101,7 +114,7 @@ fun OrbinDialogMessage(
 ) {
     Text(
         text = text,
-        style = ReaderType.body.withReaderFont(),
+        style = OrbinType.readerBody.withReaderFont(),
         color = reader.inkMuted,
         modifier = modifier,
     )
@@ -145,7 +158,7 @@ fun OrbinFilledButton(
     ) {
         Text(
             text = label,
-            style = ReaderType.label.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+            style = OrbinType.label.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
             color = ink,
             textAlign = TextAlign.Center,
         )
@@ -175,7 +188,7 @@ fun OrbinTextButton(
     ) {
         Text(
             text = label,
-            style = ReaderType.label.withReaderFont().copy(fontWeight = FontWeight.Medium),
+            style = OrbinType.label.withReaderFont().copy(fontWeight = FontWeight.Medium),
             color = if (enabled) reader.accent else reader.inkMuted,
             textAlign = TextAlign.Center,
         )
@@ -199,10 +212,10 @@ fun OrbinConfirmDialog(
     OrbinDialog(onDismissRequest = onDismiss) {
         OrbinDialogTitle(title)
         OrbinDialogMessage(message)
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OrbinTextButton(label = dismissLabel, onClick = onDismiss)
             OrbinFilledButton(
@@ -228,6 +241,7 @@ fun OrbinActionSheet(
     actions: List<NextSheetAction>,
     onDismiss: () -> Unit,
 ) {
+    val contentDensity = LocalDensity.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val ios = LocalNextPlatform.current == NextPlatform.IOS
     val shape = RoundedCornerShape(topStart = OrbinRadius.panel, topEnd = OrbinRadius.panel)
@@ -251,42 +265,44 @@ fun OrbinActionSheet(
             )
         },
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = title,
-                style = ReaderType.meta.withReaderFont(),
-                color = reader.inkMuted,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            )
-            actions.forEach { action ->
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .widthIn(min = MIN_TOUCH_TARGET)
-                            .heightIn(min = MIN_TOUCH_TARGET)
-                            .clip(RoundedCornerShape(OrbinRadius.thumbnail))
-                            .nextClickable(
-                                role = Role.Button,
-                                onClick = {
-                                    action.onClick()
-                                    onDismiss()
-                                },
-                            ).padding(horizontal = 8.dp, vertical = 8.dp),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    Text(
-                        text = action.label,
-                        style = ReaderType.body.withReaderFont().copy(fontWeight = FontWeight.Medium),
-                        color = reader.ink,
-                    )
+        CompositionLocalProvider(LocalDensity provides contentDensity) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = title,
+                    style = OrbinType.meta.withReaderFont(),
+                    color = reader.inkMuted,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+                actions.forEach { action ->
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .widthIn(min = MIN_TOUCH_TARGET)
+                                .heightIn(min = MIN_TOUCH_TARGET)
+                                .clip(RoundedCornerShape(OrbinRadius.thumbnail))
+                                .nextClickable(
+                                    role = Role.Button,
+                                    onClick = {
+                                        action.onClick()
+                                        onDismiss()
+                                    },
+                                ).padding(horizontal = 8.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            text = action.label,
+                            style = OrbinType.readerBody.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                            color = reader.ink,
+                        )
+                    }
                 }
             }
         }

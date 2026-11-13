@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="orbin_search_idle_title">Find a thread</string>
+    <string name="orbin_search_no_matches_hint">Try another word in the boards you follow.</string>
+</resources>

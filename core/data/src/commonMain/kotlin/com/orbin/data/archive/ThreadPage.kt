@@ -195,7 +195,7 @@ private fun tagsFor(style: InlineStyle): Pair<String, String> =
     when (style) {
         InlineStyle.GREENTEXT -> "<span class=\"green\">" to "</span>"
         InlineStyle.QUOTE_TEXT -> "<span class=\"pink\">" to "</span>"
-        InlineStyle.SPOILER -> "<span class=\"spoiler\">" to "</span>"
+        InlineStyle.SPOILER -> SPOILER_OPEN_TAG to "</span></details>"
         InlineStyle.BOLD -> "<b>" to "</b>"
         InlineStyle.ITALIC -> "<i>" to "</i>"
         InlineStyle.UNDERLINE -> "<u>" to "</u>"
@@ -220,15 +220,23 @@ internal fun StringBuilder.appendEscaped(text: String): StringBuilder {
 
 private const val TITLE_LENGTH = 80
 
-/** The archive's stylesheet: Coral reader colors, or dark where the reader prefers it. */
+// The browser hides all descendants while closed and supplies keyboard/touch activation without script.
+private const val SPOILER_OPEN_TAG =
+    "<details class=\"spoiler\"><summary>Spoiler</summary><span class=\"spoiler-content\">"
+
+/** Coral reader roles, with light ink flattened onto the white card to keep it opaque. */
 internal const val ARCHIVE_CSS = """:root {
-  --bg: #ffffff; --raised: #ffffff; --ink: #191c19; --muted: #404941; --line: #c0c9bf;
-  --accent: #c73e4e; --green: #2f7d32; --pink: #b0306a;
+  --bg: #ffffff; --raised: #ffffff; --placeholder: #f5f5f5;
+  --ink: #212121; --muted: #646464; --line: #0000001e;
+  --accent: #c73e4e; --link: #c73e4e; --author: #1a1a1a; --subject: #1a1a1a;
+  --green: #2e7d32; --error: #b3261e; --spoiler: #2b2b2b;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #1c1c1e; --raised: #1c271e; --ink: #e0e8e0; --muted: #c0c9bf; --line: #404941;
-    --accent: #ff8a96; --green: #8bc98d; --pink: #f08cb8; }
+  :root { --bg: #1c1c1e; --raised: #2c2c2e; --placeholder: #2c2c2e;
+    --ink: #ffffff; --muted: #c5c8c6; --line: #ffffff1e;
+    --accent: #ff8a96; --link: #ff9aa5; --author: #ffb0b8; --subject: #ffb0b8;
+    --green: #81c784; --error: #f2b8b5; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
@@ -236,27 +244,31 @@ body { margin: 0; background: var(--bg); color: var(--ink);
 header, main, footer { max-width: 820px; margin: 0 auto; padding: 16px; }
 h1 { font-size: 1.4rem; margin: 4px 0; overflow-wrap: anywhere; }
 .board, .meta, footer { color: var(--muted); font-size: 0.85rem; margin: 0; }
-a { color: var(--accent); }
+a { color: var(--link); }
 .post { background: var(--raised); border: 1px solid var(--line); border-radius: 12px;
   padding: 12px 14px; margin: 0 0 10px; scroll-margin-top: 12px; }
 .post:target { outline: 2px solid var(--accent); }
 .op { border-color: var(--accent); }
 .head { font-size: 0.85rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
-.subject { color: var(--ink); font-weight: 600; }
-.name { color: var(--ink); font-weight: 600; }
+.subject { color: var(--subject); font-weight: 600; }
+.name { color: var(--author); font-weight: 600; }
 .no { color: var(--muted); text-decoration: none; }
 .files { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 4px; }
 figure { margin: 0; max-width: 100%; }
-img, video { display: block; max-width: min(100%, 360px); max-height: 360px; border-radius: 8px; background: var(--line); }
+img, video { display: block; max-width: min(100%, 360px); max-height: 360px;
+  border-radius: 8px; background: var(--placeholder); }
 audio { max-width: 100%; }
 figcaption { font-size: 0.75rem; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
-.missing { color: var(--pink); }
+.missing { color: var(--error); }
 blockquote { margin: 8px 0 0; overflow-wrap: anywhere; }
-.green { color: var(--green); }
-.pink { color: var(--pink); }
-.quote { color: var(--accent); }
-.spoiler { background: var(--ink); color: var(--ink); border-radius: 3px; }
-.spoiler:hover, .spoiler:focus { color: var(--bg); }
+.green, .pink { color: var(--green); }
+.quote { color: var(--link); }
+.spoiler { display: inline-block; max-width: 100%; vertical-align: baseline;
+  background: var(--raised); border-radius: 4px; }
+.spoiler > summary { padding: 4px 8px; border-radius: 4px; cursor: pointer;
+  background: var(--spoiler); color: #ffffff; }
+.spoiler > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.spoiler-content { display: block; padding: 4px 8px; }
 code { font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; }
 .replies { font-size: 0.8rem; color: var(--muted); margin: 8px 0 0; }
 footer { text-align: center; padding-bottom: 32px; }

@@ -30,7 +30,7 @@ import com.orbin.uinext.NextTheme
  */
 @Composable
 fun NextAllMediaScreen(
-    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
+    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String, thumbnailUrl: String) -> Unit,
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -45,6 +45,7 @@ fun NextAllMediaScreen(
         uiState = uiState,
         isRefreshing = isRefreshing,
         showSizeControl = true,
+        showHeader = false,
         onRefresh = viewModel::refresh,
         onOpenMedia = onOpenMedia,
         onSave = viewModel::save,
@@ -69,11 +70,12 @@ fun NextAllMediaContent(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     showSizeControl: Boolean = false,
     onRefresh: () -> Unit,
-    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String) -> Unit,
+    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String, thumbnailUrl: String) -> Unit,
     modifier: Modifier = Modifier,
     onSave: ((AllMediaItem) -> Unit)? = null,
     title: String? = null,
     onOpenSaved: (() -> Unit)? = null,
+    showHeader: Boolean = true,
 ) {
     val wallTitle = title ?: stringResource(R.string.next_media_title)
     val cells = remember(uiState.items) { uiState.items.map { it.toCell() } }
@@ -118,6 +120,7 @@ fun NextAllMediaContent(
                 deepScanned = uiState.threadsScanned,
                 deepTotal = uiState.threadsTotal,
                 showSizeControl = showSizeControl,
+                showHeader = showHeader,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 title = title,
@@ -130,6 +133,7 @@ fun NextAllMediaContent(
                             item.key.board.value,
                             item.key.thread.value,
                             item.attachment.id,
+                            item.attachment.thumbnailUrl,
                         )
                     }
                 },

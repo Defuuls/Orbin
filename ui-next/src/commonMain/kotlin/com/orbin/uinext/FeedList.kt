@@ -11,7 +11,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_threads_count
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
 
 /** Optional grouping remains available to callers that need a board-specific reading mode. */
@@ -24,13 +24,13 @@ internal fun FeedGroupHeading(
     Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 12.dp)) {
         Text(
             if (title == board) board else "$title $board",
-            style = NextType.titleMedium,
+            style = OrbinType.titleMedium,
             color = next.ink,
             modifier = Modifier.semantics { heading() },
         )
         Text(
             pluralStringResource(Res.plurals.next_threads_count, count, count),
-            style = NextType.footnote,
+            style = OrbinType.footnote,
             color = next.muted,
         )
     }

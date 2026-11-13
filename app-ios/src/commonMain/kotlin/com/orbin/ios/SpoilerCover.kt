@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_spoiler
 import com.orbin.uinext.ReaderIcons
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.withReaderFont
 import org.jetbrains.compose.resources.stringResource
 
@@ -47,7 +47,7 @@ internal fun SpoilerCover(
             Text(
                 text = text,
                 color = Color.White,
-                style = ReaderType.label.withReaderFont(),
+                style = OrbinType.label.withReaderFont(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp),
             )

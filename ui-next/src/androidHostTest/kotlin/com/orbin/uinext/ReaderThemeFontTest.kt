@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.LocalNextFontFamily
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -63,7 +63,7 @@ class ReaderThemeFontTest(
             val originalResolver = LocalFontFamilyResolver.current
             NextTheme(platform = platform, fontScale = 1.3f) {
                 val family = LocalNextFontFamily.current
-                val body = NextType.body.fontFamily
+                val body = OrbinType.body.fontFamily
                 val material = MaterialTheme.typography.bodyLarge.fontFamily
                 val fontScale = LocalDensity.current.fontScale
                 val resolver = LocalFontFamilyResolver.current

@@ -18,7 +18,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -162,7 +162,7 @@ class SocialReaderScreenshotTest {
                                 }
                             }
                         }
-                    Text(text, style = NextType.body, color = next.ink)
+                    Text(text, style = OrbinType.body, color = next.ink)
                 },
                 onBack = {},
                 onWatch = {},

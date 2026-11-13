@@ -49,7 +49,7 @@ import com.orbin.uinext.resources.next_onboarding_subtitle
 import com.orbin.uinext.resources.next_onboarding_title
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -117,13 +117,13 @@ fun OnboardingScreen(
             OrbinWordmark(logoSize = 32.dp)
             Text(
                 text = stringResource(Res.string.next_onboarding_title),
-                style = ReaderType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
                 color = reader.ink,
                 modifier = Modifier.semantics { heading() },
             )
             Text(
                 text = stringResource(Res.string.next_onboarding_subtitle),
-                style = ReaderType.stateBody.withReaderFont(),
+                style = OrbinType.stateBody.withReaderFont(),
                 color = reader.inkMuted,
             )
         }
@@ -136,7 +136,7 @@ fun OnboardingScreen(
         if (errorMessage != null) {
             Text(
                 text = errorMessage,
-                style = ReaderType.meta.withReaderFont(),
+                style = OrbinType.meta.withReaderFont(),
                 color = reader.error,
                 modifier =
                     Modifier
@@ -167,7 +167,7 @@ fun OnboardingScreen(
                                 totalFollowing,
                             )
                     },
-                style = ReaderType.meta.withReaderFont(),
+                style = OrbinType.meta.withReaderFont(),
                 color = reader.inkMuted,
                 modifier = Modifier.weight(1f),
             )
@@ -215,7 +215,7 @@ private fun SiteSelector(
                     Text(
                         text = name,
                         style =
-                            ReaderType.label.withReaderFont().copy(
+                            OrbinType.label.withReaderFont().copy(
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                             ),
                         color =
@@ -309,13 +309,13 @@ private fun BoardRow(
                         text = "/${board.id}/",
                         color = reader.accent,
                         fontWeight = FontWeight.Bold,
-                        style = ReaderType.rowTitle.withReaderFont(),
+                        style = OrbinType.rowTitle.withReaderFont(),
                     )
                     Text(
                         text = board.title,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        style = ReaderType.body.withReaderFont(),
+                        style = OrbinType.readerBody.withReaderFont(),
                         color = reader.ink,
                         modifier = Modifier.weight(1f, fill = false),
                     )
@@ -325,7 +325,7 @@ private fun BoardRow(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = reader.inkMuted,
-                    style = ReaderType.meta.withReaderFont(),
+                    style = OrbinType.meta.withReaderFont(),
                 )
             }
             Box(Modifier.clearAndSetSemantics {}) {

@@ -1,8 +1,6 @@
 package com.orbin.uinext
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -19,20 +17,20 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_feed_more
+import com.orbin.uinext.resources.reader_feed_open_board
 import com.orbin.uinext.resources.reader_feed_open_media
+import com.orbin.uinext.resources.reader_feed_post_metadata
+import com.orbin.uinext.resources.reader_feed_save
+import com.orbin.uinext.resources.reader_feed_saved_while_watching
+import com.orbin.uinext.resources.reader_feed_share
+import com.orbin.uinext.resources.reader_feed_unsave
+import com.orbin.uinext.resources.reader_feed_unwatch
+import com.orbin.uinext.resources.reader_feed_view_replies
+import com.orbin.uinext.resources.reader_feed_view_videos
+import com.orbin.uinext.resources.reader_feed_watch
 import com.orbin.uinext.resources.reader_reveal_spoiler
-import com.orbin.uinext.resources.social_feed_more
-import com.orbin.uinext.resources.social_feed_post_metadata
-import com.orbin.uinext.resources.social_feed_save
-import com.orbin.uinext.resources.social_feed_saved_while_watching
-import com.orbin.uinext.resources.social_feed_share
-import com.orbin.uinext.resources.social_feed_unsave
-import com.orbin.uinext.resources.social_feed_unwatch
-import com.orbin.uinext.resources.social_feed_view_replies
-import com.orbin.uinext.resources.social_feed_view_videos
-import com.orbin.uinext.resources.social_feed_watch
-import com.orbin.uinext.resources.tiktok_feed_open_board
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 @Immutable
@@ -64,7 +62,7 @@ internal fun ReaderFeedItem(
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val menu = readerFeedRowMenu(row, actions, covered) { revealed = true }
     var expanded by rememberSaveable(row.id, menu.isNotEmpty()) { mutableStateOf(false) }
-    val optionsLabel = stringResource(Res.string.social_feed_more, row.subject)
+    val optionsLabel = stringResource(Res.string.reader_feed_more, row.subject)
     val openOptions: (() -> Unit)? = if (menu.isEmpty()) null else ({ expanded = true })
     val customActions =
         menu.filter { it.enabled && it.label != mediaLabel && it.label != revealLabel }.map { item ->
@@ -75,7 +73,7 @@ internal fun ReaderFeedItem(
         }
     val metadata =
         if (row.threadNumber.isNotEmpty()) {
-            stringResource(Res.string.social_feed_post_metadata, row.sourceAndBoard, row.threadNumber, activity)
+            stringResource(Res.string.reader_feed_post_metadata, row.sourceAndBoard, row.threadNumber, activity)
         } else {
             listOf(row.sourceAndBoard, activity).filter(String::isNotBlank).joinToString(" · ")
         }
@@ -103,8 +101,8 @@ internal fun ReaderFeedItem(
             ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
         }
     } else {
-        Column(Modifier.fillMaxWidth().background(reader.background)) {
-            Box(Modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth()) {
+            OrbinCard(modifier = Modifier.fillMaxWidth(), elevated = false) {
                 CatalogRow(
                     row = row,
                     selected = false,
@@ -122,10 +120,10 @@ internal fun ReaderFeedItem(
                     showDivider = false,
                     onLongClick = openOptions,
                     onLongClickLabel = optionsLabel,
+                    containerColor = if (next.dark) reader.surfaceVariant else reader.background,
                 )
-                ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
             }
-            ReaderHairline()
+            ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
         }
     }
 }
@@ -149,31 +147,31 @@ private fun readerFeedRowMenu(
         actions.onOpenReplies?.takeIf { actions.repliesOpenComments || !covered }?.let { open ->
             val label =
                 if (actions.repliesOpenComments) {
-                    Res.string.social_feed_view_replies
+                    Res.string.reader_feed_view_replies
                 } else {
-                    Res.string.social_feed_view_videos
+                    Res.string.reader_feed_view_videos
                 }
             add(ReaderMenuItem(stringResource(label, row.subject)) { open(row) })
         }
         actions.onOpenBoard?.let { open ->
-            add(ReaderMenuItem(stringResource(Res.string.tiktok_feed_open_board, row.board)) { open(row) })
+            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_board, row.board)) { open(row) })
         }
         actions.onToggleWatch?.let { toggle ->
-            val label = if (row.watched) Res.string.social_feed_unwatch else Res.string.social_feed_watch
+            val label = if (row.watched) Res.string.reader_feed_unwatch else Res.string.reader_feed_watch
             add(ReaderMenuItem(stringResource(label, row.subject)) { toggle(row) })
         }
         actions.onToggleSaved?.let { toggle ->
             val lockedSaved = row.bookmarked && row.watched
             val label =
                 when {
-                    lockedSaved -> Res.string.social_feed_saved_while_watching
-                    row.bookmarked -> Res.string.social_feed_unsave
-                    else -> Res.string.social_feed_save
+                    lockedSaved -> Res.string.reader_feed_saved_while_watching
+                    row.bookmarked -> Res.string.reader_feed_unsave
+                    else -> Res.string.reader_feed_save
                 }
             add(ReaderMenuItem(stringResource(label, row.subject), enabled = !lockedSaved) { toggle(row) })
         }
         actions.onShare?.let { share ->
-            add(ReaderMenuItem(stringResource(Res.string.social_feed_share, row.subject)) { share(row) })
+            add(ReaderMenuItem(stringResource(Res.string.reader_feed_share, row.subject)) { share(row) })
         }
     }
 
@@ -184,9 +182,9 @@ private fun ReaderFeedMenu(
     expanded: Boolean,
     onDismiss: () -> Unit,
 ) {
-    val watchingLabel = stringResource(Res.string.social_feed_unwatch, row.subject)
-    val savedLabel = stringResource(Res.string.social_feed_unsave, row.subject)
-    val lockedSavedLabel = stringResource(Res.string.social_feed_saved_while_watching, row.subject)
+    val watchingLabel = stringResource(Res.string.reader_feed_unwatch, row.subject)
+    val savedLabel = stringResource(Res.string.reader_feed_unsave, row.subject)
+    val lockedSavedLabel = stringResource(Res.string.reader_feed_saved_while_watching, row.subject)
     DropdownMenu(
         expanded = expanded && items.isNotEmpty(),
         onDismissRequest = onDismiss,
@@ -200,7 +198,7 @@ private fun ReaderFeedMenu(
                 text = {
                     Text(
                         item.label,
-                        style = ReaderType.stateBody.withReaderFont(),
+                        style = OrbinType.stateBody.withReaderFont(),
                         color =
                             when {
                                 !item.enabled -> reader.inkMuted

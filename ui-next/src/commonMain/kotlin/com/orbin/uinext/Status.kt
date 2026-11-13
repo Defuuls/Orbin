@@ -32,9 +32,9 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_status_loading
 import com.orbin.uinext.resources.next_status_retry
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /** Centered quiet spinner for in-pane loading (Search / Onboarding boards) — Next arc, not M3. */
@@ -62,7 +62,7 @@ fun NextEmpty(
     ) {
         Text(
             text = message,
-            style = NextType.body,
+            style = OrbinType.body,
             color = next.muted,
             textAlign = TextAlign.Center,
         )
@@ -83,7 +83,7 @@ fun NextError(
     ) {
         Text(
             text = message,
-            style = NextType.body,
+            style = OrbinType.body,
             color = next.muted,
             textAlign = TextAlign.Center,
         )
@@ -109,7 +109,7 @@ fun NextLinearProgress(
     modifier: Modifier = Modifier,
     progress: Float? = null,
 ) {
-    val shape = RoundedCornerShape(NextRadius.pill)
+    val shape = RoundedCornerShape(OrbinRadius.pill)
     BoxWithConstraints(
         modifier =
             modifier

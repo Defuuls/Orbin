@@ -180,7 +180,7 @@ private fun MediaTimeBar(
     val scrubbing by rememberUpdatedState(onScrubbingChange)
     Canvas(
         modifier
-            .height(26.dp)
+            .height(48.dp)
             .testTag(ReaderMediaControlsTags.TIME_BAR)
             .semantics {
                 progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)

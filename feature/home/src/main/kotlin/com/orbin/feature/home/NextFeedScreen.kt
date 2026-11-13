@@ -66,11 +66,29 @@ fun NextFeedScreen(
     onSelectSource: (Int) -> Unit = {},
     onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
     onOpenThreadVideos: (provider: String, board: String, thread: Long, title: String) -> Unit = onOpenThread,
+    onOpenMedia: (
+        (
+            provider: String,
+            board: String,
+            thread: Long,
+            attachmentId: String,
+            thumbnailUrl: String,
+        ) -> Unit
+    )? = null,
+    downloadBadge: Int? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mode by viewModel.feedMode.collectAsStateWithLifecycle()
     LaunchedEffect(providerFilter) { viewModel.setProviderFilter(providerFilter) }
     val actionsViewModel: FeedActionsViewModel = hiltViewModel()
+    val activeDownloads =
+        if (downloadBadge != null) {
+            downloadBadge
+        } else {
+            val badgeModel: FeedDownloadBadgeViewModel = hiltViewModel()
+            val count by badgeModel.activeCount.collectAsStateWithLifecycle()
+            count
+        }
     val bookmarks by actionsViewModel.bookmarks.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
@@ -195,6 +213,7 @@ fun NextFeedScreen(
                 query = localQuery,
                 onQueryChange = { localQuery = it },
                 mode = catalogMode,
+                downloadBadge = activeDownloads,
                 onModeChange = { selected ->
                     viewModel.setCatalogMode(
                         if (selected == CatalogMode.GRID) StoredCatalogMode.GRID else StoredCatalogMode.LIST,
@@ -249,8 +268,24 @@ fun NextFeedScreen(
                     }
                 },
                 onOpenMedia = { row ->
-                    byId[row.id]?.let {
-                        onOpenThreadVideos(it.key.provider.value, it.key.board.value, it.key.thread.value, it.title)
+                    byId[row.id]?.let { entry ->
+                        val attachment = entry.attachment
+                        if (onOpenMedia != null && attachment != null) {
+                            onOpenMedia(
+                                entry.key.provider.value,
+                                entry.key.board.value,
+                                entry.key.thread.value,
+                                attachment.id,
+                                attachment.thumbnailUrl,
+                            )
+                        } else {
+                            onOpenThreadVideos(
+                                entry.key.provider.value,
+                                entry.key.board.value,
+                                entry.key.thread.value,
+                                entry.title,
+                            )
+                        }
                     }
                 },
                 repliesOpenComments = settings.openThreadComments,

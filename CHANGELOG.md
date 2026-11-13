@@ -6,12 +6,32 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [205-Nopales] - 2026-11-13
+
+### Added
+- Shipped the Coral card-stack app icon, matching splash artwork, and in-app branding.
+- Completed Coral layouts across Feed, Search, Downloads, Settings, saved and watched collections, history, media walls, and two-pane browsing on Android and iOS.
+- Added inline Feed layout controls, live download badges, persistent primary navigation, and a scroll thumb for long threads.
+- Added persistent media download controls, double-tap saving, swipe dismissal, playback-speed options, and downloading the rest of a thread.
+
+### Changed
+- Consolidated shared typography, corner radii, and reader-facing strings while keeping the app read-only.
+- Kept first-run board setup, followed-board Feed scope, saved layout preferences, and system Dynamic Type behavior across the redesigned screens.
+
 ### Fixed
+- Matched Android and iOS status-bar icons to the white Coral header while retaining light icons over full-screen media.
+- Preserved the surrounding text scale in dialogs and kept long actions visible when space is limited.
+- Separated media titles and counters from touch controls in narrow large-text layouts, including right-to-left text.
+- Opened the selected Feed or catalog attachment using source-qualified identifiers and exact thumbnail anchors, including Lynx sources.
+- Kept media navigation separate from the thread-comments preference and avoided inserting a comments page beneath the media viewer.
+- Removed duplicate accessibility announcements from the wordmark and primary navigation, and kept large-text source labels readable.
 - Retried Android media downloads after a network error, a timeout, or an HTTP 408, 429 or 5xx, instead of marking them permanently failed, and resumed a partial file with a Range request when the server supports it. Downloads wait for a network connection, back off between attempts, and at most three run at once to the same host, through the same rate-limit handling as video playback.
 - Removed the 30-second overall request timeout on the shared iOS HTTP client so a large download or media transfer is no longer cut off mid-transfer; stalled connections still time out after 30 seconds.
 - Stopped a second save of the same file from queueing another download when one is already queued, running, or completed and still on the device. A failed save, or a completed one whose file has been deleted, is retried on the existing record.
 
 ### Testing
+- Added normal and 200% text-scale regressions for dialog windows and narrow right-to-left media toolbars.
+- Expanded shared UI, download-queue, media-selection, playback, gesture, navigation, and accessibility regressions for the completed redesign.
 - Added unit tests for download retry versus permanent-failure classification, for HTTP Range resume (206 append, 200 restart, 416 complete or restart), and for the per-host download cap and WorkManager network constraint.
 - Added unit tests that enqueueing the same URL and path twice keeps a single record, re-queues a failed or missing file, and leaves a different folder as a separate download.
 - Added a host stress test that queues 100 downloads through 429, 503, and mid-body disconnects, and requires every file to finish once, with no duplicate enqueues and no partial body in the published folder.
@@ -3098,7 +3118,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v204-Moringa...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v205-Nopales...HEAD
+[205-Nopales]: https://github.com/Defuuls/Orbin/compare/v204-Moringa...v205-Nopales
 [204-Moringa]: https://github.com/Defuuls/Orbin/compare/v203-Chaya...v204-Moringa
 [203-Chaya]: https://github.com/Defuuls/Orbin/compare/v202-Arracacha...v203-Chaya
 [202-Arracacha]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...v202-Arracacha

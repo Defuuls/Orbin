@@ -18,8 +18,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.ReaderMediaControls
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 
 // The viewer's overlay controls, scrub bubble, skip labels and passive progress line, drawn over
 // [VideoPlayer].
@@ -79,10 +79,10 @@ internal fun SkipLabel(
     Text(
         text = if (seconds > 0) "+${seconds}s" else "\u2212${-seconds}s",
         color = Color.White,
-        style = NextType.body,
+        style = OrbinType.body,
         modifier =
             modifier
-                .clip(RoundedCornerShape(NextRadius.pill))
+                .clip(RoundedCornerShape(OrbinRadius.pill))
                 .background(Color.Black.copy(alpha = SKIP_LABEL_FILL_ALPHA))
                 .padding(horizontal = 16.dp, vertical = 8.dp),
     )

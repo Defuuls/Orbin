@@ -28,9 +28,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.NextRadius
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 
 /**
  * Modern Material 3 text field for forms.
@@ -50,7 +50,7 @@ fun NextTextField(
     leading: @Composable (() -> Unit)? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
-    val shape = RoundedCornerShape(NextRadius.control)
+    val shape = RoundedCornerShape(OrbinRadius.control)
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -62,9 +62,9 @@ fun NextTextField(
                 },
         enabled = enabled,
         readOnly = readOnly,
-        textStyle = NextType.body.copy(color = next.ink),
-        label = label?.let { { Text(it, style = NextType.sectionHeader) } },
-        placeholder = placeholder?.let { { Text(it, style = NextType.body, color = next.faint) } },
+        textStyle = OrbinType.body.copy(color = next.ink),
+        label = label?.let { { Text(it, style = OrbinType.sectionHeader) } },
+        placeholder = placeholder?.let { { Text(it, style = OrbinType.body, color = next.faint) } },
         leadingIcon = leading,
         trailingIcon = trailing,
         singleLine = singleLine,
@@ -103,7 +103,7 @@ fun NextToggleRow(
             modifier
                 .fillMaxWidth()
                 .heightIn(min = MIN_TOUCH_TARGET)
-                .clip(RoundedCornerShape(NextRadius.control))
+                .clip(RoundedCornerShape(OrbinRadius.control))
                 .background(next.raised)
                 .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
                 .padding(horizontal = NextSpace.rowX, vertical = 10.dp),
@@ -112,7 +112,7 @@ fun NextToggleRow(
     ) {
         Text(
             text = label,
-            style = NextType.body,
+            style = OrbinType.body,
             color = next.ink,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -140,12 +140,12 @@ fun NextSelect(
     var expanded by remember { mutableStateOf(false) }
     val display =
         options.getOrNull(selectedIndex)?.takeIf { selectedIndex >= 0 } ?: placeholder
-    val shape = RoundedCornerShape(NextRadius.control)
+    val shape = RoundedCornerShape(OrbinRadius.control)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
-            style = NextType.sectionHeader,
+            style = OrbinType.sectionHeader,
             color = next.muted,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp),
         )
@@ -164,7 +164,7 @@ fun NextSelect(
         ) {
             Text(
                 text = display.ifEmpty { placeholder },
-                style = NextType.body,
+                style = OrbinType.body,
                 color = if (display.isEmpty()) next.faint else next.ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -172,7 +172,7 @@ fun NextSelect(
             )
             Text(
                 text = if (expanded) "▴" else "▾",
-                style = NextType.footnote,
+                style = OrbinType.footnote,
                 color = next.muted,
             )
         }
@@ -182,7 +182,7 @@ fun NextSelect(
                     Modifier
                         .fillMaxWidth()
                         .padding(top = 6.dp)
-                        .clip(RoundedCornerShape(NextRadius.card))
+                        .clip(RoundedCornerShape(OrbinRadius.compactCard))
                         .background(next.raised),
             ) {
                 options.forEachIndexed { index, option ->
@@ -218,7 +218,7 @@ private fun NextSelectOptionRow(
     ) {
         Text(
             text = label,
-            style = NextType.body,
+            style = OrbinType.body,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) next.accent else next.ink,
             maxLines = 2,
@@ -228,7 +228,7 @@ private fun NextSelectOptionRow(
         if (selected) {
             Text(
                 text = "✓",
-                style = NextType.footnote,
+                style = OrbinType.footnote,
                 fontWeight = FontWeight.SemiBold,
                 color = next.accent,
             )

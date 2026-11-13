@@ -61,7 +61,7 @@ import com.orbin.uinext.resources.next_snackbar_dismiss
 import com.orbin.uinext.tokens.NextMotion
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
@@ -380,7 +380,7 @@ private fun NextSnackbarToast(data: NextSnackbarData) {
         ) {
             Text(
                 text = data.message,
-                style = ReaderType.body.withReaderFont(),
+                style = OrbinType.readerBody.withReaderFont(),
                 color = reader.ink,
                 // The row owns the live announcement; UIKit must not repeat the child text.
                 modifier = Modifier.weight(1f, fill = false).clearAndSetSemantics {},

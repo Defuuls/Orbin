@@ -8,9 +8,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
@@ -20,6 +23,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -44,9 +50,7 @@ class ReaderMediaChromeTest {
         compose.setContent {
             NextTheme {
                 Box(Modifier.width(390.dp).background(Color.White)) {
-                    ReaderMediaToolbar {
-                        ReaderMediaBack("Back") { actions += "back" }
-                        ReaderMediaTitle("selected.mp4", "2/7", Modifier.weight(1f))
+                    ReaderMediaToolbar("selected.mp4", "2/7", "Close", { actions += "close" }) {
                         ReaderMediaAction(Icons.AutoMirrored.Filled.VolumeOff, "Unmute", { actions += "mute" })
                         ReaderMediaAction(Icons.Filled.FileDownload, "Save", { actions += "save" })
                         ReaderMediaAction(Icons.Filled.MoreVert, "More", { actions += "more" }, overflow = true)
@@ -57,14 +61,14 @@ class ReaderMediaChromeTest {
         val bar = compose.onNodeWithTag(ReaderMediaToolbarTags.CONTENT).fetchSemanticsNode().boundsInRoot
         assertEquals(390f, bar.width, 0.1f)
         assertEquals(56f, bar.height, 0.1f)
-        val back = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
+        val back = compose.onNodeWithContentDescription("Close").fetchSemanticsNode().boundsInRoot
         val mute = compose.onNodeWithContentDescription("Unmute").fetchSemanticsNode().boundsInRoot
         val save = compose.onNodeWithContentDescription("Save").fetchSemanticsNode().boundsInRoot
         val more = compose.onNodeWithContentDescription("More").fetchSemanticsNode().boundsInRoot
         assertEquals(56f, back.width, 0.1f)
         assertEquals(50f, mute.width, 0.1f)
         assertEquals(50f, save.width, 0.1f)
-        assertEquals(44f, more.width, 0.1f)
+        assertEquals(48f, more.width, 0.1f)
         assertTrue(back.right < mute.left)
         assertEquals(mute.right, save.left, 0.1f)
         assertEquals(save.right, more.left, 0.1f)
@@ -78,10 +82,83 @@ class ReaderMediaChromeTest {
         )
         val pixels = compose.onNodeWithTag(ReaderMediaToolbarTags.BAR).captureToImage().toPixelMap()
         assertEquals(120f / 255, pixels[0, 0].red, 0.01f)
-        listOf("Back", "Unmute", "Save", "More").forEach {
+        listOf("Close", "Unmute", "Save", "More").forEach {
             compose.onNodeWithContentDescription(it).performClick()
         }
-        compose.runOnIdle { assertEquals(listOf("back", "mute", "save", "more"), actions) }
+        compose.runOnIdle { assertEquals(listOf("close", "mute", "save", "more"), actions) }
+    }
+
+    @Test
+    fun mediaTitleHonorsLargeDeviceTypeWithoutOverlappingItsSubtitle() {
+        compose.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f, fontScale = 2f)) {
+                NextTheme {
+                    Box(Modifier.width(390.dp)) {
+                        ReaderMediaToolbar("selected.mp4", "2/7", "Close", {}) {
+                            ReaderMediaAction(Icons.Filled.FileDownload, "Save", {})
+                        }
+                    }
+                }
+            }
+        }
+        val title = compose.onNodeWithText("selected.mp4").fetchSemanticsNode().boundsInRoot
+        val position = compose.onNodeWithText("2/7").fetchSemanticsNode().boundsInRoot
+        val bar = compose.onNodeWithTag(ReaderMediaToolbarTags.CONTENT).fetchSemanticsNode().boundsInRoot
+        assertTrue(title.height >= 40f)
+        assertTrue(position.height >= 28f)
+        assertTrue(position.top >= title.bottom)
+        assertTrue(bar.bottom >= position.bottom)
+        assertTrue(bar.height > 56f)
+    }
+
+    @Test
+    fun narrowMaximumTextKeepsTheCounterReadableBelowFullSizePersistentActions() {
+        val actions = mutableListOf<String>()
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalDensity provides Density(1f, fontScale = 2f),
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+            ) {
+                NextTheme {
+                    Box(Modifier.width(248.dp)) {
+                        ReaderMediaToolbar("selected.mp4", "2/7", "Close", { actions += "close" }) {
+                            ReaderMediaAction(Icons.AutoMirrored.Filled.VolumeOff, "Unmute", { actions += "mute" })
+                            ReaderMediaAction(Icons.Filled.FileDownload, "Save", { actions += "save" })
+                            ReaderMediaAction(Icons.Filled.MoreVert, "More", { actions += "more" }, overflow = true)
+                        }
+                    }
+                }
+            }
+        }
+        val bar = compose.onNodeWithTag(ReaderMediaToolbarTags.CONTENT).fetchSemanticsNode().boundsInRoot
+        val actionRow = compose.onNodeWithTag(ReaderMediaToolbarTags.ACTIONS).fetchSemanticsNode().boundsInRoot
+        val title = compose.onNodeWithText("selected.mp4").fetchSemanticsNode().boundsInRoot
+        val counter = compose.onNodeWithText("2/7").fetchSemanticsNode().boundsInRoot
+        assertEquals(248f, bar.width, 0.1f)
+        assertTrue(title.top >= actionRow.bottom)
+        assertTrue(title.width >= 216f)
+        assertTrue(title.height >= 40f)
+        assertTrue(counter.top >= title.bottom)
+        assertTrue(counter.bottom <= bar.bottom)
+        val titleLayouts = mutableListOf<TextLayoutResult>()
+        val counterLayouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText("selected.mp4").performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
+            assertTrue(it(titleLayouts))
+        }
+        compose.onNodeWithText("2/7").performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
+            assertTrue(it(counterLayouts))
+        }
+        assertTrue(titleLayouts.single().getLineEnd(0, visibleEnd = true) > 3)
+        assertTrue(!counterLayouts.single().isLineEllipsized(0))
+        listOf("Close", "Unmute", "Save", "More").forEach { label ->
+            val node = compose.onNodeWithContentDescription(label)
+            val bounds = node.fetchSemanticsNode().boundsInRoot
+            assertTrue(bounds.width >= 48f && bounds.height >= 48f)
+            assertTrue(bounds.left >= bar.left && bounds.right <= bar.right)
+            assertTrue(bounds.bottom <= title.top)
+            node.performClick()
+        }
+        compose.runOnIdle { assertEquals(listOf("close", "mute", "save", "more"), actions) }
     }
 
     @Test
@@ -105,7 +182,7 @@ class ReaderMediaChromeTest {
         }
         bounds.zipWithNext().forEach { (left, right) -> assertEquals(left.right, right.left, 0.1f) }
         assertEquals(
-            26f,
+            48f,
             compose
                 .onNodeWithTag(ReaderMediaControlsTags.TIME_BAR)
                 .fetchSemanticsNode()

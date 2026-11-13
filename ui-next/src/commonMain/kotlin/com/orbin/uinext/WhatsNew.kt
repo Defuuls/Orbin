@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_whats_new_done
 import com.orbin.uinext.resources.next_whats_new_title
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -101,14 +101,14 @@ fun WhatsNewDialog(
             notes.sections.filter { it.entries.isNotEmpty() }.forEach { section ->
                 Text(
                     text = section.heading,
-                    style = ReaderType.rowTitle.withReaderFont(),
+                    style = OrbinType.rowTitle.withReaderFont(),
                     fontWeight = FontWeight.SemiBold,
                     color = reader.ink,
                 )
                 section.entries.forEach { entry ->
                     Text(
                         text = "• $entry",
-                        style = ReaderType.body.withReaderFont(),
+                        style = OrbinType.readerBody.withReaderFont(),
                         color = reader.inkMuted,
                     )
                 }

@@ -126,6 +126,8 @@ private fun HomeReaderFixture(
         repliesOpenComments = false,
         onOpenBoard = {},
         onOpenBoards = {},
+        onOpenDownloads = {},
+        downloadBadge = 2,
         onOpenSearch = {},
         onOpenSaved = {},
         onOpenWatched = {},

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_feed_for_you">For You</string>
+    <string name="reader_feed_following">Following</string>
+    <string name="reader_feed_open_board">Open %1$s board</string>
+</resources>

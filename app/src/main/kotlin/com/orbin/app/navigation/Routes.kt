@@ -55,6 +55,17 @@ sealed interface Route {
         val attachmentId: String? = null,
     ) : Route
 
+    /** Catalog/feed selection needs extra identity without changing Gallery's persisted destination ID. */
+    @Serializable
+    data class SelectedMedia(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val attachmentId: String,
+        val thumbnailUrl: String? = null,
+        val startIndex: Int = 0,
+    ) : Route
+
     /** Keeps Gallery's saved destination identity unchanged when chat opens a thread's videos. */
     @Serializable
     data class ThreadVideos(

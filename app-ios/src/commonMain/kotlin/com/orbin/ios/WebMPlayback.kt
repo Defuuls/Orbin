@@ -1,11 +1,14 @@
 package com.orbin.ios
 
+import com.orbin.uinext.mediaPlaybackSpeed
+
 /** Play is acknowledged only after WebKit fulfills it; a rejected current request can be retried. */
 internal data class WebMPlaybackRequest(
     val command: Int,
     val play: Boolean,
     val muted: Boolean,
     val loop: Boolean,
+    val speed: Float = 1f,
 )
 
 /**
@@ -17,6 +20,7 @@ internal fun webMPlaybackScript(request: WebMPlaybackRequest): String {
     val play = request.play
     val muted = request.muted
     val loop = request.loop
+    val speed = mediaPlaybackSpeed(request.speed)
     return """
         (function(){
             var v=document.getElementById('v');
@@ -27,6 +31,7 @@ internal fun webMPlaybackScript(request: WebMPlaybackRequest): String {
             if(!v)return null;
             v.muted=$muted;
             v.loop=$loop;
+            v.playbackRate=$speed;
             function applied(play){
                 window.__orbinPlaybackApplied=$command;
                 window.__orbinPlaybackAppliedPlay=play;

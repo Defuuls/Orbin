@@ -63,7 +63,8 @@ import com.orbin.network.interceptor.RetryAfterTracker
 import com.orbin.uinext.FeedPlaybackControls
 import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextCircularProgress
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.mediaPlaybackSpeed
+import com.orbin.uinext.tokens.OrbinType
 import kotlinx.coroutines.delay
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
@@ -92,6 +93,8 @@ fun VideoPlayer(
     onFeedLike: (() -> Unit)? = null,
     onPlayIntentChange: ((Boolean) -> Unit)? = null,
     onMuteIntentChange: ((Boolean) -> Unit)? = null,
+    playbackSpeed: Float = 1f,
+    onDoubleTapSave: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
@@ -239,6 +242,11 @@ fun VideoPlayer(
         exoPlayer.setAudioAttributes(exoPlayer.audioAttributes, !isMuted)
     }
 
+    LaunchedEffect(exoPlayer, playbackSpeed) {
+        // Updating the rate keeps the same player, media position and play/pause intent.
+        exoPlayer.setPlaybackSpeed(mediaPlaybackSpeed(playbackSpeed))
+    }
+
     // Explicit playback preferences override the legacy duration-based default.
     LaunchedEffect(durationMs, loop) {
         exoPlayer.repeatMode = repeatModeFor(loop ?: shouldLoop(durationMs))
@@ -373,7 +381,7 @@ fun VideoPlayer(
             Modifier
         } else {
             Modifier
-                .pointerInput(playbackError, exoPlayer, onLongPress, onControlsToggle) {
+                .pointerInput(playbackError, exoPlayer, onLongPress, onControlsToggle, onDoubleTapSave) {
                     detectTapGestures(
                         onLongPress = onLongPress?.let { handler -> { handler() } },
                         // Toggle on release rather than waiting out the double-tap timeout: a double
@@ -387,7 +395,9 @@ fun VideoPlayer(
                         },
                         // Left half goes back, right half goes forward, as in most video players.
                         onDoubleTap = { offset ->
-                            if (playbackError == null) skip(offset.x >= size.width / 2f)
+                            if (playbackError == null) {
+                                if (onDoubleTapSave != null) onDoubleTapSave() else skip(offset.x >= size.width / 2f)
+                            }
                         },
                     )
                 }.semantics {
@@ -455,7 +465,7 @@ fun VideoPlayer(
                                 playbackError.orEmpty()
                             },
                         color = Color.White,
-                        style = NextType.body,
+                        style = OrbinType.body,
                         textAlign = TextAlign.Center,
                     )
                     if (isRateLimited && !autoRetryPending) {

@@ -2,34 +2,34 @@ package com.orbin.uinext
 
 import androidx.compose.runtime.Composable
 import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_settings_about
 import com.orbin.uinext.resources.reader_settings_about_summary
+import com.orbin.uinext.resources.reader_settings_appearance
 import com.orbin.uinext.resources.reader_settings_appearance_summary
+import com.orbin.uinext.resources.reader_settings_board_preferences
 import com.orbin.uinext.resources.reader_settings_board_summary
+import com.orbin.uinext.resources.reader_settings_downloads
+import com.orbin.uinext.resources.reader_settings_enabled_sites
+import com.orbin.uinext.resources.reader_settings_favorite_boards
 import com.orbin.uinext.resources.reader_settings_followed_summary
+import com.orbin.uinext.resources.reader_settings_help
 import com.orbin.uinext.resources.reader_settings_help_summary
+import com.orbin.uinext.resources.reader_settings_hidden
 import com.orbin.uinext.resources.reader_settings_hidden_summary
+import com.orbin.uinext.resources.reader_settings_history
 import com.orbin.uinext.resources.reader_settings_history_summary
+import com.orbin.uinext.resources.reader_settings_other
 import com.orbin.uinext.resources.reader_settings_other_summary
+import com.orbin.uinext.resources.reader_settings_playback
 import com.orbin.uinext.resources.reader_settings_playback_summary
+import com.orbin.uinext.resources.reader_settings_privacy
 import com.orbin.uinext.resources.reader_settings_privacy_summary
 import com.orbin.uinext.resources.reader_settings_sites_summary
+import com.orbin.uinext.resources.reader_settings_storage
 import com.orbin.uinext.resources.reader_settings_storage_summary
+import com.orbin.uinext.resources.reader_settings_title
+import com.orbin.uinext.resources.reader_settings_watched
 import com.orbin.uinext.resources.reader_settings_watched_summary
-import com.orbin.uinext.resources.social_settings_about
-import com.orbin.uinext.resources.social_settings_appearance
-import com.orbin.uinext.resources.social_settings_board_preferences
-import com.orbin.uinext.resources.social_settings_downloads
-import com.orbin.uinext.resources.social_settings_enabled_sites
-import com.orbin.uinext.resources.social_settings_favorite_boards
-import com.orbin.uinext.resources.social_settings_help
-import com.orbin.uinext.resources.social_settings_hidden
-import com.orbin.uinext.resources.social_settings_history
-import com.orbin.uinext.resources.social_settings_other
-import com.orbin.uinext.resources.social_settings_playback
-import com.orbin.uinext.resources.social_settings_privacy
-import com.orbin.uinext.resources.social_settings_storage
-import com.orbin.uinext.resources.social_settings_title
-import com.orbin.uinext.resources.social_settings_watched
 import org.jetbrains.compose.resources.stringResource
 
 internal val EXTERNAL_SETTINGS_DESTINATIONS = setOf("boards", "favorites", "watched", "help")
@@ -80,20 +80,20 @@ internal fun settingsDirectory(
 @Composable
 internal fun settingsPageLabels(): Map<String, String> =
     mapOf(
-        "boards" to stringResource(Res.string.social_settings_enabled_sites),
-        "boardPreferences" to stringResource(Res.string.social_settings_board_preferences),
-        "favorites" to stringResource(Res.string.social_settings_favorite_boards),
-        "history" to stringResource(Res.string.social_settings_history),
-        "watched" to stringResource(Res.string.social_settings_watched),
-        "hidden" to stringResource(Res.string.social_settings_hidden),
-        "playback" to stringResource(Res.string.social_settings_playback),
-        "appearance" to stringResource(Res.string.social_settings_appearance),
-        "privacy" to stringResource(Res.string.social_settings_privacy),
-        "storage" to stringResource(Res.string.social_settings_storage),
-        "downloads" to stringResource(Res.string.social_settings_downloads),
-        "help" to stringResource(Res.string.social_settings_help),
-        "about" to stringResource(Res.string.social_settings_about),
-        "other" to stringResource(Res.string.social_settings_other),
+        "boards" to stringResource(Res.string.reader_settings_enabled_sites),
+        "boardPreferences" to stringResource(Res.string.reader_settings_board_preferences),
+        "favorites" to stringResource(Res.string.reader_settings_favorite_boards),
+        "history" to stringResource(Res.string.reader_settings_history),
+        "watched" to stringResource(Res.string.reader_settings_watched),
+        "hidden" to stringResource(Res.string.reader_settings_hidden),
+        "playback" to stringResource(Res.string.reader_settings_playback),
+        "appearance" to stringResource(Res.string.reader_settings_appearance),
+        "privacy" to stringResource(Res.string.reader_settings_privacy),
+        "storage" to stringResource(Res.string.reader_settings_storage),
+        "downloads" to stringResource(Res.string.reader_settings_downloads),
+        "help" to stringResource(Res.string.reader_settings_help),
+        "about" to stringResource(Res.string.reader_settings_about),
+        "other" to stringResource(Res.string.reader_settings_other),
     )
 
 @Composable
@@ -101,9 +101,9 @@ internal fun directorySectionLabel(id: String): String =
     if (id ==
         "settings"
     ) {
-        stringResource(Res.string.social_settings_title)
+        stringResource(Res.string.reader_settings_title)
     } else {
-        stringResource(Res.string.social_settings_about)
+        stringResource(Res.string.reader_settings_about)
     }
 
 @Composable

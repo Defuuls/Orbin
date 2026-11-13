@@ -16,9 +16,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -100,8 +100,8 @@ class ReaderCellLayoutTest {
                 NextTheme {
                     ReaderCellLayout(
                         thumbnail = { Box(it.testTag("image")) },
-                        trailing = { Text("123", Modifier.testTag("pill"), style = ReaderType.pill) },
-                    ) { Text("Reading content", it.testTag("text"), style = ReaderType.body) }
+                        trailing = { Text("123", Modifier.testTag("pill"), style = OrbinType.pill) },
+                    ) { Text("Reading content", it.testTag("text"), style = OrbinType.readerBody) }
                 }
             }
         }

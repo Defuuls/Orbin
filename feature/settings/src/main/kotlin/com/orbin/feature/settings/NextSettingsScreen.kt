@@ -43,6 +43,7 @@ fun NextSettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null,
     onNavigate: ((String) -> Unit)? = null,
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val availablePlaybackScopes by viewModel.playbackScopes.collectAsStateWithLifecycle()
@@ -142,6 +143,7 @@ fun NextSettingsScreen(
 
     NextTheme {
         SettingsScreen(
+            bottomBar = bottomBar,
             groups = model.groups + ("Playback" to playbackRows(settings, playbackScopes, playbackScope)),
             onBack = onBack,
             onNavigate = onNavigate,

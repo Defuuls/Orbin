@@ -44,6 +44,18 @@ class VideoControlsTest {
     }
 
     @Test
+    fun playbackSpeedIsAppliedEvenForAnAcknowledgedPausedCommand() {
+        val script = webMPlaybackScript(WebMPlaybackRequest(7, false, true, true, speed = 1.25f))
+        kotlin.test.assertTrue(script.indexOf("v.playbackRate=1.25;") < script.indexOf("if(!false)"))
+        kotlin.test.assertTrue(script.contains("v.pause();"))
+        kotlin.test.assertTrue(
+            webMPlaybackScript(
+                WebMPlaybackRequest(7, true, true, false, speed = Float.NaN),
+            ).contains("v.playbackRate=1.0;"),
+        )
+    }
+
+    @Test
     fun webMStateParsesThePagesReport() {
         assertEquals(VideoState(playing = true, position = 3.5, duration = 20.0), parseWebMState("1,3.5,20,1"))
         assertEquals(VideoState(playing = false, position = 0.0, duration = 0.0), parseWebMState("0,0,NaN,1"))

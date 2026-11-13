@@ -49,10 +49,10 @@ import com.orbin.uinext.resources.reader_nav_saved
 import com.orbin.uinext.resources.reader_nav_search
 import com.orbin.uinext.resources.reader_nav_settings
 import com.orbin.uinext.resources.reader_nav_watched
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -212,7 +212,7 @@ fun ReaderDrawer(
                     tint = reader.ink,
                     modifier = Modifier.size(ReaderSize.icon),
                 )
-                Text(entry.label, style = ReaderType.stateBody.withReaderFont(), color = reader.ink)
+                Text(entry.label, style = OrbinType.stateBody.withReaderFont(), color = reader.ink)
             }
         }
     }

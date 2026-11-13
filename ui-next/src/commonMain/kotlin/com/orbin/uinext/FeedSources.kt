@@ -14,13 +14,15 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.social_feed_sources
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.resources.reader_feed_sources
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /** Home's source choice belongs to its title menu, leaving the first content row for boards. */
@@ -32,6 +34,7 @@ internal fun FeedSourceSheet(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val contentDensity = LocalDensity.current
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -39,31 +42,36 @@ internal fun FeedSourceSheet(
         contentColor = next.ink,
         tonalElevation = 0.dp,
     ) {
-        Text(
-            stringResource(Res.string.social_feed_sources),
-            style = NextType.titleMedium,
-            color = next.ink,
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp),
-        )
-        Hairline()
-        labels.forEachIndexed { index, label ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 52.dp)
-                    .selectable(selected = index == selected, role = Role.RadioButton, onClick = { onSelect(index) })
-                    .padding(horizontal = GUTTER, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(label, style = NextType.body, color = next.ink, modifier = Modifier.weight(1f))
-                if (index ==
-                    selected
+        CompositionLocalProvider(LocalDensity provides contentDensity) {
+            Text(
+                stringResource(Res.string.reader_feed_sources),
+                style = OrbinType.titleMedium,
+                color = next.ink,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 12.dp),
+            )
+            Hairline()
+            labels.forEachIndexed { index, label ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp)
+                        .selectable(
+                            selected = index == selected,
+                            role = Role.RadioButton,
+                            onClick = { onSelect(index) },
+                        ).padding(horizontal = GUTTER, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(ReaderIcons.Check, null, tint = next.ink, modifier = Modifier.size(22.dp))
+                    Text(label, style = OrbinType.body, color = next.ink, modifier = Modifier.weight(1f))
+                    if (index ==
+                        selected
+                    ) {
+                        Icon(ReaderIcons.Check, null, tint = next.ink, modifier = Modifier.size(22.dp))
+                    }
                 }
             }
+            Spacer(Modifier.size(16.dp))
         }
-        Spacer(Modifier.size(16.dp))
     }
 }

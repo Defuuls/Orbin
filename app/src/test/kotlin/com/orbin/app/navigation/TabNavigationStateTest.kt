@@ -76,6 +76,80 @@ class TabNavigationStateTest {
     }
 
     @Test
+    fun primarySettingsAndDownloadsReplaceEachOtherWithoutDiscardingTheReader() {
+        val nav = controller()
+        nav.navigateToTab(Route.BoardGallery)
+        val reader = nav.currentBackStackEntry!!
+        reader.savedStateHandle["scrollIndex"] = 18
+        nav.openDestination(NextDestination.SETTINGS)
+        nav.openDestination(NextDestination.DOWNLOADS)
+
+        repeat(3) {
+            nav.openPrimaryDestination(NextDestination.SETTINGS)
+            nav.openPrimaryDestination(NextDestination.DOWNLOADS)
+        }
+
+        assertThat(nav.currentDestination!!.hasRoute(Route.Downloads::class)).isTrue()
+        nav.popBackStack()
+        assertThat(nav.currentBackStackEntry).isSameInstanceAs(reader)
+        assertThat(reader.savedStateHandle.get<Int>("scrollIndex")).isEqualTo(18)
+    }
+
+    @Test
+    fun reselectingTheVisiblePrimaryPageKeepsItsStateAndHierarchicalBack() {
+        val nav = controller()
+        nav.navigateToTab(Route.Saved)
+        nav.openPrimaryDestination(NextDestination.SETTINGS)
+        val settings = nav.currentBackStackEntry!!
+        settings.savedStateHandle["category"] = "appearance"
+
+        nav.openPrimaryDestination(NextDestination.SETTINGS)
+
+        assertThat(nav.currentBackStackEntry).isSameInstanceAs(settings)
+        assertThat(settings.savedStateHandle.get<String>("category")).isEqualTo("appearance")
+        nav.popBackStack()
+        assertThat(nav.currentDestination!!.hasRoute(Route.Saved::class)).isTrue()
+    }
+
+    @Test
+    fun primarySettingsReturnsToItsRetainedStoragePageUnderDownloads() {
+        val nav = controller()
+        nav.navigateToTab(Route.Saved)
+        nav.openDestination(NextDestination.SETTINGS)
+        val settings = nav.currentBackStackEntry!!
+        settings.savedStateHandle["category"] = "storage"
+        settings.savedStateHandle["scrollIndex"] = 4
+        nav.openDestination(NextDestination.DOWNLOADS)
+
+        nav.openPrimaryDestination(NextDestination.SETTINGS)
+
+        assertThat(nav.currentBackStackEntry).isSameInstanceAs(settings)
+        assertThat(settings.savedStateHandle.get<String>("category")).isEqualTo("storage")
+        assertThat(settings.savedStateHandle.get<Int>("scrollIndex")).isEqualTo(4)
+        nav.popBackStack()
+        assertThat(nav.currentDestination!!.hasRoute(Route.Saved::class)).isTrue()
+    }
+
+    @Test
+    fun primarySwitchDoesNotRestoreAnOlderSettingsPageBelowAnotherReader() {
+        val nav = controller()
+        nav.navigateToTab(Route.Saved)
+        nav.openDestination(NextDestination.SETTINGS)
+        val oldSettings = nav.currentBackStackEntry!!
+        nav.navigate(Route.History)
+        val history = nav.currentBackStackEntry!!
+        history.savedStateHandle["scrollIndex"] = 9
+        nav.openDestination(NextDestination.DOWNLOADS)
+
+        nav.openPrimaryDestination(NextDestination.SETTINGS)
+
+        assertThat(nav.currentBackStackEntry).isNotSameInstanceAs(oldSettings)
+        nav.popBackStack()
+        assertThat(nav.currentBackStackEntry).isSameInstanceAs(history)
+        assertThat(history.savedStateHandle.get<Int>("scrollIndex")).isEqualTo(9)
+    }
+
+    @Test
     fun choosingTheCurrentCatalogBoardPreservesItsSavedStateAndBackStackEntry() {
         val nav = controller()
         nav.navigateToTab(Route.BoardGallery)
@@ -119,6 +193,7 @@ class TabNavigationStateTest {
                     composable<Route.Watched> {}
                     composable<Route.Search> {}
                     composable<Route.Saved> {}
+                    composable<Route.History> {}
                     composable<Route.Settings> {}
                     composable<Route.Downloads> {}
                     composable<Route.Thread> {}

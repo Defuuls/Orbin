@@ -23,7 +23,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 
 /** What the safe-mode screen says, in the platform's own strings. */
 data class SafeModeText(
@@ -69,12 +69,12 @@ fun SafeModeScreen(
         OrbinLogo(size = 48.dp, contentDescription = null)
         Text(
             text.title,
-            style = ReaderType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+            style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
             color = reader.ink,
             modifier = Modifier.semantics { heading() },
         )
-        Text(text.explanation, style = ReaderType.stateBody.withReaderFont(), color = reader.inkMuted)
-        Text(text.saveFirst, style = ReaderType.stateBody.withReaderFont(), color = reader.inkMuted)
+        Text(text.explanation, style = OrbinType.stateBody.withReaderFont(), color = reader.inkMuted)
+        Text(text.saveFirst, style = OrbinType.stateBody.withReaderFont(), color = reader.inkMuted)
 
         OrbinFilledButton(
             label = text.saveCrashDetails,

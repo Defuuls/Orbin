@@ -52,7 +52,6 @@ import com.orbin.uinext.ThreadCollectionScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.stringResource
@@ -64,10 +63,14 @@ private const val CLEAR_ARMED_MS = 4_000L
 // Home, Boards, Watched, Search and Saved drawer destinations, plus their detail pages.
 
 @Composable
-internal fun FeedDestination(browser: Browser) {
+internal fun FeedDestination(
+    browser: Browser,
+    downloads: MediaDownloads? = null,
+) {
     val feed by browser.feed.collectAsState()
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val downloadBadge = rememberActiveDownloadBadge(downloads)
     val site by browser.feedSite.collectAsState()
     val loadingMore by browser.feedLoadingMore.collectAsState()
     val canLoadMore by browser.feedCanLoadMore.collectAsState()
@@ -112,6 +115,7 @@ internal fun FeedDestination(browser: Browser) {
             FeedScreen(
                 rows = rows,
                 mode = catalogMode,
+                downloadBadge = downloadBadge,
                 onModeChange = { selected ->
                     browser.settings.setCatalogMode(
                         if (selected == ReaderCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST,
@@ -131,7 +135,13 @@ internal fun FeedDestination(browser: Browser) {
                 loadMoreKey = discoveryProgress,
                 hideRailOnScroll = false,
                 onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
-                onOpenMedia = { row -> byRow[row.id]?.let { browser.openThreadVideos(it.thread.key) } },
+                onOpenMedia = { row ->
+                    byRow[row.id]?.let { entry ->
+                        entry.thread.originalPost.attachments.firstOrNull()?.let { attachment ->
+                            browser.openMedia(entry.thread.key, attachment.id, attachment.thumbnailUrl)
+                        }
+                    }
+                },
                 onOpenReplies = { row ->
                     byRow[row.id]?.let {
                         if (settings.openThreadComments) {
@@ -177,11 +187,11 @@ internal fun FeedDestination(browser: Browser) {
                     }
                 },
                 onOpenBoards = { browser.openTab(Route.Boards) },
-                onOpenDownloads = { browser.open(Route.Downloads) },
+                onOpenDownloads = { browser.openPrimaryPage(Route.Downloads) },
                 onOpenSearch = { browser.openTab(Route.Search) },
                 onOpenSaved = { browser.openTab(Route.Saved) },
                 onOpenWatched = { browser.openTab(Route.Watched) },
-                onSettings = { browser.open(Route.Settings) },
+                onSettings = { browser.openPrimaryPage(Route.Settings) },
                 sourceLabels =
                     listOf(stringResource(Res.string.ios_collection_all_sites)) + browser.sites.map { it.name },
                 selectedSource = if (site == null) 0 else browser.sites.indexOfFirst { it.id == site } + 1,
@@ -193,7 +203,11 @@ internal fun FeedDestination(browser: Browser) {
 }
 
 @Composable
-internal fun BoardsDestination(browser: Browser) {
+internal fun BoardsDestination(
+    browser: Browser,
+    downloads: MediaDownloads? = null,
+) {
+    val downloadBadge = rememberActiveDownloadBadge(downloads)
     val directory by browser.boardDirectory.collectAsState()
     val followed by browser.followed.collectAsState()
     val unreachable by browser.unreachableSites.collectAsState()
@@ -207,6 +221,7 @@ internal fun BoardsDestination(browser: Browser) {
         }
     val byTile = remember(list) { list.associateBy { it.tileId } }
     BoardsScreen(
+        downloadBadge = downloadBadge,
         hideRailOnScroll = true,
         subtitle = boardsSubtitle(list.size, unreachable),
         emptyMessage =
@@ -223,11 +238,11 @@ internal fun BoardsDestination(browser: Browser) {
         onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
         onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
         onOpenFeed = { browser.openTab(Route.Feed) },
-        onOpenDownloads = { browser.open(Route.Downloads) },
+        onOpenDownloads = { browser.openPrimaryPage(Route.Downloads) },
         onOpenSaved = { browser.openTab(Route.Saved) },
         onOpenWatched = { browser.openTab(Route.Watched) },
         onOpenSearch = { browser.openTab(Route.Search) },
-        onOpenSettings = { browser.open(Route.Settings) },
+        onOpenSettings = { browser.openPrimaryPage(Route.Settings) },
         headerContent = { SiteSwitcher(browser, site, gapAfter = 0.dp, compact = true) },
     )
 }
@@ -274,20 +289,11 @@ internal fun DownloadsDestination(
     val records by downloads.records.collectAsState()
     DownloadsScreen(
         records = records,
+        bottomBar = { PrimaryNavigation(browser, downloads, NextDestination.DOWNLOADS) },
         onRetry = downloads::retry,
         onClear = downloads::clear,
         onBack = { if (!browser.back()) browser.openTab(Route.Feed) },
-        onDestination = { destination ->
-            when (destination) {
-                NextDestination.FEED -> browser.openTab(Route.Feed)
-                NextDestination.BOARDS -> browser.openTab(Route.Boards)
-                NextDestination.DOWNLOADS -> Unit
-                NextDestination.SEARCH -> browser.openTab(Route.Search)
-                NextDestination.SAVED -> browser.openTab(Route.Saved)
-                NextDestination.WATCHED -> browser.openTab(Route.Watched)
-                NextDestination.SETTINGS -> browser.open(Route.Settings)
-            }
-        },
+        onDestination = browser::openPrimaryDestination,
     )
 }
 
@@ -298,6 +304,7 @@ internal fun SettingsDestination(
     backup: IosBackup,
     formFactor: FormFactor,
     version: AppVersion,
+    downloads: MediaDownloads? = null,
 ) {
     val settings by browser.settings.current.collectAsState()
     val boards by browser.boards.collectAsState()
@@ -337,6 +344,7 @@ internal fun SettingsDestination(
     }
     var imageCacheCleared by remember { mutableStateOf(false) }
     SettingsScreen(
+        bottomBar = { PrimaryNavigation(browser, downloads, NextDestination.SETTINGS) },
         groups =
             remember(
                 settings,

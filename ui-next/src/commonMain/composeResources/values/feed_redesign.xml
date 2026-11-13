@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feed_redesign_empty_title">Nothing to show yet</string>
+    <string name="feed_redesign_empty_hint">Videos from your followed boards appear here. Try another source or add a board.</string>
+</resources>

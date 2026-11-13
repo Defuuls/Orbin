@@ -33,10 +33,10 @@ import com.orbin.uinext.resources.reader_close_filter
 import com.orbin.uinext.resources.reader_dismiss_picker
 import com.orbin.uinext.resources.reader_pick_board
 import com.orbin.uinext.resources.reader_picker_empty
-import com.orbin.uinext.tokens.ReaderRadius
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 /** A real board identity, grouped by its owning site in the catalog picker. */
@@ -69,7 +69,7 @@ fun ReaderCatalogSearch(
             value = query,
             onValueChange = onQueryChange,
             singleLine = true,
-            textStyle = ReaderType.stateBody.withReaderFont().copy(color = reader.ink),
+            textStyle = OrbinType.stateBody.withReaderFont().copy(color = reader.ink),
             cursorBrush = SolidColor(reader.accent),
             modifier =
                 Modifier
@@ -82,7 +82,7 @@ fun ReaderCatalogSearch(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = ReaderSize.touchTarget)
-                        .clip(RoundedCornerShape(ReaderRadius.small))
+                        .clip(RoundedCornerShape(OrbinRadius.small))
                         .background(reader.surfaceVariant)
                         .padding(horizontal = ReaderSpace.gapSmall, vertical = ReaderSpace.line),
                     contentAlignment = Alignment.CenterStart,
@@ -90,7 +90,7 @@ fun ReaderCatalogSearch(
                     if (query.isEmpty()) {
                         Text(
                             label,
-                            style = ReaderType.stateBody.withReaderFont(),
+                            style = OrbinType.stateBody.withReaderFont(),
                             color = reader.inkMuted,
                         )
                     }
@@ -119,14 +119,14 @@ fun ReaderBoardPicker(
         containerColor = reader.background,
         titleContentColor = reader.ink,
         textContentColor = reader.ink,
-        title = { Text(stringResource(Res.string.reader_pick_board), style = ReaderType.appBarTitle.withReaderFont()) },
+        title = { Text(stringResource(Res.string.reader_pick_board), style = OrbinType.appBarTitle.withReaderFont()) },
         text = {
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = ReaderSize.readingMax)) {
                 if (boards.isEmpty()) {
                     item {
                         Text(
                             stringResource(Res.string.reader_picker_empty),
-                            style = ReaderType.stateBody.withReaderFont(),
+                            style = OrbinType.stateBody.withReaderFont(),
                             color = reader.inkMuted,
                         )
                     }
@@ -135,7 +135,7 @@ fun ReaderBoardPicker(
                     item(key = "site-${siteBoards.first().providerId}") {
                         Text(
                             siteBoards.first().siteLabel,
-                            style = ReaderType.label.withReaderFont(),
+                            style = OrbinType.label.withReaderFont(),
                             color = reader.inkMuted,
                             modifier = Modifier.padding(vertical = ReaderSpace.gapSmall).semantics { heading() },
                         )
@@ -152,8 +152,8 @@ fun ReaderBoardPicker(
                                     onClick = { onSelect(board) },
                                 ).padding(vertical = ReaderSpace.line),
                         ) {
-                            Text("/${board.boardId}/", style = ReaderType.rowTitle.withReaderFont(), color = reader.ink)
-                            Text(board.title, style = ReaderType.preview.withReaderFont(), color = reader.inkMuted)
+                            Text("/${board.boardId}/", style = OrbinType.rowTitle.withReaderFont(), color = reader.ink)
+                            Text(board.title, style = OrbinType.preview.withReaderFont(), color = reader.inkMuted)
                         }
                     }
                 }
@@ -163,7 +163,7 @@ fun ReaderBoardPicker(
             TextButton(onClick = onDismiss) {
                 Text(
                     stringResource(Res.string.reader_dismiss_picker),
-                    style = ReaderType.label.withReaderFont(),
+                    style = OrbinType.label.withReaderFont(),
                     color = reader.accent,
                 )
             }

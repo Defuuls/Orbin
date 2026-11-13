@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -24,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -45,13 +45,17 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_search_idle_hint
 import com.orbin.uinext.resources.next_search_no_matches
 import com.orbin.uinext.resources.next_search_query_label
-import com.orbin.uinext.resources.social_settings_back
-import com.orbin.uinext.resources.tiktok_search_all
-import com.orbin.uinext.resources.tiktok_search_submit
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.resources.orbin_search_idle_title
+import com.orbin.uinext.resources.orbin_search_no_matches_hint
+import com.orbin.uinext.resources.reader_search_all
+import com.orbin.uinext.resources.reader_search_submit
+import com.orbin.uinext.resources.reader_settings_back
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
+import com.orbin.uinext.tokens.ReaderSpace
 import org.jetbrains.compose.resources.stringResource
 
-/** Compact reader search over the actual source-qualified cross-site catalog results. */
+/** Coral search over actual source-qualified catalog results, with one retained source filter. */
 @Composable
 internal fun TikTokSearchScreen(
     query: String,
@@ -68,8 +72,8 @@ internal fun TikTokSearchScreen(
         remember(rows) {
             rows.mapNotNull { it.searchSource }.distinct().sortedBy { if (it == "fourchan") "" else it }
         }
-    LaunchedEffect(sources) {
-        if (selectedSource !in sources) selectedSource = null
+    LaunchedEffect(state, sources) {
+        if (state is SearchState.Results && selectedSource !in sources) selectedSource = null
     }
     val visibleRows = remember(rows, selectedSource) { filterSearchRows(rows, selectedSource) }
 
@@ -93,11 +97,11 @@ internal fun TikTokSearchScreen(
         if (state is SearchState.Results && sources.isNotEmpty()) {
             SearchSourceTabs(sources, selectedSource) { selectedSource = it }
         }
-        Hairline()
         Box(Modifier.weight(1f)) {
             SearchResults(
                 state = if (state is SearchState.Results) SearchState.Results(visibleRows) else state,
                 onOpenRow = onOpenRow,
+                onRetry = onSearch,
             )
         }
     }
@@ -115,14 +119,14 @@ private fun SearchNavigationBar(
         keyboard?.hide()
         onSearch()
     }
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = ReaderSpace.gutter, vertical = 4.dp)) {
         val stackAction = maxWidth < 360.dp && LocalDensity.current.fontScale >= 1.6f
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (onBack != null && !LocalReaderFramePresent.current) {
                     NextIconAction(
                         ReaderIcons.Back,
-                        stringResource(Res.string.social_settings_back),
+                        stringResource(Res.string.reader_settings_back),
                         onBack,
                         tint = next.ink,
                     )
@@ -133,6 +137,7 @@ private fun SearchNavigationBar(
                     placeholder = stringResource(Res.string.next_search_query_label),
                     onSearch = submit,
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(OrbinRadius.search),
                 )
                 if (!stackAction) SearchSubmit(submit)
             }
@@ -154,8 +159,8 @@ private fun SearchSubmit(onSearch: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            stringResource(Res.string.tiktok_search_submit),
-            style = NextType.body.copy(fontWeight = FontWeight.SemiBold),
+            stringResource(Res.string.reader_search_submit),
+            style = OrbinType.body.copy(fontWeight = FontWeight.SemiBold),
             color = reader.accent,
         )
     }
@@ -170,30 +175,27 @@ private fun SearchSourceTabs(
     Row(
         Modifier
             .fillMaxWidth()
+            .padding(horizontal = ReaderSpace.gutter, vertical = 4.dp)
             .horizontalScroll(rememberScrollState())
             .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        val tabs = listOf(null to stringResource(Res.string.tiktok_search_all)) + sources.map { it to sourceLabel(it) }
+        val tabs = listOf(null to stringResource(Res.string.reader_search_all)) + sources.map { it to sourceLabel(it) }
         tabs.forEach { (source, label) ->
             val active = source == selected
-            Column(
+            Box(
                 Modifier
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .clip(RoundedCornerShape(OrbinRadius.pill))
+                    .background(if (active) next.accentContainer else reader.surfaceVariant)
                     .selectable(selected = active, role = Role.Tab, onClick = { onSelect(source) })
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(Modifier.heightIn(min = MIN_TOUCH_TARGET), contentAlignment = Alignment.Center) {
-                    Text(
-                        label,
-                        style = NextType.body.copy(fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal),
-                        color = if (active) next.ink else next.muted,
-                    )
-                }
-                Box(
-                    Modifier
-                        .widthIn(min = 32.dp)
-                        .height(2.dp)
-                        .background(if (active) next.ink else Color.Transparent),
+                Text(
+                    label,
+                    style = OrbinType.body.copy(fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal),
+                    color = if (active) reader.accent else next.muted,
                 )
             }
         }
@@ -204,20 +206,35 @@ private fun SearchSourceTabs(
 private fun SearchResults(
     state: SearchState,
     onOpenRow: (SearchRow) -> Unit,
+    onRetry: () -> Unit,
 ) {
     when (state) {
-        SearchState.Idle -> NextEmpty(stringResource(Res.string.next_search_idle_hint))
+        SearchState.Idle ->
+            ReaderEmptyState(
+                title = stringResource(Res.string.orbin_search_idle_title),
+                message = stringResource(Res.string.next_search_idle_hint),
+            )
         SearchState.Loading -> NextLoading()
-        is SearchState.Error -> NextError(state.message)
+        is SearchState.Error -> ReaderErrorState(ReaderFailureCause.UNKNOWN, message = state.message, onRetry = onRetry)
         is SearchState.Results ->
             if (state.rows.isEmpty()) {
-                NextEmpty(stringResource(Res.string.next_search_no_matches))
+                ReaderEmptyState(
+                    title = stringResource(Res.string.next_search_no_matches),
+                    message = stringResource(Res.string.orbin_search_no_matches_hint),
+                )
             } else {
                 Box(Modifier.fillMaxSize()) {
                     val wideWindow = readerRecordUsesWideText()
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().testTag(ReaderSearchTags.LIST),
-                        contentPadding = PaddingValues(bottom = bottomInset()),
+                        contentPadding =
+                            PaddingValues(
+                                start = ReaderSpace.gutter,
+                                end = ReaderSpace.gutter,
+                                top = 8.dp,
+                                bottom = 8.dp + bottomInset(),
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(state.rows, key = { it.id }) { row ->
                             SearchResultRow(row, wideWindow, onClick = { onOpenRow(row) })

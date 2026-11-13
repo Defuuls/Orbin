@@ -91,6 +91,37 @@ class TikTokSearchInteractionTest {
     }
 
     @Test
+    fun selectedSourceSurvivesLoadingWhenTheNewResultsStillContainIt() {
+        val first = SearchRow("fourchan/g/41", "First site thread", "4chan · /g/", "First source")
+        val second = SearchRow("bbwchan/g/41", "Second site thread", "BBWChan · /g/", "Second source")
+        var state: SearchState by mutableStateOf(SearchState.Results(listOf(first, second)))
+        composeRule.setContent {
+            NextTheme {
+                SearchScreen("thread", {}, {}, state, {})
+            }
+        }
+        composeRule.onNodeWithText("BBWChan").performClick()
+        composeRule.runOnIdle { state = SearchState.Loading }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { state = SearchState.Results(listOf(first, second)) }
+        composeRule.onNodeWithText(first.title).assertDoesNotExist()
+        composeRule.onNodeWithText(second.title).assertExists()
+    }
+
+    @Test
+    fun aFailedSearchKeepsItsMessageAndOffersARealRetry() {
+        var retries = 0
+        composeRule.setContent {
+            NextTheme {
+                SearchScreen("thread", {}, { retries++ }, SearchState.Error("Source temporarily unavailable"), {})
+            }
+        }
+        composeRule.onNodeWithText("Source temporarily unavailable").assertExists()
+        composeRule.onNodeWithText("Retry").performClick()
+        assertEquals(1, retries)
+    }
+
+    @Test
     @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun narrowLargeTextKeepsTheFieldAndSubmitActionInsideTheViewport() {
         composeRule.setContent {

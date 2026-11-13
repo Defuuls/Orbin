@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +41,7 @@ import com.orbin.uinext.OrbinCard
 import com.orbin.uinext.nextClickable
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.withReaderFont
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -136,7 +137,8 @@ internal fun PencilHoverPreview(
     thumbnailOnly: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val density = LocalDensity.current.density
+    val contentDensity = LocalDensity.current
+    val density = contentDensity.density
     // Where the picture is, kept out of Compose state: written on every layout pass while a list
     // scrolls, as state it recomposed every picture on screen every frame.
     val bounds = remember { BoundsHolder() }
@@ -156,23 +158,26 @@ internal fun PencilHoverPreview(
         // A spoiler stays covered: hovering must not show what a tap would still ask about.
         if (showing && !attachment.isSpoiler) {
             Popup(alignment = Alignment.Center) {
-                if (thumbnailOnly) {
-                    ReaderThumbnailHover(attachment)
-                } else {
-                    AsyncImage(
-                        // A still image previews whole; anything else has only its thumbnail.
-                        model =
-                            if (attachment.type ==
-                                MediaType.IMAGE
-                            ) {
-                                attachment.sourceUrl
-                            } else {
-                                attachment.thumbnailUrl
-                            },
-                        contentDescription = attachment.originalFileName,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(OrbinRadius.thumbnail)),
-                    )
+                CompositionLocalProvider(LocalDensity provides contentDensity) {
+                    if (thumbnailOnly) {
+                        ReaderThumbnailHover(attachment)
+                    } else {
+                        AsyncImage(
+                            // A still image previews whole; anything else has only its thumbnail.
+                            model =
+                                if (attachment.type ==
+                                    MediaType.IMAGE
+                                ) {
+                                    attachment.sourceUrl
+                                } else {
+                                    attachment.thumbnailUrl
+                                },
+                            contentDescription = attachment.originalFileName,
+                            contentScale = ContentScale.Fit,
+                            modifier =
+                                Modifier.size(HOVER_PREVIEW_SIZE).clip(RoundedCornerShape(OrbinRadius.thumbnail)),
+                        )
+                    }
                 }
             }
         }
@@ -213,6 +218,7 @@ internal fun PencilMenu(
     actions: List<Pair<String, () -> Unit>>,
     modifier: Modifier = Modifier,
 ) {
+    val contentDensity = LocalDensity.current
     Box(modifier) {
         if (expanded) {
             Popup(
@@ -220,27 +226,29 @@ internal fun PencilMenu(
                 onDismissRequest = onDismiss,
                 properties = PopupProperties(focusable = true),
             ) {
-                OrbinCard(modifier = Modifier.widthIn(min = 220.dp, max = 320.dp)) {
-                    actions.forEach { (label, action) ->
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = MIN_TOUCH_TARGET)
-                                    .nextClickable(
-                                        role = Role.Button,
-                                        onClick = {
-                                            onDismiss()
-                                            action()
-                                        },
-                                    ).padding(horizontal = 16.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Text(
-                                text = label,
-                                style = ReaderType.body.withReaderFont(),
-                                color = reader.ink,
-                            )
+                CompositionLocalProvider(LocalDensity provides contentDensity) {
+                    OrbinCard(modifier = Modifier.widthIn(min = 220.dp, max = 320.dp)) {
+                        actions.forEach { (label, action) ->
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = MIN_TOUCH_TARGET)
+                                        .nextClickable(
+                                            role = Role.Button,
+                                            onClick = {
+                                                onDismiss()
+                                                action()
+                                            },
+                                        ).padding(horizontal = 16.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.CenterStart,
+                            ) {
+                                Text(
+                                    text = label,
+                                    style = OrbinType.readerBody.withReaderFont(),
+                                    color = reader.ink,
+                                )
+                            }
                         }
                     }
                 }

@@ -1,13 +1,17 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,12 +20,16 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_pane_thread
 import com.orbin.uinext.resources.reader_select_thread
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 
 object ReaderTwoPaneTags {
@@ -31,6 +39,7 @@ object ReaderTwoPaneTags {
     const val EMPTY = "reader-empty-thread-pane"
     const val EMPTY_HEADER = "reader-empty-thread-header"
     const val EMPTY_BODY = "reader-empty-thread-body"
+    const val EMPTY_CARD = "reader-empty-thread-card"
 }
 
 /**
@@ -105,12 +114,30 @@ private fun EmptyThreadPane() {
             Modifier.fillMaxWidth().weight(1f).testTag(ReaderTwoPaneTags.EMPTY_BODY),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = stringResource(Res.string.reader_select_thread),
-                modifier = Modifier.testTag(ReaderTwoPaneTags.EMPTY),
-                color = colors.inkMuted,
-                style = ReaderType.stateBody.withReaderFont(),
-            )
+            OrbinCard(
+                modifier =
+                    Modifier
+                        .padding(24.dp)
+                        .widthIn(max = 360.dp)
+                        .fillMaxWidth()
+                        .testTag(ReaderTwoPaneTags.EMPTY_CARD),
+                border = BorderStroke(1.dp, colors.hairline),
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    OrbinLogo(size = 48.dp, contentDescription = null)
+                    Text(
+                        text = stringResource(Res.string.reader_select_thread),
+                        modifier = Modifier.testTag(ReaderTwoPaneTags.EMPTY).semantics { heading() },
+                        color = colors.inkMuted,
+                        style = OrbinType.stateBody.withReaderFont(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
     }
 }

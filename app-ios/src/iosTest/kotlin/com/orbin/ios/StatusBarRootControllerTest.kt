@@ -21,7 +21,7 @@ import kotlin.test.assertEquals
 
 class StatusBarRootControllerTest {
     @Test
-    fun readerRoutesUseLightIconsAndPrivacyOrFirstRunCoversRestoreThePalette() {
+    fun coralReaderAndBlackMediaRoutesKeepTheirContrastWhileCoversRestoreThePalette() {
         val appearance = StatusBarAppearance()
         val content = UIViewController()
         val root = StatusBarRootController(content, appearance)
@@ -46,9 +46,17 @@ class StatusBarRootControllerTest {
             )
 
         routes.forEach { route ->
-            // The reader app bar extends its green/dark ground beneath the status bar.
+            // Reader pages extend Coral's white bar; full-screen media retains black chrome.
             appearance.setLightIcons(lightStatusBarIcons(route, false, false, unlocked))
-            assertEquals(UIStatusBarStyleLightContent, root.preferredStatusBarStyle(), "$route reader bar")
+            assertEquals(
+                if (route is Route.Media || route is Route.ThreadVideos) {
+                    UIStatusBarStyleLightContent
+                } else {
+                    UIStatusBarStyleDarkContent
+                },
+                root.preferredStatusBarStyle(),
+                "$route reader/media bar",
+            )
             appearance.setLightIcons(lightStatusBarIcons(route, false, true, unlocked))
             assertEquals(UIStatusBarStyleDarkContent, root.preferredStatusBarStyle(), "$route light setup")
             listOf(LockState(locked = true, obscured = false), LockState(obscured = true)).forEach { cover ->

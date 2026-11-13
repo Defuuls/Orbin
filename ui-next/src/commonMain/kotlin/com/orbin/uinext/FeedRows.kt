@@ -45,20 +45,20 @@ import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.next_search_threads_prompt
 import com.orbin.uinext.resources.next_search_title
 import com.orbin.uinext.resources.next_settings_title
-import com.orbin.uinext.resources.social_feed_choose_source
-import com.orbin.uinext.resources.social_feed_home
-import com.orbin.uinext.resources.social_feed_more
-import com.orbin.uinext.resources.social_feed_muted
-import com.orbin.uinext.resources.social_feed_open_thread
-import com.orbin.uinext.resources.social_feed_post_metadata
-import com.orbin.uinext.resources.social_feed_poster_time
-import com.orbin.uinext.resources.social_feed_save
-import com.orbin.uinext.resources.social_feed_share
-import com.orbin.uinext.resources.social_feed_unsave
-import com.orbin.uinext.resources.social_feed_unwatch
-import com.orbin.uinext.resources.social_feed_watch
-import com.orbin.uinext.tokens.NextRadius
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.resources.reader_feed_choose_source
+import com.orbin.uinext.resources.reader_feed_home
+import com.orbin.uinext.resources.reader_feed_more
+import com.orbin.uinext.resources.reader_feed_muted
+import com.orbin.uinext.resources.reader_feed_open_thread
+import com.orbin.uinext.resources.reader_feed_post_metadata
+import com.orbin.uinext.resources.reader_feed_poster_time
+import com.orbin.uinext.resources.reader_feed_save
+import com.orbin.uinext.resources.reader_feed_share
+import com.orbin.uinext.resources.reader_feed_unsave
+import com.orbin.uinext.resources.reader_feed_unwatch
+import com.orbin.uinext.resources.reader_feed_watch
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -78,7 +78,7 @@ internal fun FeedHeader(
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     var sourcePickerVisible by rememberSaveable { mutableStateOf(false) }
     val source = sourceLabels.getOrNull(selectedSource).orEmpty()
-    val chooseSource = stringResource(Res.string.social_feed_choose_source)
+    val chooseSource = stringResource(Res.string.reader_feed_choose_source)
     Column {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp).heightIn(min = 48.dp),
@@ -112,8 +112,8 @@ internal fun FeedHeader(
                 ) {
                     Text(
                         source.takeIf { selectedSource > 0 && it.isNotBlank() }
-                            ?: stringResource(Res.string.social_feed_home),
-                        style = NextType.titleLarge.copy(fontSize = 24.sp, lineHeight = 29.sp),
+                            ?: stringResource(Res.string.reader_feed_home),
+                        style = OrbinType.titleLarge.copy(fontSize = 24.sp, lineHeight = 29.sp),
                         color = next.ink,
                         modifier =
                             Modifier.testTag(NextTitleTags.LARGE).semantics {
@@ -147,7 +147,7 @@ internal fun FeedHeader(
             if (!statusMessage.isNullOrBlank()) {
                 Text(
                     statusMessage,
-                    style = NextType.footnote,
+                    style = OrbinType.footnote,
                     color = next.muted,
                     modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
                 )
@@ -199,7 +199,7 @@ internal fun FeedGridCell(
     Card(
         onClick = { onClick(row) },
         modifier = modifier.padding(if (tallMedia) 0.dp else 4.dp).semantics { role = Role.Button },
-        shape = RoundedCornerShape(if (tallMedia) 0.dp else NextRadius.card),
+        shape = RoundedCornerShape(if (tallMedia) 0.dp else OrbinRadius.compactCard),
         border = if (tallMedia) null else BorderStroke(1.dp, next.hairline),
         colors = CardDefaults.cardColors(containerColor = next.background, contentColor = next.ink),
         elevation = CardDefaults.cardElevation(0.dp),
@@ -224,29 +224,29 @@ internal fun FeedGridCell(
                     Column(Modifier.weight(1f)) {
                         Text(
                             row.sourceAndBoard,
-                            style = NextType.bodyMedium,
+                            style = OrbinType.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = next.ink,
                         )
                         Text(
                             if (row.threadNumber.isNotBlank()) {
                                 stringResource(
-                                    Res.string.social_feed_post_metadata,
+                                    Res.string.reader_feed_post_metadata,
                                     row.poster,
                                     row.threadNumber,
                                     activityText(row),
                                 )
                             } else {
-                                stringResource(Res.string.social_feed_poster_time, row.poster, activityText(row))
+                                stringResource(Res.string.reader_feed_poster_time, row.poster, activityText(row))
                             },
-                            style = NextType.footnote.copy(fontSize = 11.sp, lineHeight = 14.sp),
+                            style = OrbinType.footnote.copy(fontSize = 11.sp, lineHeight = 14.sp),
                             color = next.muted,
                         )
                     }
                     if (tallMedia) {
                         NextIconAction(
                             ReaderIcons.More,
-                            stringResource(Res.string.social_feed_more, row.subject),
+                            stringResource(Res.string.reader_feed_more, row.subject),
                             onClick = { optionsVisible = true },
                             tint = next.ink,
                         )
@@ -269,7 +269,7 @@ internal fun FeedGridCell(
                     if (row.mediaLabel.isNotBlank()) {
                         Text(
                             row.mediaLabel,
-                            style = NextType.caption1,
+                            style = OrbinType.caption1,
                             color = next.ink,
                             modifier =
                                 Modifier
@@ -294,7 +294,7 @@ internal fun FeedGridCell(
             Column(Modifier.padding(horizontal = if (tallMedia) 12.dp else inset, vertical = 4.dp)) {
                 Text(
                     row.subject,
-                    style = NextType.bodyMedium,
+                    style = OrbinType.bodyMedium,
                     fontWeight = if (row.read) FontWeight.Medium else FontWeight.SemiBold,
                     color = if (row.read) next.muted else next.ink,
                     maxLines = if (tallMedia && !uniform) 3 else 2,
@@ -305,7 +305,7 @@ internal fun FeedGridCell(
                     Gap(4)
                     Text(
                         row.excerpt,
-                        style = NextType.bodyMedium,
+                        style = OrbinType.bodyMedium,
                         color = next.ink,
                         maxLines = excerptLines,
                         minLines = if (uniform) excerptLines else 1,
@@ -330,26 +330,26 @@ internal fun FeedGridCell(
     if (optionsVisible) {
         val actions =
             buildList {
-                add(NextSheetAction(stringResource(Res.string.social_feed_open_thread)) { onClick(row) })
+                add(NextSheetAction(stringResource(Res.string.reader_feed_open_thread)) { onClick(row) })
                 onToggleWatch?.let { action ->
                     add(
                         NextSheetAction(
                             stringResource(
-                                if (row.watched) Res.string.social_feed_unwatch else Res.string.social_feed_watch,
+                                if (row.watched) Res.string.reader_feed_unwatch else Res.string.reader_feed_watch,
                                 row.subject,
                             ),
                         ) { action(row) },
                     )
                 }
                 onShareRow?.let { action ->
-                    add(NextSheetAction(stringResource(Res.string.social_feed_share, row.subject)) { action(row) })
+                    add(NextSheetAction(stringResource(Res.string.reader_feed_share, row.subject)) { action(row) })
                 }
                 if (!row.watched) {
                     onToggleSaved?.let { action ->
                         add(
                             NextSheetAction(
                                 stringResource(
-                                    if (row.bookmarked) Res.string.social_feed_unsave else Res.string.social_feed_save,
+                                    if (row.bookmarked) Res.string.reader_feed_unsave else Res.string.reader_feed_save,
                                     row.subject,
                                 ),
                             ) { action(row) },
@@ -398,10 +398,16 @@ private fun CollapsedFeedRow(
             if (showBoard ||
                 row.site.isNotBlank()
             ) {
-                Text(row.sourceAndBoard, style = NextType.titleMedium, color = next.ink)
+                Text(row.sourceAndBoard, style = OrbinType.titleMedium, color = next.ink)
             }
-            Text(row.subject, style = NextType.body, color = next.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(stringResource(Res.string.social_feed_muted), style = NextType.footnote, color = next.muted)
+            Text(
+                row.subject,
+                style = OrbinType.body,
+                color = next.muted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(stringResource(Res.string.reader_feed_muted), style = OrbinType.footnote, color = next.muted)
         }
     }
 }

@@ -23,7 +23,7 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.OrbinFilledButton
 import com.orbin.uinext.OrbinLogo
 import com.orbin.uinext.reader
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.withReaderFont
 
 /**
@@ -52,13 +52,13 @@ fun DowngradeBlockedScreen(
             OrbinLogo(size = 48.dp, contentDescription = null)
             Text(
                 stringResource(R.string.downgrade_blocked_title),
-                style = ReaderType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
                 color = reader.ink,
                 modifier = Modifier.semantics { heading() },
             )
             Text(
                 stringResource(R.string.downgrade_blocked_explanation),
-                style = ReaderType.stateBody.withReaderFont(),
+                style = OrbinType.stateBody.withReaderFont(),
                 color = reader.inkMuted,
             )
             Text(
@@ -67,12 +67,12 @@ fun DowngradeBlockedScreen(
                     currentVersionCode,
                     highestVersionCode,
                 ),
-                style = ReaderType.body.withReaderFont(),
+                style = OrbinType.readerBody.withReaderFont(),
                 color = reader.inkMuted,
             )
             Text(
                 stringResource(R.string.downgrade_blocked_next_step, highestVersionCode),
-                style = ReaderType.stateBody.withReaderFont(),
+                style = OrbinType.stateBody.withReaderFont(),
                 color = reader.inkMuted,
             )
             OrbinFilledButton(

@@ -20,7 +20,7 @@ internal class MediaScrollSync(
         if (currentRoute() != route) return
         val thread = currentThread()?.takeIf { it.key == route.thread } ?: return
         // Simply opening and closing a file preserves the reader's exact scroll offset.
-        if (index == route.index && pending.value == null) return
+        if (index == route.startIndexIn(thread.files) && pending.value == null) return
         val postId = thread.postIdForFileIndex(index) ?: return
         pending.value = thread.key to postId
     }

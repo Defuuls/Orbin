@@ -176,7 +176,12 @@ class ReaderHomeAccessibilityTest {
             .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
         assertEquals(1, layouts.size)
         val layout = layouts.single()
-        assertFalse("$label must not overflow at maximum text", layout.hasVisualOverflow)
+        assertFalse(
+            "$label must not overflow at maximum text: size=${layout.size}, " +
+                "constraints=${layout.layoutInput.constraints}, lines=${layout.lineCount}, " +
+                "widthOverflow=${layout.didOverflowWidth}, heightOverflow=${layout.didOverflowHeight}",
+            layout.hasVisualOverflow,
+        )
         repeat(layout.lineCount) { line -> assertFalse(layout.isLineEllipsized(line)) }
         assertEquals(label.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
     }

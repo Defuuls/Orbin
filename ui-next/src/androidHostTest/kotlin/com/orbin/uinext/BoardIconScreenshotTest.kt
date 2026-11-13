@@ -17,7 +17,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,7 +66,7 @@ private fun IconDirectory(
     val boards = registeredBoardIconIds.filter { it.startsWith("$provider/") }.sorted()
     Text(
         "$label · ${boards.size} boards",
-        style = NextType.titleLarge,
+        style = OrbinType.titleLarge,
         color = next.ink,
         modifier = Modifier.padding(top = 12.dp, bottom = 12.dp),
     )
@@ -81,7 +81,7 @@ private fun IconDirectory(
                     BoardIcon(provider, identity.substringAfter('/'), modifier = Modifier.size(48.dp))
                     Text(
                         "/${identity.substringAfter('/')}/",
-                        style = NextType.footnote.copy(fontSize = 11.sp, lineHeight = 14.sp),
+                        style = OrbinType.footnote.copy(fontSize = 11.sp, lineHeight = 14.sp),
                         color = next.ink,
                     )
                 }

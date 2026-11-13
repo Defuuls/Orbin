@@ -41,10 +41,10 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_back
 import com.orbin.uinext.resources.reader_menu
 import com.orbin.uinext.resources.reader_more
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import com.orbin.uinext.tokens.readerColors
 import org.jetbrains.compose.resources.stringResource
 
@@ -164,7 +164,7 @@ fun ReaderAppBar(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = title,
-                            style = ReaderType.appBarTitle.withReaderFont(),
+                            style = OrbinType.appBarTitle.withReaderFont(),
                             color = colors.onAppBar,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -218,7 +218,7 @@ fun ReaderAppBar(
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        style = ReaderType.appBarSubtitle.withReaderFont(),
+                        style = OrbinType.appBarSubtitle.withReaderFont(),
                         color = colors.onAppBar,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -258,7 +258,7 @@ fun ReaderAppBar(
                                 text = {
                                     Text(
                                         text = item.label,
-                                        style = ReaderType.stateBody.withReaderFont(),
+                                        style = OrbinType.stateBody.withReaderFont(),
                                         color = if (item.enabled) colors.ink else colors.inkMuted,
                                     )
                                 },

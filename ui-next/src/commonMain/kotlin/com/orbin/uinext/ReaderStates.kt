@@ -60,10 +60,9 @@ import com.orbin.uinext.resources.reader_refreshing
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_retry
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderRadius
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.ceil
 
@@ -196,9 +195,9 @@ private fun ReaderSkeleton(
                                     Modifier.padding(12.dp),
                                     verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
                                 ) {
-                                    SkeletonLine(ReaderType.cardTitle.withReaderFont(), lines = 2)
+                                    SkeletonLine(OrbinType.cardTitle.withReaderFont(), lines = 2)
                                     SkeletonLine(
-                                        ReaderType.meta.withReaderFont(),
+                                        OrbinType.meta.withReaderFont(),
                                         Modifier.width(ReaderSize.pillMinWidth),
                                     )
                                 }
@@ -250,19 +249,19 @@ private fun ReaderSkeletonCell(
                             ).padding(bottom = ReaderSpace.gapSmall),
                         verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
                     ) {
-                        SkeletonLine(ReaderType.postAuthor.withReaderFont())
-                        SkeletonLine(ReaderType.meta.withReaderFont())
+                        SkeletonLine(OrbinType.postAuthor.withReaderFont())
+                        SkeletonLine(OrbinType.meta.withReaderFont())
                     }
-                    SkeletonLine(ReaderType.body.withReaderFont(), lines = 2)
+                    SkeletonLine(OrbinType.readerBody.withReaderFont(), lines = 2)
                 }
             } else {
                 Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
-                    SkeletonLine(ReaderType.rowTitle.withReaderFont())
+                    SkeletonLine(OrbinType.rowTitle.withReaderFont())
                     SkeletonLine(
-                        ReaderType.meta.withReaderFont(),
+                        OrbinType.meta.withReaderFont(),
                         Modifier.width(if (wideWindow) ReaderSize.thumbnailWide else ReaderSize.thumbnail),
                     )
-                    SkeletonLine(ReaderType.preview.withReaderFont(), lines = 2)
+                    SkeletonLine(OrbinType.preview.withReaderFont(), lines = 2)
                 }
             }
         }
@@ -330,14 +329,14 @@ private fun ReaderCenteredState(
             Text(
                 title,
                 color = if (error) colors.error else colors.ink,
-                style = ReaderType.stateTitle.withReaderFont(),
+                style = OrbinType.stateTitle.withReaderFont(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ReaderStateTags.TITLE).semantics { heading() },
             )
             Text(
                 message,
                 color = colors.inkMuted,
-                style = ReaderType.stateBody.withReaderFont(),
+                style = OrbinType.stateBody.withReaderFont(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ReaderStateTags.MESSAGE),
             )
@@ -378,7 +377,7 @@ fun ReaderRefreshFailure(
         ) {
             Text(
                 message ?: stringResource(Res.string.reader_refresh_failure, readerFailureTitle(cause)),
-                style = ReaderType.stateBody.withReaderFont(),
+                style = OrbinType.stateBody.withReaderFont(),
                 color = reader.ink,
                 modifier = Modifier.weight(1f, fill = false),
             )
@@ -450,5 +449,5 @@ private fun SkeletonLine(
 
 @Composable
 private fun SkeletonBlock(modifier: Modifier) {
-    Box(modifier.clip(RoundedCornerShape(ReaderRadius.small)).background(reader.surfaceVariant))
+    Box(modifier.clip(RoundedCornerShape(OrbinRadius.small)).background(reader.surfaceVariant))
 }

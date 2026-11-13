@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_thread_op">OP</string>
+    <string name="reader_thread_share">Share thread</string>
+</resources>

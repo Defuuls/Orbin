@@ -54,8 +54,8 @@ import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_clear_search
 import com.orbin.uinext.resources.next_provider_unknown
-import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -202,7 +202,7 @@ fun PlatformSegments(
                 ) {
                     Text(
                         label,
-                        style = NextType.body,
+                        style = OrbinType.body,
                         fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (active) next.ink else next.muted,
                     )
@@ -248,7 +248,7 @@ fun SchematicSearch(
                         },
                 ),
             keyboardActions = KeyboardActions(onSearch = { onSearch?.invoke() }),
-            textStyle = NextType.body.copy(color = next.ink, lineHeight = 20.sp),
+            textStyle = OrbinType.body.copy(color = next.ink, lineHeight = 20.sp),
             cursorBrush = SolidColor(reader.accent),
             modifier =
                 Modifier
@@ -284,7 +284,7 @@ fun SchematicSearch(
                             if (value.isEmpty()) {
                                 Text(
                                     placeholder,
-                                    style = NextType.body.copy(lineHeight = 20.sp),
+                                    style = OrbinType.body.copy(lineHeight = 20.sp),
                                     color = next.muted,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -357,7 +357,7 @@ private fun PlatformProviderMenu(
         ) {
             Text(
                 selectedLabel,
-                style = NextType.bodyMedium,
+                style = OrbinType.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = next.ink,
                 maxLines = 1,
@@ -380,7 +380,7 @@ private fun PlatformProviderMenu(
                     text = {
                         Text(
                             label,
-                            style = NextType.body,
+                            style = OrbinType.body,
                             fontWeight = if (index == selected) FontWeight.SemiBold else FontWeight.Normal,
                             color = if (index == selected) reader.accent else reader.ink,
                         )

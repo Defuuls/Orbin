@@ -1,15 +1,19 @@
 package com.orbin.feature.downloads
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -17,27 +21,28 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.uinext.DownloadRow
-import com.orbin.uinext.GroupedDivider
-import com.orbin.uinext.GroupedSection
+import com.orbin.uinext.DownloadTags
 import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderEmptyState
 import com.orbin.uinext.ReaderMenuItem
 import com.orbin.uinext.ReaderScaffold
+import com.orbin.uinext.tokens.ReaderSpace
 
 /**
  * Download history on the Next language. Transfer + notifications stay with the platform download
  * manager; this screen only lists what Orbin asked for.
  *
  * Back returns to the previous screen; Clear is available from the shared app bar's overflow.
+ * A supplied [bottomBar] owns its system-bottom safe inset.
  */
 @Composable
-@Suppress("UNUSED_PARAMETER")
 fun DownloadsScreen(
     onBack: (() -> Unit)? = null,
     onDestination: ((NextDestination) -> Unit)? = null,
     viewModel: DownloadsViewModel = hiltViewModel(),
+    bottomBar: (@Composable () -> Unit)? = null,
 ) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
@@ -45,16 +50,30 @@ fun DownloadsScreen(
     val title = stringResource(R.string.downloads_title)
 
     NextTheme {
-        ReaderScaffold(
-            title = title,
-            onBack = onBack,
-            overflow = listOf(ReaderMenuItem(clearLabel) { showClearDialog = true }),
-        ) { bottomPad ->
-            DownloadsContent(
-                downloads = downloads,
-                bottomPad = bottomPad,
-                onRetry = { viewModel.retry(it) },
-            )
+        Column(Modifier.fillMaxSize()) {
+            ReaderScaffold(
+                title = title,
+                modifier = Modifier.weight(1f),
+                destination = NextDestination.DOWNLOADS,
+                onDestination = onDestination,
+                onBack = onBack,
+                overflow =
+                    if (downloads.isEmpty()) {
+                        emptyList()
+                    } else {
+                        listOf(
+                            ReaderMenuItem(clearLabel) { showClearDialog = true },
+                        )
+                    },
+            ) { bottomPad ->
+                DownloadsContent(
+                    downloads = downloads,
+                    // A supplied navigation bar consumes its own system-bottom safe inset.
+                    bottomPad = if (bottomBar == null) bottomPad else PaddingValues(),
+                    onRetry = { viewModel.retry(it) },
+                )
+            }
+            bottomBar?.invoke()
         }
     }
 
@@ -84,16 +103,18 @@ private fun DownloadsContent(
         )
     } else {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = LIST_END_SPACE + bottomPad.calculateBottomPadding()),
+            modifier = Modifier.fillMaxSize().testTag(DownloadTags.LIST),
+            contentPadding =
+                PaddingValues(
+                    start = ReaderSpace.gutter,
+                    end = ReaderSpace.gutter,
+                    top = 8.dp,
+                    bottom = LIST_END_SPACE + bottomPad.calculateBottomPadding(),
+                ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item {
-                GroupedSection {
-                    downloads.forEachIndexed { index, record ->
-                        DownloadRow(record = record, onRetry = { onRetry(record.id) })
-                        if (index < downloads.lastIndex) GroupedDivider()
-                    }
-                }
+            items(downloads, key = { it.id }, contentType = { "download" }) { record ->
+                DownloadRow(record = record, onRetry = { onRetry(record.id) })
             }
         }
     }
@@ -106,17 +127,18 @@ private fun DownloadRow(
 ) {
     DownloadRow(
         fileName = record.fileName,
+        modifier = Modifier.testTag(DownloadTags.row(record.id)),
         status = stringResource(record.status.labelRes()),
         progress = record.progressFraction,
         active = record.status.isActive,
-        retryLabel = "Retry",
+        retryLabel = stringResource(R.string.downloads_retry_label),
         retryDescription = stringResource(R.string.downloads_retry),
         onRetry = onRetry.takeIf { record.status == DownloadStatus.FAILED },
     )
 }
 
-/** Room under the last download, above the tab pill's own clearance. */
-private val LIST_END_SPACE = 28.dp
+/** A final card remains clear of the navigation bar or system gesture area. */
+private val LIST_END_SPACE = 16.dp
 
 @StringRes
 private fun DownloadStatus.labelRes(): Int =

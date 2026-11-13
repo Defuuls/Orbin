@@ -69,18 +69,24 @@ class ReaderTwoPaneTest {
     }
 
     @Test
-    fun `the empty message is centered below its detail app bar and disappears when a thread opens`() {
+    fun `the Coral empty card is centered below its detail app bar and disappears when a thread opens`() {
         var threadOpen by mutableStateOf(false)
         showPanes(threadOpen = { threadOpen })
 
         val body = composeRule.onNodeWithTag(ReaderTwoPaneTags.EMPTY_BODY).getUnclippedBoundsInRoot()
+        val card =
+            composeRule.onNodeWithTag(ReaderTwoPaneTags.EMPTY_CARD).assertIsDisplayed().getUnclippedBoundsInRoot()
         val message = composeRule.onNodeWithText("Select a thread").assertIsDisplayed().getUnclippedBoundsInRoot()
-        assertThat((message.left.value + message.right.value) / 2)
+        assertThat((card.left.value + card.right.value) / 2)
             .isWithin(0.5f)
             .of((body.left.value + body.right.value) / 2)
-        assertThat((message.top.value + message.bottom.value) / 2)
+        assertThat((card.top.value + card.bottom.value) / 2)
             .isWithin(0.5f)
             .of((body.top.value + body.bottom.value) / 2)
+        assertThat(message.left.value).isAtLeast(card.left.value)
+        assertThat(message.right.value).isAtMost(card.right.value)
+        assertThat(message.top.value).isAtLeast(card.top.value)
+        assertThat(message.bottom.value).isAtMost(card.bottom.value)
         composeRule.onNodeWithText("Thread content").assertDoesNotExist()
 
         composeRule.runOnIdle { threadOpen = true }
@@ -88,6 +94,7 @@ class ReaderTwoPaneTest {
         composeRule.onNodeWithText("Select a thread").assertDoesNotExist()
         composeRule.onNodeWithText("Thread content").assertIsDisplayed()
         composeRule.onNodeWithTag(ReaderTwoPaneTags.EMPTY_HEADER).assertDoesNotExist()
+        composeRule.onNodeWithTag(ReaderTwoPaneTags.EMPTY_CARD).assertDoesNotExist()
     }
 
     @Test

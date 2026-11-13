@@ -72,22 +72,20 @@ import com.orbin.uinext.resources.next_thread_save_page
 import com.orbin.uinext.resources.next_thread_scroll_top
 import com.orbin.uinext.resources.next_thread_watch
 import com.orbin.uinext.resources.next_thread_watching
+import com.orbin.uinext.resources.reader_feed_save
+import com.orbin.uinext.resources.reader_feed_saved_while_watching
+import com.orbin.uinext.resources.reader_feed_unsave
 import com.orbin.uinext.resources.reader_media_more
 import com.orbin.uinext.resources.reader_new
 import com.orbin.uinext.resources.reader_open_browser
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_reply_link
-import com.orbin.uinext.resources.social_feed_save
-import com.orbin.uinext.resources.social_feed_saved_while_watching
-import com.orbin.uinext.resources.social_feed_unsave
-import com.orbin.uinext.resources.social_thread_op
-import com.orbin.uinext.resources.social_thread_share
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.resources.reader_thread_op
+import com.orbin.uinext.resources.reader_thread_share
 import com.orbin.uinext.tokens.OrbinRadius
-import com.orbin.uinext.tokens.ReaderRadius
+import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.tokens.ReaderType
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -286,7 +284,7 @@ fun ThreadScreen(
         val unreadFrom =
             firstUnreadPostId?.let { id -> posts.indexOfFirst { it.id == id } }?.takeIf { it > 0 }
         val newCount = unreadFrom?.let { posts.size - it }
-        Box(Modifier.fillMaxSize()) {
+        ReaderFastScrollThumb(state = state, enabled = showingPosts, modifier = Modifier.fillMaxSize()) {
             BoxWithConstraints(
                 Modifier
                     .fillMaxSize()
@@ -313,7 +311,7 @@ fun ThreadScreen(
                         if (!subtitle.isNullOrBlank()) {
                             Text(
                                 text = subtitle,
-                                style = ReaderType.meta.withReaderFont(),
+                                style = OrbinType.meta.withReaderFont(),
                                 color = colors.inkMuted,
                                 modifier =
                                     Modifier.fillMaxWidth().padding(
@@ -422,7 +420,7 @@ private fun ThreadPill(
 ) {
     Text(
         label,
-        style = NextType.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        style = OrbinType.labelLarge.copy(fontWeight = FontWeight.SemiBold),
         color = reader.onAccent,
         maxLines = 1,
         modifier =
@@ -503,22 +501,22 @@ private fun threadOverflow(
                 saved && watching ->
                     add(
                         ReaderMenuItem(
-                            label = stringResource(Res.string.social_feed_saved_while_watching, subject),
+                            label = stringResource(Res.string.reader_feed_saved_while_watching, subject),
                             enabled = false,
                             onClick = {},
                         ),
                     )
                 saved ->
                     add(
-                        ReaderMenuItem(stringResource(Res.string.social_feed_unsave, subject), onClick = onToggleSaved),
+                        ReaderMenuItem(stringResource(Res.string.reader_feed_unsave, subject), onClick = onToggleSaved),
                     )
                 else ->
                     add(
-                        ReaderMenuItem(stringResource(Res.string.social_feed_save, subject), onClick = onToggleSaved),
+                        ReaderMenuItem(stringResource(Res.string.reader_feed_save, subject), onClick = onToggleSaved),
                     )
             }
         }
-        if (onShare != null) add(ReaderMenuItem(stringResource(Res.string.social_thread_share), onClick = onShare))
+        if (onShare != null) add(ReaderMenuItem(stringResource(Res.string.reader_thread_share), onClick = onShare))
         if (onReload != null) add(ReaderMenuItem(stringResource(Res.string.reader_reload), onClick = onReload))
         if (onOpenBrowser != null) {
             add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
@@ -553,12 +551,12 @@ private fun PostCell(
     val indent = ReaderSpace.gap * post.depth.coerceIn(0, MAX_REPLY_DEPTH)
     val showThumbnail = post.hasMedia && !collapsed
     val inset = readerPostInset(wideWindow)
-    val bodyStyle = if (wideWindow) ReaderType.postBodyWide.withReaderFont() else ReaderType.postBody.withReaderFont()
+    val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.postBody.withReaderFont()
     val detailStyle =
         if (wideWindow) {
-            ReaderType.postDetailsWide.withReaderFont()
+            OrbinType.postDetailsWide.withReaderFont()
         } else {
-            ReaderType.postDetails
+            OrbinType.postDetails
                 .withReaderFont()
         }
     Column(
@@ -613,7 +611,7 @@ private fun PostThumbnail(
     Box(
         modifier
             .testTag(ThreadTags.THUMBNAIL)
-            .clip(RoundedCornerShape(ReaderRadius.card))
+            .clip(RoundedCornerShape(OrbinRadius.compact))
             .background(colors.surfaceVariant),
     ) {
         if (covered) {
@@ -624,7 +622,7 @@ private fun PostThumbnail(
         if (post.mediaCount > 1) {
             Text(
                 text = stringResource(Res.string.reader_media_more, post.mediaCount - 1),
-                style = ReaderType.meta.withReaderFont().copy(textDirection = TextDirection.Ltr),
+                style = OrbinType.meta.withReaderFont().copy(textDirection = TextDirection.Ltr),
                 color = colors.ink,
                 modifier =
                     Modifier
@@ -678,7 +676,7 @@ private fun PostHeader(
             }
             if (original) {
                 Text(
-                    text = stringResource(Res.string.social_thread_op),
+                    text = stringResource(Res.string.reader_thread_op),
                     style = detailStyle,
                     color = colors.inkMuted,
                 )
@@ -715,13 +713,13 @@ private fun PostBody(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = ReaderSize.touchTarget)
-                    .clip(RoundedCornerShape(ReaderRadius.small))
+                    .clip(RoundedCornerShape(OrbinRadius.small))
                     .background(colors.surfaceVariant)
                     .nextClickable(onClickLabel = revealLabel, onClick = { spoilerRevealed = true })
                     .padding(horizontal = ReaderSpace.gap),
             contentAlignment = Alignment.CenterStart,
         ) {
-            Text(text = revealLabel, style = ReaderType.label.withReaderFont(), color = colors.ink)
+            Text(text = revealLabel, style = OrbinType.label.withReaderFont(), color = colors.ink)
         }
     } else if (body != null) {
         ProvideTextStyle(LocalReaderPostBodyStyle.current.copy(color = colors.ink)) { body(post) }
@@ -778,7 +776,7 @@ private fun UnreadMarker() {
     Column(Modifier.fillMaxWidth().testTag(ThreadTags.UNREAD)) {
         Text(
             text = stringResource(Res.string.reader_new),
-            style = ReaderType.meta.withReaderFont(),
+            style = OrbinType.meta.withReaderFont(),
             color = colors.accent,
             modifier = Modifier.padding(start = ReaderSpace.gutter, top = ReaderSpace.line, bottom = ReaderSpace.line),
         )
@@ -793,7 +791,7 @@ private fun ThreadStatus(
     fileCount: Int,
     statusText: String?,
 ) {
-    val style = ReaderType.postBody.withReaderFont().copy(fontWeight = FontWeight.Medium)
+    val style = OrbinType.postBody.withReaderFont().copy(fontWeight = FontWeight.Medium)
     Box(
         modifier =
             Modifier

@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
@@ -27,6 +28,7 @@ import com.orbin.feature.downloads.DownloadsScreen
 import com.orbin.feature.gallery.GalleryScreen
 import com.orbin.feature.gallery.NextAllMediaScreen
 import com.orbin.feature.home.BoardGalleryScreen
+import com.orbin.feature.home.FeedDownloadBadgeViewModel
 import com.orbin.feature.home.NextFeedWithSiteSwitcherScreen
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.NextSearchScreen
@@ -34,6 +36,7 @@ import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextScaffold
+import com.orbin.uinext.OrbinBottomBar
 import com.orbin.uinext.ReaderAction
 import com.orbin.uinext.ReaderIcons
 import com.orbin.uinext.ReaderScaffold
@@ -78,14 +81,25 @@ fun OrbinNavHost(
                 onOpenThreadVideos = { provider, board, thread, _ ->
                     navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
                 },
+                onOpenMedia = { provider, board, thread, attachmentId, thumbnailUrl ->
+                    navController.navigate(
+                        Route.SelectedMedia(
+                            provider,
+                            board,
+                            thread,
+                            attachmentId = attachmentId,
+                            thumbnailUrl = thumbnailUrl,
+                        ),
+                    )
+                },
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
-                onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenSettings = { navController.openPrimaryDestination(NextDestination.SETTINGS) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenDownloads = { navController.openPrimaryDestination(NextDestination.DOWNLOADS) },
                 onOpenSearch = { navController.navigateToTab(Route.Search) },
                 onOpenSaved = { navController.navigateToTab(Route.Saved) },
                 onOpenWatched = { navController.navigateToTab(Route.Watched) },
@@ -94,14 +108,15 @@ fun OrbinNavHost(
 
         composable<Route.BoardGallery> {
             BoardGalleryScreen(
+                downloadBadge = primaryDownloadBadge(),
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
-                onOpenDownloads = { navController.navigate(Route.Downloads) },
+                onOpenDownloads = { navController.openPrimaryDestination(NextDestination.DOWNLOADS) },
                 onOpenSaved = { navController.navigateToTab(Route.Saved) },
                 onOpenWatched = { navController.navigateToTab(Route.Watched) },
-                onOpenSettings = { navController.navigate(Route.Settings) },
+                onOpenSettings = { navController.openPrimaryDestination(NextDestination.SETTINGS) },
                 onOpenSearch = { navController.navigateToTab(Route.Search) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -136,14 +151,15 @@ fun OrbinNavHost(
             ) {
                 NextAllMediaScreen(
                     title = "/${backStackEntry.toRoute<Route.BoardMedia>().board}/",
-                    onOpenMedia = { provider, board, thread, attachmentId ->
+                    onOpenMedia = { provider, board, thread, attachmentId, thumbnailUrl ->
                         navController.navigate(
-                            Route.Gallery(
+                            Route.SelectedMedia(
                                 provider = provider,
                                 board = board,
                                 thread = thread,
                                 startIndex = 0,
                                 attachmentId = attachmentId,
+                                thumbnailUrl = thumbnailUrl,
                             ),
                         )
                     },
@@ -236,6 +252,10 @@ fun OrbinNavHost(
             GalleryScreen(onClose = navController::navigateUp)
         }
 
+        composable<Route.SelectedMedia> {
+            GalleryScreen(onClose = navController::navigateUp)
+        }
+
         composable<Route.Saved> {
             ThreadCollectionsDestination(
                 kind = CollectionKind.SAVED,
@@ -263,11 +283,19 @@ fun OrbinNavHost(
             )
         }
         composable<Route.Downloads> {
-            DownloadsScreen(onBack = { navController.navigateUp() })
+            DownloadsScreen(
+                onBack = { navController.navigateUp() },
+                bottomBar = {
+                    PrimaryBottomBar(NextDestination.DOWNLOADS, navController::openPrimaryDestination)
+                },
+            )
         }
 
         composable<Route.Settings> {
             NextSettingsScreen(
+                bottomBar = {
+                    PrimaryBottomBar(NextDestination.SETTINGS, navController::openPrimaryDestination)
+                },
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 onBack = { navController.navigateUp() },
                 onNavigate = { destination ->
@@ -296,6 +324,22 @@ fun OrbinNavHost(
             )
         }
     }
+}
+
+/** The view model belongs to the current navigation entry; progress bytes never change this state. */
+@Composable
+private fun primaryDownloadBadge(): Int {
+    val model: FeedDownloadBadgeViewModel = hiltViewModel()
+    val count by model.activeCount.collectAsStateWithLifecycle()
+    return count
+}
+
+@Composable
+private fun PrimaryBottomBar(
+    selected: NextDestination,
+    onSelect: (NextDestination) -> Unit,
+) {
+    OrbinBottomBar(selected = selected, onSelect = onSelect, downloadBadge = primaryDownloadBadge())
 }
 
 internal val threadRouteSaver =
@@ -348,6 +392,32 @@ internal fun NavHostController.openDestination(destination: NextDestination) {
         NextDestination.DOWNLOADS -> navigate(Route.Downloads)
         NextDestination.SETTINGS -> navigate(Route.Settings)
     }
+}
+
+/** Return to a retained utility page, or replace the utility trail above the current reader. */
+internal fun NavHostController.openPrimaryDestination(destination: NextDestination) {
+    val route =
+        when (destination) {
+            NextDestination.DOWNLOADS -> Route.Downloads
+            NextDestination.SETTINGS -> Route.Settings
+            else -> {
+                openDestination(destination)
+                return
+            }
+        }
+    while (
+        currentDestination?.hasRoute(Route.Downloads::class) == true ||
+        currentDestination?.hasRoute(Route.Settings::class) == true
+    ) {
+        val targetVisible =
+            when (destination) {
+                NextDestination.DOWNLOADS -> currentDestination?.hasRoute(Route.Downloads::class) == true
+                NextDestination.SETTINGS -> currentDestination?.hasRoute(Route.Settings::class) == true
+            }
+        if (targetVisible) return
+        if (!popBackStack()) break
+    }
+    navigate(route) { launchSingleTop = true }
 }
 
 /** Choosing the board already in view retains its paging generation, sort and scroll state. */

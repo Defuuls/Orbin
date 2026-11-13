@@ -252,6 +252,61 @@ class BrowserTest {
         }
 
     @Test
+    fun directCatalogMediaLoadsItsThreadAndReturnsWithoutACommentsPage() =
+        runTest {
+            val mediaThread =
+                """{"posts":[{"no":7,"time":1,"tim":70,"filename":"op","ext":".jpg"},
+                    {"no":9,"time":3,"tim":90,"filename":"reply","ext":".jpg"}]}"""
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to mediaThread))
+            browser.boards.settled()
+            browser.openMedia(WATCHED_KEY, "catalog-preview", "https://i.4cdn.org/g/90s.jpg")
+            val route = assertIs<Route.Media>(browser.backStack.value.last())
+            assertEquals(listOf(Route.Feed, route), browser.backStack.value)
+            val loaded = assertIs<Load.Ready<Thread>>(browser.thread.settled()).value
+            assertEquals(WATCHED_KEY, loaded.key)
+            assertEquals(1, route.startIndexIn(loaded.files))
+            browser.mediaScroll.select(route, 1)
+            assertNull(browser.mediaScroll.target.value, "opening the selected file is not a page swipe")
+            assertTrue(browser.back())
+            assertEquals(listOf(Route.Feed), browser.backStack.value)
+        }
+
+    @Test
+    fun aFailedDirectMediaLoadCannotDisplayThePreviousThreadsFiles() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(1)))
+            browser.openThread(WATCHED_KEY)
+            browser.thread.settled()
+            val missing = WATCHED_KEY.copy(thread = ThreadId(404))
+            browser.openMedia(missing, "missing")
+            assertIs<Load.Failed>(browser.thread.settled())
+            assertEquals(missing, assertIs<Route.Media>(browser.backStack.value.last()).thread)
+        }
+
+    @Test
+    fun primaryUtilitySwitchesPreserveTheirReaderWithoutGrowingATrail() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(1)))
+            browser.openThread(WATCHED_KEY)
+            val retained = browser.thread.settled()
+            browser.boards.settled()
+            val before = requested.size
+            repeat(3) {
+                browser.openPrimaryPage(Route.Settings)
+                browser.openPrimaryPage(Route.Downloads)
+            }
+            browser.openPrimaryPage(Route.Settings)
+            val expected = listOf(Route.Feed, Route.ThreadPage(WATCHED_KEY), Route.Settings)
+            assertEquals(expected, browser.backStack.value)
+            browser.openPrimaryPage(Route.Settings)
+            assertEquals(expected, browser.backStack.value)
+            assertTrue(browser.back())
+            assertEquals(Route.ThreadPage(WATCHED_KEY), browser.backStack.value.last())
+            assertSame(retained, browser.thread.value)
+            assertEquals(before, requested.size, "utility switching never mounts a hidden feed or reloads the thread")
+        }
+
+    @Test
     fun goingBackShowsTheLoadedPageWithoutFetchingItAgain() =
         runTest {
             // An established reader has a real saved follow; an empty old install stays in setup,

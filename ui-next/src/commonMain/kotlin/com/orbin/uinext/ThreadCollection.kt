@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -15,11 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.collection_empty
 import com.orbin.uinext.resources.reader_row_meta
+import com.orbin.uinext.resources.reader_secondary_settings
 import com.orbin.uinext.resources.reader_unread
-import com.orbin.uinext.resources.tiktok_secondary_settings
+import com.orbin.uinext.tokens.ReaderSpace
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -47,7 +50,7 @@ object ReaderSavedTags {
     fun row(id: String): String = "reader-saved-row:$id"
 }
 
-/** Saved, watched and history use the same compact reader cells over their actual local records. */
+/** Saved, watched and history share Coral cards over their actual source-qualified records. */
 @Composable
 fun ThreadCollectionScreen(
     title: String,
@@ -68,7 +71,7 @@ fun ThreadCollectionScreen(
         actions =
             onSettings
                 ?.let {
-                    listOf(ReaderAction(ReaderIcons.Settings, stringResource(Res.string.tiktok_secondary_settings), it))
+                    listOf(ReaderAction(ReaderIcons.Settings, stringResource(Res.string.reader_secondary_settings), it))
                 }.orEmpty(),
     ) { padding ->
         Box(
@@ -91,15 +94,21 @@ private fun ReaderCollection(
     wideWindow: Boolean,
     saved: Boolean,
 ) {
-    // Stored records have source identities and text metadata, not guaranteed attachment data.
-    // Keep the reading surface compact without fabricating media covers or a profile header.
+    // Stable record identities retain the current reading anchor when another item is inserted.
     LazyColumn(
         modifier =
             Modifier
                 .fillMaxSize()
                 .background(reader.background)
                 .testTag(if (saved) ReaderSavedTags.LIST else ReaderCollectionTags.LIST),
-        contentPadding = PaddingValues(bottom = padding.calculateBottomPadding()),
+        contentPadding =
+            PaddingValues(
+                start = ReaderSpace.gutter,
+                end = ReaderSpace.gutter,
+                top = COLLECTION_GAP,
+                bottom = COLLECTION_GAP + padding.calculateBottomPadding(),
+            ),
+        verticalArrangement = Arrangement.spacedBy(COLLECTION_GAP),
     ) {
         if (rows.isEmpty()) {
             item(key = "reader-collection-empty") {
@@ -116,6 +125,8 @@ private fun ReaderCollection(
         }
     }
 }
+
+private val COLLECTION_GAP = 8.dp
 
 @Composable
 private fun StoredThreadRow(

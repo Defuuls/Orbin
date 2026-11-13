@@ -57,7 +57,7 @@ import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.next
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.NextMotion
-import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinType
 
 internal const val OFFLINE_BANNER_TAG = "orbin-offline-banner"
 
@@ -79,12 +79,14 @@ fun OrbinApp(
     val immersive =
         currentEntry?.destination?.let {
             it.hasRoute(Route.Gallery::class) ||
+                it.hasRoute(Route.SelectedMedia::class) ||
                 it.hasRoute(Route.ThreadVideos::class)
         } ?: false
     val readerBarVisible =
         currentEntry?.destination?.let { destination ->
             !destination.hasRoute(Route.Onboarding::class) &&
                 !destination.hasRoute(Route.Gallery::class) &&
+                !destination.hasRoute(Route.SelectedMedia::class) &&
                 !destination.hasRoute(Route.ThreadVideos::class)
         } ?: !startWithOnboarding
     SystemBarAppearance(immersive = immersive, readerBarVisible = readerBarVisible)
@@ -232,7 +234,7 @@ private fun OfflineBanner(modifier: Modifier = Modifier) {
                 .background(next.accentSoft)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         color = next.accent,
-        style = NextType.footnote,
+        style = OrbinType.footnote,
         textAlign = TextAlign.Center,
     )
 }
@@ -244,7 +246,7 @@ internal fun SystemBarAppearance(
     readerBarVisible: Boolean = false,
 ) {
     val activity = LocalView.current.context.findActivity() as? ComponentActivity ?: return
-    val darkIcons = !next.dark && !immersive
+    val darkIcons = !next.dark && (readerBarVisible || !immersive)
     SideEffect {
         val style =
             if (darkIcons) {
@@ -253,7 +255,7 @@ internal fun SystemBarAppearance(
                 SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
             }
         activity.enableEdgeToEdge(
-            statusBarStyle = if (readerBarVisible) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT) else style,
+            statusBarStyle = style,
             navigationBarStyle = style,
         )
     }

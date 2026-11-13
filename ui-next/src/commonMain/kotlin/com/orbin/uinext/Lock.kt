@@ -24,7 +24,7 @@ import com.orbin.uinext.resources.next_lock_hint
 import com.orbin.uinext.resources.next_lock_title
 import com.orbin.uinext.resources.next_lock_unlock
 import com.orbin.uinext.resources.next_lock_unlocking
-import com.orbin.uinext.tokens.ReaderType
+import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -51,10 +51,10 @@ fun LockScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        OrbinLogo(size = 72.dp, tint = reader.accent, contentDescription = null)
+        OrbinLogo(size = 72.dp, contentDescription = null)
         Text(
             text = stringResource(Res.string.next_lock_title),
-            style = ReaderType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+            style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
             color = reader.ink,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 20.dp).semantics { heading() },
@@ -63,7 +63,7 @@ fun LockScreen(
             text = message ?: stringResource(Res.string.next_lock_hint),
             modifier = Modifier.padding(top = 8.dp),
             color = if (failed) reader.error else reader.inkMuted,
-            style = ReaderType.stateBody.withReaderFont(),
+            style = OrbinType.stateBody.withReaderFont(),
             textAlign = TextAlign.Center,
         )
         if (!unlocking) {
@@ -75,7 +75,7 @@ fun LockScreen(
         } else {
             Text(
                 stringResource(Res.string.next_lock_unlocking),
-                style = ReaderType.body.withReaderFont(),
+                style = OrbinType.readerBody.withReaderFont(),
                 color = reader.inkMuted,
                 modifier = Modifier.padding(top = 24.dp),
             )

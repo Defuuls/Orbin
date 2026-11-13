@@ -177,23 +177,62 @@ class WebMPlaybackScriptTest(unittest.TestCase):
             assert.equal(window.__orbinPlaybackApplied, 4);
         """)
 
+    def test_same_command_speed_changes_preserve_pending_ack_and_manual_pause(self) -> None:
+        self.run_production_script(r"""
+            video = media();
+            video.currentTime = 4.5;
+            const first = deferred();
+            video.playResult = () => first.promise;
+            run(0);
+            const pending = window.__orbinPlaybackPending;
+            run(5);
+            assert.equal(video.playbackRate, 1.25, 'The current pending command accepts a speed update');
+            assert.equal(window.__orbinPlaybackPending, pending, 'Speed does not replace pending playback');
+            assert.equal(window.__orbinPlaybackApplied, undefined, 'A speed update is not a play acknowledgement');
+            assert.equal(video.playCalls, 1);
+            first.resolve();
+            await flush();
+            assert.equal(window.__orbinPlaybackApplied, 1);
+            assert.equal(window.__orbinPlaybackPending, null);
+
+            video.paused = true; // Native controls can pause after the play promise is acknowledged.
+            run(6);
+            assert.equal(video.playbackRate, 2);
+            assert.equal(video.paused, true, 'Changing speed never resumes a manual pause');
+            assert.equal(video.currentTime, 4.5, 'Changing speed retains the selected playback position');
+            assert.equal(video.playCalls, 1);
+            assert.equal(window.__orbinPlaybackApplied, 1, 'The existing acknowledgement remains valid');
+
+            run(3);
+            run(7);
+            assert.equal(video.playbackRate, 1.25, 'An acknowledged pause also accepts a new rate');
+            assert.equal(video.paused, true);
+            assert.equal(video.pauseCalls, 1, 'Polling a paused rate update does not issue another command');
+            assert.equal(video.playCalls, 1);
+            assert.equal(window.__orbinPlaybackApplied, 3);
+        """)
+
     def run_production_script(self, checks: str) -> None:
         source = SCRIPT_SOURCE.read_text(encoding="utf-8")
         template = re.search(r'return """(.*?)"""\.trimIndent\(\)', source, re.DOTALL)
         self.assertIsNotNone(template, "The production script must remain an inspectable raw JavaScript string")
         scripts = []
-        for command, play, muted, loop in [
-            (1, True, True, True),
-            (1, True, False, False),
-            (2, True, False, False),
-            (3, False, False, False),
-            (4, True, True, True),
+        for command, play, muted, loop, speed in [
+            (1, True, True, True, 1.0),
+            (1, True, False, False, 1.0),
+            (2, True, False, False, 1.0),
+            (3, False, False, False, 1.0),
+            (4, True, True, True, 1.0),
+            (1, True, False, False, 1.25),
+            (1, True, False, False, 2.0),
+            (3, False, False, False, 1.25),
         ]:
             scripts.append(Template(textwrap.dedent(template.group(1))).substitute(
                 command=command,
                 play=str(play).lower(),
                 muted=str(muted).lower(),
                 loop=str(loop).lower(),
+                speed=speed,
             ))
         setup = r"""
             const assert = require('node:assert/strict');
@@ -210,7 +249,7 @@ class WebMPlaybackScriptTest(unittest.TestCase):
             }
             function media() {
                 return {
-                    paused: true, ended: false, currentTime: 0, duration: 10,
+                    paused: true, ended: false, currentTime: 0, duration: 10, playbackRate: 1.0,
                     playCalls: 0, pauseCalls: 0,
                     playResult: () => Promise.resolve(),
                     play() { this.playCalls++; this.paused=false; this.ended=false; return this.playResult(); },

@@ -84,6 +84,62 @@ class ThreadArchiveTest {
     }
 
     @Test
+    fun spoilersStartClosedAndKeepStyledTextAndQuoteLinksInsideTheirDisclosure() {
+        val spoiler =
+            PostNode.Styled(
+                InlineStyle.SPOILER,
+                persistentListOf(
+                    PostNode.Styled(InlineStyle.GREENTEXT, persistentListOf(PostNode.Text(">hidden & styled"))),
+                    PostNode.QuoteLink(PostId(101)),
+                    PostNode.Link("https://example.test/?a=1&b=2", persistentListOf(PostNode.Text("hidden link"))),
+                ),
+            )
+        val archived =
+            thread.copy(
+                originalPost = thread.originalPost.copy(comment = PostComment("", persistentListOf(spoiler))),
+            )
+        val page = threadPage(archived, emptyMap(), null, 0L)
+        val disclosure = page.substringAfter("<details class=\"spoiler\">").substringBefore("</details>")
+
+        // Native details starts closed and gives its summary keyboard and touch activation without script.
+        assertTrue("<details class=\"spoiler\">" in page)
+        assertFalse("<details class=\"spoiler\" open" in page)
+        assertTrue(disclosure.startsWith("<summary>Spoiler</summary>"))
+        assertTrue("<span class=\"green\">&gt;hidden &amp; styled</span>" in disclosure)
+        assertTrue("<a class=\"quote\" href=\"#p101\">&gt;&gt;101</a>" in disclosure)
+        assertTrue("href=\"https://example.test/?a=1&amp;b=2\"" in disclosure)
+        assertTrue("hidden link</a>" in disclosure)
+        assertFalse("<script" in page)
+    }
+
+    @Test
+    fun nestedSpoilersHaveIndependentClosedDisclosures() {
+        val nested =
+            PostNode.Styled(
+                InlineStyle.SPOILER,
+                persistentListOf(
+                    PostNode.Text("outer "),
+                    PostNode.Styled(
+                        InlineStyle.SPOILER,
+                        persistentListOf(
+                            PostNode.Styled(InlineStyle.QUOTE_TEXT, persistentListOf(PostNode.Text("inner"))),
+                        ),
+                    ),
+                ),
+            )
+        val archived =
+            thread.copy(
+                originalPost = thread.originalPost.copy(comment = PostComment("", persistentListOf(nested))),
+            )
+        val page = threadPage(archived, emptyMap(), null, 0L)
+
+        assertEquals(2, Regex("<details class=\"spoiler\">").findAll(page).count())
+        assertEquals(2, Regex("<summary>Spoiler</summary>").findAll(page).count())
+        assertTrue("<span class=\"pink\">inner</span></span></details></span></details>" in page)
+        assertFalse(" open" in page.substringAfter("<blockquote>").substringBefore("</blockquote>"))
+    }
+
+    @Test
     fun namesCannotLeaveTheirFolder() {
         assertEquals("____etc", safeName("../.etc"))
         assertEquals(".webm", extensionOf(".webm", ""))
