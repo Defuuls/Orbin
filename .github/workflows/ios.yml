@@ -173,8 +173,9 @@ jobs:
 
       # Combined cache's post-save is `success()`-only, so a failed Gradle step
       # never wrote ~/.konan. Save explicitly so a later run can reuse the compiler.
+      # Saved from main only; pull requests restore main's copy instead of adding duplicates.
       - name: Save Kotlin/Native compiler cache
-        if: always()
+        if: always() && github.ref == 'refs/heads/main'
         continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

@@ -87,8 +87,10 @@ jobs:
       # The emulator runner downloads the system image itself, and that download now and then comes
       # back truncated ("unknown archive"), failing the job before a benchmark runs. As in
       # instrumentation.yml: cache the image, and install it with retries on a miss.
+      # Restore only: instrumentation.yml saves this same key from main, so pull requests here
+      # no longer write a 1.6 GB duplicate that evicts the iOS Kotlin/Native cache.
       - name: System image cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: sysimg-cache
         with:
           path: |
