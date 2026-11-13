@@ -9,6 +9,17 @@ All notable changes to Orbin are documented here. The format is based on
 ### Changed
 - Replaced the aperture and orbit app icons with a card-stack mark on coral `#FF5D68`: two offset rounded cards, thread lines on large sizes, and a play-triangle notch. Android adaptive, monochrome, legacy, splash, notification, iOS AppIcon and LaunchMark, and the website favicon all derive from one SVG.
 
+## [204-Moringa] - 2026-11-13
+
+### Fixed
+- Applied the iOS system text size once, preventing extra shrinking or enlargement from duplicate Dynamic Type scaling.
+- Kept live iOS text-size changes synchronized with the system without requiring an app relaunch.
+
+### Testing
+- Added native composable regressions for live text-size changes and host scaling.
+- Added installed-app checks for Small and Large text sizes and a cold relaunch.
+
+
 ## [203-Chaya] - 2026-11-13
 
 ### Security
@@ -3080,7 +3091,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v203-Chaya...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v204-Moringa...HEAD
+[204-Moringa]: https://github.com/Defuuls/Orbin/compare/v203-Chaya...v204-Moringa
 [203-Chaya]: https://github.com/Defuuls/Orbin/compare/v202-Arracacha...v203-Chaya
 [202-Arracacha]: https://github.com/Defuuls/Orbin/compare/v201-Huauzontle...v202-Arracacha
 [201-Huauzontle]: https://github.com/Defuuls/Orbin/compare/v200-Shungiku...v201-Huauzontle

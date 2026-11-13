@@ -1,6 +1,7 @@
+import UIKit
 import XCTest
 
-/// Launches the installed production application without test-only launch flags or content fixtures.
+/// Launches the installed production app without app-specific test flags or content fixtures.
 final class StartupSmokeTests: XCTestCase {
     private var app: XCUIApplication!
     private var hasOpenedFeed = false
@@ -27,6 +28,7 @@ final class StartupSmokeTests: XCTestCase {
         XCTAssertGreaterThan(welcome.frame.height, 0)
         XCTAssertFalse(startBrowsing.isEnabled, "A fresh installation must not enter Home with zero followed boards")
         XCTAssertTrue(labeled("Follow at least one board to continue").exists)
+        assertDynamicTypeIsAppliedOnce()
         attachScreenshot(named: "ios-onboarding-follow-required")
 
         // /3/ is a SFW board whose metadata appears first in the real 4chan directory.
@@ -127,6 +129,31 @@ final class StartupSmokeTests: XCTestCase {
 
     private func labeled(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func assertDynamicTypeIsAppliedOnce() {
+        // UIKit's standard launch override changes both the app category and Compose's native
+        // density. A second category multiplier shrinks Small to 0.85 * 0.88 instead of 0.88.
+        func headingHeight(at category: UIContentSizeCategory) -> CGFloat {
+            app.terminate()
+            app.launchArguments = ["-UIPreferredContentSizeCategoryName", category.rawValue]
+            app.launch()
+            let heading = labeled("Welcome to Orbin")
+            waitUntilExists([heading], description: "Onboarding at Dynamic Type " + category.rawValue)
+            XCTAssertGreaterThan(heading.frame.height, 0)
+            return heading.frame.height
+        }
+
+        let large = headingHeight(at: .large)
+        let small = headingHeight(at: .small)
+        XCTAssertEqual(small / large, 0.88, accuracy: 0.06, "Small text must receive one system-size factor")
+        let restored = headingHeight(at: .large)
+        XCTAssertEqual(restored, large, accuracy: 1, "A cold launch must restore the normal text size")
+        let sizing = XCTAttachment(string: "Large: \(large) pt; Small: \(small) pt; restored: \(restored) pt; ratio: \(small / large)")
+        sizing.name = "ios-dynamic-type-sizing"
+        sizing.lifetime = .keepAlways
+        add(sizing)
+        app.launchArguments = []
     }
 
     private func releaseNotesDoneButton() -> XCUIElement {
