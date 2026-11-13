@@ -32,8 +32,8 @@ class SettingsRowsTest {
                     .flatMap { it.second }
                     .single { it.id == SettingIds.CATALOG_MODE }
             assertEquals(SettingKind.CHOICE, row.kind)
-            assertEquals(listOf("List", "Grid"), row.options)
-            assertEquals(if (mode == CatalogMode.LIST) "List" else "Grid", row.value)
+            assertEquals(listOf("List", "Grid", "Card"), row.options)
+            assertEquals(mode.label, row.value)
             assertEquals(mode.ordinal, row.selected)
         }
     }
@@ -44,13 +44,13 @@ class SettingsRowsTest {
             val repository = FakeSettings()
             val reader = ReaderSettings(repository, FakeHistory(), backgroundScope)
             runCurrent()
-            reader.setCatalogMode(CatalogMode.GRID).join()
+            reader.setCatalogMode(CatalogMode.CARD).join()
             runCurrent()
-            assertEquals(CatalogMode.GRID, reader.current.value.catalogMode)
-            assertEquals(CatalogMode.GRID, repository.settings.value.catalogMode)
+            assertEquals(CatalogMode.CARD, reader.current.value.catalogMode)
+            assertEquals(CatalogMode.CARD, repository.settings.value.catalogMode)
             val reopened = ReaderSettings(repository, FakeHistory(), backgroundScope)
             runCurrent()
-            assertEquals(CatalogMode.GRID, reopened.current.value.catalogMode)
+            assertEquals(CatalogMode.CARD, reopened.current.value.catalogMode)
             assertEquals(AppThemeMode.SYSTEM, reopened.current.value.themeMode)
         }
 
@@ -92,7 +92,7 @@ class SettingsRowsTest {
         assertEquals(listOf(SettingIds.THEME, SettingIds.AMOLED, SettingIds.CATALOG_MODE), appearance.map { it.id })
         assertEquals(listOf("Theme", "AMOLED black", "Catalog view"), appearance.map { it.label })
         val catalog = appearance.single { it.id == SettingIds.CATALOG_MODE }
-        assertEquals(listOf("List", "Grid"), catalog.options)
+        assertEquals(listOf("List", "Grid", "Card"), catalog.options)
         assertEquals("Grid", catalog.value)
         assertEquals(1, catalog.selected)
     }

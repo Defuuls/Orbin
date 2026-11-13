@@ -36,6 +36,7 @@ internal data class VideoState(
     val position: Double = 0.0,
     val duration: Double = 0.0,
     val loading: Boolean = false,
+    val displayReady: Boolean = false,
 )
 
 /**
@@ -116,17 +117,26 @@ internal fun clock(seconds: Double): String {
     return "${whole / SECONDS_PER_MINUTE}:${(whole % SECONDS_PER_MINUTE).toString().padStart(2, '0')}"
 }
 
-/** "playing,position,duration,muted" as the WebM page's state script reports it, or null if the page is not ready. */
+/** WebM state includes buffering/display readiness; older four-field snapshots remain readable. */
 internal fun parseWebMState(text: String): VideoState? {
     val fields =
-        text.split(',').takeIf { it.size == WEBM_STATE_FIELDS }
+        text.split(',').takeIf { it.size == WEBM_STATE_FIELDS || it.size == WEBM_LEGACY_STATE_FIELDS }
             ?: return null
     val (playing, positionText, durationText) = fields
-    val muted = fields.last()
-    if (playing !in listOf("0", "1") || muted !in listOf("0", "1")) return null
+    val muted = fields[WEBM_MUTED_FIELD]
+    val validFlags =
+        playing in WEBM_FLAGS && muted in WEBM_FLAGS && fields.drop(WEBM_LEGACY_STATE_FIELDS).all { it in WEBM_FLAGS }
+    if (!validFlags) return null
     val position = positionText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: return null
     val duration = durationText.toDoubleOrNull()?.takeIf { it.isFinite() } ?: 0.0
-    return VideoState(playing = playing == "1", muted = muted == "1", position = position, duration = duration)
+    return VideoState(
+        playing = playing == "1",
+        muted = muted == "1",
+        position = position,
+        duration = duration,
+        loading = fields.getOrNull(WEBM_LOADING_FIELD) == "1",
+        displayReady = fields.getOrNull(WEBM_READY_FIELD) == "1",
+    )
 }
 
 /** Last viewer audio choice for this process; inline previews never use or change it. */
@@ -141,6 +151,11 @@ internal fun webMStateScript(muted: Boolean): String =
     "(function(){var v=document.getElementById('v');if(!v)return null;v.muted=$muted;" +
         "return (v.paused?'0':'1')+','+v.currentTime+','+v.duration+','+(v.muted?'1':'0')})()"
 
-private const val WEBM_STATE_FIELDS = 4
+private const val WEBM_STATE_FIELDS = 6
+private const val WEBM_LEGACY_STATE_FIELDS = 4
+private const val WEBM_MUTED_FIELD = 3
+private const val WEBM_LOADING_FIELD = 4
+private const val WEBM_READY_FIELD = 5
+private val WEBM_FLAGS = setOf("0", "1")
 private const val SKIP_SECONDS = 10.0
 private const val SECONDS_PER_MINUTE = 60

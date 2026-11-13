@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -324,11 +325,22 @@ internal fun MediaDestination(
     route: Route.Media,
 ) {
     val thread by browser.thread.collectAsState()
+    val presentation by browser.preparedThread.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val open = (thread as? Load.Ready)?.value?.takeIf { it.key == route.thread }
-    val files = remember(open) { open?.files.orEmpty() }
+    val loadedFiles = presentation?.takeIf { it.thread === open }?.attachments.orEmpty()
+    val contentBlocked = (thread as? Load.Failed)?.contentBlocked == true
+    var seedDenied by rememberSaveable(route) { mutableStateOf(contentBlocked) }
+    SideEffect { if (contentBlocked) seedDenied = true }
+    val files =
+        remember(
+            route,
+            loadedFiles,
+            contentBlocked,
+            seedDenied,
+        ) { if (contentBlocked || seedDenied) loadedFiles else route.viewerFiles(loadedFiles) }
     val startIndex = remember(route, files) { route.startIndexIn(files) }
-    if (open == null || startIndex == null) {
+    if (startIndex == null) {
         // The viewer closes an empty playlist. Keep loading/error presentation outside it so a
         // direct catalog entry cannot dismiss itself before its thread has arrived.
         val loadingLabel = stringResource(Res.string.ios_media_loading)
@@ -362,14 +374,18 @@ internal fun MediaDestination(
             playback = settings.playbackPreferences.resolve(route.thread.provider, route.thread.board),
             files = files,
             startIndex = startIndex,
-            onPageChanged = { browser.mediaScroll.select(route, it) },
+            onPageChanged = { index ->
+                files.getOrNull(index)?.let { selected ->
+                    loadedFiles.indexOfViewerFile(selected)?.let { browser.mediaScroll.select(route, it) }
+                }
+            },
             onClose = { browser.back() },
-            onSave = { file -> downloads.save(file, route.thread, open.subject) },
+            onSave = { file -> downloads.save(file, route.thread, open?.subject) },
             onDownloadRest =
                 if (files.size > 1) {
                     { current ->
                         files.forEachIndexed { index, file ->
-                            if (index != current) downloads.save(file, route.thread, open.subject)
+                            if (index != current) downloads.save(file, route.thread, open?.subject)
                         }
                     }
                 } else {

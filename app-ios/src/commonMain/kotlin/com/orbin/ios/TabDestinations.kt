@@ -111,14 +111,22 @@ internal fun FeedDestination(
     ) {
         BoxWithConstraints {
             val catalogMode =
-                if (settings.catalogMode == CatalogMode.GRID) ReaderCatalogMode.GRID else ReaderCatalogMode.LIST
+                when (settings.catalogMode) {
+                    CatalogMode.LIST -> ReaderCatalogMode.LIST
+                    CatalogMode.GRID -> ReaderCatalogMode.GRID
+                    CatalogMode.CARD -> ReaderCatalogMode.CARD
+                }
             FeedScreen(
                 rows = rows,
                 mode = catalogMode,
                 downloadBadge = downloadBadge,
                 onModeChange = { selected ->
                     browser.settings.setCatalogMode(
-                        if (selected == ReaderCatalogMode.GRID) CatalogMode.GRID else CatalogMode.LIST,
+                        when (selected) {
+                            ReaderCatalogMode.LIST -> CatalogMode.LIST
+                            ReaderCatalogMode.GRID -> CatalogMode.GRID
+                            ReaderCatalogMode.CARD -> CatalogMode.CARD
+                        },
                     )
                 },
                 wideWindow = isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
@@ -138,7 +146,7 @@ internal fun FeedDestination(
                 onOpenMedia = { row ->
                     byRow[row.id]?.let { entry ->
                         entry.thread.originalPost.attachments.firstOrNull()?.let { attachment ->
-                            browser.openMedia(entry.thread.key, attachment.id, attachment.thumbnailUrl)
+                            browser.openMedia(entry.thread.key, attachment)
                         }
                     }
                 },

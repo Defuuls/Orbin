@@ -10,8 +10,8 @@ A visual companion, [schematic.html](schematic.html), shows the same diagrams an
 
 Covered here:
 
-- Home in list mode and grid mode, including source selection;
-- the board catalog in list mode and grid mode;
+- Home in List, Grid and Card modes, including source selection;
+- the board catalog in List, Grid and Card modes;
 - the thread reader;
 - the two-pane layout that shows both;
 - Boards, Search, Downloads, stored-thread collections, Settings and its sub-pages;
@@ -22,7 +22,7 @@ Covered here:
 
 Orbin is read-only. This design has no compose button, no reply box and no per-post reply control, and none may be added under it.
 
-Home and board catalogs share the device-wide List/Grid preference. A missing preference defaults to Grid; an existing List choice is retained. Coral cards, search controls and supporting screens use the same palette while thread posts retain the compact reader metrics. Saved, Watched and History show real stored records rather than synthesized profiles. [Other screens](#other-screens) describes the remaining surfaces and the dedicated playback experience.
+Home and board catalogs share the device-wide List/Grid/Card preference. A missing preference defaults to Grid; existing List and Grid choices are retained. Card mode shows one full-width Coral card per row, with 16dp pane-edge gutters, 8dp between cards, 12dp content insets and a preview height of three quarters of the card width. It remains one column in a tablet catalog pane. The Home layout control cycles Grid → List → Card → Grid; overflow menus and Appearance settings offer direct selection. The preference survives relaunches and backup restoration. Coral cards, search controls and supporting screens use the same palette while thread posts retain the compact reader metrics. Saved, Watched and History show real stored records rather than synthesized profiles. [Other screens](#other-screens) describes the remaining surfaces and the dedicated playback experience.
 
 ## Tokens
 
@@ -238,6 +238,10 @@ The current catalog and Home grids use `orbinCatalogGridSpec`, with 16dp outside
 
 Cards use the shared rounded Coral surface, a compact author/thread identity, a two-line subject, an inset thumbnail and actual reply/file counts. The selected thread has an accent border. Text grows with the system font size, thumbnail requests remain bounded, and muted/spoiler behavior remains functional. Catalog sort controls map to the existing Catalog, Bump order and Reply count values.
 
+### Card mode
+
+`orbinCatalogCardSpec` keeps one column at every pane width. Each card fills the pane between the same 16dp gutters, with 8dp vertical gaps and an image height of three quarters of the card width. The identity, subject, counts, selection, media actions and long-press options use the same card component as Grid. Loading reserves the same horizontal space. Changing layout retains the current thread and resets its within-card scroll offset so a tall preview cannot skip several compact rows.
+
 ### List mode
 
 ![Phone catalog, list mode](diagrams/phone-catalog-list.svg)
@@ -391,7 +395,7 @@ Appearance retains its persisted behavior inside Coral preference cards and sub-
 | --- | --- | --- |
 | Theme | System, Light, Dark | System |
 | AMOLED black | On, Off | Off |
-| Catalog view | List, Grid | Grid when unset; preserve a saved choice |
+| Catalog view | List, Grid, Card | Grid when unset; preserve a saved choice |
 
 Settings uses the shared title/Back contract, searchable categories, Coral cards and pill search, trailing values/switches and anchored choices. Long searchable scope choices retain their dedicated page. Orbin-only setting IDs, callbacks, validation and storage behavior stay intact.
 

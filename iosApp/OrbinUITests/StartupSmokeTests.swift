@@ -50,6 +50,11 @@ final class StartupSmokeTests: XCTestCase {
         hasOpenedFeed = true
         startBrowsing.tap()
         assertHomeAfterSetup(expectsReleaseNotes: true)
+        assertLayoutAction("List view")
+        layoutButton().tap()
+        assertLayoutAction("Card view")
+        layoutButton().tap()
+        assertLayoutAction("Grid view")
 
         assertDrawerDestinations()
 
@@ -58,6 +63,9 @@ final class StartupSmokeTests: XCTestCase {
         app.terminate()
         app.launch()
         assertHomeAfterSetup()
+        assertLayoutAction("Grid view") // Card remains selected after a cold launch.
+        layoutButton().tap()
+        assertLayoutAction("List view") // The third action completes Card → Grid.
     }
 
     override func tearDownWithError() throws {
@@ -87,7 +95,7 @@ final class StartupSmokeTests: XCTestCase {
         XCTAssertFalse(labeled("Welcome to Orbin").exists, "Persisted setup must not reopen onboarding")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch.exists)
 
-        // Home must use the actual reader list/grid even when live catalogs are unavailable.
+        // Home must use the actual reader layouts even when live catalogs are unavailable.
         // This check also runs after cold relaunch so returning users cannot enter the old feed.
         let readerGrid = app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == %@", "reader-feed-grid")
@@ -129,6 +137,21 @@ final class StartupSmokeTests: XCTestCase {
 
     private func labeled(_ label: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    private func layoutButton() -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "identifier == %@", "reader-feed-mode")).firstMatch
+    }
+
+    private func assertLayoutAction(_ label: String) {
+        let control = layoutButton()
+        let ready = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                control.exists && control.isHittable && control.label.contains(label)
+            },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 15), .completed, "Layout action: " + label)
     }
 
     private func assertDynamicTypeIsAppliedOnce() {

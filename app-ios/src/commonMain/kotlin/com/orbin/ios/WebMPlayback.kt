@@ -24,7 +24,7 @@ internal fun webMPlaybackScript(request: WebMPlaybackRequest): String {
     return """
         (function(){
             var v=document.getElementById('v');
-            function state(){return (v.paused?'0':'1')+','+v.currentTime+','+v.duration+','+(v.muted?'1':'0');}
+            $WEBM_READINESS_SCRIPT
             var requested=window.__orbinPlaybackRequested;
             if(requested&&requested.command>$command)return v?state():null;
             window.__orbinPlaybackRequested={command:$command,play:$play};
@@ -79,3 +79,33 @@ internal fun webMPlaybackScript(request: WebMPlaybackRequest): String {
         })()
         """.trimIndent()
 }
+
+/** Readiness follows media events, independently of command acknowledgment and play intent. */
+private const val WEBM_READINESS_SCRIPT = """
+    if(v&&!v.__orbinReadinessInstalled){
+        v.__orbinReadinessInstalled=true;
+        v.__orbinHasPlayed=false;
+        v.__orbinWaiting=v.readyState<3;
+        v.__orbinSeeking=false;
+        function waiting(){v.__orbinWaiting=true;}
+        function available(){
+            if(v.readyState>=3&&!v.seeking&&!v.__orbinSeeking)v.__orbinWaiting=false;
+        }
+        v.addEventListener('playing',function(){
+            v.__orbinHasPlayed=true;v.__orbinWaiting=false;v.__orbinSeeking=false;
+        });
+        v.addEventListener('waiting',waiting);
+        v.addEventListener('stalled',function(){if(v.readyState<3||v.seeking)waiting();});
+        v.addEventListener('seeking',function(){v.__orbinSeeking=true;waiting();});
+        v.addEventListener('seeked',function(){v.__orbinSeeking=false;v.__orbinWaiting=v.readyState<3;});
+        v.addEventListener('canplay',available);
+        v.addEventListener('timeupdate',available);
+        v.addEventListener('emptied',function(){v.__orbinHasPlayed=false;waiting();});
+    }
+    function state(){
+        var buffering=v.readyState<3||v.seeking||v.__orbinSeeking||v.__orbinWaiting;
+        var ready=v.__orbinHasPlayed&&!buffering;
+        return (!v.paused&&ready?'1':'0')+','+v.currentTime+','+v.duration+','+
+            (v.muted?'1':'0')+','+(buffering?'1':'0')+','+(ready?'1':'0');
+    }
+"""

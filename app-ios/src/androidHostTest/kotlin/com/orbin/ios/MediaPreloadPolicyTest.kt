@@ -37,6 +37,38 @@ class MediaPreloadPolicyTest {
     }
 
     @Test
+    fun upcomingWorkWaitsForTheCurrentClipToBecomeReadyAndStopsAgainWhenItStalls() {
+        val files = listOf(file("current"), file("next"), file("later"))
+
+        assertNull(nextMediaPreloadTarget(files, 0, true, true, currentReady = false))
+        assertEquals(files[1].preloadKey(), nextMediaPreloadTarget(files, 0, true, true, currentReady = true))
+        assertNull(
+            nextMediaPreloadTarget(files, 0, true, true, currentReady = false),
+            "A failed or stalled current clip must release competing upcoming work",
+        )
+        assertNull(
+            nextMediaPreloadTarget(files, 1, true, true, currentReady = false),
+            "The previous page's readiness cannot authorize preload while its replacement prepares",
+        )
+        assertEquals(files[2].preloadKey(), nextMediaPreloadTarget(files, 1, true, true, currentReady = true))
+    }
+
+    @Test
+    fun upcomingWebMAlsoWaitsForItsCurrentPlaybackSurface() {
+        val files = listOf(file("current", extension = "webm"), file("next"))
+
+        assertNull(nextMediaPreloadTarget(files, 0, true, true, currentReady = false))
+        assertEquals(files[1].preloadKey(), nextMediaPreloadTarget(files, 0, true, true, currentReady = true))
+    }
+
+    @Test
+    fun aStillImageDoesNotNeedVideoReadinessToPrepareTheNextClip() {
+        val files = listOf(file("current", extension = "jpg", type = MediaType.IMAGE), file("next"))
+
+        assertEquals(files[1].preloadKey(), nextMediaPreloadTarget(files, 0, true, true, currentReady = false))
+    }
+
+    @Test
     fun rapidPagingAndSettingsOffReleaseExactlyOneUpcomingResource() {
         val created = mutableListOf<Resource>()
         val released = mutableListOf<Resource>()

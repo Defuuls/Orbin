@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.attachmentDetails
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.AllMediaUiState
@@ -30,7 +31,7 @@ import com.orbin.uinext.NextTheme
  */
 @Composable
 fun NextAllMediaScreen(
-    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String, thumbnailUrl: String) -> Unit,
+    onOpenMedia: (provider: String, board: String, thread: Long, attachment: MediaAttachment) -> Unit,
     modifier: Modifier = Modifier,
     hideRailOnScroll: Boolean = false,
     onChromeVisibleChange: (Boolean) -> Unit = {},
@@ -70,7 +71,7 @@ fun NextAllMediaContent(
     onChromeVisibleChange: (Boolean) -> Unit = {},
     showSizeControl: Boolean = false,
     onRefresh: () -> Unit,
-    onOpenMedia: (provider: String, board: String, thread: Long, attachmentId: String, thumbnailUrl: String) -> Unit,
+    onOpenMedia: (provider: String, board: String, thread: Long, attachment: MediaAttachment) -> Unit,
     modifier: Modifier = Modifier,
     onSave: ((AllMediaItem) -> Unit)? = null,
     title: String? = null,
@@ -132,8 +133,7 @@ fun NextAllMediaContent(
                             item.key.provider.value,
                             item.key.board.value,
                             item.key.thread.value,
-                            item.attachment.id,
-                            item.attachment.thumbnailUrl,
+                            item.attachment,
                         )
                     }
                 },

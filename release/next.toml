@@ -1,44 +1,34 @@
-# Orbin 205 - Nopales
+# Orbin 206 - Sea Beet
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 205
-codename = "Nopales"
-version_code = 223
+number = 206
+codename = "Sea Beet"
+version_code = 224
 
-highlight = "Coral navigation, selected-media playback, and accessible reader controls across Android and iOS."
+highlight = "Full-width Card view and faster selected-video startup on Android and iOS."
 
 summary = [
-  "bump Orbin to 205-Nopales / versionCode 223",
-  "complete the Coral redesign across primary and secondary reader screens",
-  "finish selected-media navigation, download controls, and accessible layout behavior",
+  "bump Orbin to 206-Sea-Beet / versionCode 224",
+  "add a full-width Card layout to Feed and board catalogs on Android and iOS",
+  "preserve the selected layout across navigation, relaunches and backups",
+  "start known selected videos before loading the rest of the thread",
 ]
 
 [changelog]
 Added = [
-  "Shipped the Coral card-stack app icon, matching splash artwork, and in-app branding.",
-  "Completed Coral layouts across Feed, Search, Downloads, Settings, saved and watched collections, history, media walls, and two-pane browsing on Android and iOS.",
-  "Added inline Feed layout controls, live download badges, persistent primary navigation, and a scroll thumb for long threads.",
-  "Added persistent media download controls, double-tap saving, swipe dismissal, playback-speed options, and downloading the rest of a thread.",
+  "Added Card view to Feed and board catalogs: one full-width card per row with a larger image preview, alongside the existing Grid and List layouts.",
+  "Added Card to Appearance settings and layout menus; the Home layout button cycles Grid, List and Card.",
 ]
 Changed = [
-  "Consolidated shared typography, corner radii, and reader-facing strings while keeping the app read-only.",
-  "Kept first-run board setup, followed-board Feed scope, saved layout preferences, and system Dynamic Type behavior across the redesigned screens.",
+  "Saved Card view as a shared layout preference on Android and iOS, including backup restoration, while retaining existing Grid and List selections.",
 ]
 Fixed = [
-  "Matched Android and iOS status-bar icons to the white Coral header while retaining light icons over full-screen media.",
-  "Preserved the surrounding text scale in dialogs and kept long actions visible when space is limited.",
-  "Separated media titles and counters from touch controls in narrow large-text layouts, including right-to-left text.",
-  "Opened the selected Feed or catalog attachment using source-qualified identifiers and exact thumbnail anchors, including Lynx sources.",
-  "Kept media navigation separate from the thread-comments preference and avoided inserting a comments page beneath the media viewer.",
-  "Removed duplicate accessibility announcements from the wordmark and primary navigation, and kept large-text source labels readable.",
-  "Retried Android media downloads after a network error, a timeout, or an HTTP 408, 429 or 5xx, instead of marking them permanently failed, and resumed a partial file with a Range request when the server supports it. Downloads wait for a network connection, back off between attempts, and at most three run at once to the same host, through the same rate-limit handling as video playback.",
-  "Removed the 30-second overall request timeout on the shared iOS HTTP client so a large download or media transfer is no longer cut off mid-transfer; stalled connections still time out after 30 seconds.",
-  "Stopped a second save of the same file from queueing another download when one is already queued, running, or completed and still on the device. A failed save, or a completed one whose file has been deleted, is retried on the existing record.",
+  "Opened known selected attachments immediately while the rest of their thread loads in the background, retaining the selected player when the playlist expands.",
+  "Corrected iOS WebM buffering and playback readiness reporting, and held next-video preloading until the current video is ready.",
+  "Batched Android encrypted video-cache writes in 64 KiB chunks while continuing to deliver network packets immediately to the player.",
 ]
 Testing = [
-  "Added normal and 200% text-scale regressions for dialog windows and narrow right-to-left media toolbars.",
-  "Expanded shared UI, download-queue, media-selection, playback, gesture, navigation, and accessibility regressions for the completed redesign.",
-  "Added unit tests for download retry versus permanent-failure classification, for HTTP Range resume (206 append, 200 restart, 416 complete or restart), and for the per-host download cap and WorkManager network constraint.",
-  "Added unit tests that enqueueing the same URL and path twice keeps a single record, re-queues a failed or missing file, and leaves a different folder as a separate download.",
-  "Added a host stress test that queues 100 downloads through 429, 503, and mid-body disconnects, and requires every file to finish once, with no duplicate enqueues and no partial body in the published folder.",
+  "Added full-width Card geometry, mode selection, navigation and accessibility regressions, with shared screenshots for phone and tablet layouts.",
+  "Expanded preference, backup and destination tests to cover Card persistence and installed Android layout switching.",
+  "Added delayed-thread, selected-player continuity and video-readiness regressions, plus cache streaming, cancellation, truncation and failure tests.",
 ]

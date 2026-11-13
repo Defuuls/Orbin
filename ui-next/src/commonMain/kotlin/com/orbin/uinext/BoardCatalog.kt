@@ -83,6 +83,7 @@ import com.orbin.uinext.resources.reader_sort_bump_order
 import com.orbin.uinext.resources.reader_sort_catalog
 import com.orbin.uinext.resources.reader_sort_reply_count
 import com.orbin.uinext.resources.reader_unread
+import com.orbin.uinext.resources.reader_view_card
 import com.orbin.uinext.resources.reader_view_grid
 import com.orbin.uinext.resources.reader_view_list
 import com.orbin.uinext.tokens.OrbinRadius
@@ -99,16 +100,19 @@ enum class CatalogMode {
     /** One row per thread: thumbnail, title, post number and date, preview, reply count. */
     LIST,
 
-    /** Cards with an image half the viewport tall, in the columns [catalogGridSpec] gives, and reply/file counts. */
+    /** Compact cards in the columns [orbinCatalogGridSpec] gives, with reply and file counts. */
     GRID,
+
+    /** The catalog card at the full pane width, inside the usual outer gutters. */
+    CARD,
     ;
 
     /**
      * Whether a host's thumbnail slot should draw a still image from its original file, decoded to
-     * the cell. A grid card is far wider than a provider thumbnail (about 250 pixels), which would
-     * look blurry stretched across it; a list cell is thumbnail-sized and never needs the original.
+     * the cell. A grid or full-width card is far wider than a provider thumbnail (about 250 pixels),
+     * which would look blurry stretched across it; a list cell never needs the original.
      */
-    val sharpensThumbnails: Boolean get() = this == GRID
+    val sharpensThumbnails: Boolean get() = this != LIST
 }
 
 object CatalogTags {
@@ -153,7 +157,7 @@ fun catalogSortTabs(): List<CatalogSortTab> =
 /**
  * A board's catalog, as docs/design-system specifies it.
  *
- * List and grid share one lazy grid and one [state], so switching [mode] keeps the scroll
+ * All modes share one lazy grid and one [state], so switching [mode] keeps the scroll
  * position and reloads nothing. The app bar is fixed; only the threads scroll.
  *
  * [wideWindow] is whether the window, not this pane, is wide: it selects the larger thumbnail.
@@ -194,12 +198,13 @@ fun BoardScreen(
 ) {
     val colors = reader
     val heading = catalogHeading(board, description)
+    PreserveCatalogScrollAnchor(state, mode)
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .background(
-                    if (mode == CatalogMode.GRID && !next.dark) colors.surfaceVariant else colors.background,
+                    if (mode != CatalogMode.LIST && !next.dark) colors.surfaceVariant else colors.background,
                 ).semantics { paneTitle = board },
     ) {
         ReaderAppBar(
@@ -241,11 +246,16 @@ fun BoardScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
         ) {
-            val grid = mode == CatalogMode.GRID
-            val gridSpec = if (grid) orbinCatalogGridSpec(maxWidth) else catalogGridSpec(maxWidth, maxHeight)
-            val columns = if (grid) gridSpec.columns else 1
-            val gap = if (grid) ORBIN_CATALOG_GAP else NO_GAP
-            val outer = if (grid) ORBIN_CATALOG_GUTTER else NO_GAP
+            val cards = mode != CatalogMode.LIST
+            val gridSpec =
+                when (mode) {
+                    CatalogMode.GRID -> orbinCatalogGridSpec(maxWidth)
+                    CatalogMode.CARD -> orbinCatalogCardSpec(maxWidth)
+                    CatalogMode.LIST -> catalogGridSpec(maxWidth, maxHeight)
+                }
+            val columns = if (cards) gridSpec.columns else 1
+            val gap = if (cards) ORBIN_CATALOG_GAP else NO_GAP
+            val outer = if (cards) ORBIN_CATALOG_GUTTER else NO_GAP
             val cellMin = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
@@ -268,7 +278,7 @@ fun BoardScreen(
                 ) { index ->
                     val row = rowAt(index)
                     when {
-                        row == null && grid ->
+                        row == null && cards ->
                             OrbinCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 elevated = false,
@@ -282,7 +292,7 @@ fun BoardScreen(
                                 )
                             }
                         row == null -> Box(Modifier.fillMaxWidth().height(cellMin))
-                        grid ->
+                        cards ->
                             CatalogCard(
                                 row = row,
                                 selected = row.id == selectedRowId,
@@ -308,7 +318,7 @@ fun BoardScreen(
 
 /**
  * Columns for the thread Files grid in a pane [width] wide: the width over `size.gridCardMin`,
- * rounded down, at least one. Catalog, Home and loading grids use [catalogGridSpec] instead.
+ * rounded down, at least one. Catalog, Home and loading grids use [orbinCatalogGridSpec] instead.
  */
 fun catalogGridColumns(width: Dp): Int = maxOf(1, (width / ReaderSize.gridCardMin).toInt())
 
@@ -358,6 +368,17 @@ fun orbinCatalogGridSpec(width: Dp): CatalogGridSpec {
     return CatalogGridSpec(columns, colWidth * ORBIN_CATALOG_IMAGE_RATIO)
 }
 
+/**
+ * One full-width catalog card, inside the catalog gutters, with the same image ratio as Grid.
+ * Unmeasured, unbounded, or gutter-only widths fall back to a usable minimum card width.
+ */
+fun orbinCatalogCardSpec(width: Dp): CatalogGridSpec {
+    val fallback = ORBIN_CATALOG_MIN_CARD + ORBIN_CATALOG_GUTTER * 2
+    val usable = if (width.isFinite && width > ORBIN_CATALOG_GUTTER * 2) width else fallback
+    val cardWidth = usable - ORBIN_CATALOG_GUTTER * 2
+    return CatalogGridSpec(columns = 1, imageHeight = cardWidth * ORBIN_CATALOG_IMAGE_RATIO)
+}
+
 /** A reply or unread count as the pill shows it: exact below 1000, then thousands to one decimal, rounded down. */
 internal fun abbreviatedCount(count: Int): AbbreviatedCount =
     if (count < COUNT_ABBREVIATION_FROM) {
@@ -399,18 +420,29 @@ private fun catalogOverflow(
 ): List<ReaderMenuItem> =
     buildList {
         if (onModeChange != null) {
-            when (mode) {
-                CatalogMode.LIST ->
-                    add(ReaderMenuItem(stringResource(Res.string.reader_view_grid)) { onModeChange(CatalogMode.GRID) })
-                CatalogMode.GRID ->
-                    add(ReaderMenuItem(stringResource(Res.string.reader_view_list)) { onModeChange(CatalogMode.LIST) })
-            }
+            addAll(catalogModeMenuItems(mode, onModeChange))
         }
         if (sortLabel != null) add(ReaderMenuItem(stringResource(Res.string.reader_sort, sortLabel), onClick = onSort))
         if (onOpenMedia != null) add(ReaderMenuItem(stringResource(Res.string.next_board_media), onClick = onOpenMedia))
         if (onOpenBrowser != null) {
             add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
         }
+    }
+
+/** Offer direct access to every other presentation in catalog and Home overflow menus. */
+@Composable
+internal fun catalogModeMenuItems(
+    mode: CatalogMode,
+    onModeChange: (CatalogMode) -> Unit,
+): List<ReaderMenuItem> =
+    CatalogMode.entries.filter { it != mode }.map { target ->
+        val label =
+            when (target) {
+                CatalogMode.LIST -> Res.string.reader_view_list
+                CatalogMode.GRID -> Res.string.reader_view_grid
+                CatalogMode.CARD -> Res.string.reader_view_card
+            }
+        ReaderMenuItem(stringResource(label)) { onModeChange(target) }
     }
 
 /** One complete announcement: title, replies, files, optional unread count, then date. */

@@ -7,6 +7,13 @@ import org.junit.Test
 
 class CatalogModeTest {
     @Test
+    fun cardIsAppendedWithoutChangingExistingChoiceIndices() {
+        assertEquals(0, CatalogMode.LIST.ordinal)
+        assertEquals(1, CatalogMode.GRID.ordinal)
+        assertEquals(2, CatalogMode.CARD.ordinal)
+    }
+
+    @Test
     fun settingsWithoutACatalogPreferenceDefaultToGrid() {
         assertEquals(CatalogMode.GRID, Json.decodeFromString<AppSettings>("{}").catalogMode)
     }

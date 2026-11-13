@@ -88,17 +88,26 @@ internal actual fun NativePlayer(
     onMuteIntentChange: ((Boolean) -> Unit)?,
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
+    onPlaybackReadyChange: ((Boolean) -> Unit)?,
 ) {
     val player =
         remember(url, preloader) {
             preloader?.takeNative(url)
                 ?: NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = initiallyMuted } }
         } ?: return
+    val controller =
+        remember {
+            AVPlayerViewController().apply {
+                showsPlaybackControls = false
+                allowsPictureInPicturePlayback = !feedMode
+            }
+        }
     var muted by remember(player) { mutableStateOf(player.muted) }
     val currentLoop = rememberUpdatedState(loop)
     val currentSpeed = rememberUpdatedState(mediaPlaybackSpeed(playbackSpeed))
     val reportIntent by rememberUpdatedState(onPlayIntentChange)
     val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
+    val reportReady by rememberUpdatedState(onPlaybackReadyChange)
     val currentActive = rememberUpdatedState(active)
     val foreground =
         remember(player) {
@@ -165,6 +174,7 @@ internal actual fun NativePlayer(
             // decoder alive until Kotlin's collector releases the player object.
             player.currentItem?.asset?.cancelLoading()
             player.replaceCurrentItemWithPlayerItem(null)
+            reportReady?.invoke(false)
         }
     }
     // Audio policy must not change a manually started or paused player's playback state.
@@ -195,8 +205,13 @@ internal actual fun NativePlayer(
         if (active && foreground.value && player.rate > 0f) player.rate = currentSpeed.value
     }
     LaunchedEffect(player, active) {
-        if (!active) return@LaunchedEffect
+        if (!active) {
+            reportReady?.invoke(false)
+            return@LaunchedEffect
+        }
         var reported = false
+        var previousPosition = seconds(player.currentTime())
+        var playbackStarted = false
         while (true) {
             // Says why a video stays black: decoder exhaustion shows as AVFoundation -11839 or -11819.
             player.currentItem?.error?.takeIf { !reported }?.let {
@@ -205,36 +220,40 @@ internal actual fun NativePlayer(
             }
             val item = player.currentItem
             val ready = item?.status == AVPlayerItemStatusReadyToPlay
+            val position = seconds(player.currentTime())
+            if (player.rate > 0f && position > previousPosition) playbackStarted = true
+            previousPosition = position
+            val loading =
+                playRequested &&
+                    (
+                        item == null ||
+                            item.status == AVPlayerItemStatusUnknown ||
+                            player.timeControlStatus == AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
+                    )
+            // AVItem readiness alone precedes decode/render. Audio has no video surface, so an
+            // advancing media clock is also evidence that the selected item has actually started.
+            val displayed = (controller.player == player && controller.readyForDisplay) || playbackStarted
             state =
                 VideoState(
                     playing = player.rate > 0f,
-                    position = seconds(player.currentTime()),
+                    position = position,
                     duration = duration.read(ready) { item?.let { seconds(it.duration) } ?: 0.0 },
-                    loading =
-                        playRequested &&
-                            (
-                                item == null ||
-                                    item.status == AVPlayerItemStatusUnknown ||
-                                    player.timeControlStatus == AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
-                            ),
+                    loading = loading,
+                    displayReady = ready && displayed && !loading,
                 )
+            reportReady?.invoke(state.displayReady && foreground.value)
             delay(CONTROLS_REFRESH_MS)
         }
     }
     Box(modifier) {
         UIKitViewController(
-            factory = {
-                AVPlayerViewController().apply {
-                    showsPlaybackControls = false
-                    allowsPictureInPicturePlayback = !feedMode
-                }
-            },
+            factory = { controller },
             // The interop factory runs once per host, not once per remembered player. A URL
             // replacement must attach the player that the playback effects and controls use.
             // Only the page on screen offers picture in picture: neighbours composed by the pager
             // are not PiP sources.
             update = {
-                it.player = player
+                if (it.player != player) it.player = player
                 it.allowsPictureInPicturePlayback = !feedMode
                 it.canStartPictureInPictureAutomaticallyFromInline = active && !feedMode
             },
@@ -327,11 +346,13 @@ internal actual fun NativeWebMPlayer(
     onMuteIntentChange: ((Boolean) -> Unit)?,
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
+    onPlaybackReadyChange: ((Boolean) -> Unit)?,
 ) {
     var muted by remember(url, initiallyMuted) { mutableStateOf(initiallyMuted) }
     var playRequested by remember(url) { mutableStateOf(active && autoPlay) }
     val reportIntent by rememberUpdatedState(onPlayIntentChange)
     val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
+    val reportReady by rememberUpdatedState(onPlaybackReadyChange)
     var playCommand by remember(url) { mutableIntStateOf(0) }
     var foreground by remember(url) {
         mutableStateOf(
@@ -399,7 +420,10 @@ internal actual fun NativeWebMPlayer(
     LaunchedEffect(webView, playCommand, muted, loop, playbackSpeed) {
         val sent = request()
         webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
-            if (playCommand == sent.command) state = it.copy(loading = sent.play && !it.playing && !it.atEnd)
+            if (playCommand == sent.command) {
+                state = it.copy(loading = sent.play && (it.loading || !it.playing) && !it.atEnd)
+                reportReady?.invoke(it.displayReady && currentActive && foreground)
+            }
         }
     }
     LaunchedEffect(webView) {
@@ -407,7 +431,8 @@ internal actual fun NativeWebMPlayer(
             val sent = request()
             webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
                 if (playCommand == sent.command) {
-                    state = it.copy(loading = sent.play && !it.playing && !it.atEnd)
+                    state = it.copy(loading = sent.play && (it.loading || !it.playing) && !it.atEnd)
+                    reportReady?.invoke(it.displayReady && currentActive && foreground)
                     val completedClip = !currentLoop && it.atEnd
                     if (completedClip && playRequested) {
                         playRequested = false
@@ -472,6 +497,7 @@ internal actual fun NativeWebMPlayer(
             webView.navigationDelegate = null
             webView.UIDelegate = null
             webView.tearDownMedia()
+            reportReady?.invoke(false)
         }
     }
     Box(modifier) {
@@ -493,7 +519,11 @@ internal actual fun NativeWebMPlayer(
         val togglePlay: () -> Unit = {
             playRequested = if (feedMode || state.loading) !playRequested else !state.playing
             playCommand++
-            state = state.copy(playing = playRequested, loading = playRequested && state.duration <= 0.0)
+            state =
+                state.copy(
+                    playing = playRequested && state.displayReady && !state.loading,
+                    loading = playRequested && (!state.displayReady || state.loading),
+                )
             webView.evaluateJavaScript(
                 webMPlaybackScript(
                     WebMPlaybackRequest(playCommand, playRequested && active && foreground, muted, loop, playbackSpeed),

@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
@@ -34,7 +32,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -75,7 +72,6 @@ import com.orbin.uinext.nextElevatedSurface
 import com.orbin.uinext.readerMediaSwipeToClose
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -93,7 +89,6 @@ fun GalleryScreen(
     val content by viewModel.content.collectAsStateWithLifecycle()
     val loaded = content as? GalleryContentState.Ready
     val media = loaded?.media.orEmpty()
-    val threadMediaIndices = loaded?.threadMediaIndices.orEmpty()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val playback = remember(settings) { viewModel.playbackSettings() }
@@ -134,16 +129,12 @@ fun GalleryScreen(
             return@NextTheme
         }
 
-        val pagerState =
-            rememberPagerState(
-                initialPage = viewModel.initialPageIn(media).coerceIn(0, media.lastIndex),
-                pageCount = { media.size },
-            )
-
-        LaunchedEffect(pagerState, threadMediaIndices) {
-            snapshotFlow { pagerState.settledPage }
-                .distinctUntilChanged()
-                .collect { page -> threadMediaIndices.getOrNull(page)?.let(mediaPageChanged) }
+        val ready = checkNotNull(loaded)
+        val selection = rememberGalleryPagerSelection(ready, viewModel.initialPageIn(media))
+        val currentIndex = selection.activeIndexIn(ready)
+        val waitingForRestoredPage = selection.activePageKey !in ready.pageKeys
+        LaunchedEffect(selection.activePageKey, ready.threadMediaIndices) {
+            ready.threadMediaIndexAt(currentIndex)?.let(mediaPageChanged)
         }
 
         // Exit and download remain visible while viewing or playing media.
@@ -153,13 +144,13 @@ fun GalleryScreen(
         val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
 
-        LaunchedEffect(pagerState.settledPage, media, playback.preloadNextClip) {
-            viewModel.prefetchAround(pagerState.settledPage, media)
+        LaunchedEffect(selection.activePageKey, media, playback.preloadNextClip) {
+            if (!waitingForRestoredPage) viewModel.prefetchAround(currentIndex, media)
         }
         val haptics = LocalHapticFeedback.current
         val close = {
             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-            threadMediaIndices.getOrNull(pagerState.settledPage)?.let(mediaPageChanged)
+            ready.threadMediaIndexAt(currentIndex)?.let(mediaPageChanged)
             onClose()
         }
         val save: (MediaAttachment) -> Unit = { attachment ->
@@ -170,9 +161,10 @@ fun GalleryScreen(
             }
         }
         val closeThresholdPx = with(density) { CLOSE_PULL_THRESHOLD.toPx() }
-        val currentType = media.getOrNull(pagerState.settledPage)?.type
+        val currentType = media.getOrNull(currentIndex)?.type?.takeUnless { waitingForRestoredPage }
         val hasTransport = currentType == MediaType.VIDEO || currentType == MediaType.AUDIO
-        val pullToClose = remember(closeThresholdPx) { PullPastEndToClose(closeThresholdPx) { close() } }
+        val latestClose by rememberUpdatedState(close)
+        val pullToClose = remember(closeThresholdPx) { PullPastEndToClose(closeThresholdPx) { latestClose() } }
 
         Box(
             modifier =
@@ -183,62 +175,61 @@ fun GalleryScreen(
                     .nestedScroll(pullToClose)
                     .readerMediaSwipeToClose(close, toolbarHeight, if (hasTransport) 160.dp else 0.dp),
         ) {
-            VerticalPager(
-                state = pagerState,
-                key = { page -> checkNotNull(loaded).pageKey(page) },
-                modifier = Modifier.fillMaxSize(),
-                beyondViewportPageCount = 0,
-            ) { page ->
-                val item = media[page.coerceIn(0, media.lastIndex)]
-                val isActive = page == pagerState.settledPage
-                val isNear = kotlin.math.abs(page - pagerState.settledPage) <= 1
-                var revealed by remember(item.id) { mutableStateOf(!item.isSpoiler) }
-                Box(
-                    modifier = Modifier.fillMaxSize().background(Color.Black),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (!revealed) {
-                        Box(
-                            modifier = Modifier.fillMaxSize().clickable { revealed = true },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = stringResource(R.string.gallery_spoiler_reveal),
-                                color = Color.White,
-                                style = OrbinType.labelMedium,
-                            )
-                        }
-                    } else if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
-                        if (isActive) {
-                            // A neighbour or covered file must not allocate a decoder or fetch its source.
-                            VideoPlayer(
+            if (waitingForRestoredPage) NextLoading()
+            if (!waitingForRestoredPage) {
+                GalleryMediaPager(
+                    content = ready,
+                    selection = selection,
+                    modifier = Modifier.fillMaxSize(),
+                ) { item, isActive, isNear ->
+                    var revealed by remember(item.id) { mutableStateOf(!item.isSpoiler) }
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color.Black),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (!revealed) {
+                            Box(
+                                modifier = Modifier.fillMaxSize().clickable { revealed = true },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.gallery_spoiler_reveal),
+                                    color = Color.White,
+                                    style = OrbinType.labelMedium,
+                                )
+                            }
+                        } else if (item.type == MediaType.VIDEO || item.type == MediaType.AUDIO) {
+                            if (isActive) {
+                                // A neighbour or covered file must not allocate a decoder or fetch its source.
+                                VideoPlayer(
+                                    url = item.sourceUrl,
+                                    modifier = Modifier.fillMaxSize(),
+                                    autoPlay = playback.autoplay,
+                                    muted = viewerMuted,
+                                    loop = playback.loopVideos,
+                                    active = true,
+                                    onLongPress = { actionsFor = item },
+                                    playbackSpeed = playbackSpeed,
+                                    onDoubleTapSave = { save(item) },
+                                )
+                            } else {
+                                MediaThumbnail(
+                                    attachment = item,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit,
+                                )
+                            }
+                        } else {
+                            ZoomableImage(
                                 url = item.sourceUrl,
+                                contentDescription = item.originalFileName,
                                 modifier = Modifier.fillMaxSize(),
-                                autoPlay = playback.autoplay,
-                                muted = viewerMuted,
-                                loop = playback.loopVideos,
-                                active = true,
+                                placeholderUrl = item.thumbnailUrl,
+                                active = isActive || (playback.preloadNextClip && isNear),
                                 onLongPress = { actionsFor = item },
-                                playbackSpeed = playbackSpeed,
                                 onDoubleTapSave = { save(item) },
                             )
-                        } else {
-                            MediaThumbnail(
-                                attachment = item,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Fit,
-                            )
                         }
-                    } else {
-                        ZoomableImage(
-                            url = item.sourceUrl,
-                            contentDescription = item.originalFileName,
-                            modifier = Modifier.fillMaxSize(),
-                            placeholderUrl = item.thumbnailUrl,
-                            active = isActive || (playback.preloadNextClip && isNear),
-                            onLongPress = { actionsFor = item },
-                            onDoubleTapSave = { save(item) },
-                        )
                     }
                 }
             }
@@ -248,15 +239,23 @@ fun GalleryScreen(
                     toolbarHeight = with(density) { it.height.toDp() }
                 },
             ) {
-                val currentIndex = pagerState.settledPage.coerceIn(0, media.lastIndex)
                 val currentItem = media[currentIndex]
                 ReaderMediaToolbar(
-                    filename = currentItem.originalFileName,
-                    position = "${currentIndex + 1}/${media.size}",
+                    filename =
+                        if (waitingForRestoredPage) {
+                            stringResource(
+                                R.string.next_media_title,
+                            )
+                        } else {
+                            currentItem.originalFileName
+                        },
+                    position = if (waitingForRestoredPage) "" else "${currentIndex + 1}/${media.size}",
                     closeLabel = closeLabel,
                     onClose = close,
                 ) {
-                    if (currentItem.type == MediaType.VIDEO || currentItem.type == MediaType.AUDIO) {
+                    if (!waitingForRestoredPage &&
+                        (currentItem.type == MediaType.VIDEO || currentItem.type == MediaType.AUDIO)
+                    ) {
                         ReaderMediaAction(
                             imageVector =
                                 if (viewerMuted) {
@@ -271,17 +270,19 @@ fun GalleryScreen(
                             },
                         )
                     }
-                    ReaderMediaAction(
-                        imageVector = Icons.Filled.FileDownload,
-                        label = downloadLabel,
-                        onClick = { save(currentItem) },
-                    )
-                    ReaderMediaAction(
-                        imageVector = Icons.Filled.MoreVert,
-                        label = stringResource(R.string.gallery_more_options),
-                        onClick = { actionsFor = currentItem },
-                        overflow = true,
-                    )
+                    if (!waitingForRestoredPage) {
+                        ReaderMediaAction(
+                            imageVector = Icons.Filled.FileDownload,
+                            label = downloadLabel,
+                            onClick = { save(currentItem) },
+                        )
+                        ReaderMediaAction(
+                            imageVector = Icons.Filled.MoreVert,
+                            label = stringResource(R.string.gallery_more_options),
+                            onClick = { actionsFor = currentItem },
+                            overflow = true,
+                        )
+                    }
                 }
             }
 
@@ -292,7 +293,7 @@ fun GalleryScreen(
                     onDismiss = { actionsFor = null },
                     onSaveRemaining =
                         if (checkNotNull(loaded).threadMedia.size > 1) {
-                            { viewModel.downloadRestOfThread(pagerState.settledPage) }
+                            { viewModel.downloadRestOfThread(currentIndex) }
                         } else {
                             null
                         },

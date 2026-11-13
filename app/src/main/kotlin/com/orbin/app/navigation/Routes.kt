@@ -66,6 +66,19 @@ sealed interface Route {
         val startIndex: Int = 0,
     ) : Route
 
+    /** An already known original can open immediately without changing older gallery destination IDs. */
+    @Serializable
+    data class SeededMedia(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val attachmentId: String,
+        /** Complete file, qualified by its source/thread and validated again by the viewer. */
+        val encodedMediaSeed: String,
+        val thumbnailUrl: String? = null,
+        val startIndex: Int = 0,
+    ) : Route
+
     /** Keeps Gallery's saved destination identity unchanged when chat opens a thread's videos. */
     @Serializable
     data class ThreadVideos(

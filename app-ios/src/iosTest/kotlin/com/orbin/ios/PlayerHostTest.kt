@@ -89,14 +89,17 @@ class PlayerHostTest {
         val urls = paths.map { assertNotNull(NSURL.fileURLWithPath(it).absoluteString) }
         val url = mutableStateOf(urls.first())
         val visible = mutableStateOf(true)
+        val active = mutableStateOf(true)
+        val readiness = mutableListOf<Boolean>()
         val root =
             ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
                 if (visible.value) {
                     NativePlayer(
                         url.value,
-                        active = true,
+                        active = active.value,
                         loop = true,
                         modifier = Modifier.fillMaxSize(),
+                        onPlaybackReadyChange = { readiness += it },
                     )
                 }
             }
@@ -108,12 +111,18 @@ class PlayerHostTest {
                     val host = root.players().single()
                     await { (host.player?.currentItem?.asset as? AVURLAsset)?.URL?.absoluteString == urls[0] }
                     assertDecodedColor(host, red = true)
+                    await { readiness.lastOrNull() == true }
+                    active.value = false
+                    await { host.player?.rate == 0f && readiness.lastOrNull() == false }
+                    active.value = true
+                    await { host.player?.rate?.let { it > 0f } == true && readiness.lastOrNull() == true }
                     url.value = urls[1]
                     await { (host.player?.currentItem?.asset as? AVURLAsset)?.URL?.absoluteString == urls[1] }
                     assertEquals(host.objcPtr(), root.players().single().objcPtr())
                     assertDecodedColor(host, red = false)
+                    await { readiness.lastOrNull() == true }
                     visible.value = false
-                    await { root.players().isEmpty() }
+                    await { root.players().isEmpty() && readiness.lastOrNull() == false }
                     assertNull(host.player)
                     url.value = urls[0]
                     visible.value = true
@@ -121,85 +130,6 @@ class PlayerHostTest {
             }
         } finally {
             paths.forEach { NSFileManager.defaultManager.removeItemAtPath(it, error = null) }
-        }
-    }
-
-    private fun assertDecodedColor(
-        host: AVPlayerViewController,
-        red: Boolean,
-    ) {
-        val player = assertNotNull(host.player)
-        val item = assertNotNull(player.currentItem)
-        val output =
-            AVPlayerItemVideoOutput(
-                pixelBufferAttributes =
-                    mapOf(
-                        CFBridgingRelease(CFRetain(kCVPixelBufferPixelFormatTypeKey)) to
-                            kCVPixelFormatType_32BGRA.toLong(),
-                    ),
-            )
-        item.addOutput(output)
-        try {
-            await {
-                val buffer =
-                    output.copyPixelBufferForItemTime(player.currentTime(), itemTimeForDisplay = null)
-                        ?: return@await false
-                try {
-                    assertEquals(64uL, CVPixelBufferGetWidth(buffer))
-                    assertEquals(64uL, CVPixelBufferGetHeight(buffer))
-                    assertEquals(kCVPixelFormatType_32BGRA, CVPixelBufferGetPixelFormatType(buffer))
-                    assertEquals(0, CVPixelBufferLockBaseAddress(buffer, 0u))
-                    try {
-                        val pixels = assertNotNull(CVPixelBufferGetBaseAddress(buffer)).reinterpret<UByteVar>()
-                        val offset = (32uL * CVPixelBufferGetBytesPerRow(buffer) + 32uL * 4uL).toInt()
-                        val blue = pixels[offset].toInt()
-                        val green = pixels[offset + 1].toInt()
-                        val actualRed = pixels[offset + 2].toInt()
-                        assertTrue(blue < 30, "Decoded frame should have no blue channel")
-                        assertTrue(
-                            if (red) actualRed > 200 && green < 30 else green > 200 && actualRed < 30,
-                            "Decoded frame must match the current URL's color: R=$actualRed G=$green B=$blue",
-                        )
-                    } finally {
-                        CVPixelBufferUnlockBaseAddress(buffer, 0u)
-                    }
-                    true
-                } finally {
-                    CVPixelBufferRelease(buffer)
-                }
-            }
-            await {
-                if (!host.readyForDisplay) return@await false
-                if (host.view.window == null || host.view.hidden || host.view.alpha <= 0.0) return@await false
-                val viewWidth = host.view.bounds.useContents { size.width }
-                val viewHeight = host.view.bounds.useContents { size.height }
-                if (viewWidth <= 0.0 || viewHeight <= 0.0) return@await false
-                host.videoBounds.useContents {
-                    size.width > 0.0 &&
-                        size.height > 0.0 &&
-                        origin.x >= -1.0 &&
-                        origin.y >= -1.0 &&
-                        origin.x + size.width <= viewWidth + 1.0 &&
-                        origin.y + size.height <= viewHeight + 1.0
-                }
-            }
-            assertTrue(host.view.window != null && !host.view.hidden && host.view.alpha > 0.0)
-            val viewWidth = host.view.bounds.useContents { size.width }
-            val viewHeight = host.view.bounds.useContents { size.height }
-            assertTrue(viewWidth > 0.0 && viewHeight > 0.0)
-            assertTrue(
-                host.videoBounds.useContents {
-                    size.width > 0.0 &&
-                        size.height > 0.0 &&
-                        origin.x >= -1.0 &&
-                        origin.y >= -1.0 &&
-                        origin.x + size.width <= viewWidth + 1.0 &&
-                        origin.y + size.height <= viewHeight + 1.0
-                },
-                "Display-ready video must occupy valid bounds inside its mounted view",
-            )
-        } finally {
-            item.removeOutput(output)
         }
     }
 
@@ -352,6 +282,8 @@ class PlayerHostTest {
         val preloader = createNativeMediaPreloader()
         val visible = mutableStateOf(true)
         val showPlayer = mutableStateOf(false)
+        val active = mutableStateOf(true)
+        val readiness = mutableListOf<Boolean>()
         val root =
             ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
                 if (visible.value) {
@@ -360,12 +292,13 @@ class PlayerHostTest {
                         if (showPlayer.value) {
                             NativeWebMPlayer(
                                 url = url,
-                                active = true,
+                                active = active.value,
                                 autoPlay = true,
                                 initiallyMuted = true,
                                 loop = true,
                                 preloader = preloader,
                                 modifier = Modifier.fillMaxSize(),
+                                onPlaybackReadyChange = { readiness += it },
                             )
                         }
                     }
@@ -393,19 +326,12 @@ class PlayerHostTest {
                 val shown = root.view.webViews().single()
                 assertEquals(warmed.objcPtr(), shown.objcPtr(), "Opening the clip reuses the prepared WebKit view")
                 assertNull(preloader.peekWebM(url))
-                var lastSnapshot: List<Double>? = null
-                await(failureMessage = {
-                    "WebM did not render: state=$lastSnapshot, window=${shown.window != null}, " +
-                        "bounds=${shown.bounds.useContents { "${size.width}x${size.height}" }}, $lastWebMDetails"
-                }) {
-                    lastSnapshot = shown.mediaSnapshot()
-                    lastSnapshot?.let {
-                        it[0] >= 2 && it[1] == 64.0 && it[2] == 64.0 && it[3] > 0.05 && it[4] > 0
-                    } == true
-                }
-                val playing = assertNotNull(shown.mediaSnapshot())
-                assertTrue(playing[3] > 0.0, "The actual HTML video clock advances")
-                assertTrue(playing[4] > 0.0, "WebKit reports decoded video frames")
+                shown.assertDecodedPlayback()
+                await { readiness.lastOrNull() == true }
+                active.value = false
+                await { readiness.lastOrNull() == false && shown.mediaSnapshot()?.get(5) == 1.0 }
+                active.value = true
+                await { readiness.lastOrNull() == true && shown.mediaSnapshot()?.get(5) == 0.0 }
                 preloader.prepare(MediaPreloadKey("vp8-following", url, MediaType.VIDEO, "webm"))
                 val following = assertNotNull(preloader.peekWebM(url))
                 await { following.window != null && root.view.webViews().size == 2 }
@@ -420,19 +346,12 @@ class PlayerHostTest {
                         .objcPtr(),
                 )
                 assertTrue(warmHost.subviews.isEmpty(), "Promoted WebKit view belongs only to the visible player")
+                showPlayer.value = false
+                await { root.view.webViews().isEmpty() && readiness.lastOrNull() == false }
             }
         } finally {
             preloader.close()
         }
-    }
-
-    private fun assertSilentPreparedWebM(webView: WKWebView) {
-        // The upcoming view loads actual clip metadata without playing or producing audio.
-        await { webView.mediaSnapshot()?.let { it[0] >= 1 && it[1] == 64.0 && it[2] == 64.0 } == true }
-        val before = assertNotNull(webView.mediaSnapshot())
-        assertEquals(0.0, before[3])
-        assertEquals(1.0, before[5], "The preloaded view remains paused")
-        assertEquals(1.0, before[6], "The preloaded view remains muted")
     }
 
     @Test
@@ -584,123 +503,227 @@ class PlayerHostTest {
             await { root.view.webViews().isEmpty() }
         }
     }
+}
 
-    private fun writeFeedFixture(encoded: String): String {
-        val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
-        val bytes = Base64.decode(encoded)
-        val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
-        assertTrue(data.writeToFile(path, atomically = true))
-        return path
-    }
-
-    private fun foregroundFeedTestHost() {
-        // The standalone Kotlin executable has no UIApplicationMain; model the real activation event.
-        NSNotificationCenter.defaultCenter.postNotificationName(
-            UIApplicationDidBecomeActiveNotification,
-            `object` = null,
+private fun assertDecodedColor(
+    host: AVPlayerViewController,
+    red: Boolean,
+) {
+    val player = assertNotNull(host.player)
+    val item = assertNotNull(player.currentItem)
+    val output =
+        AVPlayerItemVideoOutput(
+            pixelBufferAttributes =
+                mapOf(
+                    CFBridgingRelease(CFRetain(kCVPixelBufferPixelFormatTypeKey)) to
+                        kCVPixelFormatType_32BGRA.toLong(),
+                ),
         )
-    }
-
-    private fun backgroundFeedTestHost() {
-        NSNotificationCenter.defaultCenter.postNotificationName(
-            UIApplicationWillResignActiveNotification,
-            `object` = null,
-        )
-        NSNotificationCenter.defaultCenter.postNotificationName(
-            UIApplicationDidEnterBackgroundNotification,
-            `object` = null,
-        )
-    }
-
-    private var lastWebMDetails = ""
-
-    private fun WKWebView.mediaSnapshot(): List<Double>? {
-        var completed = false
-        var snapshot: String? = null
-        var failure: String? = null
-        evaluateJavaScript(
-            """
-            (function(){
-                var v=document.getElementById('v');if(!v)return null;
-                var frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:(v.webkitDecodedFrameCount||0);
-                var r=v.getBoundingClientRect();
-                var details={
-                    requested:window.__orbinPlaybackRequested,
-                    applied:window.__orbinPlaybackApplied,
-                    pending:window.__orbinPlaybackPending,
-                    rejection:window.__orbinPlaybackLastRejection,
-                    error:v.error?{code:v.error.code,message:v.error.message}:null,
-                    visibility:document.visibilityState,focused:document.hasFocus(),
-                    rect:[r.x,r.y,r.width,r.height],network:v.networkState,
-                    duration:v.duration,ended:v.ended,
-                    codec:v.canPlayType('video/webm; codecs="vp8"')
-                };
-                return [v.readyState,v.videoWidth,v.videoHeight,v.currentTime,frames,v.paused?1:0,v.muted?1:0].join(',')+'|'+JSON.stringify(details);
-            })()
-            """.trimIndent(),
-        ) { value, error ->
-            snapshot = value as? String
-            failure = error?.localizedDescription
-            completed = true
-        }
-        await { completed }
-        assertNull(failure, "Query actual WebKit media state")
-        val payload = snapshot ?: return null
-        lastWebMDetails = payload.substringAfter('|', "")
-        return payload.substringBefore('|').split(',').map { it.toDouble() }
-    }
-
-    private fun withWindow(
-        root: UIViewController,
-        disposeContent: () -> Unit,
-        block: () -> Unit,
-    ) {
-        val originalMute = SessionAudio.muted
-        val window = UIWindow(frame = CGRectMake(0.0, 0.0, 390.0, 844.0))
-        window.rootViewController = root
-        window.makeKeyAndVisible()
-        try {
-            block()
-        } finally {
+    item.addOutput(output)
+    try {
+        await {
+            val buffer =
+                output.copyPixelBufferForItemTime(player.currentTime(), itemTimeForDisplay = null)
+                    ?: return@await false
             try {
-                disposeContent()
-                await {
-                    root.players().isEmpty() && root.view.webViews().isEmpty() && root.view.preloadHosts().isEmpty()
+                assertEquals(64uL, CVPixelBufferGetWidth(buffer))
+                assertEquals(64uL, CVPixelBufferGetHeight(buffer))
+                assertEquals(kCVPixelFormatType_32BGRA, CVPixelBufferGetPixelFormatType(buffer))
+                assertEquals(0, CVPixelBufferLockBaseAddress(buffer, 0u))
+                try {
+                    val pixels = assertNotNull(CVPixelBufferGetBaseAddress(buffer)).reinterpret<UByteVar>()
+                    val offset = (32uL * CVPixelBufferGetBytesPerRow(buffer) + 32uL * 4uL).toInt()
+                    val blue = pixels[offset].toInt()
+                    val green = pixels[offset + 1].toInt()
+                    val actualRed = pixels[offset + 2].toInt()
+                    assertTrue(blue < 30, "Decoded frame should have no blue channel")
+                    assertTrue(
+                        if (red) actualRed > 200 && green < 30 else green > 200 && actualRed < 30,
+                        "Decoded frame must match the current URL's color: R=$actualRed G=$green B=$blue",
+                    )
+                } finally {
+                    CVPixelBufferUnlockBaseAddress(buffer, 0u)
                 }
+                true
             } finally {
-                window.hidden = true
-                window.rootViewController = null
-                SessionAudio.muted = originalMute
+                CVPixelBufferRelease(buffer)
             }
         }
+        await {
+            if (!host.readyForDisplay) return@await false
+            if (host.view.window == null || host.view.hidden || host.view.alpha <= 0.0) return@await false
+            val viewWidth = host.view.bounds.useContents { size.width }
+            val viewHeight = host.view.bounds.useContents { size.height }
+            if (viewWidth <= 0.0 || viewHeight <= 0.0) return@await false
+            host.videoBounds.useContents {
+                size.width > 0.0 &&
+                    size.height > 0.0 &&
+                    origin.x >= -1.0 &&
+                    origin.y >= -1.0 &&
+                    origin.x + size.width <= viewWidth + 1.0 &&
+                    origin.y + size.height <= viewHeight + 1.0
+            }
+        }
+        assertTrue(host.view.window != null && !host.view.hidden && host.view.alpha > 0.0)
+        val viewWidth = host.view.bounds.useContents { size.width }
+        val viewHeight = host.view.bounds.useContents { size.height }
+        assertTrue(viewWidth > 0.0 && viewHeight > 0.0)
+        assertTrue(
+            host.videoBounds.useContents {
+                size.width > 0.0 &&
+                    size.height > 0.0 &&
+                    origin.x >= -1.0 &&
+                    origin.y >= -1.0 &&
+                    origin.x + size.width <= viewWidth + 1.0 &&
+                    origin.y + size.height <= viewHeight + 1.0
+            },
+            "Display-ready video must occupy valid bounds inside its mounted view",
+        )
+    } finally {
+        item.removeOutput(output)
     }
-
-    private fun await(
-        failureMessage: () -> String = { "Native view did not reach the expected state within five seconds" },
-        condition: () -> Boolean,
-    ) {
-        repeat(100) {
-            if (condition()) return
-            NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.05))
-        }
-        assertTrue(condition(), failureMessage())
-    }
-
-    private fun UIViewController.players(): List<AVPlayerViewController> =
-        childViewControllers.filterIsInstance<UIViewController>().flatMap {
-            if (it is AVPlayerViewController) listOf(it) else it.players()
-        }
-
-    private fun UIView.webViews(): List<WKWebView> =
-        subviews.filterIsInstance<UIView>().flatMap {
-            if (it is WKWebView) listOf(it) else it.webViews()
-        }
-
-    private fun UIView.preloadHosts(): List<MediaPreloadHostView> =
-        subviews.filterIsInstance<UIView>().flatMap {
-            if (it is MediaPreloadHostView) listOf(it) else it.preloadHosts()
-        }
 }
+
+private fun assertSilentPreparedWebM(webView: WKWebView) {
+    // The upcoming view loads actual clip metadata without playing or producing audio.
+    await { webView.mediaSnapshot()?.let { it[0] >= 1 && it[1] == 64.0 && it[2] == 64.0 } == true }
+    val before = assertNotNull(webView.mediaSnapshot())
+    assertEquals(0.0, before[3])
+    assertEquals(1.0, before[5], "The preloaded view remains paused")
+    assertEquals(1.0, before[6], "The preloaded view remains muted")
+}
+
+private fun WKWebView.assertDecodedPlayback() {
+    var lastSnapshot: List<Double>? = null
+    await(failureMessage = {
+        "WebM did not render: state=$lastSnapshot, window=${window != null}, " +
+            "bounds=${bounds.useContents { "${size.width}x${size.height}" }}, $lastWebMDetails"
+    }) {
+        lastSnapshot = mediaSnapshot()
+        lastSnapshot?.let {
+            it[0] >= 2 && it[1] == 64.0 && it[2] == 64.0 && it[3] > 0.05 && it[4] > 0
+        } == true
+    }
+    val playing = assertNotNull(mediaSnapshot())
+    assertTrue(playing[3] > 0.0, "The actual HTML video clock advances")
+    assertTrue(playing[4] > 0.0, "WebKit reports decoded video frames")
+}
+
+private fun writeFeedFixture(encoded: String): String {
+    val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
+    val bytes = Base64.decode(encoded)
+    val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+    assertTrue(data.writeToFile(path, atomically = true))
+    return path
+}
+
+private fun foregroundFeedTestHost() {
+    // The standalone Kotlin executable has no UIApplicationMain; model the real activation event.
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        UIApplicationDidBecomeActiveNotification,
+        `object` = null,
+    )
+}
+
+private fun backgroundFeedTestHost() {
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        UIApplicationWillResignActiveNotification,
+        `object` = null,
+    )
+    NSNotificationCenter.defaultCenter.postNotificationName(
+        UIApplicationDidEnterBackgroundNotification,
+        `object` = null,
+    )
+}
+
+private var lastWebMDetails = ""
+
+private fun WKWebView.mediaSnapshot(): List<Double>? {
+    var completed = false
+    var snapshot: String? = null
+    var failure: String? = null
+    evaluateJavaScript(
+        """
+        (function(){
+            var v=document.getElementById('v');if(!v)return null;
+            var frames=v.getVideoPlaybackQuality?v.getVideoPlaybackQuality().totalVideoFrames:(v.webkitDecodedFrameCount||0);
+            var r=v.getBoundingClientRect();
+            var details={
+                requested:window.__orbinPlaybackRequested,
+                applied:window.__orbinPlaybackApplied,
+                pending:window.__orbinPlaybackPending,
+                rejection:window.__orbinPlaybackLastRejection,
+                error:v.error?{code:v.error.code,message:v.error.message}:null,
+                visibility:document.visibilityState,focused:document.hasFocus(),
+                rect:[r.x,r.y,r.width,r.height],network:v.networkState,
+                duration:v.duration,ended:v.ended,
+                codec:v.canPlayType('video/webm; codecs="vp8"')
+            };
+            return [v.readyState,v.videoWidth,v.videoHeight,v.currentTime,frames,v.paused?1:0,v.muted?1:0].join(',')+'|'+JSON.stringify(details);
+        })()
+        """.trimIndent(),
+    ) { value, error ->
+        snapshot = value as? String
+        failure = error?.localizedDescription
+        completed = true
+    }
+    await { completed }
+    assertNull(failure, "Query actual WebKit media state")
+    val payload = snapshot ?: return null
+    lastWebMDetails = payload.substringAfter('|', "")
+    return payload.substringBefore('|').split(',').map { it.toDouble() }
+}
+
+private fun withWindow(
+    root: UIViewController,
+    disposeContent: () -> Unit,
+    block: () -> Unit,
+) {
+    val originalMute = SessionAudio.muted
+    val window = UIWindow(frame = CGRectMake(0.0, 0.0, 390.0, 844.0))
+    window.rootViewController = root
+    window.makeKeyAndVisible()
+    try {
+        block()
+    } finally {
+        try {
+            disposeContent()
+            await {
+                root.players().isEmpty() && root.view.webViews().isEmpty() && root.view.preloadHosts().isEmpty()
+            }
+        } finally {
+            window.hidden = true
+            window.rootViewController = null
+            SessionAudio.muted = originalMute
+        }
+    }
+}
+
+private fun await(
+    failureMessage: () -> String = { "Native view did not reach the expected state within five seconds" },
+    condition: () -> Boolean,
+) {
+    repeat(100) {
+        if (condition()) return
+        NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.05))
+    }
+    assertTrue(condition(), failureMessage())
+}
+
+private fun UIViewController.players(): List<AVPlayerViewController> =
+    childViewControllers.filterIsInstance<UIViewController>().flatMap {
+        if (it is AVPlayerViewController) listOf(it) else it.players()
+    }
+
+private fun UIView.webViews(): List<WKWebView> =
+    subviews.filterIsInstance<UIView>().flatMap {
+        if (it is WKWebView) listOf(it) else it.webViews()
+    }
+
+private fun UIView.preloadHosts(): List<MediaPreloadHostView> =
+    subviews.filterIsInstance<UIView>().flatMap {
+        if (it is MediaPreloadHostView) listOf(it) else it.preloadHosts()
+    }
 
 // Local missing files keep host lifecycle coverage independent of network/decoder availability.
 private const val FIRST_URL = "file:///tmp/orbin-host-test-first.mp4"

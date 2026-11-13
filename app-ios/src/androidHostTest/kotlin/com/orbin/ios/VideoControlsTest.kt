@@ -65,4 +65,29 @@ class VideoControlsTest {
         assertNull(parseWebMState("1,NaN,20,1"))
         assertNull(parseWebMState("not ready"))
     }
+
+    @Test
+    fun webMStateSeparatesThePlayIntentFromBufferingAndActualDisplayReadiness() {
+        assertEquals(
+            VideoState(playing = true, position = 3.5, duration = 20.0, loading = true),
+            parseWebMState("1,3.5,20,1,1,0"),
+        )
+        assertEquals(
+            VideoState(playing = true, muted = false, position = 3.5, duration = 20.0, displayReady = true),
+            parseWebMState("1,3.5,20,0,0,1"),
+        )
+        assertEquals(VideoState(loading = true), parseWebMState("0,0,NaN,1,1,0"))
+        assertEquals(VideoState(), parseWebMState("0,0,0,1,0,0"))
+        listOf(
+            "1,3.5,20,1,unknown,0",
+            "1,3.5,20,1,0,unknown",
+            "1,3.5,20,1,2,0",
+            "1,3.5,20,1,0,-1",
+            "1,3.5,20,unknown,0,1",
+            "2,3.5,20,1,0,1",
+            "1,NaN,20,1,0,1",
+            "1,3.5,20,1,0",
+            "1,3.5,20,1,0,1,0",
+        ).forEach { report -> assertNull(parseWebMState(report), report) }
+    }
 }

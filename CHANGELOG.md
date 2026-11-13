@@ -6,6 +6,25 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [206-Sea-Beet] - 2026-11-13
+
+### Added
+- Added Card view to Feed and board catalogs: one full-width card per row with a larger image preview, alongside the existing Grid and List layouts.
+- Added Card to Appearance settings and layout menus; the Home layout button cycles Grid, List and Card.
+
+### Changed
+- Saved Card view as a shared layout preference on Android and iOS, including backup restoration, while retaining existing Grid and List selections.
+
+### Fixed
+- Opened known selected attachments immediately while the rest of their thread loads in the background, retaining the selected player when the playlist expands.
+- Corrected iOS WebM buffering and playback readiness reporting, and held next-video preloading until the current video is ready.
+- Batched Android encrypted video-cache writes in 64 KiB chunks while continuing to deliver network packets immediately to the player.
+
+### Testing
+- Added full-width Card geometry, mode selection, navigation and accessibility regressions, with shared screenshots for phone and tablet layouts.
+- Expanded preference, backup and destination tests to cover Card persistence and installed Android layout switching.
+- Added delayed-thread, selected-player continuity and video-readiness regressions, plus cache streaming, cancellation, truncation and failure tests.
+
 ## [205-Nopales] - 2026-11-13
 
 ### Added
@@ -3118,7 +3137,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v205-Nopales...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v206-Sea-Beet...HEAD
+[206-Sea-Beet]: https://github.com/Defuuls/Orbin/compare/v205-Nopales...v206-Sea-Beet
 [205-Nopales]: https://github.com/Defuuls/Orbin/compare/v204-Moringa...v205-Nopales
 [204-Moringa]: https://github.com/Defuuls/Orbin/compare/v203-Chaya...v204-Moringa
 [203-Chaya]: https://github.com/Defuuls/Orbin/compare/v202-Arracacha...v203-Chaya

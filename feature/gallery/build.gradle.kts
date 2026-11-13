@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.orbin.android.feature)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -29,6 +30,7 @@ tasks.withType<Test>().configureEach {
 
 dependencies {
     implementation(libs.kermit)
+    implementation(libs.kotlinx.serialization.json)
     implementation(project(":ui-next"))
     implementation(project(":media"))
 

@@ -166,21 +166,31 @@ private fun ReaderSkeleton(
         BoxWithConstraints(
             Modifier.fillMaxSize().clearAndSetSemantics { contentDescription = label },
         ) {
-            val grid = mode == CatalogMode.GRID
-            val gridSpec = if (grid) orbinCatalogGridSpec(maxWidth) else catalogGridSpec(maxWidth, maxHeight)
-            val columns = if (grid) gridSpec.columns else 1
+            val cards = mode != CatalogMode.LIST
+            val gridSpec =
+                when (mode) {
+                    CatalogMode.GRID -> orbinCatalogGridSpec(maxWidth)
+                    CatalogMode.CARD -> orbinCatalogCardSpec(maxWidth)
+                    CatalogMode.LIST -> catalogGridSpec(maxWidth, maxHeight)
+                }
+            val columns = if (cards) gridSpec.columns else 1
             val cellMinimum = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
-            val minimum = if (grid) gridSpec.imageHeight else cellMinimum
+            val minimum =
+                when (mode) {
+                    CatalogMode.CARD -> gridSpec.imageHeight.coerceAtLeast(cellMinimum)
+                    CatalogMode.GRID -> gridSpec.imageHeight
+                    CatalogMode.LIST -> cellMinimum
+                }
             val rowCount = ceil(maxHeight.value / minimum.value).toInt().coerceAtLeast(1)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 userScrollEnabled = false,
-                contentPadding = if (grid) PaddingValues(ORBIN_CATALOG_GUTTER) else PaddingValues(),
-                horizontalArrangement = if (grid) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Start,
-                verticalArrangement = if (grid) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
+                contentPadding = if (cards) PaddingValues(ORBIN_CATALOG_GUTTER) else PaddingValues(),
+                horizontalArrangement = if (cards) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Start,
+                verticalArrangement = if (cards) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
             ) {
                 items(rowCount * columns) {
-                    if (grid) {
+                    if (cards) {
                         OrbinCard(
                             modifier =
                                 Modifier
