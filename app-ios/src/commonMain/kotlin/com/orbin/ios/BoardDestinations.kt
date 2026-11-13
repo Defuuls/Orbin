@@ -177,7 +177,11 @@ internal fun CatalogDestination(
                             openDrawer != null -> ReaderNavigation.MENU
                             else -> ReaderNavigation.NONE
                         },
-                    onNavigation = onBack ?: { openDrawer?.invoke() },
+                    onNavigation =
+                        onBack ?: {
+                            openDrawer?.invoke()
+                            Unit
+                        },
                     onPickBoard = { pickerVisible = true },
                     onSearch = {
                         searchVisible = !searchVisible
