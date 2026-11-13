@@ -113,6 +113,60 @@ class MediaDownloadsTest {
     }
 
     @Test
+    fun savingTheSameFileTwiceDoesNotFetchItAgain() =
+        runTest {
+            var fetches = 0
+            val dao = FakeDownloadDao()
+            val downloads =
+                MediaDownloads(
+                    dao = dao,
+                    store = { _, _, _, _ -> },
+                    fetch = { _, _ ->
+                        fetches++
+                        byteArrayOf(1)
+                    },
+                    scope = backgroundScope,
+                    now = { 1_000 },
+                )
+            val clip = file("clip.webm")
+
+            assertTrue(downloads.save(clip, thread, null))
+            downloads.records.first { it.singleOrNull()?.status == DownloadStatus.COMPLETED }
+            assertTrue(downloads.save(clip, thread, null))
+            testScheduler.advanceUntilIdle()
+
+            assertEquals(1, fetches)
+            assertEquals(1, dao.all().size)
+        }
+
+    @Test
+    fun savingAFailedFileAgainFetchesItOnTheSameRow() =
+        runTest {
+            var fetches = 0
+            val dao = FakeDownloadDao()
+            val downloads =
+                MediaDownloads(
+                    dao = dao,
+                    store = { _, _, _, _ -> },
+                    fetch = { _, _ ->
+                        fetches++
+                        if (fetches == 1) error("offline") else byteArrayOf(1)
+                    },
+                    scope = backgroundScope,
+                    now = { 1_000 },
+                )
+            val clip = file("clip.webm")
+
+            assertTrue(downloads.save(clip, thread, null))
+            downloads.records.first { it.singleOrNull()?.status == DownloadStatus.FAILED }
+            assertTrue(downloads.save(clip, thread, null))
+            downloads.records.first { it.singleOrNull()?.status == DownloadStatus.COMPLETED }
+
+            assertEquals(2, fetches)
+            assertEquals(1, dao.all().size)
+        }
+
+    @Test
     fun aRemoteFileNameCannotLeaveItsFolder() {
         assertEquals("passwd.jpg", downloadFileName(file("../etc/passwd.jpg")))
         assertEquals("passwd.jpg", downloadFileName(file("a\\b\\passwd.jpg")))
@@ -164,6 +218,15 @@ private class FakeDownloadDao : DownloadDao {
     override suspend fun clear() = rows.update { emptyList() }
 
     override suspend fun getById(id: Long): DownloadEntity? = rows.value.firstOrNull { it.id == id }
+
+    override suspend fun findByTarget(
+        url: String,
+        fileName: String,
+        relativeDir: String,
+    ): List<DownloadEntity> =
+        rows.value
+            .filter { it.url == url && it.fileName == fileName && it.relativeDir == relativeDir }
+            .sortedByDescending { it.createdAtMillis }
 
     override suspend fun delete(id: Long) = rows.update { list -> list.filterNot { it.id == id } }
 }

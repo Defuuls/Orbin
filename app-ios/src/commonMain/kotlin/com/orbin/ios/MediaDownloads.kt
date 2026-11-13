@@ -7,6 +7,8 @@ import com.orbin.core.model.PermanentContentFilter
 import com.orbin.core.model.ThreadKey
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
+import com.orbin.data.repository.EnqueueDecision
+import com.orbin.data.repository.decideEnqueue
 import com.orbin.network.ktor.MAX_BUFFERED_MEDIA_BYTES
 import com.orbin.network.ktor.readBoundedBytes
 import io.ktor.client.HttpClient
@@ -22,7 +24,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlin.time.Clock
 
@@ -88,9 +92,11 @@ class MediaDownloads(
     private val scope: CoroutineScope,
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     private val durableFetch: DurableMediaFetch? = null,
+    private val fileExists: (fileName: String, folder: String) -> Boolean = { _, _ -> true },
 ) {
     // Bytes so far of the saves in flight, by record id.
     private val progress = MutableStateFlow<Map<Long, Pair<Long, Long?>>>(emptyMap())
+    private val enqueueMutex = Mutex()
 
     /** Every save, most recent first, with live progress for the ones still running. */
     val records: StateFlow<List<DownloadRecord>> =
@@ -129,20 +135,33 @@ class MediaDownloads(
         val url = safeExternalLink(file.sourceUrl) ?: return false
         val name = downloadFileName(file)
         if (PermanentContentFilter.matchesAny(listOf(name, file.originalFileName, threadTitle))) return false
-        val id = nextId()
         val folder = downloadFolder(thread.board.value, thread.thread.value, threadTitle)
         scope.launch {
-            dao.upsert(
-                DownloadEntity(
-                    id = id,
-                    url = url,
-                    fileName = name,
-                    status = DownloadStatus.RUNNING.name,
-                    createdAtMillis = now(),
-                    relativeDir = folder,
-                ),
-            )
-            transfer(id, url, name, folder)
+            val job =
+                enqueueMutex.withLock {
+                    when (val decision = decideEnqueue(dao.findByTarget(url, name, folder), fileExists(name, folder))) {
+                        is EnqueueDecision.ReturnExisting -> null
+                        is EnqueueDecision.Requeue -> {
+                            dao.updateStatus(decision.id, DownloadStatus.RUNNING.name)
+                            TransferJob(decision.id, url, name, folder)
+                        }
+                        EnqueueDecision.InsertNew -> {
+                            val id = nextId()
+                            dao.upsert(
+                                DownloadEntity(
+                                    id = id,
+                                    url = url,
+                                    fileName = name,
+                                    status = DownloadStatus.RUNNING.name,
+                                    createdAtMillis = now(),
+                                    relativeDir = folder,
+                                ),
+                            )
+                            TransferJob(id, url, name, folder)
+                        }
+                    }
+                }
+            if (job != null) transfer(job.id, job.url, job.name, job.folder)
         }
         return true
     }
@@ -261,6 +280,13 @@ private fun DownloadEntity.toRecord(live: Pair<Long, Long?>?): DownloadRecord =
         downloadedBytes = live?.first ?: 0L,
         totalBytes = live?.second,
     )
+
+private data class TransferJob(
+    val id: Long,
+    val url: String,
+    val name: String,
+    val folder: String,
+)
 
 private val UNFINISHED = setOf(DownloadStatus.QUEUED.name, DownloadStatus.RUNNING.name)
 private val UNSAFE_PATH_CHARS = Regex("""[/\\:*?"<>|]""")

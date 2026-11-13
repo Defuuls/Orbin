@@ -6,6 +6,16 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- Retried Android media downloads after a network error, a timeout, or an HTTP 408, 429 or 5xx, instead of marking them permanently failed, and resumed a partial file with a Range request when the server supports it. Downloads wait for a network connection, back off between attempts, and at most three run at once to the same host, through the same rate-limit handling as video playback.
+- Removed the 30-second overall request timeout on the shared iOS HTTP client so a large download or media transfer is no longer cut off mid-transfer; stalled connections still time out after 30 seconds.
+- Stopped a second save of the same file from queueing another download when one is already queued, running, or completed and still on the device. A failed save, or a completed one whose file has been deleted, is retried on the existing record.
+
+### Testing
+- Added unit tests for download retry versus permanent-failure classification, for HTTP Range resume (206 append, 200 restart, 416 complete or restart), and for the per-host download cap and WorkManager network constraint.
+- Added unit tests that enqueueing the same URL and path twice keeps a single record, re-queues a failed or missing file, and leaves a different folder as a separate download.
+- Added a host stress test that queues 100 downloads through 429, 503, and mid-body disconnects, and requires every file to finish once, with no duplicate enqueues and no partial body in the published folder.
+
 ## [204-Moringa] - 2026-11-13
 
 ### Fixed

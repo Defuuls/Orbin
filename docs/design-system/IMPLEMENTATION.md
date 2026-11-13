@@ -260,7 +260,7 @@ The following table records the earlier drawer and app-bar migration; its Home p
 | Same file | `secondary pages do not claim a primary tab` | `secondary routes show Back and cannot open a drawer`; `a root without a navigation callback omits Menu` |
 | [PrimaryLoadingNavigationTest](../../ui-next/src/androidHostTest/kotlin/com/orbin/uinext/PrimaryLoadingNavigationTest.kt) | `loadingBoardsKeepAllFiveTabsUsable` | `loadingBoardsKeepAllDrawerDestinationsUsable` |
 | Same file | `failedHomeOffersRetryAndNavigationToAnotherTab` | `failedHomeOffersRetryAndNavigationToAnotherDrawerDestination` |
-| [EditorialDockTest](../../ui-next/src/androidHostTest/kotlin/com/orbin/uinext/EditorialDockTest.kt) | `largeTextKeepsLabelsReadableAndTargetsReachable` | `largeTextKeepsDrawerLabelsReadableAndTargetsReachable` |
+| [ReaderDrawerSelectionTest](../../ui-next/src/androidHostTest/kotlin/com/orbin/uinext/ReaderDrawerSelectionTest.kt) | `largeTextKeepsLabelsReadableAndTargetsReachable` | `largeTextKeepsDrawerLabelsReadableAndTargetsReachable` |
 | Same file | `choosingATabUpdatesSelectionWithOneCallback` | `choosingADrawerEntryUpdatesSelectionWithOneCallback` |
 | Same file | `narrowViewportKeepsAllFiveIndependent48dpTargets` | `narrowViewportKeepsIndependentFullWidthDrawerTargets` |
 | [InlineActionAccessibilityTest](../../ui-next/src/androidHostTest/kotlin/com/orbin/uinext/InlineActionAccessibilityTest.kt) | `a destination tab is at least the minimum touch target` | `a drawer destination is at least the minimum touch target` |

@@ -220,15 +220,15 @@ internal fun StringBuilder.appendEscaped(text: String): StringBuilder {
 
 private const val TITLE_LENGTH = 80
 
-/** The archive's stylesheet: a light page, or dark where the reader prefers it. */
+/** The archive's stylesheet: Coral reader colors, or dark where the reader prefers it. */
 internal const val ARCHIVE_CSS = """:root {
-  --bg: #f7fbf7; --raised: #ffffff; --ink: #191c19; --muted: #404941; --line: #c0c9bf;
-  --accent: #276a3c; --green: #2f7d32; --pink: #b0306a;
+  --bg: #ffffff; --raised: #ffffff; --ink: #191c19; --muted: #404941; --line: #c0c9bf;
+  --accent: #c73e4e; --green: #2f7d32; --pink: #b0306a;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #101a12; --raised: #1c271e; --ink: #e0e8e0; --muted: #c0c9bf; --line: #404941;
-    --accent: #a3d4af; --green: #8bc98d; --pink: #f08cb8; }
+  :root { --bg: #1c1c1e; --raised: #1c271e; --ink: #e0e8e0; --muted: #c0c9bf; --line: #404941;
+    --accent: #ff8a96; --green: #8bc98d; --pink: #f08cb8; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
