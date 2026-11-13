@@ -3,17 +3,7 @@ name: Performance
 on:
   pull_request:
     paths:
-      - 'app/**'
       - 'benchmark/**'
-      - 'core/model/**'
-      - 'core/reader/**'
-      - 'core/ui/**'
-      - 'core/designsystem/**'
-      - 'data/**'
-      - 'domain/**'
-      - 'feature/**'
-      - 'media/**'
-      - 'ui-next/**'
       - '.github/workflows/performance.yml'
   workflow_dispatch:
 
