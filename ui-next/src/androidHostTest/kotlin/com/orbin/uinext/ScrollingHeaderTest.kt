@@ -2,11 +2,15 @@ package com.orbin.uinext
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -119,7 +123,13 @@ class ScrollingHeaderTest {
             NextTheme { BoardsScreen(boards = boards, showRail = false) }
         }
 
-        composeRule.onNodeWithContentDescription(OrbinStyle.WORDMARK).assertIsDisplayed()
+        composeRule
+            .onNodeWithTag(BoardsTags.HEADER)
+            .assertIsDisplayed()
+            .assertContentDescriptionEquals(OrbinStyle.WORDMARK)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+        // UIKit merges descendant labels too, so decorative text must not duplicate the header label.
+        composeRule.onAllNodesWithText(OrbinStyle.WORDMARK, useUnmergedTree = true).assertCountEquals(0)
         composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_BOARD_TITLE))
 
         composeRule.onNodeWithText(LAST_BOARD_TITLE).assertIsDisplayed()
