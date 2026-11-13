@@ -2,7 +2,7 @@
 
 Orbin's identity is a **night theater** for imageboards: immersive, media-first, and night-mode native. The product dims the room and lets the board fill the frame.
 
-This document replaces the prior orbital / aubergine system. Until production launcher assets are swapped, treat the aperture mark and void palette below as the source of truth for new UI and brand work.
+This document replaces the prior orbital / aubergine system. Production launcher, splash and notification assets now use the card-stack mark on coral `#FF5D68` described below. In-app UI color tokens are the Coral ReaderTokens palette (`#C73E4E` light accent, `#FF8A96` dark accent).
 
 ## Core idea
 
@@ -14,16 +14,18 @@ Voice is short and direct, slightly filmic: product copy speaks like a projectio
 
 ## Mark
 
-**Aperture / lens iris.** An open circle formed by geometric iris blades with a clear central counter. White on void black. Ownable at launcher scale without planets, stars, orbits, or literal camera hardware chrome.
+**Card stack.** Two offset rounded cards on a coral `#FF5D68` tile: a dark-coral `#B8323F` back card and a white front card with a play-triangle notch (and, at larger sizes, two thread lines). The mark reads as boards, threads and media. It uses no circles, rings, targets or letter O.
+
+A second, small version of the same mark drops the thread lines and scales the front card and play triangle up 10%. It is used at 48px and under and for the monochrome themed-icon layer, so the silhouette still holds at 24dp.
 
 ### Mark principles
 
-- Keep the silhouette simple enough to read at 24dp.
-- Prefer pure white `#E8E4DC` (or `#FFFFFF`) on Void; monochrome adaptive icons may be tinted by the system.
-- Do not add gradients, inner shadows, outlines, or decorative rings.
-- Retire the orbital / planetary mark for new first-party surfaces.
+- Keep the silhouette simple enough to read at 24dp (use the small mark at that size).
+- Icon coral is `#FF5D68`; the back card is `#B8323F`; the front card is white. Monochrome adaptive icons may be tinted by the system; the play triangle is a hole in that layer.
+- Do not add gradients, inner shadows, outlines, circles, rings, or a letter O.
+- The aperture / iris mark and the orbital / planetary mark are retired for new first-party surfaces.
 
-Production vector paths: `app/src/main/res/drawable/ic_launcher_aperture_foreground.xml` (foreground) and `app/src/main/res/drawable/ic_launcher_monochrome.xml` (monochrome).
+Production sources: [`docs/assets/orbin-icon-mark.svg`](assets/orbin-icon-mark.svg) and [`docs/assets/orbin-icon-mark-small.svg`](assets/orbin-icon-mark-small.svg). Regenerated paths: `app/src/main/res/drawable/ic_launcher_foreground.xml` (foreground) and `app/src/main/res/drawable/ic_launcher_monochrome.xml` (monochrome). See [launcher-icons.md](launcher-icons.md).
 
 ## Color system
 
@@ -79,7 +81,7 @@ Aubergine, mauve, blush, lilac, plum, and eggplant are **retired** as identity c
 
 ### Boards
 
-- Search-forward header with the aperture mark.
+- Search-forward header with the card-stack mark.
 - Dense `/board` list rows: code, title, Fog description; Ember for subscribed.
 - Thin separators; no heavy cards.
 
@@ -93,6 +95,6 @@ Aubergine, mauve, blush, lilac, plum, and eggplant are **retired** as identity c
 
 ## Lockups
 
-Pair the aperture mark with a plain **Orbin** wordmark (semibold sans) only when space and context need the name. In immersive product chrome, the mark alone is preferred.
+Pair the card-stack mark with a plain **Orbin** wordmark (semibold sans) only when space and context need the name. In immersive product chrome, the mark alone is preferred.
 
 Showcase assets for the prior orbital system remain under `docs/assets/` until replaced; do not treat them as the current identity.

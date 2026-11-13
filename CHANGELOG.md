@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+- Replaced the aperture and orbit app icons with a card-stack mark on coral `#FF5D68`: two offset rounded cards, thread lines on large sizes, and a play-triangle notch. Android adaptive, monochrome, legacy, splash, notification, iOS AppIcon and LaunchMark, and the website favicon all derive from one SVG.
+
 ## [203-Chaya] - 2026-11-13
 
 ### Security
