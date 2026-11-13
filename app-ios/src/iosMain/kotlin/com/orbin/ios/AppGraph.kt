@@ -2,6 +2,7 @@ package com.orbin.ios
 
 import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.data.settings.LegacySyncCleanup
+import com.orbin.data.settings.LegacyThemeMigration
 import com.orbin.graph.createSharedGraph
 import com.orbin.network.NetworkConfig
 import com.orbin.provider.api.ViolentMediaCoverProvider
@@ -77,6 +78,7 @@ internal object AppGraph {
         scope.launch(Dispatchers.Default) {
             deleteLegacySyncKeychainItems()
             LegacySyncCleanup.clear(preferences)
+            LegacyThemeMigration.clear(preferences)
         }
         // Apply the saved resolver (and "strict" flag) as soon as settings are available, and
         // again if the user changes them. EncryptedDns updates the process-wide PrivacyContext

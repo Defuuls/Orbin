@@ -12,6 +12,7 @@ import coil3.SingletonImageLoader
 import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
 import com.orbin.data.repository.AndroidDownloadQueue
 import com.orbin.data.settings.LegacySyncCleanup
+import com.orbin.data.settings.LegacyThemeMigration
 import com.orbin.data.worker.WatchScheduler
 import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
@@ -76,6 +77,7 @@ class OrbinApplication :
         CoroutineScope(Dispatchers.IO).launch {
             downloadQueue.get().prepare()
             LegacySyncCleanup.clear(preferences.get())
+            LegacyThemeMigration.clear(preferences.get())
         }
     }
 

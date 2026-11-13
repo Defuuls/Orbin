@@ -543,8 +543,6 @@ fun NextScaffold(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
-val RAIL_HEIGHT = TikTokDesign.NavigationHeight
-
 internal val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */

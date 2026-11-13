@@ -1,20 +1,6 @@
 package com.orbin.core.ui.post
 
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -24,136 +10,29 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
-import com.orbin.core.designsystem.theme.GreentextColor
-import com.orbin.core.designsystem.theme.GreentextDarkColor
-import com.orbin.core.designsystem.theme.QuoteLinkColor
-import com.orbin.core.designsystem.theme.QuoteLinkDarkColor
-import com.orbin.core.designsystem.theme.SpoilerBackground
 import com.orbin.core.model.InlineStyle
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
+
+/** Imageboard greentext — kept period-accurate and AA contrast-safe on light and dark grounds. */
+val GreentextColor = Color(0xFF43631B)
+val GreentextDarkColor = Color(0xFF8FB855)
+
+/** Quote link — contrast-safe on light and dark grounds. */
+val QuoteLinkColor = Color(0xFF237A3B)
+val QuoteLinkDarkColor = Color(0xFF80D997)
+
+/** Spoiler tag — near-black fill, same as before. */
+val SpoilerBackground = Color(0xFF2B2B2B)
 
 /** The real host after a link whose text names another; not a link itself, so it reads as a label. */
 private val realDestinationStyle = SpanStyle(fontStyle = FontStyle.Italic)
 
 private val plainTextUrlRegex = Regex("""(?i)\b(?:https?://|www\.)[^\s<>\"']+""")
 private val trailingUrlPunctuation = charArrayOf('.', ',', ';', ':', '!', '?', ')', ']')
-
-/**
- * Renders a parsed [PostComment] as styled, interactive text. Quote links invoke [onQuoteClick];
- * external links invoke [onLinkClick]. Plain-text URLs are linkified too, so thread link export and
- * in-post tapping are not limited to provider-supplied HTML anchors. Set [selectable] for full post
- * views so long-press selection exposes the platform copy menu.
- *
- * Uses [LinkAnnotation] so links are exposed to accessibility services (TalkBack announces them as
- * links) and honour the platform's link handling, replacing the deprecated `ClickableText`.
- *
- * Spoilers start blacked out and reveal individually on tap; see [CommentRenderContext] for how a
- * span keeps its identity across the rebuild that reveals it. Reveals are per-composition, so
- * scrolling a post out of view and back re-hides it.
- *
- * Known accessibility limitation: a blacked-out spoiler is a span coloured to match its
- * background inside this one Text, so a screen reader speaks it immediately — the tap-to-reveal
- * choice only exists visually. Per-span semantics inside an AnnotatedString aren't expressible
- * today; fixing this means rendering spoilers as separate composables, which changes text layout
- * and is out of scope here. Recorded rather than hidden.
- *
- * For non-interactive previews (catalog cards, feed rows) use [PostCommentPreviewText] instead, so
- * taps fall through to the enclosing card.
- */
-@Composable
-fun PostCommentText(
-    comment: PostComment,
-    modifier: Modifier = Modifier,
-    selectable: Boolean = false,
-    onQuoteClick: (PostId) -> Unit = {},
-    onLinkClick: (String) -> Unit = {},
-) {
-    // Keep the latest callbacks without rebuilding the (comment-keyed) annotated string on every
-    // recomposition; the link listeners read these at click time.
-    val currentOnQuoteClick by rememberUpdatedState(onQuoteClick)
-    val currentOnLinkClick by rememberUpdatedState(onLinkClick)
-
-    // Keyed on the comment so a recycled row showing a different post starts fully hidden rather
-    // than inheriting the previous post's reveals.
-    var revealedSpoilers by remember(comment) { mutableStateOf(emptySet<Int>()) }
-    val haptics = LocalHapticFeedback.current
-    val revealedSpoilerBackground = MaterialTheme.colorScheme.surfaceVariant
-    val isDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val greentextColor = if (isDarkSurface) GreentextDarkColor else GreentextColor
-    val quoteLinkColor = if (isDarkSurface) QuoteLinkDarkColor else QuoteLinkColor
-
-    val annotated =
-        remember(comment, revealedSpoilers, revealedSpoilerBackground, greentextColor, quoteLinkColor) {
-            val context =
-                CommentRenderContext(
-                    onQuoteClick = { id -> currentOnQuoteClick(id) },
-                    onLinkClick = { url -> currentOnLinkClick(url) },
-                    revealedSpoilers = revealedSpoilers,
-                    onSpoilerClick = { id ->
-                        haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                        revealedSpoilers = revealedSpoilers + id
-                    },
-                    revealedSpoilerBackground = revealedSpoilerBackground,
-                    greentextColor = greentextColor,
-                    quoteLinkColor = quoteLinkColor,
-                )
-            buildCommentText(comment, context)
-        }
-
-    val text =
-        @Composable {
-            Text(
-                text = annotated,
-                modifier = modifier,
-                style = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
-            )
-        }
-
-    if (selectable) {
-        SelectionContainer(content = text)
-    } else {
-        text()
-    }
-}
-
-/**
- * Renders a [PostComment] as styled but non-interactive text for previews. Quote links and URLs are
- * coloured for consistency but are not tappable, so taps fall through to the enclosing clickable
- * card (e.g. opening the thread) instead of being swallowed.
- */
-@Composable
-fun PostCommentPreviewText(
-    comment: PostComment,
-    modifier: Modifier = Modifier,
-    maxLines: Int = Int.MAX_VALUE,
-) {
-    val isDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val greentextColor = if (isDarkSurface) GreentextDarkColor else GreentextColor
-    val quoteLinkColor = if (isDarkSurface) QuoteLinkDarkColor else QuoteLinkColor
-    val annotated =
-        remember(comment, greentextColor, quoteLinkColor) {
-            buildCommentText(
-                comment,
-                CommentRenderContext(
-                    greentextColor = greentextColor,
-                    quoteLinkColor = quoteLinkColor,
-                ),
-                interactive = false,
-            )
-        }
-    Text(
-        text = annotated,
-        modifier = modifier,
-        style = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onSurface),
-        maxLines = maxLines,
-        overflow = TextOverflow.Ellipsis,
-    )
-}
 
 /**
  * Everything the node walk needs that does not vary between sibling nodes: the click callbacks and

@@ -45,16 +45,3 @@ fun Modifier.nextAccentSurface(shape: Shape): Modifier =
     this
         .clip(shape)
         .background(next.accentContainer)
-
-/**
- * Backwards-compatible alias for [nextElevatedSurface].
- *
- * Name is historical — this is **not** frosted glass / blur. Prefer [nextElevatedSurface] at new
- * call sites so naming matches the matte M3 surface vocabulary.
- */
-@Deprecated(
-    message = "Use nextElevatedSurface instead to align with the flat matte design language",
-    replaceWith = ReplaceWith("nextElevatedSurface(shape)"),
-)
-@Composable
-fun Modifier.nextFrosted(shape: Shape): Modifier = nextElevatedSurface(shape)

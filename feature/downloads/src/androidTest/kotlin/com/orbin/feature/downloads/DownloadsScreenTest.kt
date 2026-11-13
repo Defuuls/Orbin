@@ -15,10 +15,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.orbin.core.designsystem.theme.OrbinTheme
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.testing.repository.FakeDownloadRepository
+import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderAppBarTags
 import com.orbin.uinext.tokens.ReaderSize
 import kotlinx.coroutines.flow.first
@@ -160,7 +160,7 @@ class DownloadsScreenTest {
         val repository = FakeDownloadRepository(records.toList())
         val viewModel = DownloadsViewModel(repository)
         composeTestRule.setContent {
-            OrbinTheme {
+            NextTheme {
                 DownloadsScreen(onBack = onBack, viewModel = viewModel)
             }
         }

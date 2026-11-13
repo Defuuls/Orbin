@@ -118,6 +118,8 @@ class SettingsStoreTest {
             val restored = SettingsStore(dataStore).settings.first()
             assertEquals(CatalogMode.GRID, restored.catalogMode)
             assertEquals(AppThemeMode.DARK, restored.themeMode)
+            assertTrue(LegacyThemeMigration.COLOR_THEME !in dataStore.data.first())
+            assertEquals(8, dataStore.data.first()[intPreferencesKey("tablet_catalog_columns")])
         }
 
     @Test
@@ -146,6 +148,8 @@ class SettingsStoreTest {
             SettingsStore(dataStore).setCatalogMode(CatalogMode.GRID)
 
             assertEquals(CatalogMode.GRID, SettingsStore(dataStore).settings.first().catalogMode)
+            assertTrue(LegacyThemeMigration.COLOR_THEME !in dataStore.data.first())
+            assertEquals(-1, dataStore.data.first()[intPreferencesKey("tablet_catalog_columns")])
         }
 
     @Test

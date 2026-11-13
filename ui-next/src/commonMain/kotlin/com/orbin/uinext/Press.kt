@@ -77,7 +77,7 @@ private class NextHighlightNode(
 }
 
 /**
- * Clickable with platform press feedback: [NextHighlightIndication] on iOS, forest green ripple on Android.
+ * Clickable with platform press feedback: [NextHighlightIndication] on iOS, coral accent ripple on Android.
  */
 @Composable
 fun Modifier.nextClickable(

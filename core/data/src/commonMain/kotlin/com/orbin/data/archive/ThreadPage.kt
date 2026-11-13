@@ -220,7 +220,7 @@ internal fun StringBuilder.appendEscaped(text: String): StringBuilder {
 
 private const val TITLE_LENGTH = 80
 
-/** The archive's stylesheet: Coral ReaderTokens colors, or light where the reader prefers it. */
+/** The archive's stylesheet: Coral reader colors, or dark where the reader prefers it. */
 internal const val ARCHIVE_CSS = """:root {
   --bg: #ffffff; --raised: #ffffff; --ink: #191c19; --muted: #404941; --line: #c0c9bf;
   --accent: #c73e4e; --green: #2f7d32; --pink: #b0306a;
