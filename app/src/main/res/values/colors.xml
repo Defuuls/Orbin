@@ -6,8 +6,8 @@
     <color name="orbinx_navigation_bar">#FFFFFF</color>
     <color name="orbinx_window_background">#FFFFFF</color>
 
-    <!-- Adaptive-icon ground for the current (unchanged) launcher mark. -->
-    <color name="ic_launcher_background">#0A0A0C</color>
-    <!-- Splash ground: existing orbit mark sits on the ReaderTokens surface. -->
+    <!-- Adaptive-icon tile: Orbin coral. Splash ground is set separately. -->
+    <color name="ic_launcher_background">#FF5D68</color>
+    <!-- Splash ground: the card-stack mark sits on the ReaderTokens surface. -->
     <color name="splash_background">#FFFFFF</color>
 </resources>

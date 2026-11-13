@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Large card-stack mark (thread lines, original proportions). Fits inside the 66dp safe zone of the 108dp adaptive canvas.
+         Derived from docs/assets/orbin-icon-mark.svg. -->
+    <group android:translateX="54" android:translateY="54">
+        <group android:scaleX="0.06593794" android:scaleY="0.06593794">
+            <group android:translateX="-512.0000" android:translateY="-520.0000">
+                <path android:fillColor="#B8323F"
+                    android:pathData="M414.000,140.000 H754.000 A80.000,80.000 0 0 1 834.000,220.000 V660.000 A80.000,80.000 0 0 1 754.000,740.000 H414.000 A80.000,80.000 0 0 1 334.000,660.000 V220.000 A80.000,80.000 0 0 1 414.000,140.000 Z" />
+                <path android:fillColor="#FFFFFF"
+                    android:pathData="M270.000,300.000 H610.000 A80.000,80.000 0 0 1 690.000,380.000 V820.000 A80.000,80.000 0 0 1 610.000,900.000 H270.000 A80.000,80.000 0 0 1 190.000,820.000 V380.000 A80.000,80.000 0 0 1 270.000,300.000 Z" />
+                <path android:fillColor="#FF5D68"
+                    android:pathData="M370.200,613.000 L370.200,803.000 L545.000,708.000 Z" />
+                <path android:fillColor="#FF5D68" android:fillAlpha="0.9"
+                    android:pathData="M277.000,370.000 H543.000 A17.000,17.000 0 0 1 560.000,387.000 V387.000 A17.000,17.000 0 0 1 543.000,404.000 H277.000 A17.000,17.000 0 0 1 260.000,387.000 V387.000 A17.000,17.000 0 0 1 277.000,370.000 Z" />
+                <path android:fillColor="#FF5D68" android:fillAlpha="0.9"
+                    android:pathData="M277.000,434.000 H463.000 A17.000,17.000 0 0 1 480.000,451.000 V451.000 A17.000,17.000 0 0 1 463.000,468.000 H277.000 A17.000,17.000 0 0 1 260.000,451.000 V451.000 A17.000,17.000 0 0 1 277.000,434.000 Z" />
+            </group>
+        </group>
+    </group>
+</vector>
