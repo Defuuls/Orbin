@@ -100,6 +100,25 @@ class AndroidDownloadQueue
                 }
             }
 
+        override fun downloadedFileExists(
+            fileName: String,
+            relativeDir: String,
+        ): Boolean {
+            val path = "${Environment.DIRECTORY_DOWNLOADS}/Orbin/$relativeDir".trimEnd('/')
+            return runCatching {
+                context.contentResolver
+                    .query(
+                        MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                        arrayOf(MediaStore.Downloads._ID),
+                        "${MediaStore.Downloads.DISPLAY_NAME} = ? AND (" +
+                            "${MediaStore.Downloads.RELATIVE_PATH} = ? OR " +
+                            "${MediaStore.Downloads.RELATIVE_PATH} = ?)",
+                        arrayOf(fileName, path, "$path/"),
+                        null,
+                    )?.use { it.moveToFirst() } ?: false
+            }.getOrDefault(true)
+        }
+
         override fun writeTextFile(
             fileName: String,
             content: String,
