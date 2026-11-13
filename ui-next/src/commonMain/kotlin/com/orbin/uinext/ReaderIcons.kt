@@ -27,6 +27,27 @@ import androidx.compose.ui.unit.dp
  * Every icon retains the shared 24dp canvas and stable layout and accessibility targets.
  */
 object ReaderIcons {
+    /**
+     * Coral ring mark from the Orbin Coral design: a thick open orbit, tinted by the caller.
+     * The path is a near-complete circle with a gap at the lower right and round caps.
+     */
+    val Logo: ImageVector by lazy {
+        ImageVector
+            .Builder(
+                name = "ReaderOrbinLogo",
+                defaultWidth = READER_ICON_SIZE.dp,
+                defaultHeight = READER_ICON_SIZE.dp,
+                viewportWidth = READER_ICON_SIZE,
+                viewportHeight = READER_ICON_SIZE,
+            ).addPath(
+                pathData = PathParser().parsePathString(LOGO_RING).toNodes(),
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = LOGO_STROKE,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            ).build()
+    }
     val Plus: ImageVector by lazy { outline("Plus", "M12 5v14M5 12h14") }
     val Heart: ImageVector by lazy { outline("Heart", HEART) }
     val HeartFilled: ImageVector by lazy { filled("HeartFilled", HEART) }
@@ -136,6 +157,9 @@ object ReaderIcons {
     private const val HEART =
         "M12 21 3.3 12.7A5.6 5.6 0 0 1 12 5.6a5.6 5.6 0 0 1 8.7 7.1Z"
     private const val CIRCLE = "M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0Z"
+
+    // Open ring, gap roughly at 4 o'clock so the mark reads as an orbit rather than a plain O.
+    private const val LOGO_RING = "M17.85 16.55A6.9 6.9 0 1 1 18.05 8.15"
 }
 
 private fun outline(
@@ -175,3 +199,4 @@ private fun readerIcon(
 
 private const val READER_ICON_SIZE = 24f
 private const val READER_ICON_STROKE = 1.8f
+private const val LOGO_STROKE = 3.15f

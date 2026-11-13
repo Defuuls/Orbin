@@ -5,7 +5,7 @@ import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
 
-/** The reader design has one palette family, selected only by brightness and AMOLED mode. */
+/** The Orbin Coral palette family, selected only by brightness and AMOLED mode. */
 fun canonicalNextPalette(
     dark: Boolean,
     amoled: Boolean,

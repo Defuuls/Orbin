@@ -2,7 +2,7 @@
 
 This is the normative design for Orbin's Home, board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
-Clover 3.0.2 is the sole visual specification for Orbin's layouts, typography, spacing, navigation and controls. Orbin retains its name, icon and green brand accent, together with its board subscriptions, sources, saved/watch tools and video playback. Orbin-specific functions use the same visual structures; unavailable Clover posting functions are not synthesized. [Source record](#source-record) identifies the exact APK and the verified design evidence.
+The Orbin Coral design is the visual specification for chrome, color, cards and navigation. Clover 3.0.2 remains the reference for compact reader geometry, typography and spacing. Orbin retains its name, coral ring icon and coral brand accent, together with its board subscriptions, sources, saved/watch tools and video playback. Orbin-specific functions use the same visual structures; unavailable Clover posting functions are not synthesized. [Source record](#source-record) identifies the exact APK and the verified design evidence.
 
 A visual companion, [schematic.html](schematic.html), shows the same diagrams and tokens on one page. If the page and this document ever differ, this document is correct.
 
@@ -23,7 +23,7 @@ Home uses the same reader cells, List/Grid modes and theme colors as the board c
 
 ## Tokens
 
-The shared ReaderTokens implementation records the values below. Clover's verified geometry and neutral Light/Dark/Black surfaces define the reader; Orbin's green brand and contrast-safe action/link colors are intentional adaptations. Layout uses dp and type uses sp. Eight-digit colors use Android ARGB order (#AARRGGBB); SVG/CSS equivalents preserve the same alpha.
+The shared ReaderTokens implementation records the values below. Clover's verified geometry and neutral Light/Dark/Black surfaces define the reader metrics; Orbin's coral brand and contrast-safe action/link colors are intentional adaptations. Layout uses dp and type uses sp. Eight-digit colors use Android ARGB order (#AARRGGBB); SVG/CSS equivalents preserve the same alpha.
 
 ### Color
 
@@ -31,25 +31,25 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 
 | Token | Light | Dark | AMOLED | Use |
 | --- | --- | --- | --- | --- |
-| `color.appBar` | `#2E7D32` | `#212121` | `#000000` | App bar ground |
-| `color.statusBar` | `#1B5E20` | `#000000` | `#000000` | Status bar ground |
-| `color.onAppBar` | `#FFFFFF` | `#FFFFFF` | `#FFFFFF` | App bar labels and icons |
-| `color.background` | `#FFFFFF` | `#232323` | `#000000` | Screen, row, post and card ground |
-| `color.surfaceVariant` | `#F5F5F5` | `#303030` | `#212121` | Secondary ground, placeholders and skeletons |
-| `color.selected` | `#E8F5E9` | `#444444` | `#444444` | Open row in two panes |
+| `color.appBar` | `#FFFFFF` | `#1C1C1E` | `#000000` | App bar ground |
+| `color.statusBar` | `#FFFFFF` | `#000000` | `#000000` | Status bar ground |
+| `color.onAppBar` | `#1A1A1A` | `#FFFFFF` | `#FFFFFF` | App bar labels and icons |
+| `color.background` | `#FFFFFF` | `#1C1C1E` | `#000000` | Screen, row, post and card ground |
+| `color.surfaceVariant` | `#F5F5F5` | `#2C2C2E` | `#212121` | Secondary ground, placeholders and skeletons |
+| `color.selected` | `#FFF5F6` | `#3D2A2D` | `#3D2A2D` | Open row in two panes |
 | `color.ink` | `#DE000000` | `#FFFFFF` | `#FFFFFF` | Primary body text |
 | `color.inkSecondary` | `#89000000` | `#B2FFFFFF` | `#B2FFFFFF` | Generic secondary UI text |
 | `color.inkMuted` | `#646464` | `#C5C8C6` | `#C5C8C6` | Post numbers, dates and attachment details |
 | `color.hairline` | `#1E000000` | `#1EFFFFFF` | `#1EFFFFFF` | Decorative row and post dividers |
-| `color.accent` | `#00796B` | `#80CBC4` | `#80CBC4` | Orbin progress and actions |
-| `color.onAccent` | `#FFFFFF` | `#003731` | `#003731` | Text on an accent-filled control |
+| `color.accent` | `#C73E4E` | `#FF8A96` | `#FF8A96` | Orbin progress and actions |
+| `color.onAccent` | `#FFFFFF` | `#3B0D14` | `#3B0D14` | Text on an accent-filled control |
 | `color.quote` | `#2E7D32` | `#81C784` | `#81C784` | Quoted lines |
-| `color.author` | `#117743` | `#81C784` | `#81C784` | Post author name |
-| `color.subject` | `#0F0C5D` | `#ABA7FF` | `#ABA7FF` | Post and catalog subjects |
-| `color.quoteLink` | `#0B57D0` | `#A8C7FA` | `#A8C7FA` | Post references and backlinks |
+| `color.author` | `#1A1A1A` | `#FFB0B8` | `#FFB0B8` | Post author name |
+| `color.subject` | `#1A1A1A` | `#FFB0B8` | `#FFB0B8` | Post and catalog subjects |
+| `color.quoteLink` | `#C73E4E` | `#FF9AA5` | `#FF9AA5` | Post references and backlinks |
 | `color.error` | `#B3261E` | `#F2B8B5` | `#F2B8B5` | Error titles |
 
-The light toolbar uses Orbin green. Its darker color.statusBar preserves Clover's separate status tone. Dark uses a #212121 toolbar and black status bar; AMOLED uses black for both. Generic color.inkSecondary is distinct from color.inkMuted post metadata. Orbin keeps green #E8F5E9 for the selected light row and lightens the reference dark subject indigo #625CFF to #ABA7FF; these are deliberate brand/readability adaptations. The latter is the first rounded color on the linear white blend from the reference indigo that reaches 4.5:1 over both #232323 and #444444 (about 4.5003:1 on the selected ground). The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
+The light toolbar is white with dark ink so the coral logo and accent can carry the brand. color.statusBar matches color.appBar in Light, and is black in Dark and AMOLED. Dark uses a #1C1C1E toolbar; AMOLED uses black for both the toolbar and the status bar. Generic color.inkSecondary is distinct from color.inkMuted post metadata. Selected rows use a light coral wash #FFF5F6 in Light and a deep coral-tinted #3D2A2D in Dark and AMOLED. Subjects and author names use dark ink in Light and a light coral #FFB0B8 in Dark, so they stay readable on the selected ground. Post references use the coral accent. Quoted (greentext) lines keep a contrast-safe green. The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
 
 ### Contrast
 
@@ -353,7 +353,7 @@ The following Orbin Appearance settings retain their persisted behavior inside C
 | AMOLED black | On, Off | Off |
 | Catalog view | List, Grid | List |
 
-The selected palette is Orbin green with Clover neutral surfaces, as requested. There is no new color-theme chooser or catalog column-count setting. Preference categories use a secondary ground, simple dividers, compact title/summary rows, trailing values or switches, and modal choices. Orbin-only preferences retain their IDs, callbacks and storage behavior.
+The selected palette is Orbin Coral with light, dark and AMOLED surfaces. Appearance settings expose the System / Light / Dark theme, an optional AMOLED black, and the Orbin (Coral) palette name. Preference categories use a secondary ground, simple dividers, compact title/summary rows, trailing values or switches, and modal choices. Orbin-only preferences retain their IDs, callbacks and storage behavior.
 
 A stored color theme or column count from an earlier version is ignored. A backup file that contains a color theme is refused whole, with the message "This backup was made by an older version of Orbin and cannot be restored." Nothing from a refused backup is applied.
 
@@ -414,7 +414,7 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 **Clover 3.0.2** is the sole visual reference. Its actual installed Settings root, Appearance page, choice popup and navigation drawer were captured on an accelerated API 31 emulator in [the reference inspection](https://github.com/Defuuls/Orbin/actions/runs/43237685017). The downloaded APK was verified against the supplied file's SHA-256 before installation; package inspection confirmed `org.floens.chan`, `v3.0.2`, code `30002`.
 
-The observed fresh-install theme is **Yotsuba**, with a red toolbar and peach preference surfaces. Orbin deliberately retains its green brand accent and uses Clover's neutral Light, Dark and Black surfaces. The reference controls, row structures and interactions remain the design target; Orbin-specific settings and read-only features retain their real IDs, callbacks and persisted values.
+The observed fresh-install theme is **Yotsuba**, with a red toolbar and peach preference surfaces. Orbin deliberately uses its coral brand accent with Light, Dark and AMOLED surfaces. The reference controls, row structures and interactions remain the design target; Orbin-specific settings and read-only features retain their real IDs, callbacks and persisted values.
 
 The application is implemented independently. Standard open-source Roboto font resources retain their license and provenance. Clover's name, logo and application code are not shipped as Orbin assets.
 
@@ -436,13 +436,13 @@ The application is implemented independently. Standard open-source Roboto font r
 | Thread footer | 88dp | `size.threadStatus` |
 | Error title | 24sp | `type.stateTitle` |
 | Empty pane message | 16sp | `type.stateBody` |
-| Primary color, fresh Yotsuba | #F44336, status #D32F2F | Orbin green #2E7D32, status #1B5E20 by user choice |
+| Primary color, fresh Yotsuba | #F44336, status #D32F2F | Orbin Coral toolbar #FFFFFF with dark ink, accent #C73E4E |
 | Teal accent | `#009688` | Darkened to `color.accent` so text buttons reach 4.5:1 |
 | Post layout | Thumbnail left of text | Same |
 
 The supplied reference APK is `org.floens.chan`, version `v3.0.2` (version code `30002`), SHA-256 `3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300`.
 
-Its dark theme colors are readable in the style resources. `Chan.Theme.Dark` defines `backcolor` as `#232323` and `backcolor_secondary` as `#303030`. `Chan.Theme.Black` inherits Dark and overrides those values with `#000000` and `#212121`. Orbin uses those verified neutral grounds. The green toolbar/selection and contrast-safe action, quote, link and subject colors are explicit Orbin brand/readability adaptations documented in the color table.
+Its dark theme colors are readable in the style resources. `Chan.Theme.Dark` defines `backcolor` as `#232323` and `backcolor_secondary` as `#303030`. `Chan.Theme.Black` inherits Dark and overrides those values with `#000000` and `#212121`. Orbin keeps comparable dark and AMOLED grounds (#1C1C1E, #000000) and documents its coral toolbar, selection, action, link and subject colors in the color table.
 
 Pane widths were not established from the APK resources. The pane rules follow Orbin's existing code.
 
