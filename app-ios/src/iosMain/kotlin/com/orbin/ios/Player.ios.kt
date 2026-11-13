@@ -148,10 +148,17 @@ internal actual fun NativePlayer(
                 foreground.value = true
             }
         onDispose {
+            // Observers first: replacing the item while they are still registered can
+            // deliver a callback that seeks or plays a player being torn down.
             center.removeObserver(foregroundObserver)
             center.removeObserver(observer)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
+            player.pause()
+            // Stop the asset's outstanding loads too, so nothing keeps the item's network and
+            // decoder alive until Kotlin's collector releases the player object.
+            player.currentItem?.asset?.cancelLoading()
+            player.replaceCurrentItemWithPlayerItem(null)
         }
     }
     // Audio policy must not change a manually started or paused player's playback state.
@@ -200,15 +207,6 @@ internal actual fun NativePlayer(
                             ),
                 )
             delay(CONTROLS_REFRESH_MS)
-        }
-    }
-    DisposableEffect(player) {
-        onDispose {
-            player.pause()
-            // Stop the asset's outstanding loads too, so nothing keeps the item's network and
-            // decoder alive until Kotlin's collector releases the player object.
-            player.currentItem?.asset?.cancelLoading()
-            player.replaceCurrentItemWithPlayerItem(null)
         }
     }
     Box(modifier) {
@@ -330,10 +328,11 @@ internal actual fun NativeWebMPlayer(
     val request by rememberUpdatedState {
         WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop)
     }
+    val live = remember(url) { LiveWebMSession() }
     val navigation =
         remember(url) {
             WebMPageDelegate { webView ->
-                if (webView.hasPlaybackSurface()) {
+                if (live.active && webView.hasPlaybackSurface()) {
                     webView.evaluateJavaScript(webMPlaybackScript(request()), completionHandler = null)
                 }
             }
@@ -412,6 +411,7 @@ internal actual fun NativeWebMPlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
+                if (!live.active) return@addObserverForName
                 foreground = false
                 playCommand++
                 webView.evaluateJavaScript(
@@ -425,6 +425,7 @@ internal actual fun NativeWebMPlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
+                if (!live.active) return@addObserverForName
                 foreground = false
                 playCommand++
                 webView.evaluateJavaScript(
@@ -438,6 +439,7 @@ internal actual fun NativeWebMPlayer(
                 `object` = null,
                 queue = NSOperationQueue.mainQueue,
             ) {
+                if (!live.active) return@addObserverForName
                 foreground = true
                 playCommand++
                 webView.evaluateJavaScript(
@@ -446,6 +448,7 @@ internal actual fun NativeWebMPlayer(
                 )
             }
         onDispose {
+            live.active = false
             center.removeObserver(foregroundObserver)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
@@ -531,7 +534,9 @@ private suspend fun WKWebView.script(script: String): String? {
     // Do not acknowledge play until WebKit has a window; the regular state poll retries it there.
     if (!hasPlaybackSurface()) return null
     return suspendCancellableCoroutine { continuation ->
-        evaluateJavaScript(script) { result, _ -> continuation.resume(result as? String) }
+        evaluateJavaScript(script) { result, _ ->
+            if (continuation.isActive) continuation.resume(result as? String)
+        }
     }
 }
 
@@ -573,7 +578,13 @@ internal actual fun NativeInlineLoop(
             }
         }
     DisposableEffect(webView) {
-        onDispose { webView.tearDownMedia() }
+        onDispose {
+            // Clear delegates before tearing the document down: tearDownMedia starts a
+            // navigation, and WKWebView holds only a weak reference to the delegate.
+            webView.navigationDelegate = null
+            webView.UIDelegate = null
+            webView.tearDownMedia()
+        }
     }
     // Display only: taps must reach the card or post underneath, which opens the player.
     UIKitView(factory = { webView }, modifier = modifier, properties = PASS_THROUGH)
@@ -597,10 +608,19 @@ internal actual fun NativeVideoFrame(
     if (isWebMUrl(url)) return
     var frame by remember(url) { mutableStateOf(VideoFrames.cached(url)) }
     LaunchedEffect(url) {
-        if (frame == null) frame = VideoFrames.load(url)
+        if (frame == null) {
+            // Fast flings cancel this delay and never open the file.
+            awaitVideoLoadSettle()
+            frame = VideoFrames.load(url)
+        }
     }
     frame?.let { Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = modifier) }
 }
+
+/** Mutable flag for a WebM page: Compose state is not safe to write from a WebKit callback. */
+private class LiveWebMSession(
+    var active: Boolean = true,
+)
 
 /** A native view that only draws; touches fall through to the Compose content behind it. */
 @OptIn(ExperimentalComposeUiApi::class)

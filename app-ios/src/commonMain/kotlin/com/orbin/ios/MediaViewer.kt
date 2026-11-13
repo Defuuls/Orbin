@@ -108,7 +108,10 @@ internal fun MediaViewer(
         onDispose { preloader.close() }
     }
     LaunchedEffect(preloader, files, selection.index, playback.preloadNextClip) {
-        preloader.prepare(nextMediaPreloadTarget(files, selection.index, playback.preloadNextClip, supportsWebM))
+        prepareUpcomingAfterSettle(
+            nextMediaPreloadTarget(files, selection.index, playback.preloadNextClip, supportsWebM),
+            prepare = preloader::prepare,
+        )
     }
     val close = {
         onPageChanged(selection.index)

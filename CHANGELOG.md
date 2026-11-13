@@ -20,9 +20,11 @@ All notable changes to Orbin are documented here. The format is based on
 
 ### Fixed
 - Lifted the full-screen Android video transport, seek bar, and feed progress above the gesture and navigation bars on edge-to-edge displays, including tall 20:9 phones such as the Pixel 10 Pro XL, while letting the video itself draw behind the bars.
+- Stopped iOS from bursting video CDN requests when scrolling quickly: first-frame decodes and next-clip preloads wait until the page has settled, and at most two frame decodes run at once with spacing between starts, so a card that has scrolled away is cancelled before it opens the file. Fast scrolling through videos had been tripping the server's rate limit. Player observers are now removed before the item is released, and WebM JavaScript callbacks no longer resume a disposed player.
 
 ### Testing
 - Added unit tests for DNS-provider mapping, file-based crash reports and UserDefaults migration, and the WebM navigation policy.
+- Added regressions for the iOS video load gate: a third caller waits for a free slot, starts are spaced, and cancelling during the wait or the settle delay never starts a request; upcoming preload is released immediately when turned off.
 - Added window-inset regressions that dispatch a tall-phone navigation bar and a landscape display cutout and require the gallery time bar, transport buttons, and feed progress to stay in the safe drawing area.
 - Added regressions for the grid sizing rule across portrait, landscape, tablet, short and unmeasured windows, for catalog, Home and loading-grid layouts, and for sharp grid image requests on iOS.
 
