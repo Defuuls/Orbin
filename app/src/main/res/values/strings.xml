@@ -30,7 +30,6 @@
 
     <string name="offline_banner">You\'re offline</string>
 
-    <string name="two_pane_pick_thread">Pick a thread from the catalog</string>
     <!-- In-app update dialog -->
     <string name="update_available_title">%1$s is available</string>
     <string name="update_available_message">A new version of Orbin is ready. It downloads and installs from here.</string>

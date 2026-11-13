@@ -3,6 +3,7 @@ package com.orbin.data.diagnostics
 import android.content.Context
 import android.os.Build
 import android.os.SystemClock
+import androidx.core.content.edit
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.data.cache.SqliteMediaResponseCache
@@ -58,7 +59,7 @@ class DiagnosticsRepositoryImpl
                 runCatching {
                     if (SystemClock.elapsedRealtime() - launchStartedAt < STARTUP_WINDOW_MILLIS) {
                         val count = prefs.getInt(KEY_STARTUP_CRASHES, 0) + 1
-                        prefs.edit().putInt(KEY_STARTUP_CRASHES, count).commit()
+                        prefs.edit(commit = true) { putInt(KEY_STARTUP_CRASHES, count) }
                     }
                     store.record(format(thread, throwable))
                 }
@@ -70,7 +71,7 @@ class DiagnosticsRepositoryImpl
 
         override fun markLaunchSucceeded() {
             if (prefs.getInt(KEY_STARTUP_CRASHES, 0) != 0) {
-                prefs.edit().putInt(KEY_STARTUP_CRASHES, 0).apply()
+                prefs.edit { putInt(KEY_STARTUP_CRASHES, 0) }
             }
         }
 
@@ -124,7 +125,7 @@ class DiagnosticsRepositoryImpl
                 File(context.cacheDir, "updates").deleteRecursively()
                 store.clear()
                 providerDiagnostics.get().clear()
-                prefs.edit().putInt(KEY_STARTUP_CRASHES, 0).commit()
+                prefs.edit(commit = true) { putInt(KEY_STARTUP_CRASHES, 0) }
             }
         }
 

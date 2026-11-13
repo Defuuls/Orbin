@@ -1,6 +1,7 @@
 package com.orbin.data.version
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.core.content.pm.PackageInfoCompat
 import com.orbin.domain.repository.VersionGuardRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -40,7 +41,7 @@ class VersionGuardRepositoryImpl
             if (current <= 0) return
             // max(), not assignment: this must never lower the mark, whatever it is called from.
             if (current > highestVersionCodeSeen()) {
-                prefs.edit().putInt(KEY_HIGHEST_VERSION_CODE, current).apply()
+                prefs.edit { putInt(KEY_HIGHEST_VERSION_CODE, current) }
             }
         }
 

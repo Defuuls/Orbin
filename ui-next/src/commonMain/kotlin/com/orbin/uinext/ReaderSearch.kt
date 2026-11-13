@@ -57,7 +57,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** Coral search over actual source-qualified catalog results, with one retained source filter. */
 @Composable
-internal fun TikTokSearchScreen(
+internal fun ReaderSearchScreen(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,

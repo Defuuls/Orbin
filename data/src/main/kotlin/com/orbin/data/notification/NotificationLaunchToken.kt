@@ -2,6 +2,7 @@ package com.orbin.data.notification
 
 import android.content.Context
 import android.util.Base64
+import androidx.core.content.edit
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -27,7 +28,7 @@ object NotificationLaunchToken {
                 val bytes = ByteArray(TOKEN_BYTES).also { SecureRandom().nextBytes(it) }
                 Base64
                     .encodeToString(bytes, Base64.NO_WRAP or Base64.URL_SAFE)
-                    .also { prefs.edit().putString(KEY_TOKEN, it).commit() }
+                    .also { prefs.edit(commit = true) { putString(KEY_TOKEN, it) } }
             }
         }
 
