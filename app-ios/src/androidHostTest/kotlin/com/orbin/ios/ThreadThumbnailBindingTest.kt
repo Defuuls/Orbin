@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import coil3.ColorImage
@@ -29,7 +29,7 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.reader.preparePresentation
 import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ThreadTags
+import com.orbin.uinext.ReaderAlbumTags
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -111,17 +111,19 @@ class ThreadThumbnailBindingTest {
 
         requests.clear()
         composeRule.onNodeWithContentDescription("Files").performClick()
-        val tiles = composeRule.onAllNodesWithTag(ThreadTags.FILE, useUnmergedTree = true)
         val expectedSizes =
             presentation.fileCells
-                .mapIndexedNotNull { index, cell ->
+                .mapNotNull { cell ->
                     val preview =
                         presentation.attachmentsById
                             .getValue(cell.id)
                             .thumbnailUrl
                             .takeIf(String::isNotBlank)
-                            ?: return@mapIndexedNotNull null
-                    val bounds = tiles[index].getUnclippedBoundsInRoot()
+                            ?: return@mapNotNull null
+                    val bounds =
+                        composeRule
+                            .onNodeWithTag(ReaderAlbumTags.thumbnail(cell.id), useUnmergedTree = true)
+                            .getUnclippedBoundsInRoot()
                     val widthPx = ((bounds.right - bounds.left).value * 2f).roundToInt()
                     val heightPx = ((bounds.bottom - bounds.top).value * 2f).roundToInt()
                     preview to Size(widthPx, heightPx)

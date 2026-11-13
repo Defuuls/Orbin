@@ -91,7 +91,7 @@ class DownloadsScreenTest {
         composeTestRule
             .onNodeWithTag(ReaderAppBarTags.OVERFLOW)
             .assertTouchWidthIsEqualTo(ReaderSize.touchTarget)
-            .assertWidthIsEqualTo(ReaderSize.appBarOverflow)
+            .assertWidthIsEqualTo(maxOf(ReaderSize.appBarOverflow, ReaderSize.touchTarget))
             .assertHeightIsAtLeast(ReaderSize.touchTarget)
         openClearMenu()
             .assertWidthIsAtLeast(ReaderSize.touchTarget)

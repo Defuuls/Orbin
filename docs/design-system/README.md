@@ -286,7 +286,7 @@ The width conditions and the pane-width calculation live in `core/model/FeedLayo
 
 ## Navigation
 
-The app bar is size.appBar (56dp) tall on color.appBar; the system inset uses color.statusBar. Icons are size.icon (24dp). Navigation occupies size.appBarNavigation (56dp), normal actions size.appBarAction (50dp), and overflow size.appBarOverflow (44dp), all 56dp tall. The title starts 72dp from the leading edge when navigation is present. The title uses `type.appBarTitle`; a thread adds its board in `type.appBarSubtitle` beneath.
+The app bar is size.appBar (56dp) tall on color.appBar; the system inset uses color.statusBar. Icons are size.icon (24dp). Navigation occupies size.appBarNavigation (56dp) and normal actions size.appBarAction (50dp), all 56dp tall. Clover's source overflow width is size.appBarOverflow (44dp); Coral raises its rendered width to at least size.touchTarget (48dp), including when reserving action space. The title starts 72dp from the leading edge when navigation is present. The title uses `type.appBarTitle`; a thread adds its board in `type.appBarSubtitle` beneath.
 
 | Control | Where | Action in Orbin |
 | --- | --- | --- |
@@ -392,7 +392,7 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ## Accessibility
 
-- General controls preserve size.touchTarget (48dp). The source-verified toolbar overflow uses a 44 × 56dp target; normal toolbar actions use 50 × 56dp and navigation 56 × 56dp.
+- General controls preserve size.touchTarget (48dp). Coral raises the source-verified 44dp toolbar overflow width to a 48 × 56dp target; normal toolbar actions use 50 × 56dp and navigation 56 × 56dp.
 - A catalog row is one screen-reader item: title, total replies, files, optional unread count, then date/source metadata. Plain counters are not repeated as a second announcement.
 - A post announces author, number, date, then the body. References are separate links.
 - Selection in two panes is announced as selected and does not rely on `color.selected` alone.

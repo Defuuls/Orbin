@@ -170,6 +170,16 @@ final class StartupSmokeTests: XCTestCase {
         ).firstMatch
     }
 
+    private func destinationHeader(_ identifier: String, title: String) -> XCUIElement {
+        if identifier == "BOARDS" {
+            // Boards uses the Coral wordmark header while the other destinations retain titles.
+            return app.descendants(matching: .any).matching(
+                NSPredicate(format: "identifier == %@ AND label == %@", "boards-home-header", "Orbin")
+            ).firstMatch
+        }
+        return appBarTitle(title)
+    }
+
     private func drawerEntry(_ destination: String) -> XCUIElement {
         app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == %@", "reader-navigation-entry-" + destination)
@@ -199,7 +209,7 @@ final class StartupSmokeTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(entry.frame.height, 44)
             }
             drawerEntry(identifier).tap()
-            waitUntilExists([appBarTitle(title)], description: "The " + title + " app bar")
+            waitUntilExists([destinationHeader(identifier, title: title)], description: "The " + title + " header")
             openDrawer()
             XCTAssertTrue(drawerEntry(identifier).isSelected, title + " announces its selected drawer state")
             drawerEntry(identifier).tap()

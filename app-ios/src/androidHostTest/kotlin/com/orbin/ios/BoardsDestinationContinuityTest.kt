@@ -4,11 +4,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
 import com.orbin.graph.orbinProviders
+import com.orbin.uinext.BoardsTags
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
 import io.ktor.client.engine.mock.MockEngine
@@ -75,16 +78,19 @@ class BoardsDestinationContinuityTest {
             composeRule.setContent {
                 NextTheme(platform = NextPlatform.IOS) { BoardsDestination(browser) }
             }
+            composeRule.onNodeWithTag(BoardsTags.HEADER).assertIsDisplayed()
 
             val remove = "Unfollow 4chan · /g/"
             composeRule.onAllNodesWithContentDescription(remove)[0].assertIsSelected().assertIsDisplayed()
             assertEquals(Load.Loading, browser.boards.value)
 
             val other = browser.sites.first { it.id != FOURCHAN }
+            composeRule.onNodeWithContentDescription("4chan").performClick()
             composeRule.onNodeWithText(other.name).performClick()
             runCurrent()
             browser.activeSite.first { it == other.id }
             composeRule.onNodeWithText("Loading…").assertIsDisplayed()
+            composeRule.onNodeWithContentDescription(other.name).performClick()
             composeRule.onNodeWithText("4chan").assertIsDisplayed().performClick()
             runCurrent()
             browser.activeSite.first { it == FOURCHAN }
