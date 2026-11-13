@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -85,6 +86,10 @@ data class BoardTile(
     /** Optional catalog size from a host that already has it. Never invented. */
     val threadCount: Int? = null,
 )
+
+object BoardsTags {
+    const val HEADER = "boards-home-header"
+}
 
 internal fun List<BoardTile>.sortedAlphabetically(): List<BoardTile> =
     sortedWith(
@@ -336,7 +341,7 @@ private fun BoardsHomeHeader(
             .heightIn(min = MIN_TOUCH_TARGET),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        OrbinWordmark()
+        OrbinWordmark(modifier = Modifier.testTag(BoardsTags.HEADER))
         Spacer(Modifier.weight(1f))
         if (showMenu) {
             NextIconAction(

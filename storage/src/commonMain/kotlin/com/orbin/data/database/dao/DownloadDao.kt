@@ -29,6 +29,16 @@ interface DownloadDao {
     @Query("SELECT * FROM downloads WHERE id = :id")
     suspend fun getById(id: Long): DownloadEntity?
 
+    @Query(
+        "SELECT * FROM downloads WHERE url = :url AND fileName = :fileName AND relativeDir = :relativeDir " +
+            "ORDER BY createdAtMillis DESC",
+    )
+    suspend fun findByTarget(
+        url: String,
+        fileName: String,
+        relativeDir: String,
+    ): List<DownloadEntity>
+
     @Query("DELETE FROM downloads WHERE id = :id")
     suspend fun delete(id: Long)
 }

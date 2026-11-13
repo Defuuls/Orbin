@@ -122,11 +122,12 @@ fun ReaderAppBar(
     ) {
         val titleStart = if (leading == ReaderNavigation.NONE) ZERO else TITLE_AFTER_NAVIGATION
         val navigationWidth = if (leading == ReaderNavigation.NONE) ReaderSpace.gutter else ReaderSize.appBarNavigation
+        val overflowWidth = maxOf(ReaderSize.appBarOverflow, ReaderSize.touchTarget)
         val actionSpace = (maxWidth - navigationWidth - titleStart - ReaderSize.touchTarget).coerceAtLeast(ZERO)
         val actionBudget =
-            ((actionSpace - ReaderSize.appBarOverflow) / ReaderSize.appBarAction).toInt().coerceAtLeast(0)
+            ((actionSpace - overflowWidth) / ReaderSize.appBarAction).toInt().coerceAtLeast(0)
         val allActionsWidth =
-            ReaderSize.appBarAction * actions.size + if (overflow.isEmpty()) ZERO else ReaderSize.appBarOverflow
+            ReaderSize.appBarAction * actions.size + if (overflow.isEmpty()) ZERO else overflowWidth
         val visibleActions = if (allActionsWidth <= actionSpace) actions else actions.take(actionBudget)
         val menuItems =
             overflow +
@@ -245,7 +246,7 @@ fun ReaderAppBar(
                             Modifier
                                 .testTag(
                                     ReaderAppBarTags.OVERFLOW,
-                                ).size(48.dp, maxOf(ReaderSize.appBar, 48.dp)),
+                                ).size(overflowWidth, ReaderSize.appBar),
                     )
                     DropdownMenu(
                         expanded = open,

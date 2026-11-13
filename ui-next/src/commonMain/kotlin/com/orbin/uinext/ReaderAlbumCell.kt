@@ -34,6 +34,8 @@ import org.jetbrains.compose.resources.stringResource
 object ReaderAlbumTags {
     fun cell(id: String): String = "reader-album-cell:$id"
 
+    fun thumbnail(id: String): String = "reader-album-thumbnail:$id"
+
     fun details(id: String): String = "reader-album-details:$id"
 }
 
@@ -78,7 +80,8 @@ internal fun ReaderAlbumCell(
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f),
+                .aspectRatio(1f)
+                .testTag(ReaderAlbumTags.thumbnail(cell.id)),
         ) {
             if (covered) {
                 ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
