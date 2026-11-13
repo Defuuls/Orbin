@@ -3,4 +3,5 @@
     <string name="reader_followed_boards">Followed boards</string>
     <string name="reader_board_follow">Follow %1$s</string>
     <string name="reader_board_unfollow">Unfollow %1$s</string>
+    <string name="reader_board_open">Open %1$s</string>
 </resources>

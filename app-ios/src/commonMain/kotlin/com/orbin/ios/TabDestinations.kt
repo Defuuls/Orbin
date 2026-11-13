@@ -49,7 +49,6 @@ import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.ThreadCollectionRow
 import com.orbin.uinext.ThreadCollectionScreen
-import com.orbin.uinext.tokens.ReaderSpace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -208,7 +207,7 @@ internal fun BoardsDestination(browser: Browser) {
         }
     val byTile = remember(list) { list.associateBy { it.tileId } }
     BoardsScreen(
-        hideRailOnScroll = false,
+        hideRailOnScroll = true,
         subtitle = boardsSubtitle(list.size, unreachable),
         emptyMessage =
             when (boards) {
@@ -229,7 +228,7 @@ internal fun BoardsDestination(browser: Browser) {
         onOpenWatched = { browser.openTab(Route.Watched) },
         onOpenSearch = { browser.openTab(Route.Search) },
         onOpenSettings = { browser.open(Route.Settings) },
-        headerContent = { SiteSwitcher(browser, site, gapAfter = ReaderSpace.gap) },
+        headerContent = { SiteSwitcher(browser, site, gapAfter = 0.dp, compact = true) },
     )
 }
 
@@ -238,16 +237,20 @@ internal fun BoardsDestination(browser: Browser) {
 private fun SiteSwitcher(
     browser: Browser,
     active: ProviderId,
-    // Boards puts its search field straight under its header; the feed spaces its own.
+    // Boards puts its search field on the same row as this compact provider menu.
     gapAfter: Dp = 0.dp,
+    compact: Boolean = false,
 ) {
     if (browser.sites.size < 2) return
     PlatformSegments(
         labels = browser.sites.map { it.name },
         selected = browser.sites.indexOfFirst { it.id == active },
         onSelect = { browser.selectSite(browser.sites[it].id) },
+        compact = compact,
     )
-    Spacer(Modifier.height(gapAfter))
+    if (gapAfter > 0.dp) {
+        Spacer(Modifier.height(gapAfter))
+    }
 }
 
 /**

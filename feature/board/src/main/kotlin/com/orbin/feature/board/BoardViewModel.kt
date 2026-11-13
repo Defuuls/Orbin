@@ -89,6 +89,10 @@ class BoardViewModel
             savedStateHandle[CATALOG_SORT_KEY] = catalogSort.value.next()
         }
 
+        fun setCatalogSort(sort: CatalogSort) {
+            savedStateHandle[CATALOG_SORT_KEY] = sort
+        }
+
         fun setCatalogMode(mode: CatalogMode) {
             viewModelScope.launch { settingsRepository.setCatalogMode(mode) }
         }

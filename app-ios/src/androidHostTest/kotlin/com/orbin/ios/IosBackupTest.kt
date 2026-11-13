@@ -140,7 +140,7 @@ class IosBackupTest {
                 assertTrue(restored.onboardingCompleted)
                 assertTrue(restored.biometricLockEnabled)
                 assertFalse(restored.openThreadComments, "older backups restore the video-first chat default")
-                assertEquals(CatalogMode.LIST, restored.catalogMode)
+                assertEquals(CatalogMode.GRID, restored.catalogMode)
             }
         }
 

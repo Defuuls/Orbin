@@ -11,12 +11,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -32,14 +34,16 @@ fun BoardIcon(
     boardId: String,
     modifier: Modifier = Modifier,
     title: String = "",
+    shape: Shape = CircleShape,
+    size: Dp = DEFAULT_BOARD_ICON_SIZE.dp,
 ) {
     val definition = remember(siteId, boardId, title) { boardIconDefinition(siteId, boardId, title) }
     val background = (if (next.dark) DARK_BOARD_COLORS else LIGHT_BOARD_COLORS)[definition.colorIndex]
     Box(
         modifier =
             modifier
-                .size(DEFAULT_BOARD_ICON_SIZE.dp)
-                .clip(CircleShape)
+                .size(size)
+                .clip(shape)
                 .background(background)
                 .clearAndSetSemantics {},
     ) {

@@ -127,7 +127,7 @@ data class AppSettings(
     /** Feed columns on a tablet, 1–4. */
     val tabletFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
     /** Catalog presentation is shared by every board and saved on this device. */
-    val catalogMode: CatalogMode = CatalogMode.LIST,
+    val catalogMode: CatalogMode = CatalogMode.GRID,
     val playbackPreferences: PlaybackPreferences = PlaybackPreferences(),
     /** Open comments from Home's chat button instead of the thread's videos. */
     val openThreadComments: Boolean = false,

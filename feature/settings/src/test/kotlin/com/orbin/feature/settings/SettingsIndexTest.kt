@@ -69,12 +69,12 @@ class SettingsIndexTest {
     }
 
     @Test
-    fun `catalog view defaults to list with a grid choice`() {
+    fun `catalog view defaults to grid with a list choice`() {
         val catalog = allRows().single { it.id == "catalogMode" }
         assertThat(catalog.kind).isEqualTo(SettingKind.CHOICE)
         assertThat(catalog.options).containsExactly("List", "Grid").inOrder()
-        assertThat(catalog.value).isEqualTo("List")
-        assertThat(catalog.selected).isEqualTo(0)
+        assertThat(catalog.value).isEqualTo("Grid")
+        assertThat(catalog.selected).isEqualTo(1)
     }
 
     /**

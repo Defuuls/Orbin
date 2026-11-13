@@ -89,7 +89,7 @@ val next: NextPalette
  * Installs the shared reader palette in [LocalNext] and [MaterialTheme].
  *
  * Platform controls adapt to native press feedback while retaining the same semantic colors.
- * The reader's single green palette follows the requested brightness and AMOLED mode.
+ * The Orbin Coral palette follows the requested brightness and AMOLED mode.
  *
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
  * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits

@@ -2,7 +2,8 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +34,8 @@ import org.jetbrains.compose.resources.stringResource
 object ReaderAlbumTags {
     fun cell(id: String): String = "reader-album-cell:$id"
 
+    fun thumbnail(id: String): String = "reader-album-thumbnail:$id"
+
     fun details(id: String): String = "reader-album-details:$id"
 }
 
@@ -53,55 +56,58 @@ internal fun ReaderAlbumCell(
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val openLabel = stringResource(Res.string.next_open_file)
     val actionsLabel = stringResource(Res.string.next_media_actions)
-    BoxWithConstraints(modifier) {
+    val clickable =
+        if (covered || onOpen != null || onLongPress != null) {
+            Modifier.nextClickable(
+                role = Role.Button,
+                onClickLabel = if (covered) revealLabel else openLabel,
+                onLongClick = onLongPress?.let { handler -> { handler(cell) } },
+                onLongClickLabel = actionsLabel,
+                onClick = {
+                    if (covered) revealed = true else onOpen?.invoke(cell)
+                },
+            )
+        } else {
+            Modifier
+        }
+    Column(
+        modifier
+            .fillMaxWidth()
+            .testTag(cellTag)
+            .background(reader.surfaceVariant)
+            .then(clickable),
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(maxWidth + ReaderSize.albumDetails)
-                .testTag(cellTag)
-                .background(reader.surfaceVariant)
-                .then(
-                    if (covered || onOpen != null || onLongPress != null) {
-                        Modifier.nextClickable(
-                            role = Role.Button,
-                            onClickLabel = if (covered) revealLabel else openLabel,
-                            onLongClick = onLongPress?.let { handler -> { handler(cell) } },
-                            onLongClickLabel = actionsLabel,
-                            onClick = {
-                                if (covered) revealed = true else onOpen?.invoke(cell)
-                            },
-                        )
-                    } else {
-                        Modifier
-                    },
-                ),
+                .aspectRatio(1f)
+                .testTag(ReaderAlbumTags.thumbnail(cell.id)),
         ) {
             if (covered) {
                 ReaderSpoilerCover(onReveal = { revealed = true }, modifier = Modifier.fillMaxSize())
             } else {
                 tile?.invoke(cell, Modifier.fillMaxSize())
             }
-            if (details.isNotBlank()) {
-                Box(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .height(ReaderSize.albumDetails)
-                        .background(Color(0x8A000000))
-                        .padding(horizontal = ReaderSpace.postInset)
-                        .testTag(detailsTag),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    val style = ReaderType.postDetails.withReaderFont()
-                    CompositionLocalProvider(LocalTextStyle provides style) {
-                        Text(
-                            details,
-                            style = style,
-                            color = Color.White,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+        }
+        if (details.isNotBlank()) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(ReaderSize.albumDetails)
+                    .background(Color(0x8A000000))
+                    .padding(horizontal = ReaderSpace.postInset)
+                    .testTag(detailsTag),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                val style = ReaderType.postDetails.withReaderFont()
+                CompositionLocalProvider(LocalTextStyle provides style) {
+                    Text(
+                        details,
+                        style = style,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }

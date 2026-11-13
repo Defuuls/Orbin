@@ -148,7 +148,10 @@ class FeedDestinationContinuityTest {
             val entry = (browser.feed.value as Load.Ready).value.single()
             showHome(browser)
 
-            composeRule.onNodeWithTag(ReaderFeedTags.row(entry.feedRowId)).performClick()
+            // The merged card includes its title but centers on media; tap the title's actual bounds.
+            composeRule
+                .onNodeWithText(checkNotNull(entry.thread.originalPost.subject), useUnmergedTree = true)
+                .performClick()
             assertEquals(Route.ThreadPage(THREAD), browser.backStack.value.last())
         }
 

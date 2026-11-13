@@ -301,47 +301,50 @@ class CatalogScreenTest {
     }
 
     @Test
-    fun `grid mode shows one full-width card whose image is half the grid viewport on a phone`() {
+    fun `grid mode shows two compact cards with inset images on a phone`() {
         composeRule.setContent { NextTheme { Catalog(mode = CatalogMode.GRID, thumbnail = true) } }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        val expected = orbinCatalogGridSpec(grid.right - grid.left)
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val first = cards[0].getUnclippedBoundsInRoot()
         val second = cards[1].getUnclippedBoundsInRoot()
         val image =
             composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)[0].getUnclippedBoundsInRoot()
-        assertEquals("the outer margin leaves 2dp at each edge", 2f, first.left.value, 0.5f)
-        assertEquals("one card spans the pane", 356f, (first.right - first.left).value, 0.5f)
-        assertEquals("the image spans the card", 356f, (image.right - image.left).value, 0.5f)
+        assertEquals("two columns on a phone", 2, expected.columns)
+        assertEquals("the outer gutter is 16dp", ORBIN_CATALOG_GUTTER.value, first.left.value, 0.5f)
+        assertEquals("two cards share the first line", first.top.value, second.top.value, 0.5f)
+        val cardWidth = (grid.right - grid.left - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP).value / 2f
+        assertEquals("cards share the pane equally", cardWidth, (first.right - first.left).value, 0.5f)
         assertEquals(
-            "the image is half the viewport below the app bar",
-            (grid.bottom - grid.top).value / 2,
+            "the image follows the grid spec",
+            expected.imageHeight.value,
             (image.bottom - image.top).value,
             0.5f,
         )
-        assertTrue("the text sits below the image", first.bottom > image.bottom)
-        assertTrue("the next card starts a new line", second.top >= first.bottom)
-        composeRule.onNodeWithText("23R 4I", useUnmergedTree = true).assertExists()
+        assertEquals("the image is inset 12dp", first.left.value + 12f, image.left.value, 0.5f)
+        assertTrue("counts sit below the image", first.bottom > image.bottom)
+        composeRule.onNodeWithText("23 replies", useUnmergedTree = true).assertExists()
+        composeRule.onNodeWithText("4 files", useUnmergedTree = true).assertExists()
     }
 
     @Test
-    fun `a short pane splits the grid into columns and keeps each image half its height`() {
+    fun `a short pane still shows two Coral catalog columns`() {
         composeRule.setContent {
             NextTheme { Box(Modifier.size(360.dp, 356.dp)) { Catalog(mode = CatalogMode.GRID, thumbnail = true) } }
         }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
-        val expected = catalogGridSpec(grid.right - grid.left, grid.bottom - grid.top)
-        assertEquals((grid.bottom - grid.top).value / 2, expected.imageHeight.value, 0.5f)
-        assertEquals("360dp holds two such images across, not three", 2, expected.columns)
+        val expected = orbinCatalogGridSpec(grid.right - grid.left)
+        assertEquals("360dp holds two Coral cards across", 2, expected.columns)
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val first = cards[0].getUnclippedBoundsInRoot()
         val second = cards[1].getUnclippedBoundsInRoot()
         val image =
             composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)[0].getUnclippedBoundsInRoot()
         assertEquals("two cards share the first line", first.top.value, second.top.value, 0.5f)
-        // (360 - two outer margins of 2 - one gap of 4) / 2 columns
-        assertEquals(176f, (first.right - first.left).value, 0.5f)
+        val cardWidth = (grid.right - grid.left - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP).value / 2f
+        assertEquals(cardWidth, (first.right - first.left).value, 0.5f)
         assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
     }
 
@@ -362,10 +365,16 @@ class CatalogScreenTest {
 
         val image =
             composeRule.onNodeWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val card = composeRule.onNodeWithTag(CatalogTags.CARD).getUnclippedBoundsInRoot()
+        val pending = composeRule.onNodeWithTag(CatalogTags.PENDING).getUnclippedBoundsInRoot()
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
-        assertEquals((grid.bottom - grid.top).value / 2, (image.bottom - image.top).value, 0.5f)
-        assertTrue("the loaded card leads the grid", card.top < image.bottom)
+        val expected = orbinCatalogGridSpec(grid.right - grid.left)
+        assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
+        assertEquals(
+            "the pending cell uses the same image height",
+            expected.imageHeight.value,
+            (pending.bottom - pending.top).value,
+            0.5f,
+        )
     }
 
     @Test
@@ -485,7 +494,7 @@ class CatalogScreenTest {
         var picks = 0
         composeRule.setContent { NextTheme { Catalog(onPickBoard = { picks += 1 }) } }
 
-        composeRule.onNodeWithText("Technology").performClick()
+        composeRule.onNodeWithText("/g/ - Technology").performClick()
 
         assertEquals(1, picks)
     }

@@ -16,9 +16,6 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.orbin.uinext.tokens.ReaderSize
-import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -38,33 +35,35 @@ class CatalogLargeTextTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `normal catalog cards span the phone with an image half the viewport tall`() {
+    fun `normal catalog cards use two Coral columns with complete counts`() {
         composeRule.setContent { Grid(fontScale = 1f) }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        val expected = orbinCatalogGridSpec(grid.right - grid.left)
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
+        assertEquals(2, expected.columns)
         LABELS.forEachIndexed { index, label ->
             val layout = countLayout(label)
             assertEquals(1, layout.lineCount)
             assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
             val card = cards[index].getUnclippedBoundsInRoot()
             val image = images[index].getUnclippedBoundsInRoot()
-            // 411dp less the 2dp outer margin at each edge: one column.
-            assertEquals(407f, (card.right - card.left).value, 0.5f)
-            assertEquals((grid.bottom - grid.top).value / 2f, (image.bottom - image.top).value, 0.5f)
-            assertTrue(
-                "the text block keeps its minimum below the image",
-                (card.bottom - image.bottom) >= ReaderSize.gridCardText,
-            )
+            val cardWidth =
+                (grid.right - grid.left - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP * (expected.columns - 1)) /
+                    expected.columns
+            assertEquals(cardWidth.value, (card.right - card.left).value, 0.5f)
+            assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
+            assertTrue("counts sit below the image", card.bottom > image.bottom)
         }
     }
 
     @Test
-    fun `font two keeps complete counts below a full-width image of unchanged height`() {
+    fun `font two keeps complete counts below an image of unchanged height`() {
         composeRule.setContent { Grid(fontScale = 2f, longTitles = true, longCounts = true) }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        val expected = orbinCatalogGridSpec(grid.right - grid.left)
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
         LONG_LABELS.forEachIndexed { index, label ->
@@ -79,55 +78,45 @@ class CatalogLargeTextTest {
             val image = images[index].getUnclippedBoundsInRoot()
             assertEquals(
                 "Large text never shrinks the image",
-                (grid.bottom - grid.top).value / 2f,
+                expected.imageHeight.value,
                 (image.bottom - image.top).value,
                 0.5f,
             )
-            assertTrue(
-                "The text block must grow rather than clip the count",
-                (card.bottom - image.bottom) > ReaderSize.gridCardText,
-            )
-            assertTrue(text.top >= image.bottom + ReaderSpace.cardPad)
-            assertTrue(text.bottom <= card.bottom - ReaderSpace.cardPad)
+            assertTrue("The count sits below the image and inside the card", text.top >= image.bottom)
+            assertTrue(text.bottom <= card.bottom)
         }
     }
 
     @Test
-    fun `font two wraps complete reply and unread counts inside a short pane's three narrow cards`() {
-        // 250dp leaves less than 240dp below the app bar, so images sit at the 120dp floor, three across.
+    fun `font two wraps complete reply and unread counts inside a short pane's Coral cards`() {
         composeRule.setContent {
             Box(Modifier.size(360.dp, 250.dp)) { Grid(fontScale = 2f, longTitles = true, longCounts = true) }
         }
 
+        val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
+        val expected = orbinCatalogGridSpec(grid.right - grid.left)
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val images = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)
         LONG_LABELS.forEachIndexed { index, label ->
             val layout = countLayout(label)
             assertEquals(label, layout.layoutInput.text.text)
-            assertEquals(
-                "Counters retain their specified sp size",
-                if (index == 0) 14.sp else 12.sp,
-                layout.layoutInput.style.fontSize,
-            )
             assertEquals(2f, layout.layoutInput.density.fontScale, 0f)
             assertFalse(overflowDetails(label, layout), layout.hasVisualOverflow)
-            assertTrue("$label should wrap in this three-column grid", layout.lineCount > 1)
             assertEquals(label.length, layout.getLineEnd(layout.lineCount - 1, visibleEnd = true))
             repeat(layout.lineCount) { assertFalse(layout.isLineEllipsized(it)) }
 
             val text = composeRule.onNodeWithText(label, useUnmergedTree = true).getUnclippedBoundsInRoot()
             val card = cards[index].getUnclippedBoundsInRoot()
             val image = images[index].getUnclippedBoundsInRoot()
-            assertEquals("three 116dp cards share the line", 116f, (card.right - card.left).value, 0.5f)
-            assertEquals(ReaderSize.gridCardMin.value, (image.bottom - image.top).value, 0.5f)
-            assertTrue(
-                "The text block must grow rather than clip the count",
-                (card.bottom - image.bottom) > ReaderSize.gridCardText,
-            )
-            assertTrue(text.left >= card.left + ReaderSpace.cardPad)
-            assertTrue(text.right <= card.right - ReaderSpace.cardPad)
-            assertTrue(text.top >= image.bottom + ReaderSpace.cardPad)
-            assertTrue(text.bottom <= card.bottom - ReaderSpace.cardPad)
+            val cardWidth =
+                (grid.right - grid.left - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP * (expected.columns - 1)) /
+                    expected.columns
+            assertEquals(cardWidth.value, (card.right - card.left).value, 0.5f)
+            assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
+            assertTrue(text.left >= card.left)
+            assertTrue(text.right <= card.right)
+            assertTrue(text.top >= image.bottom)
+            assertTrue(text.bottom <= card.bottom)
         }
     }
 
@@ -188,8 +177,8 @@ class CatalogLargeTextTest {
     }
 
     private companion object {
-        val LABELS = listOf("1234R 1I", "7 new replies")
-        val LONG_LABELS = listOf("123456789R 123456789I", "123456789 new replies")
+        val LABELS = listOf("1234 replies", "7 new replies")
+        val LONG_LABELS = listOf("123456789 replies", "123456789 new replies")
         val ROWS =
             listOf(
                 FeedRow("A title", "/g/", "2m", replies = 1234, media = 1, id = "site/g/1"),

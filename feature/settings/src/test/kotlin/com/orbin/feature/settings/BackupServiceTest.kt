@@ -98,7 +98,7 @@ class BackupServiceTest {
         }
 
     @Test
-    fun olderBackupsWithoutAColorThemeRestoreListAndVideoFirstChatDefaults() =
+    fun olderBackupsWithoutAColorThemeRestoreGridAndVideoFirstChatDefaults() =
         runTest {
             for (legacyColumns in listOf("", """, "tabletCatalogColumns": 6""")) {
                 val destination =
@@ -110,7 +110,7 @@ class BackupServiceTest {
 
                 assertThat(destination.current.openThreadComments).isFalse()
                 assertThat(destination.current.themeMode).isEqualTo(AppThemeMode.DARK)
-                assertThat(destination.current.catalogMode).isEqualTo(CatalogMode.LIST)
+                assertThat(destination.current.catalogMode).isEqualTo(CatalogMode.GRID)
             }
         }
 

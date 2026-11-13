@@ -4,7 +4,10 @@ import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -139,7 +142,6 @@ private fun LoadedThread(
     val configuration = LocalConfiguration.current
     val haptics = LocalHapticFeedback.current
     val thread = state.thread
-    val listState = rememberLazyListState()
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
     val collapsed =
         rememberSaveable(
@@ -149,8 +151,20 @@ private fun LoadedThread(
     val presentation = state.presentation
     val statusText = readerThreadStatus(presentation)
     val rows = presentation.rows
+    val listState =
+        remember(thread.key) {
+            val saved = initialScrollPosition.takeIf { initialScrollLoaded }
+            val savedIdx = saved?.let { pos -> rows.indexOfFirst { it.post.id == pos.postId } } ?: -1
+            val unreadIdx = firstUnreadPostId?.let { id -> rows.indexOfFirst { it.post.id == id } } ?: -1
+            when {
+                savedIdx >= 0 -> LazyListState(savedIdx + 1, saved?.offsetPx?.coerceAtLeast(0) ?: 0)
+                unreadIdx > 0 -> LazyListState(unreadIdx + 1, 0)
+                else -> LazyListState()
+            }
+        }
 
     var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
+    var downloadSheet by rememberSaveable(thread.key) { mutableStateOf(false) }
     var initialScrollRestored by rememberSaveable(thread.key) { mutableStateOf(false) }
 
     fun saveVisiblePost(flush: Boolean = false) {
@@ -167,13 +181,15 @@ private fun LoadedThread(
         onOpenMedia(index)
     }
 
-    LaunchedEffect(initialScrollLoaded, initialScrollPosition, rows, initialScrollRestored) {
+    LaunchedEffect(initialScrollLoaded, initialScrollPosition, firstUnreadPostId, rows, initialScrollRestored) {
         if (!initialScrollLoaded || initialScrollRestored) return@LaunchedEffect
-        initialScrollPosition?.let { saved ->
-            val target = rows.indexOfFirst { it.post.id == saved.postId }
-            if (target >= 0) {
-                listState.scrollToItem(target + 1, saved.offsetPx.coerceAtLeast(0))
-            }
+        val saved = initialScrollPosition
+        val savedTarget = saved?.let { pos -> rows.indexOfFirst { it.post.id == pos.postId } } ?: -1
+        if (savedTarget >= 0) {
+            listState.scrollToItem(savedTarget + 1, saved?.offsetPx?.coerceAtLeast(0) ?: 0)
+        } else {
+            val unread = firstUnreadPostId?.let { id -> rows.indexOfFirst { it.post.id == id } } ?: -1
+            if (unread > 0) listState.scrollToItem(unread + 1)
         }
         initialScrollRestored = true
     }
@@ -258,7 +274,7 @@ private fun LoadedThread(
                 },
                 onDownloadAll = {
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                    viewModel.downloadAllMedia()
+                    downloadSheet = true
                 },
                 onSavePage = {
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
@@ -333,6 +349,28 @@ private fun LoadedThread(
                 hostState = snackbarHostState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
+            if (downloadSheet) {
+                AlertDialog(
+                    onDismissRequest = { downloadSheet = false },
+                    title = { Text(stringResource(R.string.thread_download_title)) },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                downloadSheet = false
+                                viewModel.downloadAllMedia(videosOnly = true)
+                            },
+                        ) { Text(stringResource(R.string.thread_download_videos)) }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                downloadSheet = false
+                                viewModel.downloadAllMedia(videosOnly = false)
+                            },
+                        ) { Text(stringResource(R.string.thread_download_everything)) }
+                    },
+                )
+            }
         }
     }
 }

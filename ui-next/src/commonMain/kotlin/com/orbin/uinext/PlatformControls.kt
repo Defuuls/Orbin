@@ -26,14 +26,22 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -45,7 +53,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_clear_search
+import com.orbin.uinext.resources.next_provider_unknown
 import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -156,7 +166,12 @@ fun PlatformSegments(
     selected: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
+    if (compact) {
+        PlatformProviderMenu(labels = labels, selected = selected, onSelect = onSelect, modifier = modifier)
+        return
+    }
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     Row(modifier.fillMaxWidth().selectableGroup()) {
         labels.forEachIndexed { index, label ->
@@ -212,7 +227,10 @@ fun SchematicSearch(
     placeholder: String,
     modifier: Modifier = Modifier,
     onSearch: (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(4.dp),
+    containerColor: Color? = null,
 ) {
+    val fill = containerColor ?: reader.surfaceVariant
     Box(modifier.fillMaxWidth().heightIn(min = MIN_TOUCH_TARGET), contentAlignment = Alignment.Center) {
         BasicTextField(
             value = value,
@@ -245,8 +263,8 @@ fun SchematicSearch(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(reader.surfaceVariant)
+                            .clip(shape)
+                            .background(fill)
                             .padding(
                                 start = 10.dp,
                                 end = if (value.isEmpty()) 10.dp else 48.dp,
@@ -299,6 +317,84 @@ fun SchematicSearch(
                         modifier = Modifier.size(12.dp),
                     )
                 }
+            }
+        }
+    }
+}
+
+/** A compact provider chip with a menu, used on the Coral Boards home row. */
+@Composable
+private fun PlatformProviderMenu(
+    labels: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (labels.isEmpty()) return
+    val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
+    var open by remember { mutableStateOf(false) }
+    val selectedInRange = selected in labels.indices
+    val selectedLabel =
+        if (selectedInRange) {
+            labels[selected]
+        } else {
+            stringResource(Res.string.next_provider_unknown)
+        }
+    val menuShape = RoundedCornerShape(OrbinRadius.search)
+    Box(modifier) {
+        Row(
+            modifier =
+                Modifier
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .clip(menuShape)
+                    .background(reader.surfaceVariant)
+                    .border(2.dp, next.muted, menuShape)
+                    .nextClickable(role = Role.Button, onClick = { open = true })
+                    .padding(horizontal = 12.dp)
+                    .semantics { contentDescription = selectedLabel },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                selectedLabel,
+                style = NextType.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = next.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Icon(
+                ReaderIcons.ChevronDown,
+                contentDescription = null,
+                tint = next.muted,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            containerColor = reader.background,
+        ) {
+            labels.forEachIndexed { index, label ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            label,
+                            style = NextType.body,
+                            fontWeight = if (index == selected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (index == selected) reader.accent else reader.ink,
+                        )
+                    },
+                    onClick = {
+                        open = false
+                        if (index != selected) {
+                            haptics.performHapticFeedback(
+                                androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn,
+                            )
+                            onSelect(index)
+                        }
+                    },
+                )
             }
         }
     }

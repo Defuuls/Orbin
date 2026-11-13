@@ -291,6 +291,10 @@ class Browser(
         _catalogSort.update { it.next() }
     }
 
+    fun setCatalogSort(sort: CatalogSort) {
+        _catalogSort.value = sort
+    }
+
     private val _thread = MutableStateFlow<Load<Thread>>(Load.Loading)
     val thread: StateFlow<Load<Thread>> = _thread.asStateFlow()
     private val _threadRefreshing = MutableStateFlow(false)

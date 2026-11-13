@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed
@@ -59,15 +62,16 @@ import com.orbin.uinext.resources.next_row_counts
 import com.orbin.uinext.resources.next_row_files
 import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.next_spoiler_reveal
+import com.orbin.uinext.resources.next_thread_back_to
 import com.orbin.uinext.resources.next_thread_download_all
+import com.orbin.uinext.resources.next_thread_download_title
 import com.orbin.uinext.resources.next_thread_files
-import com.orbin.uinext.resources.next_thread_jump_bottom
-import com.orbin.uinext.resources.next_thread_jump_top
+import com.orbin.uinext.resources.next_thread_new_posts
 import com.orbin.uinext.resources.next_thread_posts
 import com.orbin.uinext.resources.next_thread_save_page
+import com.orbin.uinext.resources.next_thread_scroll_top
 import com.orbin.uinext.resources.next_thread_watch
 import com.orbin.uinext.resources.next_thread_watching
-import com.orbin.uinext.resources.reader_first_new
 import com.orbin.uinext.resources.reader_media_more
 import com.orbin.uinext.resources.reader_new
 import com.orbin.uinext.resources.reader_open_browser
@@ -78,6 +82,8 @@ import com.orbin.uinext.resources.social_feed_saved_while_watching
 import com.orbin.uinext.resources.social_feed_unsave
 import com.orbin.uinext.resources.social_thread_op
 import com.orbin.uinext.resources.social_thread_share
+import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.ReaderRadius
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
@@ -126,6 +132,8 @@ object ThreadTags {
     const val FILE = "thread-file"
     const val FILE_DETAILS = "thread-file-details"
     const val PROGRESS = "thread-progress"
+    const val NEW_PILL = "thread-new-pill"
+    const val BACK_PILL = "thread-back-pill"
 }
 
 /**
@@ -162,6 +170,8 @@ fun ThreadScreen(
     listState: LazyListState? = null,
     scrollToPostId: String? = null,
     firstUnreadPostId: String? = null,
+    backToLabel: String? = null,
+    onBackTo: (() -> Unit)? = null,
     onScrollConsumed: () -> Unit = {},
     body: (@Composable (Post) -> Unit)? = null,
     media: (@Composable (Post, Modifier) -> Unit)? = null,
@@ -191,6 +201,34 @@ fun ThreadScreen(
             scope.launch { state.animateScrollToItem(target + HEADER_ITEMS) }
         }
     }
+    var returnToId by remember { mutableStateOf<String?>(null) }
+    var returnToNumber by remember { mutableStateOf<String?>(null) }
+    val openReference: ((String) -> Unit)? =
+        onPostReference?.let { outer ->
+            { id ->
+                val visible = posts.getOrNull((state.firstVisibleItemIndex - HEADER_ITEMS).coerceAtLeast(0))
+                if (visible != null && visible.id != id) {
+                    returnToId = visible.id
+                    returnToNumber = visible.number
+                }
+                outer(id)
+            }
+        }
+    val resolvedBackLabel =
+        backToLabel
+            ?: returnToNumber?.let { number ->
+                val raw = number.removePrefix("No.").trim()
+                stringResource(Res.string.next_thread_back_to, raw)
+            }
+    val resolvedBackTo =
+        onBackTo
+            ?: returnToId?.let { id ->
+                {
+                    reveal(id)
+                    returnToId = null
+                    returnToNumber = null
+                }
+            }
     LaunchedEffect(scrollToPostId, posts, layout) {
         if (!showingPosts) return@LaunchedEffect
         val target = posts.indexOfFirst { it.id == scrollToPostId }
@@ -213,7 +251,9 @@ fun ThreadScreen(
             subtitle = listOf(sourceLabel(siteName), board).filter(String::isNotBlank).joinToString(" · "),
             navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
             onNavigation = onBack ?: {},
-            actions = threadActions(watching, showingPosts, onWatch, onLayoutChange),
+            onTitleTap = { scope.launch { state.animateScrollToItem(0) } },
+            titleTapLabel = stringResource(Res.string.next_thread_scroll_top),
+            actions = threadActions(watching, showingPosts, onWatch, onLayoutChange, onDownloadAll),
             overflow =
                 threadOverflow(
                     subject = subject,
@@ -223,10 +263,6 @@ fun ThreadScreen(
                     watching = watching,
                     onToggleSaved = onToggleSaved,
                     onShare = onShare,
-                    canJump = showingPosts && posts.size > 1,
-                    onTop = { scope.launch { state.animateScrollToItem(0) } },
-                    onFirstNew = firstUnreadPostId?.let { id -> { reveal(id) } },
-                    onBottom = { scope.launch { state.animateScrollToItem(posts.size + HEADER_ITEMS) } },
                     onDownloadAll = onDownloadAll,
                     onSavePage = onSavePage,
                     onOpenBrowser = onOpenBrowser,
@@ -247,86 +283,158 @@ fun ThreadScreen(
             stateContent()
             return@Column
         }
-        BoxWithConstraints(
-            Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
-        ) {
-            val fileColumns = catalogGridColumns(maxWidth)
-            val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
-            LazyColumn(
-                state = if (showingPosts) state else filesState,
-                modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
-                contentPadding =
-                    if (showingPosts) {
-                        PaddingValues(bottom = bottomInset())
-                    } else {
-                        PaddingValues(
-                            start = ReaderSpace.albumPadding,
-                            end = ReaderSpace.albumPadding,
-                            top = ReaderSpace.albumPadding,
-                            bottom = bottomInset() + ReaderSpace.albumPadding,
-                        )
-                    },
+        val unreadFrom =
+            firstUnreadPostId?.let { id -> posts.indexOfFirst { it.id == id } }?.takeIf { it > 0 }
+        val newCount = unreadFrom?.let { posts.size - it }
+        Box(Modifier.fillMaxSize()) {
+            BoxWithConstraints(
+                Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
             ) {
-                item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
-                    if (!subtitle.isNullOrBlank()) {
-                        Text(
-                            text = subtitle,
-                            style = ReaderType.meta.withReaderFont(),
-                            color = colors.inkMuted,
-                            modifier =
-                                Modifier.fillMaxWidth().padding(
-                                    horizontal = ReaderSpace.gutter,
-                                    vertical = ReaderSpace.gapSmall,
-                                ),
-                        )
-                    }
-                }
-                if (showingPosts) {
-                    itemsIndexed(posts, key = {
-                        _,
-                        post,
-                        ->
-                        post.stableKey
-                    }, contentType = { _, _ -> ThreadLayout.POSTS }) {
-                        index,
-                        post,
-                        ->
-                        Column(Modifier.fillMaxWidth()) {
-                            if (index > 0 && post.id == firstUnreadPostId) UnreadMarker()
-                            PostCell(
-                                post = post,
-                                original = index == 0,
-                                collapsed = post.id in collapsed,
-                                wideWindow = wideWindow,
-                                onToggleCollapse = onToggleCollapse,
-                                onClick = onPostClick,
-                                onReference = onPostReference,
-                                body = body,
-                                media = media,
+                val fileColumns = catalogGridColumns(maxWidth)
+                val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
+                LazyColumn(
+                    state = if (showingPosts) state else filesState,
+                    modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
+                    contentPadding =
+                        if (showingPosts) {
+                            PaddingValues(bottom = bottomInset())
+                        } else {
+                            PaddingValues(
+                                start = ReaderSpace.albumPadding,
+                                end = ReaderSpace.albumPadding,
+                                top = ReaderSpace.albumPadding,
+                                bottom = bottomInset() + ReaderSpace.albumPadding,
+                            )
+                        },
+                ) {
+                    item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
+                        if (!subtitle.isNullOrBlank()) {
+                            Text(
+                                text = subtitle,
+                                style = ReaderType.meta.withReaderFont(),
+                                color = colors.inkMuted,
+                                modifier =
+                                    Modifier.fillMaxWidth().padding(
+                                        horizontal = ReaderSpace.gutter,
+                                        vertical = ReaderSpace.gapSmall,
+                                    ),
                             )
                         }
                     }
-                    item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
-                        ThreadStatus(
-                            replies = maxOf(0, posts.size - 1),
-                            fileCount = posts.sumOf { it.mediaCount },
-                            statusText = statusText,
-                        )
-                    }
-                } else {
-                    items(
-                        fileRows,
-                        key = { row -> row.joinToString(separator = "|") { it.id } },
-                        contentType = { ThreadLayout.FILES },
-                    ) { rowOfFiles ->
-                        FileRow(rowOfFiles, fileColumns, onOpenFile, fileTile)
+                    if (showingPosts) {
+                        itemsIndexed(posts, key = {
+                            _,
+                            post,
+                            ->
+                            post.stableKey
+                        }, contentType = { _, _ -> ThreadLayout.POSTS }) {
+                            index,
+                            post,
+                            ->
+                            Column(Modifier.fillMaxWidth()) {
+                                if (index > 0 && post.id == firstUnreadPostId) UnreadMarker()
+                                PostCell(
+                                    post = post,
+                                    original = index == 0,
+                                    collapsed = post.id in collapsed,
+                                    wideWindow = wideWindow,
+                                    onToggleCollapse = onToggleCollapse,
+                                    onClick = onPostClick,
+                                    onReference = openReference,
+                                    body = body,
+                                    media = media,
+                                )
+                            }
+                        }
+                        item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
+                            ThreadStatus(
+                                replies = maxOf(0, posts.size - 1),
+                                fileCount = posts.sumOf { it.mediaCount },
+                                statusText = statusText,
+                            )
+                        }
+                    } else {
+                        items(
+                            fileRows,
+                            key = { row -> row.joinToString(separator = "|") { it.id } },
+                            contentType = { ThreadLayout.FILES },
+                        ) { rowOfFiles ->
+                            FileRow(rowOfFiles, fileColumns, onOpenFile, fileTile)
+                        }
                     }
                 }
             }
+            if (showingPosts) {
+                ThreadJumpPills(
+                    newLabel =
+                        newCount?.let { count ->
+                            pluralStringResource(Res.plurals.next_thread_new_posts, count, count)
+                        },
+                    onNew = firstUnreadPostId?.let { id -> { reveal(id) } },
+                    backLabel = resolvedBackLabel,
+                    onBackTo = resolvedBackTo,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun ThreadJumpPills(
+    newLabel: String?,
+    onNew: (() -> Unit)?,
+    backLabel: String?,
+    onBackTo: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val hasNewPill = newLabel != null && onNew != null
+    val hasBackPill = backLabel != null && onBackTo != null
+    if (!hasNewPill && !hasBackPill) return
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                    ),
+                ).padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (backLabel != null && onBackTo != null) {
+            ThreadPill(label = backLabel, tag = ThreadTags.BACK_PILL, onClick = onBackTo)
+        }
+        if (newLabel != null && onNew != null) {
+            ThreadPill(label = newLabel, tag = ThreadTags.NEW_PILL, onClick = onNew)
+        }
+    }
+}
+
+@Composable
+private fun ThreadPill(
+    label: String,
+    tag: String,
+    onClick: () -> Unit,
+) {
+    Text(
+        label,
+        style = NextType.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        color = reader.onAccent,
+        maxLines = 1,
+        modifier =
+            Modifier
+                .testTag(tag)
+                .heightIn(min = MIN_TOUCH_TARGET)
+                .clip(RoundedCornerShape(OrbinRadius.pill))
+                .background(reader.accent)
+                .nextClickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .semantics { contentDescription = label },
+    )
 }
 
 const val MAX_REPLY_DEPTH = 3
@@ -337,6 +445,7 @@ private fun threadActions(
     showingPosts: Boolean,
     onWatch: (() -> Unit)?,
     onLayoutChange: ((ThreadLayout) -> Unit)?,
+    onDownloadAll: (() -> Unit)?,
 ): List<ReaderAction> =
     buildList {
         if (onLayoutChange != null) {
@@ -363,6 +472,15 @@ private fun threadActions(
                 ),
             )
         }
+        if (onDownloadAll != null) {
+            add(
+                ReaderAction(
+                    icon = ReaderIcons.Download,
+                    label = stringResource(Res.string.next_thread_download_title),
+                    onClick = onDownloadAll,
+                ),
+            )
+        }
     }
 
 @Composable
@@ -374,10 +492,6 @@ private fun threadOverflow(
     watching: Boolean,
     onToggleSaved: (() -> Unit)?,
     onShare: (() -> Unit)?,
-    canJump: Boolean,
-    onTop: () -> Unit,
-    onFirstNew: (() -> Unit)?,
-    onBottom: () -> Unit,
     onDownloadAll: (() -> Unit)?,
     onSavePage: (() -> Unit)?,
     onOpenBrowser: (() -> Unit)?,
@@ -408,15 +522,6 @@ private fun threadOverflow(
         if (onReload != null) add(ReaderMenuItem(stringResource(Res.string.reader_reload), onClick = onReload))
         if (onOpenBrowser != null) {
             add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
-        }
-        if (canJump) {
-            add(ReaderMenuItem(stringResource(Res.string.next_thread_jump_top), onClick = onTop))
-            if (onFirstNew !=
-                null
-            ) {
-                add(ReaderMenuItem(stringResource(Res.string.reader_first_new), onClick = onFirstNew))
-            }
-            add(ReaderMenuItem(stringResource(Res.string.next_thread_jump_bottom), onClick = onBottom))
         }
         if (!showingPosts) {
             if (onDownloadAll != null) {

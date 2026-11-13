@@ -55,6 +55,49 @@ object NextRadius {
 }
 
 /**
+ * Orbin Coral radii for the incoming card-based chrome.
+ *
+ * These sit beside [NextRadius] so existing Clover-derived reader geometry stays intact
+ * until each screen is restyled. Cards are generously rounded; search fields are pills;
+ * thumbnails share a 12dp corner.
+ */
+@Immutable
+object OrbinRadius {
+    /** Thumbnails and compact media tiles. */
+    val thumbnail: Dp = 12.dp
+
+    /** White (or dark-elevated) content cards and settings groups. */
+    val card: Dp = 16.dp
+
+    /** Larger panels such as the settings profile header. */
+    val panel: Dp = 20.dp
+
+    /** Search fields and filter chips. */
+    val search: Dp = 24.dp
+
+    /** Reply-count and action pills. */
+    val pill: Dp = 20.dp
+}
+
+/**
+ * Soft ambient elevation for Coral cards and bars on a light page ground.
+ *
+ * Dark and AMOLED themes prefer a tonal lift ([OrbinCard] uses [OrbinElevation.card] as
+ * tonal elevation and drops the drop-shadow) so cards do not pick up a harsh halo.
+ */
+@Immutable
+object OrbinElevation {
+    /** Resting content card. */
+    val card: Dp = 2.dp
+
+    /** Floating action or "tap to top" control. */
+    val floating: Dp = 6.dp
+
+    /** App bar and bottom navigation. */
+    val bar: Dp = 4.dp
+}
+
+/**
  * Solid matte anodized surface fills — no translucency, no frosted glass, no blur.
  */
 @Immutable

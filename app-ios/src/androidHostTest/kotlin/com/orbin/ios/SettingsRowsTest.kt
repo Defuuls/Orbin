@@ -93,8 +93,8 @@ class SettingsRowsTest {
         assertEquals(listOf("Theme", "AMOLED black", "Catalog view"), appearance.map { it.label })
         val catalog = appearance.single { it.id == SettingIds.CATALOG_MODE }
         assertEquals(listOf("List", "Grid"), catalog.options)
-        assertEquals("List", catalog.value)
-        assertEquals(0, catalog.selected)
+        assertEquals("Grid", catalog.value)
+        assertEquals(1, catalog.selected)
     }
 
     @Test

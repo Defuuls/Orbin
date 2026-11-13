@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -102,6 +103,8 @@ fun ReaderAppBar(
     onNavigation: (() -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
     titleClickLabel: String? = null,
+    onTitleTap: (() -> Unit)? = null,
+    titleTapLabel: String? = null,
     actions: List<ReaderAction> = emptyList(),
     overflow: List<ReaderMenuItem> = emptyList(),
 ) {
@@ -119,11 +122,12 @@ fun ReaderAppBar(
     ) {
         val titleStart = if (leading == ReaderNavigation.NONE) ZERO else TITLE_AFTER_NAVIGATION
         val navigationWidth = if (leading == ReaderNavigation.NONE) ReaderSpace.gutter else ReaderSize.appBarNavigation
+        val overflowWidth = maxOf(ReaderSize.appBarOverflow, ReaderSize.touchTarget)
         val actionSpace = (maxWidth - navigationWidth - titleStart - ReaderSize.touchTarget).coerceAtLeast(ZERO)
         val actionBudget =
-            ((actionSpace - ReaderSize.appBarOverflow) / ReaderSize.appBarAction).toInt().coerceAtLeast(0)
+            ((actionSpace - overflowWidth) / ReaderSize.appBarAction).toInt().coerceAtLeast(0)
         val allActionsWidth =
-            ReaderSize.appBarAction * actions.size + if (overflow.isEmpty()) ZERO else ReaderSize.appBarOverflow
+            ReaderSize.appBarAction * actions.size + if (overflow.isEmpty()) ZERO else overflowWidth
         val visibleActions = if (allActionsWidth <= actionSpace) actions else actions.take(actionBudget)
         val menuItems =
             overflow +
@@ -194,6 +198,20 @@ fun ReaderAppBar(
                                 ),
                         contentAlignment = Alignment.CenterStart,
                     ) { titleRow() }
+                } else if (onTitleTap != null) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .widthIn(min = ReaderSize.touchTarget)
+                                .heightIn(min = ReaderSize.appBar)
+                                .semantics { titleTapLabel?.let { contentDescription = it } }
+                                .nextClickable(
+                                    role = Role.Button,
+                                    onClickLabel = titleTapLabel,
+                                    onClick = onTitleTap,
+                                ),
+                        contentAlignment = Alignment.CenterStart,
+                    ) { titleRow() }
                 } else {
                     titleRow()
                 }
@@ -228,7 +246,7 @@ fun ReaderAppBar(
                             Modifier
                                 .testTag(
                                     ReaderAppBarTags.OVERFLOW,
-                                ).size(ReaderSize.appBarOverflow, ReaderSize.appBar),
+                                ).size(overflowWidth, ReaderSize.appBar),
                     )
                     DropdownMenu(
                         expanded = open,

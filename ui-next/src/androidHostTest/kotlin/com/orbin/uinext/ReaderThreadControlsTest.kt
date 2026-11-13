@@ -7,11 +7,11 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Assert.assertEquals
@@ -30,7 +30,7 @@ class ReaderThreadControlsTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `Bottom reaches the entire footer after a last post taller than the viewport`() {
+    fun `scrolling to the end shows the entire footer after a last post taller than the viewport`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -58,8 +58,7 @@ class ReaderThreadControlsTest {
             lastBody.bottom - lastBody.top > viewport.bottom - viewport.top,
         )
         composeRule.onNodeWithTag(ThreadTags.STATUS).assertDoesNotExist()
-        composeRule.onNodeWithContentDescription("More options").performClick()
-        composeRule.onNodeWithText("Bottom").performClick()
+        composeRule.onNodeWithTag(ThreadTags.LIST).performScrollToNode(hasTestTag(ThreadTags.STATUS))
 
         val footer =
             composeRule
@@ -68,7 +67,10 @@ class ReaderThreadControlsTest {
                 .assertHeightIsEqualTo(ReaderSize.threadStatus)
                 .getUnclippedBoundsInRoot()
         assertTrue("The footer must be fully inside the viewport: $footer in $viewport", footer.top >= viewport.top)
-        assertTrue("Bottom must reach the footer's end: $footer in $viewport", footer.bottom <= viewport.bottom)
+        assertTrue(
+            "The footer must be fully inside the viewport: $footer in $viewport",
+            footer.bottom <= viewport.bottom,
+        )
     }
 
     @Test

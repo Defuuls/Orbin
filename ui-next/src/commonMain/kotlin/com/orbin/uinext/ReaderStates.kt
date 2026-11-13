@@ -32,7 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -46,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_error_network
 import com.orbin.uinext.resources.reader_error_network_helper
@@ -169,7 +169,7 @@ private fun ReaderSkeleton(
             Modifier.fillMaxSize().clearAndSetSemantics { contentDescription = label },
         ) {
             val grid = mode == CatalogMode.GRID
-            val gridSpec = catalogGridSpec(maxWidth, maxHeight)
+            val gridSpec = if (grid) orbinCatalogGridSpec(maxWidth) else catalogGridSpec(maxWidth, maxHeight)
             val columns = if (grid) gridSpec.columns else 1
             val cellMinimum = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
             val minimum = if (grid) gridSpec.imageHeight else cellMinimum
@@ -177,25 +177,32 @@ private fun ReaderSkeleton(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 userScrollEnabled = false,
-                contentPadding = if (grid) PaddingValues(ReaderSpace.gridOuter) else PaddingValues(),
-                horizontalArrangement = if (grid) Arrangement.spacedBy(ReaderSpace.gridGap) else Arrangement.Start,
-                verticalArrangement = if (grid) Arrangement.spacedBy(ReaderSpace.gridGap) else Arrangement.Top,
+                contentPadding = if (grid) PaddingValues(ORBIN_CATALOG_GUTTER) else PaddingValues(),
+                horizontalArrangement = if (grid) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Start,
+                verticalArrangement = if (grid) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
             ) {
                 items(rowCount * columns) {
                     if (grid) {
-                        ReaderCatalogCardLayout(
-                            imageHeight = gridSpec.imageHeight,
+                        OrbinCard(
                             modifier =
                                 Modifier
                                     .testTag(ReaderStateTags.SKELETON_CELL)
-                                    .shadow(ReaderSize.cardElevation, RoundedCornerShape(ReaderRadius.card))
-                                    .clip(RoundedCornerShape(ReaderRadius.card))
-                                    .background(colors.background),
-                            image = { imageModifier -> SkeletonBlock(imageModifier) },
-                        ) { textModifier ->
-                            Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
-                                SkeletonLine(ReaderType.cardTitle.withReaderFont(), lines = 2)
-                                SkeletonLine(ReaderType.meta.withReaderFont(), Modifier.width(ReaderSize.pillMinWidth))
+                                    .fillMaxWidth(),
+                            elevated = false,
+                            containerColor = colors.surfaceVariant,
+                        ) {
+                            Column(Modifier.fillMaxWidth()) {
+                                SkeletonBlock(Modifier.fillMaxWidth().height(gridSpec.imageHeight))
+                                Column(
+                                    Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
+                                ) {
+                                    SkeletonLine(ReaderType.cardTitle.withReaderFont(), lines = 2)
+                                    SkeletonLine(
+                                        ReaderType.meta.withReaderFont(),
+                                        Modifier.width(ReaderSize.pillMinWidth),
+                                    )
+                                }
                             }
                         }
                     } else {

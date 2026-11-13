@@ -174,6 +174,31 @@ class ThreadViewModelTest {
         }
 
     @Test
+    fun `downloading videos only queues video attachments`() =
+        runTest {
+            val savedThread = threadWithMixedMedia()
+            val downloads = FakeDownloadRepository()
+            val viewModel =
+                createViewModel(
+                    threadRepository = FailingThreadRepository(),
+                    savedThreadRepository = FakeSavedThreadRepository(mutableMapOf(key to savedThread)),
+                    downloadRepository = downloads,
+                )
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state !is ThreadUiState.Success) state = awaitItem()
+                viewModel.downloadAllMedia(videosOnly = true)
+                runCurrent()
+                assertThat(downloads.enqueuedUrls)
+                    .containsExactly(
+                        "https://example.org/webm",
+                        "https://example.org/mp4",
+                    )
+            }
+        }
+
+    @Test
     fun `exporting links from a thread with none reports that instead of writing a file`() =
         runTest {
             val viewModel = createViewModel()

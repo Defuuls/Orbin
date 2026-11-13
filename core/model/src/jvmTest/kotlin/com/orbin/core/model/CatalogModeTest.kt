@@ -7,8 +7,8 @@ import org.junit.Test
 
 class CatalogModeTest {
     @Test
-    fun settingsWithoutACatalogPreferenceDefaultToList() {
-        assertEquals(CatalogMode.LIST, Json.decodeFromString<AppSettings>("{}").catalogMode)
+    fun settingsWithoutACatalogPreferenceDefaultToGrid() {
+        assertEquals(CatalogMode.GRID, Json.decodeFromString<AppSettings>("{}").catalogMode)
     }
 
     @Test

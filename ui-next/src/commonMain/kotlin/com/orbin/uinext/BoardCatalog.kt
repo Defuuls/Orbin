@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,7 +8,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +17,16 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
@@ -37,7 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -53,6 +57,7 @@ import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
@@ -63,19 +68,24 @@ import com.orbin.uinext.resources.next_board_media
 import com.orbin.uinext.resources.next_row_files
 import com.orbin.uinext.resources.next_row_replies
 import com.orbin.uinext.resources.reader_catalog_counts
-import com.orbin.uinext.resources.reader_catalog_stats
 import com.orbin.uinext.resources.reader_muted
 import com.orbin.uinext.resources.reader_open_browser
 import com.orbin.uinext.resources.reader_pick_board
+import com.orbin.uinext.resources.reader_post_number
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.resources.reader_reveal_spoiler
 import com.orbin.uinext.resources.reader_row_meta
 import com.orbin.uinext.resources.reader_row_summary
 import com.orbin.uinext.resources.reader_search
 import com.orbin.uinext.resources.reader_sort
+import com.orbin.uinext.resources.reader_sort_bump_order
+import com.orbin.uinext.resources.reader_sort_catalog
+import com.orbin.uinext.resources.reader_sort_reply_count
 import com.orbin.uinext.resources.reader_unread
 import com.orbin.uinext.resources.reader_view_grid
 import com.orbin.uinext.resources.reader_view_list
+import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderRadius
 import com.orbin.uinext.tokens.ReaderRatio
@@ -110,7 +120,36 @@ object CatalogTags {
     const val COUNTS = "catalog-counts"
     const val THUMBNAIL = "catalog-thumbnail"
     const val PROGRESS = "catalog-progress"
+    const val SORT_TABS = "catalog-sort-tabs"
+    const val PENDING = "catalog-pending"
 }
+
+/**
+ * A catalog sort the host already supports, shown as a tab.
+ *
+ * [id] is the host's [com.orbin.core.model.CatalogSort] name. The Catalog tab is creation
+ * date — an existing option — not a new order. Bump order and reply count map 1:1.
+ */
+data class CatalogSortTab(
+    val id: String,
+    val label: String,
+)
+
+/** Ids for the three Coral catalog tabs, matching [com.orbin.core.model.CatalogSort] names. */
+object CatalogSortTabs {
+    const val CATALOG = "CREATION_DATE"
+    const val BUMP_ORDER = "BUMP_ORDER"
+    const val REPLY_COUNT = "REPLY_COUNT"
+}
+
+/** Catalog, Bump order, and Reply count — only existing [CatalogSort] values, mockup labels. */
+@Composable
+fun catalogSortTabs(): List<CatalogSortTab> =
+    listOf(
+        CatalogSortTab(CatalogSortTabs.CATALOG, stringResource(Res.string.reader_sort_catalog)),
+        CatalogSortTab(CatalogSortTabs.BUMP_ORDER, stringResource(Res.string.reader_sort_bump_order)),
+        CatalogSortTab(CatalogSortTabs.REPLY_COUNT, stringResource(Res.string.reader_sort_reply_count)),
+    )
 
 /**
  * A board's catalog, as docs/design-system specifies it.
@@ -135,6 +174,9 @@ fun BoardScreen(
     onModeChange: ((CatalogMode) -> Unit)? = null,
     sortLabel: String? = null,
     onSort: () -> Unit = {},
+    sortTabs: List<CatalogSortTab> = emptyList(),
+    selectedSortId: String? = null,
+    onSelectSort: (String) -> Unit = {},
     onOpenMedia: (() -> Unit)? = null,
     onOpenRow: (FeedRow) -> Unit = {},
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
@@ -152,32 +194,43 @@ fun BoardScreen(
     stateContent: (@Composable () -> Unit)? = null,
 ) {
     val colors = reader
+    val heading = catalogHeading(board, description)
     Column(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(colors.background)
-                .semantics { paneTitle = board },
+                .background(
+                    if (mode == CatalogMode.GRID && !next.dark) colors.surfaceVariant else colors.background,
+                ).semantics { paneTitle = board },
     ) {
         ReaderAppBar(
-            title = description.ifBlank { board },
+            title = heading,
             navigation = navigation,
             onNavigation = onNavigation,
             onTitleClick = onPickBoard,
             titleClickLabel = stringResource(Res.string.reader_pick_board),
             actions = catalogActions(onReload, onSearch),
-            overflow = catalogOverflow(mode, onModeChange, sortLabel, onSort, onOpenMedia, onOpenBrowser),
+            overflow =
+                catalogOverflow(
+                    mode,
+                    onModeChange,
+                    sortLabel,
+                    onSort,
+                    onOpenMedia,
+                    onOpenBrowser,
+                ),
         )
-        Box(Modifier.fillMaxWidth().height(ReaderSize.progress)) {
-            if (reloading) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(ReaderSize.progress)
-                        .background(colors.accent)
-                        .testTag(CatalogTags.PROGRESS),
-                )
-            }
+        if (reloading) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(ReaderSize.progress)
+                    .background(colors.accent)
+                    .testTag(CatalogTags.PROGRESS),
+            )
+        }
+        if (sortTabs.isNotEmpty()) {
+            CatalogSortTabRow(tabs = sortTabs, selectedId = selectedSortId, onSelect = onSelectSort)
         }
         headerContent?.invoke()
         if (stateContent != null) {
@@ -190,10 +243,10 @@ fun BoardScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
         ) {
             val grid = mode == CatalogMode.GRID
-            val gridSpec = catalogGridSpec(maxWidth, maxHeight)
+            val gridSpec = if (grid) orbinCatalogGridSpec(maxWidth) else catalogGridSpec(maxWidth, maxHeight)
             val columns = if (grid) gridSpec.columns else 1
-            val gap = if (grid) ReaderSpace.gridGap else NO_GAP
-            val outer = if (grid) ReaderSpace.gridOuter else NO_GAP
+            val gap = if (grid) ORBIN_CATALOG_GAP else NO_GAP
+            val outer = if (grid) ORBIN_CATALOG_GUTTER else NO_GAP
             val cellMin = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
@@ -216,7 +269,19 @@ fun BoardScreen(
                 ) { index ->
                     val row = rowAt(index)
                     when {
-                        row == null && grid -> Box(Modifier.fillMaxWidth().height(gridSpec.imageHeight))
+                        row == null && grid ->
+                            OrbinCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                elevated = false,
+                                containerColor = reader.surfaceVariant,
+                            ) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(gridSpec.imageHeight)
+                                        .testTag(CatalogTags.PENDING),
+                                )
+                            }
                         row == null -> Box(Modifier.fillMaxWidth().height(cellMin))
                         grid ->
                             CatalogCard(
@@ -272,6 +337,26 @@ fun catalogGridSpec(
     val imageHeight = maxOf(half, ReaderSize.gridCardMin)
     val columns = if (width.isFinite && width > 0.dp) maxOf(1, (width / imageHeight).toInt()) else 1
     return CatalogGridSpec(columns, imageHeight)
+}
+
+/**
+ * Coral catalog grid: at least two [OrbinCard] columns on a phone, more on a wide pane.
+ * Image height follows the column width so cards stay compact, unlike [catalogGridSpec]
+ * which sizes images to half the viewport and yields a single phone column.
+ */
+fun orbinCatalogGridSpec(width: Dp): CatalogGridSpec {
+    val fallback = ORBIN_CATALOG_MIN_CARD * 2 + ORBIN_CATALOG_GUTTER * 2 + ORBIN_CATALOG_GAP
+    val usable = if (width.isFinite && width > 0.dp) width else fallback
+    val columns =
+        maxOf(
+            1,
+            (
+                (usable - ORBIN_CATALOG_GUTTER * 2 + ORBIN_CATALOG_GAP) /
+                    (ORBIN_CATALOG_MIN_CARD + ORBIN_CATALOG_GAP)
+            ).toInt(),
+        )
+    val colWidth = (usable - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP * (columns - 1)) / columns
+    return CatalogGridSpec(columns, colWidth * ORBIN_CATALOG_IMAGE_RATIO)
 }
 
 /** A reply or unread count as the pill shows it: exact below 1000, then thousands to one decimal, rounded down. */
@@ -475,13 +560,13 @@ internal fun CatalogRow(
                 )
                 if (!row.muted && row.excerpt.isNotBlank()) {
                     Text(
-                        text = remember(row.excerpt, colors) { previewText(row.excerpt, colors) },
+                        text = remember(row.previewLines, colors) { previewText(row.previewLines, colors) },
                         style = bodyStyle,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                CatalogCounts(row, grid = false, style = bodyStyle)
+                CatalogCounts(row, style = bodyStyle)
             }
         }
         if (showDivider) ReaderHairline(Modifier.padding(horizontal = inset))
@@ -492,7 +577,6 @@ internal fun CatalogRow(
 @Composable
 private fun CatalogCounts(
     row: FeedRow,
-    grid: Boolean,
     style: TextStyle = ReaderType.postBody,
 ) {
     val colors = reader
@@ -504,15 +588,11 @@ private fun CatalogCounts(
         Text(
             modifier = Modifier.fillMaxWidth(),
             text =
-                if (grid) {
-                    stringResource(Res.string.reader_catalog_stats, row.replies, row.media)
-                } else {
-                    stringResource(
-                        Res.string.reader_catalog_counts,
-                        pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
-                        pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
-                    )
-                },
+                stringResource(
+                    Res.string.reader_catalog_counts,
+                    pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
+                    pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
+                ),
             style = style.withReaderFont(),
             color = colors.inkMuted,
         )
@@ -527,7 +607,7 @@ private fun CatalogCounts(
     }
 }
 
-/** A thread as a grid card: an image [imageHeight] tall, then the subject, excerpt and plain counters. */
+/** A thread as a grid card: identity, subject, an inset thumbnail, then reply and file counts. */
 @Composable
 internal fun CatalogCard(
     row: FeedRow,
@@ -549,7 +629,6 @@ internal fun CatalogCard(
     onLongClickLabel: String? = null,
 ) {
     val colors = reader
-    val shape = RoundedCornerShape(ReaderRadius.card)
     val title = rowTitle(row)
     val bodyStyle = if (wideWindow) ReaderType.postBodyWide.withReaderFont() else ReaderType.postBody.withReaderFont()
     val summary = listOfNotNull(rowSummary(row, title), metadata).joinToString(", ")
@@ -558,50 +637,128 @@ internal fun CatalogCard(
     val covered = showThumbnail && row.imageSpoiler && !(spoilerRevealed ?: revealed)
     val reveal = { if (onRevealSpoiler != null) onRevealSpoiler() else revealed = true }
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
-    Column(
-        modifier
-            .testTag(itemTag ?: CatalogTags.CARD)
-            .fillMaxWidth()
-            .shadow(ReaderSize.cardElevation, shape)
-            .clip(shape)
-            .background(if (selected) colors.selected else colors.background)
-            .nextClickable(
-                role = Role.Button,
-                onLongClick = onLongClick,
-                onLongClickLabel = onLongClickLabel,
-            ) { onOpen(row) }
-            .clearAndSetSemantics {
-                contentDescription = summary
-                this.selected = selected
-                val actions =
-                    buildList {
-                        if (covered) {
-                            add(
-                                CustomAccessibilityAction(revealLabel) {
-                                    reveal()
-                                    true
-                                },
-                            )
-                        } else if (showThumbnail && onOpenThumbnail != null && thumbnailClickLabel != null) {
-                            add(
-                                CustomAccessibilityAction(thumbnailClickLabel) {
-                                    onOpenThumbnail(row)
-                                    true
-                                },
-                            )
-                        }
-                        addAll(accessibilityActions)
-                    }
-                if (actions.isNotEmpty()) customActions = actions
-            },
+    val numberLabel =
+        if (row.threadNumber.isNotEmpty()) {
+            stringResource(Res.string.reader_post_number, row.threadNumber)
+        } else {
+            ""
+        }
+    val actions =
+        buildList {
+            if (covered) {
+                add(
+                    CustomAccessibilityAction(revealLabel) {
+                        reveal()
+                        true
+                    },
+                )
+            } else if (showThumbnail && onOpenThumbnail != null && thumbnailClickLabel != null) {
+                add(
+                    CustomAccessibilityAction(thumbnailClickLabel) {
+                        onOpenThumbnail(row)
+                        true
+                    },
+                )
+            }
+            addAll(accessibilityActions)
+        }
+    val titleMaxLines = 2
+    OrbinCard(
+        modifier =
+            modifier
+                .testTag(itemTag ?: CatalogTags.CARD)
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = summary
+                    this.selected = selected
+                    if (actions.isNotEmpty()) customActions = actions
+                }.nextClickable(
+                    role = Role.Button,
+                    onClickLabel = summary,
+                    onLongClick = onLongClick,
+                    onLongClickLabel = onLongClickLabel,
+                    onClick = { onOpen(row) },
+                ),
+        containerColor = if (selected) colors.selected else null,
+        border = if (selected) BorderStroke(2.dp, colors.accent) else null,
+        elevated = false,
+        shape = RoundedCornerShape(OrbinRadius.card),
     ) {
-        ReaderCatalogCardLayout(
-            imageHeight = imageHeight,
-            image = { imageModifier ->
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Box(
-                    imageModifier
-                        .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
+                    Modifier
+                        .size(24.dp)
+                        .background(colors.accent, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val initial =
+                        row.poster
+                            .firstOrNull()
+                            ?.uppercaseChar()
+                            ?.toString() ?: "A"
+                    Text(
+                        initial,
+                        style = ReaderType.meta.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                        color = colors.onAccent,
+                        maxLines = 1,
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    if (row.poster.isNotBlank()) {
+                        Text(
+                            row.poster,
+                            style = ReaderType.meta.withReaderFont(),
+                            color = colors.ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (numberLabel.isNotEmpty()) {
+                        Text(
+                            numberLabel,
+                            style = ReaderType.meta.withReaderFont(),
+                            color = colors.inkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            if (title.isNotBlank()) {
+                CatalogTitle(
+                    row,
+                    title,
+                    bodyStyle,
+                    maxLines = titleMaxLines,
+                )
+            }
+            if (metadata != null) {
+                Text(
+                    metadata,
+                    style = ReaderType.meta.withReaderFont(),
+                    color = colors.inkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (showThumbnail) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(imageHeight)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(colors.surfaceVariant)
+                        .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
+                        .clearAndSetSemantics {}
                         .then(
                             catalogThumbnailAction(
                                 covered,
@@ -620,34 +777,67 @@ internal fun CatalogCard(
                             onLongClick = onLongClick,
                             onLongClickLabel = onLongClickLabel,
                         )
-                    } else if (showThumbnail) {
+                    } else {
                         thumbnail(row, Modifier.fillMaxSize())
                     }
                 }
-            },
-        ) { textModifier ->
-            Column(textModifier, verticalArrangement = Arrangement.spacedBy(ReaderSpace.line)) {
-                CatalogTitle(row, title, bodyStyle, maxLines = 3)
-                if (metadata != null) {
-                    Text(
-                        metadata,
-                        style = ReaderType.meta.withReaderFont(),
-                        color = colors.inkMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                if (!row.muted && row.excerpt.isNotBlank()) {
-                    Text(
-                        text = remember(row.excerpt, colors) { previewText(row.excerpt, colors) },
-                        style = bodyStyle,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-                CatalogCounts(row, grid = true, style = bodyStyle)
             }
+            CatalogIconCounts(row, style = bodyStyle)
+        }
+    }
+}
+
+@Composable
+private fun CatalogIconCounts(
+    row: FeedRow,
+    style: TextStyle,
+) {
+    val colors = reader
+    Column(
+        Modifier.testTag(CatalogTags.COUNTS).fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(ReaderSpace.line),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                ReaderIcons.Chat,
+                contentDescription = null,
+                tint = colors.inkMuted,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
+                modifier = Modifier.weight(1f),
+                style = style.withReaderFont(),
+                color = colors.inkMuted,
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                ReaderIcons.Album,
+                contentDescription = null,
+                tint = colors.inkMuted,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
+                modifier = Modifier.weight(1f),
+                style = style.withReaderFont(),
+                color = colors.inkMuted,
+            )
+        }
+        if (row.unread > 0) {
+            Text(
+                pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
+                modifier = Modifier.fillMaxWidth(),
+                style = ReaderType.meta.withReaderFont(),
+                color = colors.accent,
+            )
         }
     }
 }
@@ -725,19 +915,94 @@ fun ReaderCatalogCardLayout(
 internal fun previewText(
     excerpt: String,
     colors: ReaderColors,
+): AnnotatedString = previewText(previewLinesOf(excerpt), colors)
+
+internal fun previewText(
+    lines: List<PreviewLine>,
+    colors: ReaderColors,
 ): AnnotatedString =
     buildAnnotatedString {
-        excerpt.lineSequence().filter { it.isNotBlank() }.forEachIndexed { index, line ->
+        lines.forEachIndexed { index, line ->
             if (index > 0) append('\n')
-            val color = if (line.trimStart().startsWith(QUOTE_MARK)) colors.quote else colors.ink
-            withStyle(SpanStyle(color = color)) { append(line.trim()) }
+            val color = if (line.quoted) colors.quote else colors.ink
+            withStyle(SpanStyle(color = color)) { append(line.text) }
         }
     }
 
-private const val QUOTE_MARK = ">"
 private const val COUNT_ABBREVIATION_FROM = 1000
 private const val TENTHS = 10
 private val NO_GAP = 0.dp
+internal val ORBIN_CATALOG_GUTTER = 16.dp
+internal val ORBIN_CATALOG_GAP = 8.dp
+internal val ORBIN_CATALOG_MIN_CARD = 152.dp
+private const val ORBIN_CATALOG_IMAGE_RATIO = 0.75f
+
+/** "/g/ - Technology" when both path and title are present. */
+internal fun catalogHeading(
+    board: String,
+    description: String,
+): String =
+    when {
+        description.isBlank() -> board
+        board.isBlank() || description == board || board.contains(description) -> description
+        else -> "$board - $description"
+    }
+
+@Composable
+private fun CatalogSortTabRow(
+    tabs: List<CatalogSortTab>,
+    selectedId: String?,
+    onSelect: (String) -> Unit,
+) {
+    val fontScale = LocalDensity.current.fontScale
+    val largeText = fontScale >= 2f
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(reader.appBar)
+                .testTag(CatalogTags.SORT_TABS)
+                .selectableGroup()
+                .padding(horizontal = ORBIN_CATALOG_GUTTER)
+                .heightIn(min = MIN_TOUCH_TARGET)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        tabs.forEach { tab ->
+            val selected = tab.id == selectedId
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = MIN_TOUCH_TARGET)
+                        .selectable(
+                            selected = selected,
+                            role = Role.Tab,
+                            onClick = { if (!selected) onSelect(tab.id) },
+                        ).semantics { contentDescription = tab.label },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    tab.label,
+                    style = if (largeText) NextType.caption1 else NextType.bodyMedium,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (selected) reader.accent else next.muted,
+                    maxLines = if (largeText) 2 else 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Box(
+                    Modifier
+                        .padding(top = 4.dp)
+                        .height(2.dp)
+                        .fillMaxWidth(0.55f)
+                        .background(if (selected) reader.accent else reader.background.copy(alpha = 0f)),
+                )
+            }
+        }
+    }
+}
 
 @Composable
 internal fun PendingRow() {

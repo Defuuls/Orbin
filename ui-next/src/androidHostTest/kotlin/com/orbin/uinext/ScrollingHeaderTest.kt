@@ -2,11 +2,15 @@ package com.orbin.uinext
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -81,13 +85,13 @@ class ScrollingHeaderTest {
             }
         }
 
-        composeRule.onNodeWithText("Technology").assertIsDisplayed()
+        composeRule.onNodeWithText("/g/ - Technology").assertIsDisplayed()
         composeRule
             .onNodeWithTag(CatalogTags.GRID)
             .performScrollToNode(hasContentDescription(LAST_SUBJECT, substring = true))
 
         composeRule.onNodeWithContentDescription(LAST_SUBJECT, substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("Technology").assertIsDisplayed()
+        composeRule.onNodeWithText("/g/ - Technology").assertIsDisplayed()
     }
 
     @Test
@@ -106,7 +110,7 @@ class ScrollingHeaderTest {
     }
 
     @Test
-    fun `the boards browse title scrolls away with the list`() {
+    fun `the boards Orbin wordmark stays in place while the list scrolls`() {
         val boards =
             List(ROW_COUNT) { index ->
                 BoardTile(
@@ -119,11 +123,18 @@ class ScrollingHeaderTest {
             NextTheme { BoardsScreen(boards = boards, showRail = false) }
         }
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
+        composeRule
+            .onNodeWithTag(BoardsTags.HEADER)
+            .assertIsDisplayed()
+            .assertContentDescriptionEquals(OrbinStyle.WORDMARK)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+        // UIKit merges descendant labels too, so decorative text must not duplicate the header label.
+        composeRule.onAllNodesWithText(OrbinStyle.WORDMARK, useUnmergedTree = true).assertCountEquals(0)
         composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_BOARD_TITLE))
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
-        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
+        composeRule.onNodeWithText(LAST_BOARD_TITLE).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(OrbinStyle.WORDMARK).assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     private fun rows() =

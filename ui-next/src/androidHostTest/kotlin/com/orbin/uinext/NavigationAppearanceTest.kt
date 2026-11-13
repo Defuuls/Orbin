@@ -93,7 +93,7 @@ class NavigationAppearanceTest {
         composeRule
             .onNodeWithContentDescription(
                 "More options",
-            ).assertWidthIsEqualTo(44.dp)
+            ).assertWidthIsEqualTo(ReaderSize.touchTarget)
             .assertTouchWidthIsEqualTo(ReaderSize.touchTarget)
             .assertHeightIsEqualTo(56.dp)
         assertThat(
