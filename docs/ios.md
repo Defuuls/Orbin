@@ -56,7 +56,7 @@ the checklist is pending and simulator coverage does not establish physical-devi
 - a board's catalog, with thumbnail list and grid modes. **Catalog view** in Appearance and the
   catalog overflow selects List or Grid, remembered per device. Grid columns follow the pane
   width divided by 120dp, rounded down with a minimum of one; there is no column-count setting;
-- a thread's posts drawn by the same renderer as Android (`core:ui`'s `PostCommentText`):
+- a thread's posts drawn by the same renderer as Android (`core:ui`'s `PreparedPostCommentText`):
   greentext, spoilers that reveal on tap, quotes that jump to the post they quote, and links
   that open in the browser when they pass the same https check Android uses;
 - a full-screen viewer for a thread's files: swipe between them, pinch or double-tap to zoom.

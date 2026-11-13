@@ -3,8 +3,6 @@ package com.orbin.core.ui.post
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.designsystem.theme.GreentextColor
-import com.orbin.core.designsystem.theme.SpoilerBackground
 import com.orbin.core.model.InlineStyle
 import com.orbin.core.model.PostComment
 import com.orbin.core.model.PostId
@@ -13,7 +11,7 @@ import kotlinx.collections.immutable.persistentListOf
 import org.junit.Test
 
 /**
- * Covers the spoiler rendering contract of [PostCommentText] through [buildCommentText].
+ * Covers the spoiler rendering contract of [buildCommentText].
  *
  * These assertions read the produced [AnnotatedString] rather than comparing pixels, because what
  * matters is structural: which ranges are blacked out, and which ranges are tappable. A screenshot
