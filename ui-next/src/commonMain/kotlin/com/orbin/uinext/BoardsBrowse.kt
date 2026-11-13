@@ -469,20 +469,24 @@ private fun FollowChip(
             identity,
         )
     val shape = RoundedCornerShape(OrbinRadius.pill)
+    val followed = board.followed
+    val fill = if (followed) reader.selected else reader.accent
+    val stroke = reader.accent
+    val ink = if (followed) reader.accent else reader.onAccent
     Box(
         Modifier
-            .widthIn(min = 80.dp, max = 112.dp)
+            .widthIn(min = 80.dp)
             .heightIn(min = MIN_TOUCH_TARGET)
-            .nextClickable(role = Role.Button) { onFollow(!board.followed) }
+            .nextClickable(role = Role.Button) { onFollow(!followed) }
             .semantics {
                 contentDescription = actionDescription
-                selected = board.followed
+                selected = followed
             },
         contentAlignment = Alignment.Center,
     ) {
         Text(
             stringResource(
-                if (board.followed) Res.string.tiktok_board_following else Res.string.tiktok_board_follow,
+                if (followed) Res.string.tiktok_board_following else Res.string.tiktok_board_follow,
             ),
             style =
                 NextType.bodyMedium.copy(
@@ -490,15 +494,16 @@ private fun FollowChip(
                     lineHeight = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                 ),
-            color = if (board.followed) next.ink else next.onAccent,
+            color = ink,
             textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier =
                 Modifier
-                    .fillMaxWidth()
                     .clip(shape)
-                    .background(if (board.followed) next.background else next.accent)
-                    .border(1.dp, if (board.followed) next.hairline else next.accent, shape)
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .background(fill)
+                    .border(ORBIN_OUTLINE, stroke, shape)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
         )
     }
 }
@@ -520,3 +525,4 @@ internal fun formatThreadCount(count: Int): String {
 
 private val BOARD_DIRECTORY_GUTTER = 16.dp
 private val BOARD_THUMBNAIL_SIZE = 56.dp
+private val ORBIN_OUTLINE = 2.dp

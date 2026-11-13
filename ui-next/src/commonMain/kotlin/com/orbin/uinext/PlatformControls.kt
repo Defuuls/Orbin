@@ -340,8 +340,8 @@ private fun PlatformProviderMenu(
                 Modifier
                     .heightIn(min = MIN_TOUCH_TARGET)
                     .clip(menuShape)
-                    .background(reader.background)
-                    .border(1.dp, reader.hairline, menuShape)
+                    .background(reader.surfaceVariant)
+                    .border(2.dp, next.muted, menuShape)
                     .nextClickable(role = Role.Button, onClick = { open = true })
                     .padding(horizontal = 12.dp)
                     .semantics { contentDescription = selectedLabel },

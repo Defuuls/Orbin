@@ -100,8 +100,9 @@ fun OrbinWordmark(
 /**
  * A white (or dark-elevated) card with the Coral corner radius and a soft shadow.
  *
- * On light themes the lift is a 2dp drop shadow over the page ground. On dark and AMOLED
- * themes the shadow is dropped in favor of a tonal elevation so the card does not halo.
+ * On light themes the lift is a 2dp drop shadow over the page ground, with a white card
+ * fill. On dark and AMOLED the fill is [reader.surfaceVariant] (lifted against the page
+ * ground); the drop shadow is omitted so the card does not halo.
  */
 @Composable
 fun OrbinCard(
@@ -114,7 +115,9 @@ fun OrbinCard(
 ) {
     val shadow = if (next.dark) 0.dp else OrbinElevation.card
     val tonal = if (next.dark) OrbinElevation.card else 0.dp
-    val color = containerColor ?: if (next.dark) next.elevated else next.raised
+    // next.elevated equals the page ground, so dark/AMOLED cards would vanish.
+    // Use the lifted surfaceVariant fill against the darker page background.
+    val color = containerColor ?: if (next.dark) reader.surfaceVariant else reader.background
     Surface(
         modifier =
             if (onClick != null) {
@@ -157,8 +160,11 @@ fun OrbinBottomBar(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                        ),
+                    ).heightIn(min = MIN_TOUCH_TARGET)
                     .padding(top = 6.dp, bottom = 4.dp)
                     .selectableGroup(),
             horizontalArrangement = Arrangement.SpaceEvenly,
