@@ -14,9 +14,9 @@ import com.orbin.core.model.AppThemeMode
  * one dark palette and one light one rather than a mode. SYSTEM is answered here rather than left
  * to NextTheme's own default, so the shell reads the setting in one composition.
  *
- * The former [MaterialOrbinTheme] adapter was removed once nested Material sliders / snackbars /
- * pull-to-refresh were replaced with Next controls — reachable UI no longer needs a second
- * OrbinTheme colorScheme install for those widgets.
+ * The former Material adapter was removed once nested Material sliders / snackbars /
+ * pull-to-refresh were replaced with Next controls — reachable UI draws through NextTheme
+ * and no longer needs a second Material colorScheme install for those widgets.
  */
 @Composable
 internal fun AppThemeMode.isDark(): Boolean =

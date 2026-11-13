@@ -33,7 +33,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class EditorialDockTest {
+class ReaderDrawerSelectionTest {
     @get:Rule
     val composeRule = createComposeRule()
 
