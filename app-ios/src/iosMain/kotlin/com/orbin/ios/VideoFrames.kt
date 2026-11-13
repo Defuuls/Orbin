@@ -9,8 +9,6 @@ import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import platform.AVFoundation.AVAssetImageGenerator
@@ -39,7 +37,6 @@ internal interface VideoFrameExtraction {
 internal object VideoFrames {
     private val frames = LinkedHashMap<String, ImageBitmap>()
     private val framesMutex = NSLock()
-    private val decoding = Semaphore(MAX_PARALLEL)
 
     fun cached(url: String): ImageBitmap? = framesMutex.withLock { frames[url] }
 
@@ -49,17 +46,19 @@ internal object VideoFrames {
         createExtraction: (String) -> VideoFrameExtraction? = ::nativeFrameExtraction,
     ): ImageBitmap? {
         framesMutex.withLock { frames[url] }?.let { return it }
-        val frame =
-            decoding.withPermit {
+        return iosVideoLoadGate.withPermit {
+            // Another request may have filled the cache while this one waited for its turn.
+            framesMutex.withLock { frames[url] }?.let { return@withPermit it }
+            val frame =
                 withContext(Dispatchers.IO) {
                     createExtraction(url)?.let { decode(it) }
-                }
-            } ?: return null
-        framesMutex.withLock {
-            frames[url] = frame
-            while (frames.size > MAX_FRAMES) frames.remove(frames.keys.first())
+                } ?: return@withPermit null
+            framesMutex.withLock {
+                frames[url] = frame
+                while (frames.size > MAX_FRAMES) frames.remove(frames.keys.first())
+            }
+            frame
         }
-        return frame
     }
 
     private suspend fun decode(extraction: VideoFrameExtraction): ImageBitmap? {
@@ -89,7 +88,6 @@ internal object VideoFrames {
         }
     }
 
-    private const val MAX_PARALLEL = 2
     private const val MAX_FRAMES = 60
 }
 
