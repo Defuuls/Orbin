@@ -497,6 +497,7 @@ fun NextScaffold(
     actions: List<ReaderAction> = emptyList(),
     overflow: List<ReaderMenuItem> = emptyList(),
     drawerDestinations: Set<NextDestination>? = null,
+    drawAppBar: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     // A host can frame a destination explicitly; nested screens keep their content layout.
@@ -516,6 +517,7 @@ fun NextScaffold(
             actions = actions,
             overflow = overflow,
             drawerDestinations = drawerDestinations,
+            drawAppBar = drawAppBar,
             content = content,
         )
     } else {

@@ -32,7 +32,7 @@
     <string name="next_settings_no_matches">No settings match your search</string>
 
     <string name="next_launchpad_boards">Boards</string>
-    <string name="next_boards_search">Search boards</string>
+    <string name="next_boards_search">Search boards...</string>
     <string name="next_boards_discover">Discover</string>
     <string name="next_boards_following_tab">Following (%1$d)</string>
     <string name="next_boards_following">Following</string>
@@ -43,6 +43,10 @@
     <plurals name="next_boards_count">
         <item quantity="one">%1$d board</item>
         <item quantity="other">%1$d boards</item>
+    </plurals>
+    <plurals name="next_boards_thread_count">
+        <item quantity="one">%1$s thread</item>
+        <item quantity="other">%1$s threads</item>
     </plurals>
 
     <!-- Feed rows -->

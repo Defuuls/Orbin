@@ -106,7 +106,7 @@ class ScrollingHeaderTest {
     }
 
     @Test
-    fun `the boards browse title scrolls away with the list`() {
+    fun `the boards Orbin wordmark stays in place while the list scrolls`() {
         val boards =
             List(ROW_COUNT) { index ->
                 BoardTile(
@@ -119,11 +119,12 @@ class ScrollingHeaderTest {
             NextTheme { BoardsScreen(boards = boards, showRail = false) }
         }
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(OrbinStyle.WORDMARK).assertIsDisplayed()
         composeRule.onNode(verticalScrollAction()).performScrollToNode(hasText(LAST_BOARD_TITLE))
 
-        composeRule.onNodeWithTag(NextTitleTags.LARGE).assertDoesNotExist()
-        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertIsDisplayed()
+        composeRule.onNodeWithText(LAST_BOARD_TITLE).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(OrbinStyle.WORDMARK).assertIsDisplayed()
+        composeRule.onNodeWithTag(NextTitleTags.COMPACT).assertDoesNotExist()
     }
 
     private fun rows() =

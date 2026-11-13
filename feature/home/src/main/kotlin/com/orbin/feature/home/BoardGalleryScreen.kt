@@ -76,6 +76,7 @@ fun BoardGalleryScreen(
                         labels = viewModel.sites.map { it.label },
                         selected = viewModel.sites.indexOfFirst { it.id == providerId },
                         onSelect = { index -> viewModel.selectSite(viewModel.sites[index].id) },
+                        compact = true,
                     )
                 }
             },

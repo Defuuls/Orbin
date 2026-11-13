@@ -2,6 +2,7 @@
 <resources>
     <string name="reader_drawer">Navigation</string>
     <string name="reader_nav_home">Home</string>
+    <string name="reader_nav_feed">Feed</string>
     <string name="reader_nav_watched">Watched</string>
     <string name="reader_nav_boards">Boards</string>
     <string name="reader_nav_search">Search</string>

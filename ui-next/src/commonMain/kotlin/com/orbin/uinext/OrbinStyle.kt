@@ -4,7 +4,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -14,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -21,9 +32,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_nav_boards
+import com.orbin.uinext.resources.reader_nav_feed
+import com.orbin.uinext.resources.reader_nav_settings
+import com.orbin.uinext.tokens.NextType
 import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.ReaderType
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Shared Orbin Coral chrome: the coral ring mark, wordmark, and softly elevated cards.
@@ -111,3 +128,100 @@ fun OrbinCard(
         content = { Column(content = content) },
     )
 }
+
+/**
+ * Coral bottom navigation for Boards, Feed, and Settings.
+ *
+ * Catalog is omitted until that destination is wired. Watched, Saved, and Search stay
+ * reachable from the drawer opened by the header menu. This is not a posting or composer
+ * entry point.
+ */
+@Composable
+fun OrbinBottomBar(
+    selected: NextDestination,
+    onSelect: (NextDestination) -> Unit,
+    modifier: Modifier = Modifier,
+    destinations: List<NextDestination> =
+        listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.SETTINGS),
+) {
+    val shadow = if (next.dark) 0.dp else OrbinElevation.bar
+    val tonal = if (next.dark) OrbinElevation.bar else 0.dp
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = reader.background,
+        shadowElevation = shadow,
+        tonalElevation = tonal,
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .padding(top = 6.dp, bottom = 4.dp)
+                    .selectableGroup(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            destinations.forEach { destination ->
+                val isSelected = destination == selected
+                val label = orbinBottomLabel(destination)
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .heightIn(min = MIN_TOUCH_TARGET)
+                            .selectable(
+                                selected = isSelected,
+                                role = Role.Tab,
+                                onClick = { if (!isSelected) onSelect(destination) },
+                            ).semantics { contentDescription = label },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = orbinBottomIcon(destination, isSelected),
+                        contentDescription = null,
+                        tint = if (isSelected) reader.accent else next.muted,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        label,
+                        style = NextType.caption1,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (isSelected) reader.accent else next.muted,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun orbinBottomLabel(destination: NextDestination): String =
+    when (destination) {
+        NextDestination.BOARDS -> stringResource(Res.string.reader_nav_boards)
+        NextDestination.FEED -> stringResource(Res.string.reader_nav_feed)
+        NextDestination.SETTINGS -> stringResource(Res.string.reader_nav_settings)
+        NextDestination.WATCHED,
+        NextDestination.SAVED,
+        NextDestination.SEARCH,
+        NextDestination.DOWNLOADS,
+        -> destination.name.lowercase().replaceFirstChar { it.titlecase() }
+    }
+
+@Composable
+private fun orbinBottomIcon(
+    destination: NextDestination,
+    selected: Boolean,
+): ImageVector =
+    when (destination) {
+        NextDestination.BOARDS -> if (selected) ReaderIcons.BoardsFilled else ReaderIcons.Boards
+        NextDestination.FEED -> if (selected) ReaderIcons.HomeFilled else ReaderIcons.Home
+        NextDestination.SETTINGS -> ReaderIcons.Settings
+        NextDestination.WATCHED -> ReaderIcons.Watched
+        NextDestination.SAVED -> ReaderIcons.Saved
+        NextDestination.SEARCH -> ReaderIcons.Search
+        NextDestination.DOWNLOADS -> ReaderIcons.Settings
+    }

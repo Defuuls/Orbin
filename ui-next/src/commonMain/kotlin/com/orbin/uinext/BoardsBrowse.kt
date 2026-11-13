@@ -7,21 +7,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +42,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
@@ -44,18 +50,21 @@ import com.orbin.uinext.resources.next_boards_no_match
 import com.orbin.uinext.resources.next_boards_nsfw
 import com.orbin.uinext.resources.next_boards_random
 import com.orbin.uinext.resources.next_boards_search
-import com.orbin.uinext.resources.next_search_title
+import com.orbin.uinext.resources.next_boards_thread_count
 import com.orbin.uinext.resources.next_status_retry
 import com.orbin.uinext.resources.reader_board_follow
 import com.orbin.uinext.resources.reader_board_unfollow
 import com.orbin.uinext.resources.reader_followed_boards
+import com.orbin.uinext.resources.reader_menu
 import com.orbin.uinext.resources.social_feed_all_boards
 import com.orbin.uinext.resources.tiktok_board_follow
 import com.orbin.uinext.resources.tiktok_board_following
 import com.orbin.uinext.resources.tiktok_boards_title
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.NextType
+import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.ReaderType
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** A board directory row. Its stable [id] includes its site when more than one site is shown. */
@@ -66,6 +75,8 @@ data class BoardTile(
     val nsfw: Boolean = false,
     val followed: Boolean = false,
     val site: String? = null,
+    /** Optional catalog size from a host that already has it. Never invented. */
+    val threadCount: Int? = null,
 )
 
 internal fun List<BoardTile>.sortedAlphabetically(): List<BoardTile> =
@@ -106,6 +117,18 @@ fun BoardsScreen(
                 }.sortedAlphabetically()
         }
     val favorites = remember(visibleBoards) { visibleBoards.filter { it.followed } }
+    val directory = remember(visibleBoards) { visibleBoards.filter { !it.followed } }
+    val siteGroups =
+        remember(directory) {
+            directory
+                .groupBy { tile ->
+                    tile.site?.let(::sourceLabel)?.takeIf(String::isNotBlank)
+                }.entries
+                .sortedBy { entry -> entry.key ?: "" }
+                .map { entry ->
+                    (entry.key ?: "") to entry.value
+                }
+        }
     val listState = rememberLazyListState()
     val railVisible =
         if (hideRailOnScroll) {
@@ -137,64 +160,80 @@ fun BoardsScreen(
             null
         }
     val boardsTitle = stringResource(Res.string.tiktok_boards_title)
-    val showCompactTitle by remember {
-        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 64 }
-    }
-    Box(modifier.fillMaxSize()) {
-        NextScaffold(
-            where = boardsTitle,
-            modifier = Modifier.fillMaxSize(),
-            railVisible = railVisible,
-            destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
-            onDestination = onDestination.takeIf { showRail },
-            drawerDestinations =
-                buildSet {
-                    add(NextDestination.BOARDS)
-                    if (onOpenFeed != null) add(NextDestination.FEED)
-                    if (onOpenWatched != null) add(NextDestination.WATCHED)
-                    if (onOpenSaved != null) add(NextDestination.SAVED)
-                    if (onOpenSearch != null) add(NextDestination.SEARCH)
-                    if (onOpenSettings != null) add(NextDestination.SETTINGS)
-                },
-            actions =
-                listOfNotNull(
-                    onOpenSearch?.let {
-                        ReaderAction(
-                            ReaderIcons.Search,
-                            stringResource(Res.string.next_search_title),
-                            it,
-                        )
-                    },
-                ),
-        ) { bottomPad ->
+    val allBoardsLabel = stringResource(Res.string.social_feed_all_boards)
+    val showBottomBar = showRail && hasTabs && railVisible
+    NextScaffold(
+        where = boardsTitle,
+        modifier = modifier.fillMaxSize(),
+        railVisible = railVisible,
+        destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
+        onDestination = onDestination.takeIf { showRail },
+        drawerDestinations =
+            buildSet {
+                add(NextDestination.BOARDS)
+                if (onOpenFeed != null) add(NextDestination.FEED)
+                if (onOpenWatched != null) add(NextDestination.WATCHED)
+                if (onOpenSaved != null) add(NextDestination.SAVED)
+                if (onOpenSearch != null) add(NextDestination.SEARCH)
+                if (onOpenSettings != null) add(NextDestination.SETTINGS)
+            },
+        drawAppBar = false,
+    ) { bottomPad ->
+        val openDrawer = LocalReaderOpenDrawer.current
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(reader.background),
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                        ),
+                    ),
+            ) {
+                BoardsHomeHeader(showMenu = openDrawer != null, onMenu = { openDrawer?.invoke() })
+                BoardsSearchRow(
+                    query = query,
+                    onQueryChange = { query = it },
+                    headerContent = headerContent,
+                )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        subtitle,
+                        style = NextType.footnote,
+                        color = next.muted,
+                        modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 4.dp),
+                    )
+                }
+                if (onRandom != null) {
+                    InlineAction(
+                        stringResource(Res.string.next_boards_random),
+                        onClick = onRandom,
+                        modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER),
+                    )
+                }
+            }
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize().contentInsets(),
-                contentPadding = PaddingValues(bottom = bottomPad.calculateBottomPadding() + NextSpace.groupGap),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(reader.surfaceVariant)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+                        ),
+                contentPadding =
+                    PaddingValues(
+                        top = 8.dp,
+                        bottom =
+                            (if (showBottomBar) 0.dp else bottomPad.calculateBottomPadding()) +
+                                NextSpace.groupGap,
+                    ),
             ) {
-                item(key = "boards-title") {
-                    Column(Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER)) {
-                        if (!LocalReaderFramePresent.current) {
-                            ScreenTitle(boardsTitle, inset = 0.dp)
-                        }
-                        headerContent()
-                        Gap(8)
-                        SchematicSearch(query, { query = it }, stringResource(Res.string.next_boards_search))
-                        if (!subtitle.isNullOrBlank()) {
-                            Text(
-                                subtitle,
-                                style = NextType.footnote,
-                                color = next.muted,
-                                modifier = Modifier.padding(top = 8.dp),
-                            )
-                        }
-                        if (onRandom !=
-                            null
-                        ) {
-                            InlineAction(stringResource(Res.string.next_boards_random), onClick = onRandom)
-                        }
-                    }
-                }
                 if (visibleBoards.isEmpty()) {
                     item(key = "boards-empty") {
                         Text(
@@ -216,43 +255,109 @@ fun BoardsScreen(
                     }
                 } else {
                     if (favorites.isNotEmpty()) {
-                        item(
-                            key = "favorite-heading",
-                        ) { BoardSectionTitle(stringResource(Res.string.reader_followed_boards)) }
-                        items(favorites, key = { "favorite:${it.id}" }) { board ->
-                            BoardListRow(
-                                board,
-                                { onOpenBoard(board) },
-                                onFollowBoard?.let {
-                                    { checked ->
-                                        it(board, checked)
-                                    }
-                                },
-                            )
+                        item(key = "favorite-heading") {
+                            BoardSectionTitle(stringResource(Res.string.reader_followed_boards))
                         }
-                        item(key = "favorite-divider") {
-                            Gap(12)
-                            Hairline()
-                        }
+                        boardRows(
+                            boards = favorites,
+                            keyPrefix = "favorite",
+                            onOpenBoard = onOpenBoard,
+                            onFollowBoard = onFollowBoard,
+                            showSite = true,
+                        )
                     }
-                    item(key = "all-heading") { BoardSectionTitle(stringResource(Res.string.social_feed_all_boards)) }
-                    items(visibleBoards, key = { "all:${it.id}" }) { board ->
-                        BoardListRow(
-                            board,
-                            { onOpenBoard(board) },
-                            onFollowBoard?.let {
-                                { checked ->
-                                    it(board, checked)
-                                }
-                            },
+                    siteGroups.forEach { (siteLabel, group) ->
+                        val heading = siteLabel.ifBlank { allBoardsLabel }
+                        item(key = "site-heading:$heading") { BoardSectionTitle(heading) }
+                        boardRows(
+                            boards = group,
+                            keyPrefix = "site:$heading",
+                            onOpenBoard = onOpenBoard,
+                            onFollowBoard = onFollowBoard,
+                            showSite = siteLabel.isBlank(),
                         )
                     }
                 }
             }
+            if (showBottomBar && onDestination != null) {
+                OrbinBottomBar(
+                    selected = NextDestination.BOARDS,
+                    onSelect = onDestination,
+                    destinations =
+                        buildList {
+                            add(NextDestination.BOARDS)
+                            if (onOpenFeed != null) add(NextDestination.FEED)
+                            if (onOpenSettings != null) add(NextDestination.SETTINGS)
+                        },
+                )
+            }
         }
-        if (!hasTabs && !LocalReaderFramePresent.current) {
-            CompactTitleBar(boardsTitle, showCompactTitle, modifier = Modifier.align(Alignment.TopCenter))
+    }
+}
+
+@Composable
+private fun BoardsHomeHeader(
+    showMenu: Boolean,
+    onMenu: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 4.dp)
+            .heightIn(min = MIN_TOUCH_TARGET),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OrbinWordmark()
+        Spacer(Modifier.weight(1f))
+        if (showMenu) {
+            NextIconAction(
+                imageVector = ReaderIcons.Menu,
+                contentDescription = stringResource(Res.string.reader_menu),
+                onClick = onMenu,
+                tint = reader.ink,
+            )
         }
+    }
+}
+
+@Composable
+private fun BoardsSearchRow(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    headerContent: @Composable () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SchematicSearch(
+            value = query,
+            onValueChange = onQueryChange,
+            placeholder = stringResource(Res.string.next_boards_search),
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(OrbinRadius.search),
+        )
+        headerContent()
+    }
+}
+
+private fun LazyListScope.boardRows(
+    boards: List<BoardTile>,
+    keyPrefix: String,
+    onOpenBoard: (BoardTile) -> Unit,
+    onFollowBoard: ((BoardTile, Boolean) -> Unit)?,
+    showSite: Boolean,
+) {
+    items(boards, key = { "$keyPrefix:${it.id}" }) { board ->
+        BoardListRow(
+            board = board,
+            onClick = { onOpenBoard(board) },
+            onFollow = onFollowBoard?.let { follow -> { checked -> follow(board, checked) } },
+            showSite = showSite,
+        )
     }
 }
 
@@ -278,86 +383,140 @@ private fun BoardListRow(
     board: BoardTile,
     onClick: () -> Unit,
     onFollow: ((Boolean) -> Unit)? = null,
+    showSite: Boolean = true,
 ) {
-    Row(
+    OrbinCard(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 5.dp)
+                .fillMaxWidth(),
+        onClick = onClick,
     ) {
-        BoardIcon(
-            siteId = board.site ?: board.id.substringBefore('/'),
-            boardId = board.path,
-            title = board.title,
-            modifier = Modifier.size(48.dp),
-        )
-        Column(Modifier.weight(1f)) {
-            Text(board.path, style = ReaderType.postBody.withReaderFont(), color = reader.ink)
-            Text(board.title, style = ReaderType.meta.withReaderFont(), color = reader.inkSecondary)
-            val metadata =
-                listOfNotNull(
-                    board.site?.let(::sourceLabel)?.takeIf(String::isNotBlank),
-                    stringResource(Res.string.next_boards_nsfw).takeIf { board.nsfw },
-                ).joinToString(" · ")
-            if (metadata.isNotBlank()) {
-                Text(
-                    metadata,
-                    style = ReaderType.postDetails.withReaderFont(),
-                    color = reader.inkSecondary,
-                )
-            }
-        }
-        if (onFollow != null) {
-            val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
-            val actionDescription =
-                stringResource(
-                    if (board.followed) {
-                        Res.string.reader_board_unfollow
-                    } else {
-                        Res.string.reader_board_follow
-                    },
-                    identity,
-                )
-            Box(
+        Row(
+            modifier =
                 Modifier
-                    .widthIn(min = 80.dp, max = 112.dp)
+                    .fillMaxWidth()
                     .heightIn(min = MIN_TOUCH_TARGET)
-                    .nextClickable(role = Role.Button) { onFollow(!board.followed) }
-                    .semantics {
-                        contentDescription = actionDescription
-                        selected = board.followed
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                val shape = RoundedCornerShape(3.dp)
-                Text(
-                    stringResource(
-                        if (board.followed) Res.string.tiktok_board_following else Res.string.tiktok_board_follow,
-                    ),
-                    style =
-                        NextType.bodyMedium.copy(
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                    color = if (board.followed) next.ink else next.onAccent,
-                    textAlign = TextAlign.Center,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(shape)
-                            .background(if (board.followed) next.background else next.accent)
-                            .border(1.dp, if (board.followed) next.hairline else next.accent, shape)
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        board.path,
+                        style = ReaderType.cardTitle.withReaderFont(),
+                        color = reader.accent,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        board.title,
+                        style = ReaderType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                        color = reader.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+                val metadata =
+                    listOfNotNull(
+                        board.site?.let(::sourceLabel)?.takeIf { showSite && it.isNotBlank() },
+                        board.threadCount?.let { count -> threadCountLabel(count) },
+                        stringResource(Res.string.next_boards_nsfw).takeIf { board.nsfw },
+                    ).joinToString(" · ")
+                if (metadata.isNotBlank()) {
+                    Text(
+                        metadata,
+                        style = ReaderType.postDetails.withReaderFont(),
+                        color = reader.inkSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-        } else {
-            Icon(ReaderIcons.ChevronRight, null, tint = next.faint, modifier = Modifier.size(20.dp))
+            if (onFollow != null) {
+                FollowChip(board = board, onFollow = onFollow)
+            }
+            BoardIcon(
+                siteId = board.site ?: board.id.substringBefore('/'),
+                boardId = board.path,
+                title = board.title,
+                modifier = Modifier.size(BOARD_THUMBNAIL_SIZE),
+                shape = RoundedCornerShape(OrbinRadius.thumbnail),
+                size = BOARD_THUMBNAIL_SIZE,
+            )
         }
     }
 }
 
+@Composable
+private fun FollowChip(
+    board: BoardTile,
+    onFollow: (Boolean) -> Unit,
+) {
+    val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
+    val actionDescription =
+        stringResource(
+            if (board.followed) {
+                Res.string.reader_board_unfollow
+            } else {
+                Res.string.reader_board_follow
+            },
+            identity,
+        )
+    val shape = RoundedCornerShape(OrbinRadius.pill)
+    Box(
+        Modifier
+            .widthIn(min = 80.dp, max = 112.dp)
+            .heightIn(min = MIN_TOUCH_TARGET)
+            .nextClickable(role = Role.Button) { onFollow(!board.followed) }
+            .semantics {
+                contentDescription = actionDescription
+                selected = board.followed
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            stringResource(
+                if (board.followed) Res.string.tiktok_board_following else Res.string.tiktok_board_follow,
+            ),
+            style =
+                NextType.bodyMedium.copy(
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+            color = if (board.followed) next.ink else next.onAccent,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(if (board.followed) next.background else next.accent)
+                    .border(1.dp, if (board.followed) next.hairline else next.accent, shape)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun threadCountLabel(count: Int): String {
+    val amount = formatThreadCount(count)
+    return pluralStringResource(Res.plurals.next_boards_thread_count, count, amount)
+}
+
+/** Whole thousands use "42k"; one decimal place is kept above 10,000 ("42.1k"). */
+internal fun formatThreadCount(count: Int): String {
+    if (count < 10_000) return count.toString()
+    val tenths = count / 100
+    val whole = tenths / 10
+    val fraction = tenths % 10
+    return if (fraction == 0) "${whole}k" else "$whole.${fraction}k"
+}
+
 private val BOARD_DIRECTORY_GUTTER = 16.dp
+private val BOARD_THUMBNAIL_SIZE = 56.dp
