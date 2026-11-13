@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -132,6 +133,7 @@ fun OrbinFilledButton(
     Box(
         modifier =
             modifier
+                .widthIn(min = MIN_TOUCH_TARGET)
                 .heightIn(min = MIN_TOUCH_TARGET)
                 .clip(shape)
                 .background(fill)
@@ -162,6 +164,7 @@ fun OrbinTextButton(
     Box(
         modifier =
             modifier
+                .widthIn(min = MIN_TOUCH_TARGET)
                 .heightIn(min = MIN_TOUCH_TARGET)
                 .clip(RoundedCornerShape(OrbinRadius.pill))
                 .nextClickable(enabled = enabled, role = Role.Button, onClick = onClick)
@@ -265,6 +268,7 @@ fun OrbinActionSheet(
                     modifier =
                         Modifier
                             .fillMaxWidth()
+                            .widthIn(min = MIN_TOUCH_TARGET)
                             .heightIn(min = MIN_TOUCH_TARGET)
                             .clip(RoundedCornerShape(OrbinRadius.thumbnail))
                             .nextClickable(
