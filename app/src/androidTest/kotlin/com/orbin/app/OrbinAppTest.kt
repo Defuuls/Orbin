@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.rule.GrantPermissionRule
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -73,23 +74,31 @@ class OrbinAppTest {
 
     @Test
     fun theAppLaunchesAndShowsFirstRunSetup() {
-        awaitText("Welcome to Orbin")
+        awaitText("Get started")
+        composeTestRule.onNodeWithText("Orbin").assertExists()
     }
 
-    /** First run is one step: pick boards, then start browsing. Nothing else is asked. */
+    /** First run starts on the full-screen setup splash and expands into appearance, privacy, and boards. */
     @Test
-    fun firstRunAsksOnlyForBoards() {
-        awaitText("Welcome to Orbin")
+    fun firstRunFlowsThroughMultiStepSetup() {
+        awaitText("Get started")
+        composeTestRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
 
+        composeTestRule.onNodeWithText("Get started").performClick()
+        awaitText("Choose your theme")
+        composeTestRule.onNodeWithText("Continue").performClick()
+
+        awaitText("Privacy & content")
+        composeTestRule.onNodeWithText("Continue").performClick()
+
+        awaitText("Welcome to Orbin")
         composeTestRule.onNodeWithText("Start browsing").assertExists().assertIsNotEnabled()
-        composeTestRule.onNodeWithText("Continue").assertDoesNotExist()
-        composeTestRule.onNodeWithText("Privacy").assertDoesNotExist()
         composeTestRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
     }
 
     @Test
     fun aHomeShortcutCannotSkipMandatoryBoardSetup() {
-        awaitText("Welcome to Orbin")
+        awaitText("Get started")
         val activity = composeTestRule.activity
         val launchIntent = Intent(activity.intent)
 
@@ -106,8 +115,8 @@ class OrbinAppTest {
             }
             composeTestRule.waitForIdle()
 
-            composeTestRule.onNodeWithText("Welcome to Orbin").assertExists()
-            composeTestRule.onNodeWithText("Start browsing").assertIsNotEnabled()
+            composeTestRule.onNodeWithText("Get started").assertExists()
+            composeTestRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
         } finally {
             // MainActivity keeps incoming intents for recreation. ActivityScenario identifies
             // its Activity by the original launch intent and otherwise ignores teardown events.
