@@ -122,12 +122,11 @@ class NavigationAppearanceTest {
     @Test
     fun `drawer content starts with Clover eight dp vertical padding`() {
         composeRule.setContent { NextTheme { ReaderDrawer(NextDestination.FEED, {}) } }
-        val home =
+        val header =
             composeRule
-                .onNodeWithTag(
-                    ReaderDrawerTags.ENTRY + NextDestination.FEED.name,
-                ).getUnclippedBoundsInRoot()
-        assertThat(home.top.value).isWithin(0.5f).of(8f)
+                .onNodeWithTag(ReaderDrawerTags.HEADER)
+                .getUnclippedBoundsInRoot()
+        assertThat(header.top.value).isWithin(0.5f).of(8f)
     }
 
     @Test
