@@ -24,9 +24,13 @@ final class StartupSmokeTests: XCTestCase {
         if getStarted.exists {
             waitUntilHittable([getStarted], description: "The setup welcome Get started button")
             getStarted.tap()
+            let chooseTheme = labeled("Choose your theme")
+            waitUntilExists([chooseTheme], description: "The appearance setup step")
             let continueButton = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).firstMatch
             waitUntilHittable([continueButton], description: "The appearance setup Continue button")
             continueButton.tap()
+            let privacyStep = labeled("Privacy & content")
+            waitUntilExists([privacyStep], description: "The privacy setup step")
             waitUntilHittable([continueButton], description: "The privacy setup Continue button")
             continueButton.tap()
         }
