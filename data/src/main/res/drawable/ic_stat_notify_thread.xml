@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <!-- Small card-stack mark (no thread lines; front card and play triangle +10%). White silhouette; the play triangle is a hole so the system tint shows through.
-         Derived from docs/assets/orbin-icon-mark-small.svg. -->
-    <group android:translateX="12" android:translateY="12">
-        <group android:scaleX="0.02062020" android:scaleY="0.02062020">
-            <group android:translateX="-499.5000" android:translateY="-535.0000">
-                <clip-path android:fillType="evenOdd"
-                    android:pathData="M0,0 H1024 V1024 H0 Z M363.220,614.300 L363.220,823.300 L555.500,718.800 Z" />
-                <path android:fillColor="#FFFFFF" android:fillAlpha="0.5"
-                    android:pathData="M414.000,140.000 H754.000 A80.000,80.000 0 0 1 834.000,220.000 V660.000 A80.000,80.000 0 0 1 754.000,740.000 H414.000 A80.000,80.000 0 0 1 334.000,660.000 V220.000 A80.000,80.000 0 0 1 414.000,140.000 Z" />
-                <path android:fillColor="#FFFFFF"
-                    android:pathData="M253.000,270.000 H627.000 A88.000,88.000 0 0 1 715.000,358.000 V842.000 A88.000,88.000 0 0 1 627.000,930.000 H253.000 A88.000,88.000 0 0 1 165.000,842.000 V358.000 A88.000,88.000 0 0 1 253.000,270.000 Z" />
-            </group>
-        </group>
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Midnight Electric >> chevrons + spark silhouette for system-tinted notifications. -->
+    <group
+        android:translateX="-4"
+        android:translateY="-4"
+        android:scaleX="0.03125"
+        android:scaleY="0.03125">
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.78"
+            android:pathData="M192,262 L294,262 L508,512 L294,762 L192,762 L406,512 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M358,262 L460,262 L674,512 L460,762 L358,762 L572,512 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M652,384 L832,512 L652,640 L702,512 Z" />
     </group>
 </vector>
