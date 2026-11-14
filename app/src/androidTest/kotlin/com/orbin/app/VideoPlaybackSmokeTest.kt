@@ -199,7 +199,7 @@ class VideoPlaybackSmokeTest {
         onFeedLike: (() -> Unit)? = null,
     ) {
         composeRule.waitUntil(TIMEOUT_MS) {
-            composeRule.onAllNodesWithText("Welcome to Orbin").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Get started").fetchSemanticsNodes().isNotEmpty()
         }
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val file =
