@@ -166,8 +166,7 @@ fun ReaderBoardPicker(
                                 .clip(RoundedCornerShape(OrbinRadius.small))
                                 .background(
                                     if (isSelected) reader.selected else androidx.compose.ui.graphics.Color.Transparent,
-                                )
-                                .selectable(
+                                ).selectable(
                                     selected = isSelected,
                                     role = Role.Button,
                                     onClick = { onSelect(board) },

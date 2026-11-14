@@ -451,6 +451,7 @@ class VideoServer internal constructor(
     ) {
         val partFile: File = partFileFor(finalFile)
         val done = CompletableDeferred<Unit>()
+
         @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
         private val dataLock = Object()
 
