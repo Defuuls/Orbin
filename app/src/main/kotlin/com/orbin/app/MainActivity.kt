@@ -84,8 +84,6 @@ class MainActivity : FragmentActivity() {
 
     private var downgradeBlocked by mutableStateOf(false)
 
-    private var keepSplashOnScreen = true
-
     private var pendingRoute by mutableStateOf<Route?>(null)
 
     private var relockOnResume by mutableStateOf(false)
@@ -149,8 +147,7 @@ class MainActivity : FragmentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
-        splashScreen.setKeepOnScreenCondition { keepSplashOnScreen }
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // After super.onCreate: Hilt field injection for an @AndroidEntryPoint activity happens
@@ -160,9 +157,6 @@ class MainActivity : FragmentActivity() {
         downgradeBlocked = versionGuardRepository.isDowngrade()
         if (safeMode) {
             setSecureContent(enabled = true)
-        }
-        if (safeMode || downgradeBlocked) {
-            keepSplashOnScreen = false
         }
         if (savedInstanceState == null) {
             handleIncomingIntent(intent)
@@ -196,9 +190,6 @@ class MainActivity : FragmentActivity() {
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val settings = uiState.settings
         val ready = uiState.ready
-        SideEffect {
-            if (ready) keepSplashOnScreen = false
-        }
         val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
         val shouldLock = uiState.shouldLock
         var previousShouldLock by remember { mutableStateOf<Boolean?>(null) }
