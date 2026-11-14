@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [207-Actinolite] - 2026-11-14
+
+### Added
+- Added a full-screen Midnight Electric welcome splash on first run that expands into Appearance, Privacy & content, and Board selection steps on Android and iOS.
+- Added a full-screen update setup and migration screen with theme selection when updating to a new release.
+
+### Changed
+- Refreshed board icon badges for 4chan and BBWChan boards using the Midnight Electric palette and updated visual test goldens.
+
+### Testing
+- Added unit tests for the multi-step setup wizard and updated Android and iOS startup smoke tests for the new setup flow.
+
+
 ## [206-Sea-Beet] - 2026-11-13
 
 ### Added
@@ -3138,7 +3151,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v206-Sea-Beet...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v207-Actinolite...HEAD
+[207-Actinolite]: https://github.com/Defuuls/Orbin/compare/v206-Sea-Beet...v207-Actinolite
 [206-Sea-Beet]: https://github.com/Defuuls/Orbin/compare/v205-Nopales...v206-Sea-Beet
 [205-Nopales]: https://github.com/Defuuls/Orbin/compare/v204-Moringa...v205-Nopales
 [204-Moringa]: https://github.com/Defuuls/Orbin/compare/v203-Chaya...v204-Moringa
