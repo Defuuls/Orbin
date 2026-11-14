@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Coral ReaderTokens light surfaces. Dark values live in values-night. -->
+    <!-- Midnight Electric ReaderTokens light surfaces. Dark values live in values-night. -->
     <!-- ReaderLightColors.background = #FFFFFF -->
     <color name="orbinx_status_bar">#FFFFFF</color>
     <color name="orbinx_navigation_bar">#FFFFFF</color>

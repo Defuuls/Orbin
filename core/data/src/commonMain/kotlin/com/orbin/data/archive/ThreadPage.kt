@@ -224,18 +224,18 @@ private const val TITLE_LENGTH = 80
 private const val SPOILER_OPEN_TAG =
     "<details class=\"spoiler\"><summary>Spoiler</summary><span class=\"spoiler-content\">"
 
-/** Coral reader roles, with light ink flattened onto the white card to keep it opaque. */
+/** Midnight Electric reader roles, with light ink flattened onto the white card to keep it opaque. */
 internal const val ARCHIVE_CSS = """:root {
-  --bg: #ffffff; --raised: #ffffff; --placeholder: #f5f5f5;
-  --ink: #212121; --muted: #646464; --line: #0000001e;
-  --accent: #c73e4e; --link: #c73e4e; --author: #1a1a1a; --subject: #1a1a1a;
+  --bg: #ffffff; --raised: #ffffff; --placeholder: #f5f7fb;
+  --ink: #1a1a1a; --muted: #5a6378; --line: #e2e6f0;
+  --accent: #4338ca; --link: #4338ca; --author: #1a1a1a; --subject: #1a1a1a;
   --green: #2e7d32; --error: #b3261e; --spoiler: #2b2b2b;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #1c1c1e; --raised: #2c2c2e; --placeholder: #2c2c2e;
-    --ink: #ffffff; --muted: #c5c8c6; --line: #ffffff1e;
-    --accent: #ff8a96; --link: #ff9aa5; --author: #ffb0b8; --subject: #ffb0b8;
+  :root { --bg: #0b1021; --raised: #141b33; --placeholder: #10162e;
+    --ink: #ffffff; --muted: #9fb0ce; --line: #1e294a;
+    --accent: #00d4ff; --link: #67e8f9; --author: #67e8f9; --subject: #ffffff;
     --green: #81c784; --error: #f2b8b5; }
 }
 * { box-sizing: border-box; }
