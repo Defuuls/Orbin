@@ -847,70 +847,70 @@ class VideoServer internal constructor(
         private const val HTTP_RANGE_NOT_SATISFIABLE = 416
         private const val HTTP_BAD_GATEWAY = 502
         private val ALL_LOADED = listOf(0f to 1f)
+    }
+}
 
-        private fun sha256Hex(value: String): String {
-            val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
-            return digest.joinToString("") { "%02x".format(it) }
-        }
+private fun sha256Hex(value: String): String {
+    val digest = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8))
+    return digest.joinToString("") { "%02x".format(it) }
+}
 
-        private fun parseContentRangeTotal(header: String?): Long? {
-            if (header == null) return null
-            val slash = header.lastIndexOf('/')
-            if (slash < 0) return null
-            return header.substring(slash + 1).trim().toLongOrNull()
-        }
+private fun parseContentRangeTotal(header: String?): Long? {
+    if (header == null) return null
+    val slash = header.lastIndexOf('/')
+    if (slash < 0) return null
+    return header.substring(slash + 1).trim().toLongOrNull()
+}
 
-        private fun parseRequestRange(
-            header: String?,
-            totalLength: Long,
-        ): LongRange? {
-            if (header == null || !header.startsWith("bytes=", ignoreCase = true)) return null
-            val spec = header.substringAfter('=').substringBefore(',').trim()
-            val dash = spec.indexOf('-')
-            if (dash < 0) return null
-            val startPart = spec.substring(0, dash).trim()
-            val endPart = spec.substring(dash + 1).trim()
-            return if (startPart.isEmpty()) {
-                parseSuffixRange(endPart, totalLength)
-            } else {
-                parseExplicitRange(startPart, endPart, totalLength)
+private fun parseRequestRange(
+    header: String?,
+    totalLength: Long,
+): LongRange? {
+    if (header == null || !header.startsWith("bytes=", ignoreCase = true)) return null
+    val spec = header.substringAfter('=').substringBefore(',').trim()
+    val dash = spec.indexOf('-')
+    if (dash < 0) return null
+    val startPart = spec.substring(0, dash).trim()
+    val endPart = spec.substring(dash + 1).trim()
+    return if (startPart.isEmpty()) {
+        parseSuffixRange(endPart, totalLength)
+    } else {
+        parseExplicitRange(startPart, endPart, totalLength)
+    }
+}
+
+private fun parseSuffixRange(
+    endPart: String,
+    totalLength: Long,
+): LongRange? {
+    val suffix = endPart.toLongOrNull()
+    return if (suffix == null || totalLength <= 0L) {
+        null
+    } else {
+        val start = (totalLength - suffix).coerceAtLeast(0L)
+        start until totalLength
+    }
+}
+
+private fun parseExplicitRange(
+    startPart: String,
+    endPart: String,
+    totalLength: Long,
+): LongRange? {
+    val start = startPart.toLongOrNull()
+    val invalidStart = start == null || (totalLength > 0L && start >= totalLength)
+    return if (invalidStart) {
+        null
+    } else {
+        val parsedEnd = endPart.toLongOrNull()
+        val end =
+            when {
+                parsedEnd != null && totalLength > 0L -> minOf(parsedEnd, totalLength - 1L)
+                parsedEnd != null -> parsedEnd
+                totalLength > 0L -> totalLength - 1L
+                else -> Long.MAX_VALUE - 1L
             }
-        }
-
-        private fun parseSuffixRange(
-            endPart: String,
-            totalLength: Long,
-        ): LongRange? {
-            val suffix = endPart.toLongOrNull()
-            return if (suffix == null || totalLength <= 0L) {
-                null
-            } else {
-                val start = (totalLength - suffix).coerceAtLeast(0L)
-                start until totalLength
-            }
-        }
-
-        private fun parseExplicitRange(
-            startPart: String,
-            endPart: String,
-            totalLength: Long,
-        ): LongRange? {
-            val start = startPart.toLongOrNull()
-            val invalidStart = start == null || (totalLength > 0L && start >= totalLength)
-            return if (invalidStart) {
-                null
-            } else {
-                val parsedEnd = endPart.toLongOrNull()
-                val end =
-                    when {
-                        parsedEnd != null && totalLength > 0L -> minOf(parsedEnd, totalLength - 1L)
-                        parsedEnd != null -> parsedEnd
-                        totalLength > 0L -> totalLength - 1L
-                        else -> Long.MAX_VALUE - 1L
-                    }
-                if (end < start) null else start..end
-            }
-        }
+        if (end < start) null else start..end
     }
 }
 
