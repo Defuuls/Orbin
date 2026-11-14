@@ -2,8 +2,11 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -16,6 +19,7 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_feed_more
 import com.orbin.uinext.resources.reader_feed_open_board
@@ -30,7 +34,9 @@ import com.orbin.uinext.resources.reader_feed_view_replies
 import com.orbin.uinext.resources.reader_feed_view_videos
 import com.orbin.uinext.resources.reader_feed_watch
 import com.orbin.uinext.resources.reader_reveal_spoiler
+import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
+import com.orbin.uinext.tokens.ReaderSize
 import org.jetbrains.compose.resources.stringResource
 
 @Immutable
@@ -56,7 +62,7 @@ internal fun ReaderFeedItem(
     actions: ReaderFeedRowActions,
     gridImageHeight: Dp,
 ) {
-    var revealed by rememberSaveable(row.id) { mutableStateOf(false) }
+    var revealed by rememberSaveable(row.id, row.imageSpoiler) { mutableStateOf(false) }
     val covered = row.imageSpoiler && !revealed && row.hasPreview && !row.muted
     val mediaLabel = stringResource(Res.string.reader_feed_open_media, row.subject)
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
@@ -97,6 +103,7 @@ internal fun ReaderFeedItem(
                 wideWindow = wideWindow,
                 onLongClick = openOptions,
                 onLongClickLabel = optionsLabel,
+                compactGrid = mode == CatalogMode.GRID,
             )
             ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
         }
@@ -140,9 +147,9 @@ private fun readerFeedRowMenu(
         val videoReplies = actions.onOpenReplies != null && !actions.repliesOpenComments
         val opensMedia = media != null || videoReplies
         if (covered && opensMedia) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_reveal_spoiler), onClick = onReveal))
+            add(ReaderMenuItem(stringResource(Res.string.reader_reveal_spoiler), icon = ReaderIcons.Hide, onClick = onReveal))
         } else if (media != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_media, row.subject)) { media(row) })
+            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_media, row.subject), icon = ReaderIcons.Album) { media(row) })
         }
         actions.onOpenReplies?.takeIf { actions.repliesOpenComments || !covered }?.let { open ->
             val label =
@@ -151,14 +158,16 @@ private fun readerFeedRowMenu(
                 } else {
                     Res.string.reader_feed_view_videos
                 }
-            add(ReaderMenuItem(stringResource(label, row.subject)) { open(row) })
+            val icon = if (actions.repliesOpenComments) ReaderIcons.Chat else ReaderIcons.Play
+            add(ReaderMenuItem(stringResource(label, row.subject), icon = icon) { open(row) })
         }
         actions.onOpenBoard?.let { open ->
-            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_board, row.board)) { open(row) })
+            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_board, row.board), icon = ReaderIcons.Boards) { open(row) })
         }
         actions.onToggleWatch?.let { toggle ->
             val label = if (row.watched) Res.string.reader_feed_unwatch else Res.string.reader_feed_watch
-            add(ReaderMenuItem(stringResource(label, row.subject)) { toggle(row) })
+            val icon = if (row.watched) ReaderIcons.WatchedFilled else ReaderIcons.Watched
+            add(ReaderMenuItem(stringResource(label, row.subject), icon = icon) { toggle(row) })
         }
         actions.onToggleSaved?.let { toggle ->
             val lockedSaved = row.bookmarked && row.watched
@@ -168,10 +177,11 @@ private fun readerFeedRowMenu(
                     row.bookmarked -> Res.string.reader_feed_unsave
                     else -> Res.string.reader_feed_save
                 }
-            add(ReaderMenuItem(stringResource(label, row.subject), enabled = !lockedSaved) { toggle(row) })
+            val icon = if (row.bookmarked) ReaderIcons.SavedFilled else ReaderIcons.Saved
+            add(ReaderMenuItem(stringResource(label, row.subject), enabled = !lockedSaved, icon = icon) { toggle(row) })
         }
         actions.onShare?.let { share ->
-            add(ReaderMenuItem(stringResource(Res.string.reader_feed_share, row.subject)) { share(row) })
+            add(ReaderMenuItem(stringResource(Res.string.reader_feed_share, row.subject), icon = ReaderIcons.Share) { share(row) })
         }
     }
 
@@ -188,25 +198,39 @@ private fun ReaderFeedMenu(
     DropdownMenu(
         expanded = expanded && items.isNotEmpty(),
         onDismissRequest = onDismiss,
-        containerColor = reader.background,
+        shape = RoundedCornerShape(OrbinRadius.card),
+        containerColor = if (next.dark) reader.surfaceVariant else reader.background,
+        border = androidx.compose.foundation.BorderStroke(ReaderSize.hairline, reader.hairline),
     ) {
         items.forEach { item ->
             val savedSelected = row.bookmarked && (item.label == savedLabel || item.label == lockedSavedLabel)
             val selected = row.watched && item.label == watchingLabel || savedSelected
+            val itemColor =
+                when {
+                    !item.enabled -> reader.inkMuted
+                    selected -> reader.accent
+                    else -> reader.ink
+                }
             DropdownMenuItem(
                 modifier = Modifier.semantics { this.selected = selected },
                 text = {
                     Text(
                         item.label,
                         style = OrbinType.stateBody.withReaderFont(),
-                        color =
-                            when {
-                                !item.enabled -> reader.inkMuted
-                                selected -> reader.accent
-                                else -> reader.ink
-                            },
+                        color = itemColor,
                     )
                 },
+                trailingIcon =
+                    item.icon?.let { icon ->
+                        {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (selected) reader.accent else if (item.enabled) reader.inkSecondary else reader.inkMuted,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    },
                 enabled = item.enabled,
                 onClick = {
                     onDismiss()

@@ -202,6 +202,7 @@ fun ReaderDrawer(
         }
         ReaderHairline(Modifier.padding(vertical = ReaderSpace.gapSmall))
         readerDrawerEntries().filter { destinations == null || it.destination in destinations }.forEach { entry ->
+            val isSelected = entry.destination == selected
             if (entry.destination == NextDestination.SETTINGS) {
                 ReaderHairline(Modifier.padding(vertical = ReaderSpace.gapSmall))
             }
@@ -210,9 +211,9 @@ fun ReaderDrawer(
                     .testTag(ReaderDrawerTags.ENTRY + entry.destination.name)
                     .fillMaxWidth()
                     .heightIn(min = ReaderSize.touchTarget)
-                    .background(if (entry.destination == selected) reader.selected else reader.background)
+                    .background(if (isSelected) reader.selected else reader.background)
                     .selectable(
-                        selected = entry.destination == selected,
+                        selected = isSelected,
                         role = Role.Tab,
                         onClick = { onSelect(entry.destination) },
                     ).padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.line),
@@ -220,12 +221,30 @@ fun ReaderDrawer(
                 horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gap),
             ) {
                 Icon(
-                    entry.icon,
+                    if (isSelected) entry.selectedIcon else entry.icon,
                     contentDescription = null,
-                    tint = reader.ink,
+                    tint = if (isSelected) reader.accent else reader.ink,
                     modifier = Modifier.size(ReaderSize.icon),
                 )
-                Text(entry.label, style = OrbinType.stateBody.withReaderFont(), color = reader.ink)
+                Text(
+                    entry.label,
+                    style =
+                        if (isSelected) {
+                            OrbinType.stateBody.withReaderFont().copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                        } else {
+                            OrbinType.stateBody.withReaderFont()
+                        },
+                    color = if (isSelected) reader.accent else reader.ink,
+                    modifier = Modifier.weight(1f),
+                )
+                if (isSelected) {
+                    Icon(
+                        imageVector = ReaderIcons.ChevronRight,
+                        contentDescription = null,
+                        tint = reader.accent,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
             }
         }
     }
@@ -235,16 +254,17 @@ private data class DrawerEntry(
     val destination: NextDestination,
     val label: String,
     val icon: ImageVector,
+    val selectedIcon: ImageVector = icon,
 )
 
 @Composable
 private fun readerDrawerEntries(): List<DrawerEntry> =
     listOf(
-        DrawerEntry(NextDestination.FEED, stringResource(Res.string.reader_nav_home), ReaderIcons.Home),
-        DrawerEntry(NextDestination.WATCHED, stringResource(Res.string.reader_nav_watched), ReaderIcons.Watched),
-        DrawerEntry(NextDestination.BOARDS, stringResource(Res.string.reader_nav_boards), ReaderIcons.Boards),
+        DrawerEntry(NextDestination.FEED, stringResource(Res.string.reader_nav_home), ReaderIcons.Home, ReaderIcons.HomeFilled),
+        DrawerEntry(NextDestination.WATCHED, stringResource(Res.string.reader_nav_watched), ReaderIcons.Watched, ReaderIcons.WatchedFilled),
+        DrawerEntry(NextDestination.BOARDS, stringResource(Res.string.reader_nav_boards), ReaderIcons.Boards, ReaderIcons.BoardsFilled),
         DrawerEntry(NextDestination.SEARCH, stringResource(Res.string.reader_nav_search), ReaderIcons.Search),
-        DrawerEntry(NextDestination.SAVED, stringResource(Res.string.reader_nav_saved), ReaderIcons.Saved),
+        DrawerEntry(NextDestination.SAVED, stringResource(Res.string.reader_nav_saved), ReaderIcons.Saved, ReaderIcons.SavedFilled),
         DrawerEntry(NextDestination.SETTINGS, stringResource(Res.string.reader_nav_settings), ReaderIcons.Settings),
     )
 

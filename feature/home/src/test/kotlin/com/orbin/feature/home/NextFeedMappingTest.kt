@@ -265,6 +265,29 @@ class NextFeedMappingTest {
         assertThat(feedEntries(feeds, emptySet(), NOW)).hasSize(3)
     }
 
+    @Test
+    fun `spoilered or violent-covered preview attachments propagate imageSpoiler to feed rows`() {
+        val covered = attachment().copy(isSpoiler = true)
+        val uncovered = attachment().copy(isSpoiler = false)
+        val entries =
+            feedEntries(
+                feeds =
+                    listOf(
+                        boardFeed(
+                            "g",
+                            thread(1, attachments = arrayOf(covered)),
+                            thread(2, attachments = arrayOf(uncovered)),
+                        ),
+                    ),
+                visited = emptySet(),
+                nowMillis = NOW,
+            )
+
+        val byId = entries.associateBy { it.key.thread.value }
+        assertThat(byId.getValue(1L).row.imageSpoiler).isTrue()
+        assertThat(byId.getValue(2L).row.imageSpoiler).isFalse()
+    }
+
     private fun boardFeed(
         board: String,
         vararg threads: CatalogThread,

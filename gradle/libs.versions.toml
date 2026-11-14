@@ -13,7 +13,7 @@ kermit = "2.2.0"
 slf4j = "2.0.19"
 kotlincrypto = "0.8.0"
 compileSdk = "37"
-minSdk = "31"
+minSdk = "35"
 targetSdk = "37"
 
 # AndroidX core

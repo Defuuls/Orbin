@@ -15,27 +15,9 @@ final class StartupSmokeTests: XCTestCase {
 
     func testFirstLaunchRequiresAPersistedBoardBeforeOpeningHome() {
         app.launch()
+        advanceToBoardSelection()
 
-        let getStarted = app.buttons.matching(NSPredicate(format: "label == %@", "Get started")).firstMatch
         let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
-        let done = releaseNotesDoneButton()
-        waitUntilExists([getStarted, startBrowsing, done], description: "Onboarding or this release's notes")
-        dismissReleaseNotesIfPresent()
-        if getStarted.exists {
-            waitUntilHittable([getStarted], description: "The setup welcome Get started button")
-            getStarted.tap()
-            let chooseTheme = labeled("Choose your theme")
-            waitUntilExists([chooseTheme], description: "The appearance setup step")
-            let continueButton = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).firstMatch
-            waitUntilHittable([continueButton], description: "The appearance setup Continue button")
-            continueButton.tap()
-            let privacyStep = labeled("Privacy & content")
-            waitUntilExists([privacyStep], description: "The privacy setup step")
-            waitUntilHittable([continueButton], description: "The privacy setup Continue button")
-            continueButton.tap()
-        }
-        waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
-
         let welcome = labeled("Welcome to Orbin")
         XCTAssertTrue(welcome.exists, "The native scene must display the shared onboarding UI")
         XCTAssertGreaterThan(welcome.frame.width, 0)
@@ -175,6 +157,7 @@ final class StartupSmokeTests: XCTestCase {
             app.terminate()
             app.launchArguments = ["-UIPreferredContentSizeCategoryName", category.rawValue]
             app.launch()
+            advanceToBoardSelection()
             let heading = labeled("Welcome to Orbin")
             waitUntilExists([heading], description: "Onboarding at Dynamic Type " + category.rawValue)
             XCTAssertGreaterThan(heading.frame.height, 0)
@@ -191,6 +174,28 @@ final class StartupSmokeTests: XCTestCase {
         sizing.lifetime = .keepAlways
         add(sizing)
         app.launchArguments = []
+    }
+
+    private func advanceToBoardSelection() {
+        let getStarted = app.buttons.matching(NSPredicate(format: "label == %@", "Get started")).firstMatch
+        let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
+        let done = releaseNotesDoneButton()
+        waitUntilExists([getStarted, startBrowsing, done], description: "Onboarding or this release's notes")
+        dismissReleaseNotesIfPresent()
+        if getStarted.exists {
+            waitUntilHittable([getStarted], description: "The setup welcome Get started button")
+            getStarted.tap()
+            let chooseTheme = labeled("Choose your theme")
+            waitUntilExists([chooseTheme], description: "The appearance setup step")
+            let continueButton = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).firstMatch
+            waitUntilHittable([continueButton], description: "The appearance setup Continue button")
+            continueButton.tap()
+            let privacyStep = labeled("Privacy & content")
+            waitUntilExists([privacyStep], description: "The privacy setup step")
+            waitUntilHittable([continueButton], description: "The privacy setup Continue button")
+            continueButton.tap()
+        }
+        waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
     }
 
     private func releaseNotesDoneButton() -> XCUIElement {

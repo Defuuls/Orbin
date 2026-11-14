@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -41,6 +43,7 @@ import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_back
 import com.orbin.uinext.resources.reader_menu
 import com.orbin.uinext.resources.reader_more
+import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderSize
@@ -77,6 +80,7 @@ class ReaderAction(
 class ReaderMenuItem(
     val label: String,
     val enabled: Boolean = true,
+    val icon: ImageVector? = null,
     val onClick: () -> Unit,
 )
 
@@ -132,7 +136,7 @@ fun ReaderAppBar(
         val menuItems =
             overflow +
                 actions.drop(visibleActions.size).map { action ->
-                    ReaderMenuItem(action.label, onClick = action.onClick)
+                    ReaderMenuItem(action.label, icon = action.icon, onClick = action.onClick)
                 }
         Row(
             modifier =
@@ -251,7 +255,9 @@ fun ReaderAppBar(
                     DropdownMenu(
                         expanded = open,
                         onDismissRequest = { open = false },
-                        containerColor = colors.background,
+                        shape = RoundedCornerShape(OrbinRadius.card),
+                        containerColor = if (next.dark) colors.surfaceVariant else colors.background,
+                        border = BorderStroke(ReaderSize.hairline, colors.hairline),
                     ) {
                         menuItems.forEach { item ->
                             DropdownMenuItem(
@@ -262,6 +268,17 @@ fun ReaderAppBar(
                                         color = if (item.enabled) colors.ink else colors.inkMuted,
                                     )
                                 },
+                                trailingIcon =
+                                    item.icon?.let { icon ->
+                                        {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = null,
+                                                tint = if (item.enabled) colors.inkSecondary else colors.inkMuted,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        }
+                                    },
                                 enabled = item.enabled,
                                 onClick = {
                                     open = false

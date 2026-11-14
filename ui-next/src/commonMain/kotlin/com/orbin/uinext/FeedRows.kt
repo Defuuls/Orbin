@@ -330,29 +330,33 @@ internal fun FeedGridCell(
     if (optionsVisible) {
         val actions =
             buildList {
-                add(NextSheetAction(stringResource(Res.string.reader_feed_open_thread)) { onClick(row) })
+                add(NextSheetAction(label = stringResource(Res.string.reader_feed_open_thread), onClick = { onClick(row) }))
                 onToggleWatch?.let { action ->
                     add(
                         NextSheetAction(
-                            stringResource(
-                                if (row.watched) Res.string.reader_feed_unwatch else Res.string.reader_feed_watch,
-                                row.subject,
-                            ),
-                        ) { action(row) },
+                            label =
+                                stringResource(
+                                    if (row.watched) Res.string.reader_feed_unwatch else Res.string.reader_feed_watch,
+                                    row.subject,
+                                ),
+                            onClick = { action(row) },
+                        ),
                     )
                 }
                 onShareRow?.let { action ->
-                    add(NextSheetAction(stringResource(Res.string.reader_feed_share, row.subject)) { action(row) })
+                    add(NextSheetAction(label = stringResource(Res.string.reader_feed_share, row.subject), onClick = { action(row) }))
                 }
                 if (!row.watched) {
                     onToggleSaved?.let { action ->
                         add(
                             NextSheetAction(
-                                stringResource(
-                                    if (row.bookmarked) Res.string.reader_feed_unsave else Res.string.reader_feed_save,
-                                    row.subject,
-                                ),
-                            ) { action(row) },
+                                label =
+                                    stringResource(
+                                        if (row.bookmarked) Res.string.reader_feed_unsave else Res.string.reader_feed_save,
+                                        row.subject,
+                                    ),
+                                onClick = { action(row) },
+                            ),
                         )
                     }
                 }

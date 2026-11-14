@@ -1,18 +1,22 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +31,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_catalog_filter
 import com.orbin.uinext.resources.reader_close_filter
@@ -55,6 +60,7 @@ fun ReaderCatalogSearch(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val searchShape = RoundedCornerShape(OrbinRadius.small)
     Row(
         modifier
             .testTag(
@@ -78,23 +84,33 @@ fun ReaderCatalogSearch(
                     .heightIn(min = ReaderSize.touchTarget)
                     .semantics { contentDescription = label },
             decorationBox = { inner ->
-                Box(
+                Row(
                     Modifier
                         .fillMaxWidth()
                         .heightIn(min = ReaderSize.touchTarget)
-                        .clip(RoundedCornerShape(OrbinRadius.small))
+                        .clip(searchShape)
                         .background(reader.surfaceVariant)
+                        .border(ReaderSize.hairline, reader.hairline, searchShape)
                         .padding(horizontal = ReaderSpace.gapSmall, vertical = ReaderSpace.line),
-                    contentAlignment = Alignment.CenterStart,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall),
                 ) {
-                    if (query.isEmpty()) {
-                        Text(
-                            label,
-                            style = OrbinType.stateBody.withReaderFont(),
-                            color = reader.inkMuted,
-                        )
+                    Icon(
+                        imageVector = ReaderIcons.Search,
+                        contentDescription = null,
+                        tint = reader.inkMuted,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                        if (query.isEmpty()) {
+                            Text(
+                                label,
+                                style = OrbinType.stateBody.withReaderFont(),
+                                color = reader.inkMuted,
+                            )
+                        }
+                        inner()
                     }
-                    inner()
                 }
             },
         )
@@ -116,7 +132,8 @@ fun ReaderBoardPicker(
     AlertDialog(
         modifier = modifier.testTag("reader-board-picker"),
         onDismissRequest = onDismiss,
-        containerColor = reader.background,
+        shape = RoundedCornerShape(OrbinRadius.card),
+        containerColor = if (next.dark) reader.surfaceVariant else reader.background,
         titleContentColor = reader.ink,
         textContentColor = reader.ink,
         title = { Text(stringResource(Res.string.reader_pick_board), style = OrbinType.appBarTitle.withReaderFont()) },
@@ -136,24 +153,60 @@ fun ReaderBoardPicker(
                         Text(
                             siteBoards.first().siteLabel,
                             style = OrbinType.label.withReaderFont(),
-                            color = reader.inkMuted,
+                            color = reader.accent,
                             modifier = Modifier.padding(vertical = ReaderSpace.gapSmall).semantics { heading() },
                         )
                     }
                     items(siteBoards.sortedBy { it.boardId }, key = { "${it.providerId}/${it.boardId}" }) { board ->
+                        val isSelected = board.providerId == selectedProvider && board.boardId == selectedBoard
                         Column(
                             Modifier
                                 .testTag("reader-board-option-${board.providerId}/${board.boardId}")
                                 .fillMaxWidth()
-                                .heightIn(min = ReaderSize.touchTarget)
+                                .clip(RoundedCornerShape(OrbinRadius.small))
+                                .background(if (isSelected) reader.selected else androidx.compose.ui.graphics.Color.Transparent)
                                 .selectable(
-                                    selected = board.providerId == selectedProvider && board.boardId == selectedBoard,
+                                    selected = isSelected,
                                     role = Role.Button,
                                     onClick = { onSelect(board) },
-                                ).padding(vertical = ReaderSpace.line),
+                                ),
                         ) {
-                            Text("/${board.boardId}/", style = OrbinType.rowTitle.withReaderFont(), color = reader.ink)
-                            Text(board.title, style = OrbinType.preview.withReaderFont(), color = reader.inkMuted)
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = ReaderSize.touchTarget)
+                                    .padding(horizontal = ReaderSpace.gapSmall, vertical = ReaderSpace.line),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall),
+                            ) {
+                                BoardIcon(
+                                    siteId = board.providerId,
+                                    boardId = board.boardId,
+                                    title = board.title,
+                                    modifier = Modifier.size(32.dp),
+                                )
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        "/${board.boardId}/",
+                                        style = OrbinType.rowTitle.withReaderFont(),
+                                        color = if (isSelected) reader.accent else reader.ink,
+                                    )
+                                    Text(
+                                        board.title,
+                                        style = OrbinType.preview.withReaderFont(),
+                                        color = reader.inkMuted,
+                                    )
+                                }
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = ReaderIcons.Check,
+                                        contentDescription = null,
+                                        tint = reader.accent,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            }
+                            ReaderHairline()
                         }
                     }
                 }

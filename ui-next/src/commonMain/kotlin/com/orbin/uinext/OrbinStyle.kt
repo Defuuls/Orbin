@@ -140,6 +140,7 @@ fun OrbinCard(
     // next.elevated equals the page ground, so dark/AMOLED cards would vanish.
     // Use the lifted surfaceVariant fill against the darker page background.
     val color = containerColor ?: if (next.dark) reader.surfaceVariant else reader.background
+    val cardBorder = border ?: BorderStroke(1.dp, reader.hairline)
     Surface(
         modifier =
             if (onClick != null) {
@@ -149,7 +150,7 @@ fun OrbinCard(
             },
         shape = shape,
         color = color,
-        border = border,
+        border = cardBorder,
         shadowElevation = shadow,
         tonalElevation = tonal,
         content = { Column(content = content) },
@@ -191,17 +192,19 @@ fun OrbinBottomBar(
         shadowElevation = shadow,
         tonalElevation = tonal,
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
-                        ),
-                    ).heightIn(min = MIN_TOUCH_TARGET)
-                    .padding(top = 6.dp, bottom = 4.dp)
-                    .selectableGroup(),
+        Column(Modifier.fillMaxWidth()) {
+            ReaderHairline()
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                            ),
+                        ).heightIn(min = MIN_TOUCH_TARGET)
+                        .padding(top = 6.dp, bottom = 4.dp)
+                        .selectableGroup(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -263,6 +266,7 @@ fun OrbinBottomBar(
                         textAlign = TextAlign.Center,
                     )
                 }
+            }
             }
         }
     }

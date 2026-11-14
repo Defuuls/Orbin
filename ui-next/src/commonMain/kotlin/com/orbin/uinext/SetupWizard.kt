@@ -114,14 +114,41 @@ internal fun WelcomeSplashStep(
                 color = SplashMuted,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(10.dp))
+            Box(
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(OrbinRadius.pill))
+                        .background(SplashSurface)
+                        .border(1.dp, SplashCyan.copy(alpha = 0.45f), RoundedCornerShape(OrbinRadius.pill))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    text = "READ-ONLY · NO ACCOUNTS",
+                    style = OrbinType.caption2.withReaderFont().copy(fontWeight = FontWeight.Bold),
+                    color = SplashCyan,
+                )
+            }
+            Spacer(Modifier.height(20.dp))
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                SplashHighlightRow("Encrypted local storage", "SQLCipher & Keystore on Android, Data Protection on iOS")
-                SplashHighlightRow("HTTPS & DNS-over-HTTPS", "Every board, catalog, and media request stays encrypted")
-                SplashHighlightRow("Zero telemetry", "No accounts, analytics, ads, or cloud backups")
+                SplashHighlightRow(
+                    icon = ReaderIcons.Lock,
+                    title = "Encrypted local storage",
+                    subtitle = "SQLCipher & Keystore on Android, Data Protection on iOS",
+                )
+                SplashHighlightRow(
+                    icon = ReaderIcons.Shield,
+                    title = "HTTPS & DNS-over-HTTPS",
+                    subtitle = "Every board, catalog, and media request stays encrypted",
+                )
+                SplashHighlightRow(
+                    icon = ReaderIcons.Hide,
+                    title = "Zero telemetry",
+                    subtitle = "No accounts, analytics, ads, or cloud backups",
+                )
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -135,10 +162,11 @@ internal fun WelcomeSplashStep(
 
 @Composable
 private fun SplashHighlightRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
 ) {
-    Column(
+    Row(
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -146,18 +174,30 @@ private fun SplashHighlightRow(
                 .background(SplashSurface)
                 .border(1.dp, SplashBorder, RoundedCornerShape(OrbinRadius.card))
                 .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = title,
-            style = OrbinType.rowTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-            color = Color.White,
+        androidx.compose.material3.Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = SplashCyan,
+            modifier = Modifier.size(20.dp),
         )
-        Text(
-            text = subtitle,
-            style = OrbinType.meta.withReaderFont(),
-            color = SplashMuted,
-        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = title,
+                style = OrbinType.rowTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                color = Color.White,
+            )
+            Text(
+                text = subtitle,
+                style = OrbinType.meta.withReaderFont(),
+                color = SplashMuted,
+            )
+        }
     }
 }
 
@@ -278,28 +318,54 @@ private fun ThemeOptionCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Box(
+            // Chance-inspired SavedThemeThumbnail mini preview card (simulated header + post + greentext)
+            Column(
                 modifier =
                     Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
+                        .size(width = 48.dp, height = 38.dp)
+                        .clip(RoundedCornerShape(6.dp))
                         .background(option.swatchBg)
-                        .border(1.dp, reader.hairline, CircleShape),
-                contentAlignment = Alignment.Center,
+                        .border(1.dp, reader.hairline, RoundedCornerShape(6.dp)),
             ) {
                 Box(
                     modifier =
                         Modifier
-                            .size(14.dp)
-                            .clip(CircleShape)
-                            .background(option.swatchAccent),
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .background(option.swatchAccent.copy(alpha = 0.28f)),
                 )
+                Column(
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(width = 22.dp, height = 4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(option.swatchAccent),
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(width = 30.dp, height = 3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(Color(0xFF789922)),
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(width = 26.dp, height = 3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(option.swatchAccent.copy(alpha = 0.55f)),
+                    )
+                }
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = option.title,
                     style = OrbinType.rowTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-                    color = reader.ink,
+                    color = if (selected) reader.accent else reader.ink,
                 )
                 Text(
                     text = option.subtitle,
@@ -307,15 +373,7 @@ private fun ThemeOptionCard(
                     color = reader.inkMuted,
                 )
             }
-            if (selected) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(reader.accent),
-                )
-            }
+            ReaderSettingsChoiceMark(selected = selected)
         }
     }
 }
@@ -490,17 +548,19 @@ private fun SetupBottomBar(
     nextLabel: String,
     onNext: () -> Unit,
 ) {
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .background(reader.background)
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        OrbinTextButton(label = backLabel, onClick = onBack)
-        OrbinFilledButton(label = nextLabel, onClick = onNext)
+    Column(Modifier.fillMaxWidth().background(reader.background)) {
+        ReaderHairline()
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                    .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            OrbinTextButton(label = backLabel, onClick = onBack)
+            OrbinFilledButton(label = nextLabel, onClick = onNext)
+        }
     }
 }

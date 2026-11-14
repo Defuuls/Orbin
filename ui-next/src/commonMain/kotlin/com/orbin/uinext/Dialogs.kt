@@ -43,6 +43,8 @@ val nextDestructiveRed: Color
 data class NextSheetAction(
     val label: String,
     val onClick: () -> Unit,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    val destructive: Boolean = false,
 )
 
 /**

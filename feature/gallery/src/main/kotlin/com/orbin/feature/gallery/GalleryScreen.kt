@@ -188,7 +188,7 @@ fun GalleryScreen(
                     selection = selection,
                     modifier = Modifier.fillMaxSize(),
                 ) { item, isActive, isNear ->
-                    var revealed by remember(item.id) { mutableStateOf(!item.isSpoiler) }
+                    var revealed by remember(item.id, item.isSpoiler) { mutableStateOf(!item.isSpoiler) }
                     Box(
                         modifier = Modifier.fillMaxSize().background(Color.Black),
                         contentAlignment = Alignment.Center,

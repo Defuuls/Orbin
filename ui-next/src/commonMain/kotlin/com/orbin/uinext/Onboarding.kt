@@ -235,6 +235,7 @@ private fun OnboardingBoardsStep(
                         .semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
+        ReaderHairline()
         Row(
             modifier =
                 Modifier

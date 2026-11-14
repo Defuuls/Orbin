@@ -132,11 +132,19 @@ data class AppSettings(
     val playbackPreferences: PlaybackPreferences = PlaybackPreferences(),
     /** Open comments from Home's chat button instead of the thread's videos. */
     val openThreadComments: Boolean = false,
+    /** On-disk streaming video cache limit in megabytes. */
+    val videoCacheMegabytes: Int = DEFAULT_VIDEO_CACHE_MEGABYTES,
 ) {
     companion object {
         val Default = AppSettings()
     }
 }
+
+/** Default on-disk video cache limit (300 MB), matching NekoSurf. */
+const val DEFAULT_VIDEO_CACHE_MEGABYTES = 300
+
+/** Selectable on-disk video cache limits in megabytes. */
+val VIDEO_CACHE_MEGABYTE_OPTIONS = listOf(100, 300, 500, 1024)
 
 /** Two columns until the reader picks otherwise: a wide screen's first step up from a phone. */
 const val DEFAULT_WIDE_FEED_COLUMNS = 2
