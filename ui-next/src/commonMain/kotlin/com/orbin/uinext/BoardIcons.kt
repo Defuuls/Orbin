@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -39,12 +40,14 @@ fun BoardIcon(
 ) {
     val definition = remember(siteId, boardId, title) { boardIconDefinition(siteId, boardId, title) }
     val background = (if (next.dark) DARK_BOARD_COLORS else LIGHT_BOARD_COLORS)[definition.colorIndex]
+    val borderColor = if (next.dark) DARK_BOARD_BORDER else LIGHT_BOARD_BORDER
     Box(
         modifier =
             modifier
                 .size(size)
                 .clip(shape)
                 .background(background)
+                .border(1.dp, borderColor, shape)
                 .clearAndSetSemantics {},
     ) {
         Icon(
@@ -231,36 +234,38 @@ private val PROVIDER_MARK_PATHS =
 
 private val LIGHT_BOARD_COLORS =
     listOf(
-        Color(0xFFE7EFF9),
-        Color(0xFFE3F2EB),
-        Color(0xFFF5EADC),
-        Color(0xFFF0E7F4),
-        Color(0xFFF6E4E8),
-        Color(0xFFE1F1F3),
-        Color(0xFFEEEBDC),
-        Color(0xFFE8E7F7),
-        Color(0xFFF3E8DC),
-        Color(0xFFE5EFE2),
-        Color(0xFFF4E7F1),
-        Color(0xFFE5EDF0),
+        Color(0xFFE8ECFF),
+        Color(0xFFE0F4FF),
+        Color(0xFFE6EFFA),
+        Color(0xFFEDE9FE),
+        Color(0xFFE0F2FE),
+        Color(0xFFE6F4F1),
+        Color(0xFFEEF2FF),
+        Color(0xFFE2ECFA),
+        Color(0xFFEAE8FF),
+        Color(0xFFE4F0F7),
+        Color(0xFFE7EDFA),
+        Color(0xFFF0EBFF),
     )
 private val DARK_BOARD_COLORS =
     listOf(
-        Color(0xFF203249),
-        Color(0xFF203B30),
-        Color(0xFF413425),
-        Color(0xFF382B43),
-        Color(0xFF442B33),
-        Color(0xFF1C3940),
-        Color(0xFF3A3825),
-        Color(0xFF2E2D45),
-        Color(0xFF413025),
-        Color(0xFF2A3928),
-        Color(0xFF402B3B),
-        Color(0xFF27383F),
+        Color(0xFF141B33),
+        Color(0xFF10243E),
+        Color(0xFF1A2044),
+        Color(0xFF12293D),
+        Color(0xFF1D1B42),
+        Color(0xFF0E2B38),
+        Color(0xFF162247),
+        Color(0xFF1B2340),
+        Color(0xFF132645),
+        Color(0xFF18293E),
+        Color(0xFF211D46),
+        Color(0xFF11223A),
     )
-private val LIGHT_BOARD_INK = Color(0xFF17212B)
-private val DARK_BOARD_INK = Color(0xFFECEFF4)
+private val LIGHT_BOARD_INK = Color(0xFF1E2440)
+private val DARK_BOARD_INK = Color(0xFF67E8F9)
+private val LIGHT_BOARD_BORDER = Color(0xFFC7D2FE)
+private val DARK_BOARD_BORDER = Color(0xFF25325C)
 private const val FNV_OFFSET = 0xCBF29CE484222325uL
 private const val FNV_PRIME = 0x100000001B3uL
 private const val BOARD_VIEWPORT = 24f

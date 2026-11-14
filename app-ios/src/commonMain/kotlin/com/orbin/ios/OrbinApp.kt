@@ -28,6 +28,9 @@ import com.orbin.uinext.NextTheme
 import com.orbin.uinext.OnboardingBoard
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
+import com.orbin.uinext.OnboardingSetupConfig
+import com.orbin.uinext.SetupThemeOption
+import com.orbin.uinext.UpdateThemeConfig
 import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.canonicalNextPalette
 import com.orbin.uinext.reader
@@ -127,6 +130,11 @@ fun OrbinApp(
                 whatsNew.lastSeen,
                 whatsNew::markSeen,
                 visible = !lockState.locked && !lockState.obscured && readerReady,
+                themeConfig =
+                    UpdateThemeConfig(
+                        theme = settings.toSetupThemeOption(),
+                        onThemeChange = { option -> browser.settings.applySetupTheme(option) },
+                    ),
                 content = readerContent,
             )
         } else {
@@ -186,7 +194,45 @@ private fun OnboardingDestination(browser: Browser) {
         isSaving = setup.isSaving,
         errorMessage = setup.errorMessage,
         canStart = setup.canStart && eligible.isNotEmpty(),
+        setupWizard =
+            OnboardingSetupConfig(
+                theme = settings.toSetupThemeOption(),
+                hideNsfwBoards = settings.hideNsfwBoards,
+                coverViolentMedia = settings.coverViolentMedia,
+                onThemeChange = { option -> browser.settings.applySetupTheme(option) },
+                onHideNsfwChange = browser.settings::setHideNsfwBoards,
+                onCoverViolentMediaChange = browser.settings::setCoverViolentMedia,
+            ),
     )
+}
+
+private fun com.orbin.core.model.AppSettings.toSetupThemeOption(): SetupThemeOption =
+    when {
+        themeMode == AppThemeMode.SYSTEM -> SetupThemeOption.SYSTEM
+        themeMode == AppThemeMode.LIGHT -> SetupThemeOption.LIGHT
+        amoled -> SetupThemeOption.AMOLED
+        else -> SetupThemeOption.DARK
+    }
+
+private fun ReaderSettings.applySetupTheme(option: SetupThemeOption) {
+    when (option) {
+        SetupThemeOption.SYSTEM -> {
+            setThemeMode(AppThemeMode.SYSTEM)
+            setAmoled(false)
+        }
+        SetupThemeOption.LIGHT -> {
+            setThemeMode(AppThemeMode.LIGHT)
+            setAmoled(false)
+        }
+        SetupThemeOption.DARK -> {
+            setThemeMode(AppThemeMode.DARK)
+            setAmoled(false)
+        }
+        SetupThemeOption.AMOLED -> {
+            setThemeMode(AppThemeMode.DARK)
+            setAmoled(true)
+        }
+    }
 }
 
 @Composable
