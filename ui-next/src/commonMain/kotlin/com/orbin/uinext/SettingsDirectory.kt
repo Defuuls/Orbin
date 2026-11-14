@@ -27,7 +27,6 @@ import com.orbin.uinext.resources.reader_settings_privacy_summary
 import com.orbin.uinext.resources.reader_settings_sites_summary
 import com.orbin.uinext.resources.reader_settings_storage
 import com.orbin.uinext.resources.reader_settings_storage_summary
-import com.orbin.uinext.resources.reader_settings_title
 import com.orbin.uinext.resources.reader_settings_watched
 import com.orbin.uinext.resources.reader_settings_watched_summary
 import org.jetbrains.compose.resources.stringResource
@@ -58,7 +57,6 @@ internal fun settingsDirectory(
     listOf(
         "settings" to
             listOfNotNull(
-                "watched".takeIf { navigationAvailable },
                 "boards".takeIf { navigationAvailable },
                 "appearance".takeIf { it in pages },
                 "boardPreferences".takeIf { navigationAvailable && "playback" in pages },
@@ -98,13 +96,7 @@ internal fun settingsPageLabels(): Map<String, String> =
 
 @Composable
 internal fun directorySectionLabel(id: String): String =
-    if (id ==
-        "settings"
-    ) {
-        stringResource(Res.string.reader_settings_title)
-    } else {
-        stringResource(Res.string.reader_settings_about)
-    }
+    if (id == "settings") "" else stringResource(Res.string.reader_settings_about)
 
 @Composable
 internal fun settingsDirectorySummary(id: String): String =
