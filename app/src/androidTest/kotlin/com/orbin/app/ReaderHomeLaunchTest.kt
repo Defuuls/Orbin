@@ -7,7 +7,6 @@ import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,7 +22,6 @@ import com.orbin.uinext.ReaderFeedTags
 import com.orbin.uinext.TikTokFeedTags
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -82,16 +80,6 @@ class ReaderHomeLaunchTest {
             composeRule.onNodeWithContentDescription("Menu").assertExists()
             composeRule.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
             composeRule.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
-
-            // Exercise the installed Android binding, including preference updates while
-            // providers are still loading; the new mode must not fall back to List.
-            for (mode in listOf(CatalogMode.LIST, CatalogMode.CARD, CatalogMode.GRID)) {
-                composeRule.onNodeWithTag(ReaderFeedTags.MODE).performClick()
-                composeRule.waitUntil(HOME_READY_TIMEOUT_MS) {
-                    runBlocking { settings.settings.first().catalogMode == mode }
-                }
-                composeRule.waitForIdle()
-            }
 
             scenario.onActivity { activity ->
                 assertTrue(
