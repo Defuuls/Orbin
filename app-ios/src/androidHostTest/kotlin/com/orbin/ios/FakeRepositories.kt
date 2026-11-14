@@ -163,6 +163,11 @@ class FakeSettings : SettingsRepository {
             it.copy(dohProvider = provider)
         }
 
+    override suspend fun setVideoCacheMegabytes(megabytes: Int) =
+        settings.update {
+            it.copy(videoCacheMegabytes = megabytes)
+        }
+
     override suspend fun setStrictDohEnabled(enabled: Boolean) =
         settings.update {
             it.copy(strictDohEnabled = enabled)

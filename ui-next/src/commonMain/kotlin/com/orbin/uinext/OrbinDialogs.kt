@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -280,28 +281,48 @@ fun OrbinActionSheet(
                     color = reader.inkMuted,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 )
-                actions.forEach { action ->
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .widthIn(min = MIN_TOUCH_TARGET)
-                                .heightIn(min = MIN_TOUCH_TARGET)
-                                .clip(RoundedCornerShape(OrbinRadius.thumbnail))
-                                .nextClickable(
-                                    role = Role.Button,
-                                    onClick = {
-                                        action.onClick()
-                                        onDismiss()
-                                    },
-                                ).padding(horizontal = 8.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        Text(
-                            text = action.label,
-                            style = OrbinType.readerBody.withReaderFont().copy(fontWeight = FontWeight.Medium),
-                            color = reader.ink,
-                        )
+                OrbinCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevated = false,
+                ) {
+                    Column(Modifier.fillMaxWidth()) {
+                        actions.forEachIndexed { index, action ->
+                            val actionColor = if (action.destructive) nextDestructiveRed else reader.ink
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .widthIn(min = MIN_TOUCH_TARGET)
+                                        .heightIn(min = MIN_TOUCH_TARGET)
+                                        .nextClickable(
+                                            role = Role.Button,
+                                            onClick = {
+                                                action.onClick()
+                                                onDismiss()
+                                            },
+                                        ).padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text(
+                                    text = action.label,
+                                    style = OrbinType.readerBody.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                                    color = actionColor,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (action.icon != null) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = action.icon,
+                                        contentDescription = null,
+                                        tint = if (action.destructive) nextDestructiveRed else reader.inkSecondary,
+                                        modifier = Modifier.padding(start = 4.dp).width(18.dp).height(18.dp),
+                                    )
+                                }
+                            }
+                            if (index < actions.lastIndex) {
+                                ReaderHairline()
+                            }
+                        }
                     }
                 }
             }

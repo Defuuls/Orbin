@@ -20,7 +20,6 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
         android:enableOnBackInvokedCallback="true"
-        tools:targetApi="33"
         android:theme="@style/Theme.Orbin.Starting">
 
         <!--

@@ -104,6 +104,7 @@ internal fun ReaderSettingAnchor(
                         shape = RoundedCornerShape(OrbinRadius.card),
                         color = if (next.dark) reader.surfaceVariant else reader.background,
                         shadowElevation = OrbinElevation.floating,
+                        border = androidx.compose.foundation.BorderStroke(ReaderSize.hairline, reader.hairline),
                     ) {
                         Column(
                             Modifier
@@ -122,12 +123,13 @@ internal fun ReaderSettingAnchor(
                                 )
                             }
                             item.options.forEachIndexed { index, label ->
+                                val isSelected = index == item.selected
                                 Row(
                                     Modifier
                                         .fillMaxWidth()
                                         .heightIn(min = 48.dp)
                                         .selectable(
-                                            selected = index == item.selected,
+                                            selected = isSelected,
                                             role = Role.RadioButton,
                                             onClick = { onSelect(index) },
                                         ).padding(horizontal = 16.dp),
@@ -140,7 +142,7 @@ internal fun ReaderSettingAnchor(
                                         color = preferencePrimaryColor,
                                         modifier = Modifier.weight(1f),
                                     )
-                                    ReaderSettingsChoiceMark(selected = index == item.selected)
+                                    ReaderSettingsChoiceMark(selected = isSelected)
                                 }
                             }
                         }

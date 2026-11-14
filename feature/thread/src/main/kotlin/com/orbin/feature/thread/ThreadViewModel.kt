@@ -17,6 +17,7 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.core.model.withViolentMediaCovered
 import com.orbin.core.reader.ThreadPresentationCache
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DisabledThreadArchive
@@ -151,7 +152,13 @@ class ThreadViewModel
 
         private suspend fun stateForFailure(error: DataError): ThreadUiState {
             lastSuccess?.let { return it.copy(refreshFailure = error) }
-            val saved = savedThreadRepository.load(key) ?: return ThreadUiState.Error(error.message, error)
+            val rawSaved = savedThreadRepository.load(key) ?: return ThreadUiState.Error(error.message, error)
+            val saved =
+                if (settingsRepository.settings.first().coverViolentMedia) {
+                    rawSaved.withViolentMediaCovered()
+                } else {
+                    rawSaved
+                }
             val presentation =
                 presentationCache.prepareVisible(
                     saved,

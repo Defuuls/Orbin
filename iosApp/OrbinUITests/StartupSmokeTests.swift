@@ -15,10 +15,9 @@ final class StartupSmokeTests: XCTestCase {
 
     func testFirstLaunchRequiresAPersistedBoardBeforeOpeningHome() {
         app.launch()
-
         advanceToBoardSelection()
-        let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
 
+        let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
         let welcome = labeled("Welcome to Orbin")
         XCTAssertTrue(welcome.exists, "The native scene must display the shared onboarding UI")
         XCTAssertGreaterThan(welcome.frame.width, 0)
@@ -151,31 +150,6 @@ final class StartupSmokeTests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 15), .completed, "Layout action: " + label)
     }
 
-    // The wizard step is not persisted until setup completes. Every cold launch used for
-    // Dynamic Type measurements must traverse the splash, appearance, and privacy steps.
-    private func advanceToBoardSelection() {
-        let getStarted = app.buttons.matching(NSPredicate(format: "label == %@", "Get started")).firstMatch
-        let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
-        let done = releaseNotesDoneButton()
-        waitUntilExists([getStarted, startBrowsing, done], description: "Onboarding or this release's notes")
-        dismissReleaseNotesIfPresent()
-        waitUntilExists([getStarted, startBrowsing], description: "The setup splash or board selection")
-        if getStarted.exists {
-            waitUntilHittable([getStarted], description: "The setup welcome Get started button")
-            getStarted.tap()
-            let chooseTheme = labeled("Choose your theme")
-            waitUntilExists([chooseTheme], description: "The appearance setup step")
-            let continueButton = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).firstMatch
-            waitUntilHittable([continueButton], description: "The appearance setup Continue button")
-            continueButton.tap()
-            let privacyStep = labeled("Privacy & content")
-            waitUntilExists([privacyStep], description: "The privacy setup step")
-            waitUntilHittable([continueButton], description: "The privacy setup Continue button")
-            continueButton.tap()
-        }
-        waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
-    }
-
     private func assertDynamicTypeIsAppliedOnce() {
         // UIKit's standard launch override changes both the app category and Compose's native
         // density. A second category multiplier shrinks Small to 0.85 * 0.88 instead of 0.88.
@@ -200,6 +174,31 @@ final class StartupSmokeTests: XCTestCase {
         sizing.lifetime = .keepAlways
         add(sizing)
         app.launchArguments = []
+    }
+
+    // The wizard step is not persisted until setup completes. Every cold launch used for
+    // Dynamic Type measurements must traverse the splash, appearance, and privacy steps.
+    private func advanceToBoardSelection() {
+        let getStarted = app.buttons.matching(NSPredicate(format: "label == %@", "Get started")).firstMatch
+        let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
+        let done = releaseNotesDoneButton()
+        waitUntilExists([getStarted, startBrowsing, done], description: "Onboarding or this release's notes")
+        dismissReleaseNotesIfPresent()
+        waitUntilExists([getStarted, startBrowsing], description: "The setup splash or board selection")
+        if getStarted.exists {
+            waitUntilHittable([getStarted], description: "The setup welcome Get started button")
+            getStarted.tap()
+            let chooseTheme = labeled("Choose your theme")
+            waitUntilExists([chooseTheme], description: "The appearance setup step")
+            let continueButton = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).firstMatch
+            waitUntilHittable([continueButton], description: "The appearance setup Continue button")
+            continueButton.tap()
+            let privacyStep = labeled("Privacy & content")
+            waitUntilExists([privacyStep], description: "The privacy setup step")
+            waitUntilHittable([continueButton], description: "The privacy setup Continue button")
+            continueButton.tap()
+        }
+        waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
     }
 
     private func releaseNotesDoneButton() -> XCUIElement {

@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -110,12 +111,32 @@ internal fun ReaderFeedControls(
                 statusMessage?.takeIf(String::isNotBlank),
             ).distinct()
         if (status.isNotEmpty()) {
-            Text(
-                status.joinToString(" · "),
-                style = OrbinType.meta.withReaderFont(),
-                color = reader.inkMuted,
-                modifier = Modifier.padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.line),
-            )
+            val bannerShape = RoundedCornerShape(16.dp)
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.gapSmall)
+                        .clip(bannerShape)
+                        .background(reader.accent.copy(alpha = 0.08f))
+                        .border(ReaderSize.hairline, reader.hairline, bannerShape)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = ReaderIcons.Boards,
+                    contentDescription = null,
+                    tint = reader.accent,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    status.joinToString(" · "),
+                    style = OrbinType.meta.withReaderFont(),
+                    color = reader.ink,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
         headerContent()
         ReaderHairline()
@@ -142,12 +163,14 @@ private fun ReaderFeedSourceChip(
 ) {
     val label = stringResource(Res.string.reader_feed_choose_source)
     val source = labels.getOrNull(selected)?.takeIf(String::isNotBlank) ?: label
+    val chipShape = RoundedCornerShape(OrbinRadius.pill)
     val chipModifier =
         modifier
             .testTag(ReaderFeedTags.SOURCE)
             .heightIn(min = ReaderSize.touchTarget)
-            .clip(RoundedCornerShape(OrbinRadius.pill))
+            .clip(chipShape)
             .background(reader.surfaceVariant)
+            .border(ReaderSize.hairline, reader.hairline, chipShape)
             .nextClickable(role = Role.Button, onClickLabel = label, onClick = onClick)
             .semantics {
                 contentDescription = label

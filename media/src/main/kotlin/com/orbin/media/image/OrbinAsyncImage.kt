@@ -190,6 +190,8 @@ fun MediaThumbnail(
             attachment.thumbnailUrl
         }
     val loopsInPlace = playing && canAutoplayInFeed(attachment, autoplayEnabled = true)
+    var hasStartedLoop by remember(attachment.id, attachment.sourceUrl) { mutableStateOf(false) }
+    if (loopsInPlace) hasStartedLoop = true
 
     Box(
         modifier =
@@ -210,7 +212,13 @@ fun MediaThumbnail(
                 // same URL and the placeholder is skipped.
                 placeholderUrl = attachment.thumbnailUrl,
             )
-            if (loopsInPlace) InlineLoop(url = attachment.sourceUrl, modifier = Modifier.fillMaxSize())
+            if (hasStartedLoop && !attachment.isSpoiler) {
+                InlineLoop(
+                    url = attachment.sourceUrl,
+                    active = loopsInPlace,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
 
         val showVideoBadge = showPlayBadge && !loopsInPlace && attachment.isPlayable

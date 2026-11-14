@@ -4,8 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,12 +45,7 @@ internal fun MediaActionsMenu(
                 { SafeExternalLinks.open(context, attachment.sourceUrl) },
             stringResource(R.string.gallery_share) to { context.shareLink(attachment.sourceUrl) },
             stringResource(R.string.gallery_copy_link) to { context.copyLink(attachment.sourceUrl) },
-            stringResource(R.string.gallery_download) to {
-                onSave(attachment)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                    Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
-                }
-            },
+            stringResource(R.string.gallery_download) to { onSave(attachment) },
         ) +
             if (attachment.type == MediaType.IMAGE && onCopyImage != null) {
                 listOf(stringResource(R.string.gallery_copy_image) to { onCopyImage(attachment) })
@@ -110,7 +103,4 @@ internal fun Context.shareLink(url: String) {
 internal fun Context.copyLink(url: String) {
     val clipboard = getSystemService(ClipboardManager::class.java) ?: return
     clipboard.setPrimaryClip(ClipData.newPlainText("Orbin link", url))
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        Toast.makeText(this, R.string.gallery_link_copied, Toast.LENGTH_SHORT).show()
-    }
 }

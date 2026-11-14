@@ -57,4 +57,7 @@ interface SettingsRepository {
 
     /** Saves the device-wide board catalog presentation. */
     suspend fun setCatalogMode(mode: CatalogMode)
+
+    /** Saves the on-disk video cache limit in megabytes. */
+    suspend fun setVideoCacheMegabytes(megabytes: Int)
 }

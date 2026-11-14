@@ -35,7 +35,14 @@ class SettingsIndexTest {
                     "saveBrowsingHistory",
                     "strictDns",
                 ),
-                listOf("clearActivity", "clearImageCache", "exportBackup", "importBackup"),
+                listOf(
+                    "clearActivity",
+                    "clearImageCache",
+                    "videoCacheLimit",
+                    "clearVideoCache",
+                    "exportBackup",
+                    "importBackup",
+                ),
                 listOf("updateOnLaunch", "checkUpdates"),
             ).inOrder()
     }

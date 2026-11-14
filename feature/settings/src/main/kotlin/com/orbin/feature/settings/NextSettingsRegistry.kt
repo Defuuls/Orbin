@@ -4,6 +4,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.VIDEO_CACHE_MEGABYTE_OPTIONS
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingItem
@@ -21,13 +22,14 @@ internal fun buildSettings(
     updateState: String,
     strings: SettingsStrings,
     imageCacheLabel: String = strings.get(R.string.settings_image_cache_empty),
+    videoCacheLabel: String = strings.get(R.string.settings_image_cache_empty),
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
     dns: DnsRowState = DnsRowState(),
 ): SettingsModel {
     val rows = Rows(strings)
     val preferences = rows.preferences(settings, vm, checkUpdatesOnLaunch) + rows.strictDns(dns, vm)
-    val data = rows.data(updateState, imageCacheLabel, clearArmed)
+    val data = rows.data(settings, vm, updateState, imageCacheLabel, videoCacheLabel, clearArmed)
     val appearanceIds = setOf("themeMode", "amoled", "catalogMode")
     val groups =
         listOf(
@@ -205,8 +207,11 @@ private class Rows(
 
     /** Only destructive actions carry a hint, and it says what goes. */
     fun data(
+        settings: AppSettings,
+        vm: SettingsViewModel,
         updateState: String,
         imageCacheLabel: String,
+        videoCacheLabel: String,
         clearArmed: Boolean,
     ) = listOf(
         action(
@@ -225,11 +230,34 @@ private class Rows(
             imageCacheLabel,
             destructive = true,
         ),
+        choice(
+            "videoCacheLimit",
+            strings.get(R.string.settings_video_cache_limit),
+            VIDEO_CACHE_MEGABYTE_OPTIONS,
+            settings.videoCacheMegabytes,
+            ::formatCacheLimitMb,
+            vm::setVideoCacheMegabytes,
+        ),
+        action(
+            "clearVideoCache",
+            strings.get(R.string.settings_clear_video_cache),
+            videoCacheLabel,
+            destructive = true,
+        ),
         action("checkUpdates", strings.get(R.string.settings_check_updates), updateState),
         action("exportBackup", strings.get(R.string.settings_export), strings.get(R.string.settings_export_action)),
         action("importBackup", strings.get(R.string.settings_import), strings.get(R.string.settings_import_action)),
     )
 }
+
+private const val MEGABYTES_PER_GIGABYTE = 1024
+
+private fun formatCacheLimitMb(megabytes: Int): String =
+    if (megabytes >= MEGABYTES_PER_GIGABYTE && megabytes % MEGABYTES_PER_GIGABYTE == 0) {
+        "${megabytes / MEGABYTES_PER_GIGABYTE} GB"
+    } else {
+        "$megabytes MB"
+    }
 
 /**
  * The rows, plus what each one does.
