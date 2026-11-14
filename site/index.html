@@ -3,353 +3,289 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orbin — a modern imageboard browser for Android and iOS</title>
-  <meta name="description" content="Orbin is a modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
-  <meta name="theme-color" content="#FF5D68" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#15161B" media="(prefers-color-scheme: dark)">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Orbin — a modern imageboard reader for Android and iOS">
-  <meta property="og:description" content="A modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
-  <meta property="og:url" content="https://defuuls.github.io/Orbin/">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Orbin — a modern imageboard reader for Android and iOS">
-  <meta name="twitter:description" content="A modern, fast, and beautiful open-source imageboard reader for Android and iOS, built with Kotlin Multiplatform and Compose.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23FF5D68%22%2F%3E%3Cg%20transform%3D%22translate%2832%2032%29%20scale%280.06328340%29%20translate%28-499.5000%20-535.0000%29%22%3E%3Cpath%20fill%3D%22%23B8323F%22%20d%3D%22M414.000%2C140.000%20H754.000%20A80.000%2C80.000%200%200%201%20834.000%2C220.000%20V660.000%20A80.000%2C80.000%200%200%201%20754.000%2C740.000%20H414.000%20A80.000%2C80.000%200%200%201%20334.000%2C660.000%20V220.000%20A80.000%2C80.000%200%200%201%20414.000%2C140.000%20Z%22%2F%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M253.000%2C270.000%20H627.000%20A88.000%2C88.000%200%200%201%20715.000%2C358.000%20V842.000%20A88.000%2C88.000%200%200%201%20627.000%2C930.000%20H253.000%20A88.000%2C88.000%200%200%201%20165.000%2C842.000%20V358.000%20A88.000%2C88.000%200%200%201%20253.000%2C270.000%20Z%22%2F%3E%3Cpath%20fill%3D%22%23FF5D68%22%20d%3D%22M363.220%2C614.300%20L363.220%2C823.300%20L555.500%2C718.800%20Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
+  <title>Orbin — Privacy-focused Android &amp; iOS imageboard browser</title>
+  <meta name="description" content="Privacy-focused, read-only Android and iOS imageboard browser built with Kotlin Multiplatform and Compose Multiplatform.">
+  <meta name="theme-color" content="#4338CA" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0B1021" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Cdefs%3E%3ClinearGradient id='g1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%235B5BFF'/%3E%3Cstop offset='50%25' stop-color='%23229BFF'/%3E%3Cstop offset='100%25' stop-color='%2300D4FF'/%3E%3C/linearGradient%3E%3ClinearGradient id='g2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2338BDF8'/%3E%3Cstop offset='100%25' stop-color='%2367E8F9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1024' height='1024' rx='224' fill='%230B1021'/%3E%3Cpath d='M192,262 L294,262 L508,512 L294,762 L192,762 L406,512 Z' fill='url(%23g1)' opacity='0.78'/%3E%3Cpath d='M358,262 L460,262 L674,512 L460,762 L358,762 L572,512 Z' fill='url(%23g1)'/%3E%3Cpath d='M652,384 L832,512 L652,640 L702,512 Z' fill='url(%23g2)'/%3E%3C/svg%3E">
   <style>
     :root {
-      --accent: #C73E4E;
-      --accent-strong: #B8323F;
-      --accent-soft: #FFD4D7;
-      --bg: #F7FBF7;
-      --bg-alt: #ECF2EC;
+      --bg: #FFFFFF;
+      --bg-alt: #F5F7FB;
       --surface: #FFFFFF;
-      --text: #191C19;
-      --text-muted: #404941;
-      --border: #C0C9BF;
-      --code-bg: #202431;
-      --code-text: #C0C9BF;
+      --text: #1A1A1A;
+      --text-muted: #5A6378;
+      --accent: #4338CA;
+      --accent-strong: #3730A3;
+      --accent-fg: #FFFFFF;
+      --border: #E2E6F0;
+      --code-bg: #F1F4FA;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --accent: #FF8A96;
-        --accent-strong: #FFB0B6;
-        --accent-soft: #5A2228;
-        --bg: #15161B;
-        --bg-alt: #1B1D25;
-        --surface: #202431;
-        --text: #E7EAF3;
-        --text-muted: #9AA3B5;
-        --border: #2C3140;
-        --code-bg: #0F1015;
-        --code-text: #CBD3E4;
+        --bg: #0B1021;
+        --bg-alt: #10162E;
+        --surface: #141B33;
+        --text: #FFFFFF;
+        --text-muted: #9FB0CE;
+        --accent: #00D4FF;
+        --accent-strong: #67E8F9;
+        --accent-fg: #0B1021;
+        --border: #1E294A;
+        --code-bg: #070B17;
       }
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
-    a { color: var(--accent); }
-    .wrap { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 1.25rem; }
 
-    header.topbar {
-      position: sticky; top: 0; z-index: 10;
-      background: color-mix(in srgb, var(--bg) 88%, transparent);
-      backdrop-filter: blur(8px);
+    header {
       border-bottom: 1px solid var(--border);
+      padding: .9rem 0;
     }
-    .topbar .wrap {
-      display: flex; align-items: center; gap: 1.25rem;
-      height: 3.25rem;
+    header .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
-    .brand { font-weight: 700; font-size: 1.05rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: .5rem; }
-    .brand svg { display: block; }
-    nav { margin-left: auto; display: flex; gap: 1rem; flex-wrap: wrap; }
-    nav a { color: var(--text-muted); text-decoration: none; font-size: .95rem; }
-    nav a:hover { color: var(--accent); }
-    @media (max-width: 640px) {
-      nav { flex-wrap: nowrap; overflow-x: auto; min-width: 0; scrollbar-width: none; }
-      nav a { white-space: nowrap; }
-    }
-
-    .hero { text-align: center; padding: 4.5rem 0 3rem; }
-    .hero h1 { font-size: clamp(2.4rem, 6vw, 3.4rem); letter-spacing: -.02em; }
-    .hero .tagline { font-size: clamp(1.05rem, 2.5vw, 1.3rem); color: var(--text-muted); max-width: 38em; margin: .75rem auto 0; }
-    .cta { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.75rem; }
-    .btn {
-      display: inline-block; padding: .7rem 1.5rem; border-radius: 999px;
-      text-decoration: none; font-weight: 600; font-size: 1rem;
-      border: 1px solid transparent;
-    }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-strong); }
-    @media (prefers-color-scheme: dark) {
-      .btn-primary { color: #10131C; }
-    }
-    .btn-secondary { border-color: var(--border); color: var(--text); background: var(--surface); }
-    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-    .hero .note { margin-top: 1rem; font-size: .9rem; color: var(--text-muted); }
-
-    section { padding: 3.25rem 0; }
-    section.alt { background: var(--bg-alt); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    h2 { font-size: 1.7rem; letter-spacing: -.01em; margin-bottom: 1rem; }
-    .section-lead { color: var(--text-muted); max-width: 44em; margin-bottom: 1.5rem; }
-
-    .shots { display: grid; gap: 1.25rem; }
-    .shots img {
-      width: 100%; height: auto; display: block;
-      border-radius: 12px; border: 1px solid var(--border);
-      background: var(--surface);
-    }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 1.25rem 1.4rem;
-    }
-    .card h3 { font-size: 1.05rem; margin-bottom: .4rem; }
-    .card p { font-size: .95rem; color: var(--text-muted); }
-
-    .dl-steps { list-style: none; counter-reset: step; display: grid; gap: 1rem; margin-top: 1.25rem; }
-    .dl-steps li {
-      counter-increment: step; position: relative; padding-left: 3rem;
-    }
-    .dl-steps li::before {
-      content: counter(step);
-      position: absolute; left: 0; top: .1rem;
-      width: 2rem; height: 2rem; border-radius: 50%;
-      background: var(--accent-soft); color: var(--accent-strong);
-      display: flex; align-items: center; justify-content: center;
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
       font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text);
     }
+    .brand:hover { text-decoration: none; }
+    nav { display: flex; gap: 1.15rem; font-size: .92rem; }
+    nav a { color: var(--text-muted); }
+    nav a:hover { color: var(--accent); text-decoration: none; }
+
+    main { padding: 3rem 0 4rem; }
+    section { padding: 2rem 0; border-top: 1px solid var(--border); }
+    section:first-child { padding-top: 0; border-top: none; }
+
+    .hero-head {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: .9rem;
+    }
+    h1 { font-size: clamp(2rem, 4.5vw, 2.6rem); line-height: 1.1; letter-spacing: -.02em; }
+    h2 { font-size: 1.25rem; margin-bottom: .9rem; letter-spacing: -.01em; }
+    .tagline { font-size: 1.08rem; color: var(--text-muted); margin-bottom: 1.1rem; }
+    .tagline strong { color: var(--text); font-weight: 600; }
+
+    .meta-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .45rem .65rem;
+      font-size: .92rem;
+      color: var(--text-muted);
+      margin-bottom: 1.35rem;
+    }
+    .cta { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 1.1rem; }
+    .btn {
+      display: inline-block;
+      padding: .6rem 1.05rem;
+      border-radius: 8px;
+      font-size: .94rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .btn:hover { text-decoration: none; }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+    .btn-secondary { background: var(--surface); color: var(--text); }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    .note { font-size: .92rem; color: var(--text-muted); margin-top: .35rem; }
+    .note strong { color: var(--text); }
+
+    ul.features {
+      list-style: disc;
+      padding-left: 1.25rem;
+      display: grid;
+      gap: .65rem;
+    }
+    ul.features li { color: var(--text-muted); }
+    ul.features strong { color: var(--text); }
+
     pre {
-      background: var(--code-bg); color: var(--code-text);
-      border-radius: 8px; padding: .9rem 1.1rem; overflow-x: auto;
-      font-size: .88rem; margin-top: .5rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .85rem 1rem;
+      overflow-x: auto;
+      font-size: .88rem;
+      margin-top: .75rem;
     }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 
-    ul.links { list-style: none; display: grid; gap: .5rem; margin-top: .75rem; }
-    ul.links li::before { content: "→ "; color: var(--accent); }
+    .release {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin-bottom: .85rem;
+    }
+    .release h3 { font-size: 1.02rem; }
+    .release time { color: var(--text-muted); font-size: .88rem; font-weight: 400; margin-left: .4rem; }
+    .release h4 {
+      font-size: .82rem;
+      margin-top: .65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .release ul { padding-left: 1.15rem; margin-top: .25rem; }
+    .release li { font-size: .93rem; color: var(--text-muted); margin: .2rem 0; }
 
-    .release { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.1rem 1.4rem; margin-bottom: 1rem; }
-    .release h3 { font-size: 1.1rem; }
-    .release time { color: var(--text-muted); font-size: .9rem; font-weight: 400; margin-left: .4rem; }
-    .release h4 { font-size: .9rem; margin-top: .6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
-    .release ul { padding-left: 1.2rem; margin-top: .25rem; }
-    .release li { font-size: .95rem; margin: .2rem 0; }
     footer {
       border-top: 1px solid var(--border);
-      padding: 2rem 0 2.5rem; color: var(--text-muted); font-size: .9rem;
+      padding: 1.5rem 0 2rem;
+      color: var(--text-muted);
+      font-size: .88rem;
     }
-    footer .wrap { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+    footer .wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem 1.25rem;
+      justify-content: space-between;
+    }
     footer a { color: var(--text-muted); }
     footer a:hover { color: var(--accent); }
   </style>
 </head>
 <body>
 
-<header class="topbar">
+<header>
   <div class="wrap">
     <a class="brand" href="#">
-      <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" fill="#FF5D68"/><g transform="translate(32 32) scale(0.06328340) translate(-499.5000 -535.0000)"><path fill="#B8323F" d="M414.000,140.000 H754.000 A80.000,80.000 0 0 1 834.000,220.000 V660.000 A80.000,80.000 0 0 1 754.000,740.000 H414.000 A80.000,80.000 0 0 1 334.000,660.000 V220.000 A80.000,80.000 0 0 1 414.000,140.000 Z"/><path fill="#FFFFFF" d="M253.000,270.000 H627.000 A88.000,88.000 0 0 1 715.000,358.000 V842.000 A88.000,88.000 0 0 1 627.000,930.000 H253.000 A88.000,88.000 0 0 1 165.000,842.000 V358.000 A88.000,88.000 0 0 1 253.000,270.000 Z"/><path fill="#FF5D68" d="M363.220,614.300 L363.220,823.300 L555.500,718.800 Z"/></g></svg>
+      <svg width="24" height="24" viewBox="0 0 1024 1024" aria-hidden="true">
+        <defs>
+          <linearGradient id="hdr-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#5B5BFF"/>
+            <stop offset="50%" stop-color="#229BFF"/>
+            <stop offset="100%" stop-color="#00D4FF"/>
+          </linearGradient>
+          <linearGradient id="hdr-g2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#67E8F9"/>
+          </linearGradient>
+        </defs>
+        <rect width="1024" height="1024" rx="224" fill="#0B1021"/>
+        <path d="M192,262 L294,262 L508,512 L294,762 L192,762 L406,512 Z" fill="url(#hdr-g1)" opacity="0.78"/>
+        <path d="M358,262 L460,262 L674,512 L460,762 L358,762 L572,512 Z" fill="url(#hdr-g1)"/>
+        <path d="M652,384 L832,512 L652,640 L702,512 Z" fill="url(#hdr-g2)"/>
+      </svg>
       Orbin
     </a>
     <nav>
-      <a href="#about">About</a>
-      <a href="#whats-new">What&rsquo;s new</a>
-      <a href="#screenshots">Screenshots</a>
-      <a href="#download">Android</a>
-      <a href="#ios">iOS</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#development">Development</a>
+      <a href="#install">Install</a>
+      <a href="#releases">Releases</a>
       <a href="https://github.com/Defuuls/Orbin">GitHub</a>
     </nav>
   </div>
 </header>
 
-<section class="hero wrap">
-  <h1>Orbin</h1>
-  <p class="tagline">A fast, private, open-source imageboard reader for Android and iOS — one shared Kotlin codebase, native on both.</p>
-  <div class="cta">
-    <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download for Android</a>
-    <a class="btn btn-secondary" href="#ios">iOS beta</a>
-    <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
-  </div>
-  <p class="note">Free and AGPLv3-licensed. Not on Google Play or the App Store — Android releases are signed and published on GitHub.</p>
-  <p class="note">Current release: <strong><a href="https://github.com/Defuuls/Orbin/releases/tag/{{RELEASE_TAG}}">{{RELEASE_NUMBER}} — {{RELEASE_CODENAME}}</a></strong>{{RELEASE_DATE}}.</p>
-  {{RELEASE_HIGHLIGHT}}
-</section>
-
-<section id="about" class="alt">
-  <div class="wrap">
-    <h2>About</h2>
-    <p class="section-lead">
-      Orbin browses 4chan (vichan/4chan-compatible) and BBW Chan (LynxChan) today, and its
-      provider architecture means new engines can be added by implementing a single interface —
-      no app changes required. It targets Android&nbsp;12+, is a read-only browsing client
-      (no posting), and ships regular signed releases.
-    </p>
-    <div class="grid">
-      <div class="card">
-        <h3>Subscribed feed</h3>
-        <p>Follow boards and read their most active threads in one feed, grouped by board. Phones show full-width cards; tablets and foldables get adjustable columns. Pull down to refresh.</p>
-      </div>
-      <div class="card">
-        <h3>Catalogs and two-pane reading</h3>
-        <p>Board catalogs are an adaptive grid of every thread. On a wide screen the catalog stays beside the open thread.</p>
-      </div>
-      <div class="card">
-        <h3>Thread reader</h3>
-        <p>Greentext, quote links with previews, backlinks, spoilers, collapsible posts, relative times, a Files view of every attachment, and a remembered reading position. Watch a thread to be told about new replies.</p>
-      </div>
-      <div class="card">
-        <h3>Save a whole thread</h3>
-        <p><strong>Save page</strong> writes a thread as a .zip: an <code>index.html</code> that opens in any browser, its stylesheet, and every image, video and thumbnail. <strong>Download all</strong> saves just the files.</p>
-      </div>
-      <div class="card">
-        <h3>Media</h3>
-        <p>Images and video in the app, with zoom, swipe between files, and video controls. Each board has a media wall of its files, with an optional deep scan that finds files in replies too.</p>
-      </div>
-      <div class="card">
-        <h3>Content filter</h3>
-        <p>An always-on filter removes gore, shock and abuse from every board, feed and search. <em>Cover violent media</em> (on by default) hides pictures in posts about violence until you open them.</p>
-      </div>
-      <div class="card">
-        <h3>Looks and comfort</h3>
-        <p>Material 3 with dynamic colour on Android, light, dark and true-black modes, system font scaling, and screen-reader support. A <em>What&rsquo;s new</em> card after each update says what changed.</p>
-      </div>
-      <div class="card">
-        <h3>Private by design</h3>
-        <p>No accounts, analytics or ads. Every request is HTTPS with encrypted DNS. Android encrypts local data with SQLCipher and a Keystore-backed DataStore; iOS stores SQLite and settings under Data Protection (settings are not separately encrypted). An optional app lock keeps the reader closed. See the <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">privacy policy</a>.</p>
-      </div>
+<main class="wrap">
+  <section>
+    <div class="hero-head">
+      <svg width="48" height="48" viewBox="0 0 1024 1024" aria-hidden="true">
+        <defs>
+          <linearGradient id="hero-g1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#5B5BFF"/>
+            <stop offset="50%" stop-color="#229BFF"/>
+            <stop offset="100%" stop-color="#00D4FF"/>
+          </linearGradient>
+          <linearGradient id="hero-g2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#38BDF8"/>
+            <stop offset="100%" stop-color="#67E8F9"/>
+          </linearGradient>
+        </defs>
+        <rect width="1024" height="1024" rx="224" fill="#0B1021"/>
+        <path d="M192,262 L294,262 L508,512 L294,762 L192,762 L406,512 Z" fill="url(#hero-g1)" opacity="0.78"/>
+        <path d="M358,262 L460,262 L674,512 L460,762 L358,762 L572,512 Z" fill="url(#hero-g1)"/>
+        <path d="M652,384 L832,512 L652,640 L702,512 Z" fill="url(#hero-g2)"/>
+      </svg>
+      <h1>Orbin</h1>
     </div>
-  </div>
-</section>
-
-<section id="whats-new">
-  <div class="wrap">
-    <h2>What&rsquo;s new</h2>
-    <p class="section-lead">The latest releases, straight from the <a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">changelog</a>.</p>
-    {{CHANGELOG}}
-  </div>
-</section>
-
-<section id="screenshots" class="alt">
-  <div class="wrap">
-    <h2>Screenshots</h2>
-    <div class="shots">
-      <img src="assets/orbin-hero-screenshot.svg?v={{RELEASE_CODE}}" alt="Orbin feed on a phone with single-column cards" loading="lazy">
-      <img src="assets/orbin-thread-screenshot.svg?v={{RELEASE_CODE}}" alt="Orbin thread reader with the Posts and Files switcher and reply cards" loading="lazy">
-      <img src="assets/orbin-settings-screenshot.svg?v={{RELEASE_CODE}}" alt="Orbin settings with theme, true black and app lock" loading="lazy">
+    <p class="tagline">
+      Privacy-focused, read-only <strong>Android &amp; iOS imageboard browser</strong> built with Kotlin Multiplatform and Compose Multiplatform.
+    </p>
+    <div class="meta-links">
+      <a href="https://github.com/Defuuls/Orbin/blob/main/docs/architecture/README.md">Architecture</a>
+      <span>&middot;</span>
+      <a href="https://github.com/Defuuls/Orbin/blob/main/docs/wiki/Developer-Guide.md">Developer Guide</a>
+      <span>&middot;</span>
+      <a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS Build</a>
+      <span>&middot;</span>
+      <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">Privacy</a>
+      <span>&middot;</span>
+      <a href="https://github.com/Defuuls/Orbin/blob/main/SECURITY.md">Security</a>
+      <span>&middot;</span>
+      <a href="https://github.com/Defuuls/Orbin/blob/main/LICENSE">License</a>
     </div>
-  </div>
-</section>
-
-<section id="download">
-  <div class="wrap">
-    <h2>Android</h2>
-    <p class="section-lead">
-      Orbin for Android needs <strong>Android 12 or newer</strong>. Signed APKs (<code>orbin-v&lt;version&gt;.apk</code>) are published on
-      <a href="https://github.com/Defuuls/Orbin/releases/latest">GitHub Releases</a> with SHA-256 checksums
-      for every release.
-    </p>
-    <ol class="dl-steps">
-      <li>
-        <strong>Get the APK</strong> from the
-        <a href="https://github.com/Defuuls/Orbin/releases/latest">latest release page</a>
-        and allow installs from your browser when Android asks.
-        You can also track updates with <a href="https://github.com/ImranR98/Obtainium">Obtainium</a>
-        using this repository&rsquo;s URL.
-      </li>
-      <li>
-        <strong>Verify the download</strong> (optional but encouraged) with the checksum file
-        attached to the release:
-        <pre><code>sha256sum -c orbin-&lt;version&gt;.apk.sha256</code></pre>
-      </li>
-      <li>
-        <strong>Updates are one-way.</strong> Once a version has run on your device, older
-        versions will not start on it. Uninstalling and reinstalling clears that, at the cost of
-        your local data.
-      </li>
-      <li>
-        <strong>Stay up to date.</strong> Orbin checks for new versions inside the app
-        (Settings &rarr; Check for updates, or automatically on launch when &ldquo;Tell me about new releases&rdquo; is enabled &mdash; on by default), or watch the
-        <a href="https://github.com/Defuuls/Orbin/releases">releases page</a>.
-      </li>
-    </ol>
-  </div>
-</section>
-
-<section id="ios" class="alt">
-  <div class="wrap">
-    <h2>iOS</h2>
-    <p class="section-lead">
-      Orbin for iPhone and iPad shares its sites, filters, settings and screens with Android through Kotlin
-      Multiplatform, with native video, the share sheet, Files and Photos, and Apple Pencil support on iPad.
-      It needs <strong>iOS 16 or newer</strong>.
-    </p>
-    <ol class="dl-steps">
-      <li><strong>It&rsquo;s in beta on TestFlight.</strong> Builds go to TestFlight testers with each release; Orbin isn&rsquo;t on the App Store.</li>
-      <li><strong>Same releases as Android.</strong> The iOS build carries the Android release&rsquo;s version and changelog, currently {{RELEASE_NUMBER}} — {{RELEASE_CODENAME}}.</li>
-      <li><strong>Build it yourself.</strong> The <a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS guide</a> covers building in Xcode and setting up your own TestFlight.</li>
-    </ol>
-  </div>
-</section>
-
-<section id="privacy">
-  <div class="wrap">
-    <h2>Privacy &amp; security</h2>
-    <p class="section-lead">What Orbin keeps, and how, depends on the platform; the <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">privacy policy</a> is the source of truth.</p>
-    <div class="grid">
-      <div class="card">
-        <h3>Stored on the device</h3>
-        <p>History, bookmarks, downloads and searches stay on the device. Android encrypts them with SQLCipher and a Keystore-backed DataStore. iOS uses SQLite and a DataStore file under Data Protection; the settings file is not separately encrypted.</p>
-      </div>
-      <div class="card">
-        <h3>Locked down</h3>
-        <p>An optional app lock &mdash; strong biometrics or the device credential on Android, Face ID, Touch ID or the passcode on iOS &mdash; with locked content kept out of the app switcher.</p>
-      </div>
-      <div class="card">
-        <h3>Quiet on the wire</h3>
-        <p>HTTPS only, DNS-over-HTTPS (Cloudflare, Google, OpenDNS or NextDNS), no analytics, and no cloud backup of local data.</p>
-      </div>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/Defuuls/Orbin/releases/latest">Download Android APK</a>
+      <a class="btn btn-secondary" href="https://github.com/Defuuls/Orbin">Source on GitHub</a>
     </div>
-  </div>
-</section>
-
-<section id="development" class="alt">
-  <div class="wrap">
-    <h2>Development</h2>
-    <p class="section-lead">
-      Orbin is open source under the AGPLv3 license, built as a strict multi-module Clean Architecture
-      Kotlin Multiplatform project: Android and iOS share the models, sites, storage and screens. Contributions are welcome.
+    <p class="note">
+      <strong>Release:</strong>
+      <a href="https://github.com/Defuuls/Orbin/releases/tag/{{RELEASE_TAG}}">{{RELEASE_NUMBER}} — {{RELEASE_CODENAME}}</a>{{RELEASE_DATE}}
     </p>
-    <ul class="links">
-      <li><a href="https://github.com/Defuuls/Orbin">Source code</a> — the main repository</li>
-      <li><a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> — user guide, settings guide, release history, troubleshooting</li>
-      <li><a href="https://github.com/Defuuls/Orbin/wiki/Developer-Guide">Developer guide</a> — building, toolchain, CI, and releases</li>
-      <li><a href="https://github.com/Defuuls/Orbin/wiki/Architecture-and-Modules">Architecture</a> — layers, modules, and design decisions</li>
-      <li><a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS guide</a> — building and testing the iOS app, and TestFlight</li>
-      <li><a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">Privacy policy</a> — what Orbin keeps and who it talks to</li>
-      <li><a href="https://github.com/Defuuls/Orbin/blob/main/CONTRIBUTING.md">Contributing guide</a> — how to get a change merged</li>
-      <li><a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">Changelog</a> — what shipped, release by release</li>
+    {{RELEASE_HIGHLIGHT}}
+  </section>
+
+  <section>
+    <h2>Overview</h2>
+    <ul class="features">
+      <li><strong>Read-only browsing:</strong> Combined multi-site feed, board directories, List/Grid catalogs, and adaptive two-pane layout (<code>4chan</code> &amp; <code>BBWChan</code>).</li>
+      <li><strong>Thread &amp; media reader:</strong> Posts, Files, and Card views, inline quote expansion, backlinks, Coil 3 images, Media3 / AVPlayer video, and swipe gallery.</li>
+      <li><strong>Privacy &amp; security:</strong> HTTPS-only, DNS-over-HTTPS, SQLCipher/Keystore encryption on Android, Data Protection on iOS, biometric lock, zero telemetry, no cloud backups.</li>
+      <li><strong>Themes:</strong> Midnight Electric palette across Light, Dark, and AMOLED modes.</li>
     </ul>
-  </div>
-</section>
+  </section>
+
+  <section id="install">
+    <h2>Quick Start</h2>
+    <p class="note">
+      Signed Android APKs (Android 12+) are published on <a href="https://github.com/Defuuls/Orbin/releases/latest">GitHub Releases</a>.
+      Building from source requires <strong>JDK 17+</strong> (see <a href="https://github.com/Defuuls/Orbin/blob/main/docs/ios.md">iOS Build</a> for Xcode):
+    </p>
+    <pre><code>./gradlew assembleDebug   # Build Android debug APK
+bash scripts/check.sh     # Run all quality gates</code></pre>
+  </section>
+
+  <section id="releases">
+    <h2>Recent Releases</h2>
+    {{CHANGELOG}}
+  </section>
+</main>
 
 <footer>
   <div class="wrap">
-    <span>Orbin — AGPLv3 licensed, free forever. Page built {{BUILT}}.</span>
+    <span>AGPLv3 &middot; Built {{BUILT}}</span>
     <span>
-      <a href="https://github.com/Defuuls/Orbin">GitHub</a> ·
-      <a href="https://github.com/Defuuls/Orbin/releases">Releases</a> ·
-      <a href="https://github.com/Defuuls/Orbin/wiki">Wiki</a> ·
-      <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">Privacy</a> ·
-      <a href="https://github.com/Defuuls/Orbin/blob/main/LICENSE">License</a>
+      <a href="https://github.com/Defuuls/Orbin">GitHub</a> &middot;
+      <a href="https://github.com/Defuuls/Orbin/blob/main/CHANGELOG.md">Changelog</a> &middot;
+      <a href="https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md">Privacy</a> &middot;
+      <a href="https://github.com/Defuuls/Orbin/blob/main/SECURITY.md">Security</a>
     </span>
   </div>
 </footer>
