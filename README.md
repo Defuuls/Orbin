@@ -4,9 +4,9 @@ Privacy-focused, read-only **Android & iOS imageboard browser** built with Kotli
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [License](LICENSE)
 
-**Current release:** [207 — Actinolite](https://github.com/Defuuls/Orbin/releases/tag/v207-Actinolite)
+**Current release:** [208 — Adamite](https://github.com/Defuuls/Orbin/releases/tag/v208-Adamite)
 
-**What's new in 207:** Full-screen Midnight Electric setup splash, multi-step onboarding, update setup, and refreshed board icons.
+**What's new in 208:** Loopback video streaming with encrypted caching, full-width feed cards, smooth video scrolling, and Android 15 (minSdk 35).
 
 - **Read-only browsing:** Combined multi-site feed, board directories, List/Grid catalogs, and adaptive two-pane layout (`4chan` & `BBWChan`).
 - **Thread & media reader:** Posts, Files, and Card views, inline quote expansion, backlinks, Coil 3 images, Media3 / AVPlayer video, and swipe gallery.

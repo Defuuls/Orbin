@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [208-Adamite] - 2026-11-14
+
+### Added
+- Added local HTTP loopback video streaming and an encrypted video cache with configurable cache size in Settings.
+
+### Changed
+- Updated the Home feed to use full-width cards with refreshed catalog, thread, and navigation styling.
+- Raised Android minSdk to 35 (Android 15) and removed obsolete pre-API 35 compatibility checks.
+
+### Fixed
+- Improved inline video playback and scrolling smoothness across feeds and threads.
+- Restored standard splash screen startup behavior and updated Android and iOS smoke tests.
+
+
 ## [207-Actinolite] - 2026-11-14
 
 ### Added
@@ -3151,7 +3165,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v207-Actinolite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v208-Adamite...HEAD
+[208-Adamite]: https://github.com/Defuuls/Orbin/compare/v207-Actinolite...v208-Adamite
 [207-Actinolite]: https://github.com/Defuuls/Orbin/compare/v206-Sea-Beet...v207-Actinolite
 [206-Sea-Beet]: https://github.com/Defuuls/Orbin/compare/v205-Nopales...v206-Sea-Beet
 [205-Nopales]: https://github.com/Defuuls/Orbin/compare/v204-Moringa...v205-Nopales
