@@ -71,7 +71,7 @@ class ThemeNestingTest {
         assertEquals(Color.Black, amoled.background)
         assertNotEquals(Color.Black, plain.background)
         assertEquals(plain.ink, amoled.ink)
-        assertEquals(plain.accent, amoled.accent)
+        assertEquals(Color.White, amoled.accent)
         assertNotEquals(plain.raised, amoled.raised)
     }
 

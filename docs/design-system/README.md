@@ -38,21 +38,21 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 | `color.statusBar` | `#FFFFFF` | `#000000` | `#000000` | Status bar ground |
 | `color.onAppBar` | `#1A1A1A` | `#FFFFFF` | `#FFFFFF` | App bar labels and icons |
 | `color.background` | `#FFFFFF` | `#0B1021` | `#000000` | Screen, row, post and card ground |
-| `color.surfaceVariant` | `#F5F7FB` | `#141B33` | `#10162B` | Secondary ground, placeholders and skeletons |
-| `color.selected` | `#EEF4FF` | `#1A2547` | `#162040` | Open row in two panes |
+| `color.surfaceVariant` | `#F5F7FB` | `#141B33` | `#161616` | Secondary ground, placeholders and skeletons |
+| `color.selected` | `#EEF4FF` | `#1A2547` | `#242424` | Open row in two panes |
 | `color.ink` | `#DE000000` | `#FFFFFF` | `#FFFFFF` | Primary body text |
 | `color.inkSecondary` | `#89000000` | `#B2FFFFFF` | `#B2FFFFFF` | Generic secondary UI text |
-| `color.inkMuted` | `#5A6378` | `#9FB0CE` | `#9FB0CE` | Post numbers, dates and attachment details |
+| `color.inkMuted` | `#5A6378` | `#9FB0CE` | `#B8B8B8` | Post numbers, dates and attachment details |
 | `color.hairline` | `#1E000000` | `#1EFFFFFF` | `#1EFFFFFF` | Decorative row and post dividers |
-| `color.accent` | `#4338CA` | `#00D4FF` | `#00D4FF` | Orbin progress and actions |
-| `color.onAccent` | `#FFFFFF` | `#06131F` | `#06131F` | Text on an accent-filled control |
-| `color.quote` | `#2E7D32` | `#34D399` | `#34D399` | Quoted lines |
-| `color.author` | `#1A1A1A` | `#8BE9FD` | `#8BE9FD` | Post author name |
-| `color.subject` | `#1A1A1A` | `#8BE9FD` | `#8BE9FD` | Post and catalog subjects |
-| `color.quoteLink` | `#0369A1` | `#38BDF8` | `#38BDF8` | Post references and backlinks |
+| `color.accent` | `#4338CA` | `#00D4FF` | `#FFFFFF` | Orbin progress and actions |
+| `color.onAccent` | `#FFFFFF` | `#06131F` | `#000000` | Text on an accent-filled control |
+| `color.quote` | `#2E7D32` | `#34D399` | `#D4D4D4` | Quoted lines |
+| `color.author` | `#1A1A1A` | `#8BE9FD` | `#E5E5E5` | Post author name |
+| `color.subject` | `#1A1A1A` | `#8BE9FD` | `#FFFFFF` | Post and catalog subjects |
+| `color.quoteLink` | `#0369A1` | `#38BDF8` | `#D4D4D4` | Post references and backlinks |
 | `color.error` | `#B3261E` | `#F2B8B5` | `#F2B8B5` | Error titles |
 
-The light toolbar is white with dark ink so the Midnight Electric indigo/cyan logo and accent can carry the brand. color.statusBar matches color.appBar in Light, and is black in Dark and AMOLED. Dark uses a #0B1021 midnight-navy toolbar; AMOLED uses black for both the toolbar and the status bar. Generic color.inkSecondary is distinct from color.inkMuted post metadata. Selected rows use a light indigo wash #EEF4FF in Light and a deep indigo-tinted #1A2547 / #162040 in Dark and AMOLED. Subjects and author names use dark ink in Light and a light cyan #8BE9FD in Dark, so they stay readable on the selected ground. Post references use the electric cyan/sky accent. Quoted (greentext) lines keep a contrast-safe green. The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
+The light toolbar is white with dark ink so the Midnight Electric indigo/cyan logo and accent can carry the brand. color.statusBar matches color.appBar in Light, and is black in Dark and AMOLED. Dark uses a #0B1021 midnight-navy toolbar and Midnight Electric cyan accents; AMOLED uses pure black and white monochrome (`#000000` / `#FFFFFF` with neutral `#161616` / `#242424` surfaces). Generic color.inkSecondary is distinct from color.inkMuted post metadata. Selected rows use a light indigo wash #EEF4FF in Light, #1A2547 in Dark, and neutral #242424 in AMOLED. Subjects and author names use dark ink in Light, light cyan #8BE9FD in Dark, and crisp white/silver in AMOLED. Post references use the electric cyan/sky accent in Light and Dark, and silver #D4D4D4 in AMOLED. Quoted (greentext) lines keep a contrast-safe green in Light and Dark and neutral silver in AMOLED. The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
 
 ### Contrast
 
