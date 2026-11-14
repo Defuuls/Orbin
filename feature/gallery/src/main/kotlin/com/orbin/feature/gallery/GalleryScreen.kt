@@ -1,5 +1,6 @@
 package com.orbin.feature.gallery
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -144,8 +145,6 @@ fun GalleryScreen(
         // Exit and download remain visible while viewing or playing media.
         val closeLabel = stringResource(R.string.gallery_close)
         val downloadLabel = stringResource(R.string.gallery_download)
-        val imageCopiedMessage = stringResource(R.string.gallery_image_copied)
-        val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
 
         LaunchedEffect(selection.activePageKey, media, playback.preloadNextClip) {
@@ -306,16 +305,8 @@ fun GalleryScreen(
                     onPlaybackSpeedChange = { playbackSpeed = it },
                     onCopyImage = { attachment ->
                         scope.launch {
-                            val result = viewModel.copyImage(attachment.sourceUrl)
+                            viewModel.copyImage(attachment.sourceUrl)
                             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                val message =
-                                    when (result) {
-                                        ImageCopyResult.IMAGE -> imageCopiedMessage
-                                        ImageCopyResult.URL -> urlCopiedMessage
-                                    }
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                            }
                         }
                     },
                 )
