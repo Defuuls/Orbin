@@ -1,6 +1,4 @@
-<img src="docs/assets/orbin-icon-mark-small.svg" width="48" height="48" alt="Orbin" align="left" />
-
-# Orbin
+# <img src="docs/assets/orbin-icon-mark-small.svg" width="28" height="28" alt="Orbin" /> Orbin
 
 Privacy-focused, read-only **Android & iOS imageboard browser** built with Kotlin Multiplatform and Compose Multiplatform.
 
