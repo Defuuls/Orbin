@@ -34,25 +34,25 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 
 | Token | Light | Dark | AMOLED | Use |
 | --- | --- | --- | --- | --- |
-| `color.appBar` | `#FFFFFF` | `#1C1C1E` | `#000000` | App bar ground |
+| `color.appBar` | `#FFFFFF` | `#0B1021` | `#000000` | App bar ground |
 | `color.statusBar` | `#FFFFFF` | `#000000` | `#000000` | Status bar ground |
 | `color.onAppBar` | `#1A1A1A` | `#FFFFFF` | `#FFFFFF` | App bar labels and icons |
-| `color.background` | `#FFFFFF` | `#1C1C1E` | `#000000` | Screen, row, post and card ground |
-| `color.surfaceVariant` | `#F5F5F5` | `#2C2C2E` | `#212121` | Secondary ground, placeholders and skeletons |
-| `color.selected` | `#FFF5F6` | `#3D2A2D` | `#3D2A2D` | Open row in two panes |
+| `color.background` | `#FFFFFF` | `#0B1021` | `#000000` | Screen, row, post and card ground |
+| `color.surfaceVariant` | `#F5F7FB` | `#141B33` | `#10162B` | Secondary ground, placeholders and skeletons |
+| `color.selected` | `#EEF4FF` | `#1A2547` | `#162040` | Open row in two panes |
 | `color.ink` | `#DE000000` | `#FFFFFF` | `#FFFFFF` | Primary body text |
 | `color.inkSecondary` | `#89000000` | `#B2FFFFFF` | `#B2FFFFFF` | Generic secondary UI text |
-| `color.inkMuted` | `#646464` | `#C5C8C6` | `#C5C8C6` | Post numbers, dates and attachment details |
+| `color.inkMuted` | `#5A6378` | `#9FB0CE` | `#9FB0CE` | Post numbers, dates and attachment details |
 | `color.hairline` | `#1E000000` | `#1EFFFFFF` | `#1EFFFFFF` | Decorative row and post dividers |
-| `color.accent` | `#C73E4E` | `#FF8A96` | `#FF8A96` | Orbin progress and actions |
-| `color.onAccent` | `#FFFFFF` | `#3B0D14` | `#3B0D14` | Text on an accent-filled control |
-| `color.quote` | `#2E7D32` | `#81C784` | `#81C784` | Quoted lines |
-| `color.author` | `#1A1A1A` | `#FFB0B8` | `#FFB0B8` | Post author name |
-| `color.subject` | `#1A1A1A` | `#FFB0B8` | `#FFB0B8` | Post and catalog subjects |
-| `color.quoteLink` | `#C73E4E` | `#FF9AA5` | `#FF9AA5` | Post references and backlinks |
+| `color.accent` | `#4338CA` | `#00D4FF` | `#00D4FF` | Orbin progress and actions |
+| `color.onAccent` | `#FFFFFF` | `#06131F` | `#06131F` | Text on an accent-filled control |
+| `color.quote` | `#2E7D32` | `#34D399` | `#34D399` | Quoted lines |
+| `color.author` | `#1A1A1A` | `#8BE9FD` | `#8BE9FD` | Post author name |
+| `color.subject` | `#1A1A1A` | `#8BE9FD` | `#8BE9FD` | Post and catalog subjects |
+| `color.quoteLink` | `#0369A1` | `#38BDF8` | `#38BDF8` | Post references and backlinks |
 | `color.error` | `#B3261E` | `#F2B8B5` | `#F2B8B5` | Error titles |
 
-The light toolbar is white with dark ink so the coral logo and accent can carry the brand. color.statusBar matches color.appBar in Light, and is black in Dark and AMOLED. Dark uses a #1C1C1E toolbar; AMOLED uses black for both the toolbar and the status bar. Generic color.inkSecondary is distinct from color.inkMuted post metadata. Selected rows use a light coral wash #FFF5F6 in Light and a deep coral-tinted #3D2A2D in Dark and AMOLED. Subjects and author names use dark ink in Light and a light coral #FFB0B8 in Dark, so they stay readable on the selected ground. Post references use the coral accent. Quoted (greentext) lines keep a contrast-safe green. The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
+The light toolbar is white with dark ink so the Midnight Electric indigo/cyan logo and accent can carry the brand. color.statusBar matches color.appBar in Light, and is black in Dark and AMOLED. Dark uses a #0B1021 midnight-navy toolbar; AMOLED uses black for both the toolbar and the status bar. Generic color.inkSecondary is distinct from color.inkMuted post metadata. Selected rows use a light indigo wash #EEF4FF in Light and a deep indigo-tinted #1A2547 / #162040 in Dark and AMOLED. Subjects and author names use dark ink in Light and a light cyan #8BE9FD in Dark, so they stay readable on the selected ground. Post references use the electric cyan/sky accent. Quoted (greentext) lines keep a contrast-safe green. The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
 
 ### Contrast
 
