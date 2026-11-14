@@ -230,7 +230,9 @@ fun ReaderDrawer(
                     entry.label,
                     style =
                         if (isSelected) {
-                            OrbinType.stateBody.withReaderFont().copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                            OrbinType.stateBody.withReaderFont().copy(
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                            )
                         } else {
                             OrbinType.stateBody.withReaderFont()
                         },
@@ -260,11 +262,31 @@ private data class DrawerEntry(
 @Composable
 private fun readerDrawerEntries(): List<DrawerEntry> =
     listOf(
-        DrawerEntry(NextDestination.FEED, stringResource(Res.string.reader_nav_home), ReaderIcons.Home, ReaderIcons.HomeFilled),
-        DrawerEntry(NextDestination.WATCHED, stringResource(Res.string.reader_nav_watched), ReaderIcons.Watched, ReaderIcons.WatchedFilled),
-        DrawerEntry(NextDestination.BOARDS, stringResource(Res.string.reader_nav_boards), ReaderIcons.Boards, ReaderIcons.BoardsFilled),
+        DrawerEntry(
+            NextDestination.FEED,
+            stringResource(Res.string.reader_nav_home),
+            ReaderIcons.Home,
+            ReaderIcons.HomeFilled,
+        ),
+        DrawerEntry(
+            NextDestination.WATCHED,
+            stringResource(Res.string.reader_nav_watched),
+            ReaderIcons.Watched,
+            ReaderIcons.WatchedFilled,
+        ),
+        DrawerEntry(
+            NextDestination.BOARDS,
+            stringResource(Res.string.reader_nav_boards),
+            ReaderIcons.Boards,
+            ReaderIcons.BoardsFilled,
+        ),
         DrawerEntry(NextDestination.SEARCH, stringResource(Res.string.reader_nav_search), ReaderIcons.Search),
-        DrawerEntry(NextDestination.SAVED, stringResource(Res.string.reader_nav_saved), ReaderIcons.Saved, ReaderIcons.SavedFilled),
+        DrawerEntry(
+            NextDestination.SAVED,
+            stringResource(Res.string.reader_nav_saved),
+            ReaderIcons.Saved,
+            ReaderIcons.SavedFilled,
+        ),
         DrawerEntry(NextDestination.SETTINGS, stringResource(Res.string.reader_nav_settings), ReaderIcons.Settings),
     )
 

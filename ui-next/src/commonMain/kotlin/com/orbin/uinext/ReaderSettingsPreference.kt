@@ -139,13 +139,10 @@ internal fun ReaderSettingAnchor(
                                     Text(
                                         label,
                                         style = preferenceTitleStyle,
-                                        color = if (isSelected) reader.accent else preferencePrimaryColor,
+                                        color = preferencePrimaryColor,
                                         modifier = Modifier.weight(1f),
                                     )
                                     ReaderSettingsChoiceMark(selected = isSelected)
-                                }
-                                if (index < item.options.lastIndex) {
-                                    ReaderHairline(Modifier.padding(horizontal = 16.dp))
                                 }
                             }
                         }

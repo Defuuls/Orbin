@@ -41,7 +41,6 @@ import com.orbin.uinext.sourceLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 private const val RELATIVE_TIME_TICK_MS = 60_000L
 

@@ -162,7 +162,13 @@ class MediaVideo private constructor(
     }
 
     fun scrubTo(targetMs: Long) {
-        val clamped = if (_durationMs.value > 0L) targetMs.coerceIn(0L, _durationMs.value) else targetMs.coerceAtLeast(0L)
+        val duration = _durationMs.value
+        val clamped =
+            if (duration > 0L) {
+                targetMs.coerceIn(0L, duration)
+            } else {
+                targetMs.coerceAtLeast(0L)
+            }
         _scrubPositionMs.value = clamped
         lease?.player?.seekTo(clamped)
     }

@@ -330,7 +330,12 @@ internal fun FeedGridCell(
     if (optionsVisible) {
         val actions =
             buildList {
-                add(NextSheetAction(label = stringResource(Res.string.reader_feed_open_thread), onClick = { onClick(row) }))
+                add(
+                    NextSheetAction(
+                        label = stringResource(Res.string.reader_feed_open_thread),
+                        onClick = { onClick(row) },
+                    ),
+                )
                 onToggleWatch?.let { action ->
                     add(
                         NextSheetAction(
@@ -344,7 +349,12 @@ internal fun FeedGridCell(
                     )
                 }
                 onShareRow?.let { action ->
-                    add(NextSheetAction(label = stringResource(Res.string.reader_feed_share, row.subject), onClick = { action(row) }))
+                    add(
+                        NextSheetAction(
+                            label = stringResource(Res.string.reader_feed_share, row.subject),
+                            onClick = { action(row) },
+                        ),
+                    )
                 }
                 if (!row.watched) {
                     onToggleSaved?.let { action ->
@@ -352,7 +362,11 @@ internal fun FeedGridCell(
                             NextSheetAction(
                                 label =
                                     stringResource(
-                                        if (row.bookmarked) Res.string.reader_feed_unsave else Res.string.reader_feed_save,
+                                        if (row.bookmarked) {
+                                            Res.string.reader_feed_unsave
+                                        } else {
+                                            Res.string.reader_feed_save
+                                        },
                                         row.subject,
                                     ),
                                 onClick = { action(row) },

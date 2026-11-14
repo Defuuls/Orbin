@@ -11,7 +11,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPackageManager
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33])
+@Config(sdk = [35])
 class VersionGuardRepositoryImplTest {
     private lateinit var context: Context
 

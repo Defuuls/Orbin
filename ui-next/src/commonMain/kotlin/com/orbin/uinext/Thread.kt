@@ -576,20 +576,50 @@ private fun threadOverflow(
             }
         }
         if (onShare != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_thread_share), icon = ReaderIcons.Share, onClick = onShare))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_thread_share),
+                    icon = ReaderIcons.Share,
+                    onClick = onShare,
+                ),
+            )
         }
         if (onReload != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_reload), icon = ReaderIcons.Refresh, onClick = onReload))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_reload),
+                    icon = ReaderIcons.Refresh,
+                    onClick = onReload,
+                ),
+            )
         }
         if (onOpenBrowser != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), icon = ReaderIcons.ShareForward, onClick = onOpenBrowser))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_open_browser),
+                    icon = ReaderIcons.ShareForward,
+                    onClick = onOpenBrowser,
+                ),
+            )
         }
         if (!showingPosts) {
             if (onDownloadAll != null) {
-                add(ReaderMenuItem(stringResource(Res.string.next_thread_download_all), icon = ReaderIcons.Download, onClick = onDownloadAll))
+                add(
+                    ReaderMenuItem(
+                        stringResource(Res.string.next_thread_download_all),
+                        icon = ReaderIcons.Download,
+                        onClick = onDownloadAll,
+                    ),
+                )
             }
             if (onSavePage != null) {
-                add(ReaderMenuItem(stringResource(Res.string.next_thread_save_page), icon = ReaderIcons.Saved, onClick = onSavePage))
+                add(
+                    ReaderMenuItem(
+                        stringResource(Res.string.next_thread_save_page),
+                        icon = ReaderIcons.Saved,
+                        onClick = onSavePage,
+                    ),
+                )
             }
         }
     }

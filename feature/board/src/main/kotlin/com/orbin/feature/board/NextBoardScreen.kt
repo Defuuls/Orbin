@@ -43,7 +43,6 @@ import com.orbin.uinext.ReaderNavigation
 import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderScaffold
 import com.orbin.uinext.catalogSortTabs
-import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 /** A paged catalog keeps its frame and loaded rows through refresh failures. */
 @Composable

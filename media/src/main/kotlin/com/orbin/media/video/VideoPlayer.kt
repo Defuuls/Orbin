@@ -60,7 +60,6 @@ import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.media.R
 import com.orbin.media.di.VideoMediaEntryPoint
 import com.orbin.media.hasHttpStatus
-import dagger.hilt.android.EntryPointAccessors
 import com.orbin.network.interceptor.RetryAfter
 import com.orbin.network.interceptor.RetryAfterTracker
 import com.orbin.uinext.FeedPlaybackControls
@@ -68,6 +67,7 @@ import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextCircularProgress
 import com.orbin.uinext.mediaPlaybackSpeed
 import com.orbin.uinext.tokens.OrbinType
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.delay
 import okhttp3.HttpUrl.Companion.toHttpUrl
 

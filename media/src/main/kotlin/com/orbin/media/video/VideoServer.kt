@@ -208,7 +208,8 @@ class VideoServer internal constructor(
         withContext(Dispatchers.IO) {
             runCatching {
                 val dir = cacheDirProvider()
-                dir.listFiles()
+                val files = dir.listFiles()
+                files
                     ?.asSequence()
                     ?.filter { it.isFile && !it.name.endsWith(PART_SUFFIX) }
                     ?.sumOf { it.length() }
@@ -220,7 +221,8 @@ class VideoServer internal constructor(
         withContext(Dispatchers.IO) {
             runCatching {
                 val dir = cacheDirProvider()
-                dir.listFiles()
+                val files = dir.listFiles()
+                files
                     ?.filter { it.isFile && !it.name.endsWith(PART_SUFFIX) }
                     ?.forEach { it.delete() }
             }
@@ -419,8 +421,9 @@ class VideoServer internal constructor(
     private fun pruneCache() {
         val limit = maxCacheBytes
         val dir = cacheDirProvider()
+        val rawFiles = dir.listFiles()
         val files =
-            dir.listFiles()
+            rawFiles
                 ?.filter { it.isFile && !it.name.endsWith(PART_SUFFIX) }
                 ?.sortedBy { it.lastModified() }
                 ?.toMutableList()
@@ -448,6 +451,7 @@ class VideoServer internal constructor(
     ) {
         val partFile: File = partFileFor(finalFile)
         val done = CompletableDeferred<Unit>()
+        @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
         private val dataLock = Object()
 
         @Volatile
@@ -629,7 +633,13 @@ class VideoServer internal constructor(
             // Wait briefly for headers/totalLength if download just started.
             val deadline = System.currentTimeMillis() + 10_000L
             synchronized(dataLock) {
-                while (totalLength < 0L && !failed && !cancelled && !done.isCompleted && System.currentTimeMillis() < deadline) {
+                while (
+                    totalLength < 0L &&
+                    !failed &&
+                    !cancelled &&
+                    !done.isCompleted &&
+                    System.currentTimeMillis() < deadline
+                ) {
                     dataLock.wait(50)
                 }
             }

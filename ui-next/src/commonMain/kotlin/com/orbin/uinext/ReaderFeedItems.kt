@@ -147,9 +147,20 @@ private fun readerFeedRowMenu(
         val videoReplies = actions.onOpenReplies != null && !actions.repliesOpenComments
         val opensMedia = media != null || videoReplies
         if (covered && opensMedia) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_reveal_spoiler), icon = ReaderIcons.Hide, onClick = onReveal))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_reveal_spoiler),
+                    icon = ReaderIcons.Hide,
+                    onClick = onReveal,
+                ),
+            )
         } else if (media != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_media, row.subject), icon = ReaderIcons.Album) { media(row) })
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_feed_open_media, row.subject),
+                    icon = ReaderIcons.Album,
+                ) { media(row) },
+            )
         }
         actions.onOpenReplies?.takeIf { actions.repliesOpenComments || !covered }?.let { open ->
             val label =
@@ -162,7 +173,12 @@ private fun readerFeedRowMenu(
             add(ReaderMenuItem(stringResource(label, row.subject), icon = icon) { open(row) })
         }
         actions.onOpenBoard?.let { open ->
-            add(ReaderMenuItem(stringResource(Res.string.reader_feed_open_board, row.board), icon = ReaderIcons.Boards) { open(row) })
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_feed_open_board, row.board),
+                    icon = ReaderIcons.Boards,
+                ) { open(row) },
+            )
         }
         actions.onToggleWatch?.let { toggle ->
             val label = if (row.watched) Res.string.reader_feed_unwatch else Res.string.reader_feed_watch
@@ -181,7 +197,12 @@ private fun readerFeedRowMenu(
             add(ReaderMenuItem(stringResource(label, row.subject), enabled = !lockedSaved, icon = icon) { toggle(row) })
         }
         actions.onShare?.let { share ->
-            add(ReaderMenuItem(stringResource(Res.string.reader_feed_share, row.subject), icon = ReaderIcons.Share) { share(row) })
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_feed_share, row.subject),
+                    icon = ReaderIcons.Share,
+                ) { share(row) },
+            )
         }
     }
 
@@ -226,7 +247,12 @@ private fun ReaderFeedMenu(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = if (selected) reader.accent else if (item.enabled) reader.inkSecondary else reader.inkMuted,
+                                tint =
+                                    when {
+                                        selected -> reader.accent
+                                        item.enabled -> reader.inkSecondary
+                                        else -> reader.inkMuted
+                                    },
                                 modifier = Modifier.size(18.dp),
                             )
                         }

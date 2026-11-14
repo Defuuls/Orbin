@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -428,13 +427,31 @@ private fun catalogOverflow(
             addAll(catalogModeMenuItems(mode, onModeChange))
         }
         if (sortLabel != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_sort, sortLabel), icon = ReaderIcons.ChevronDown, onClick = onSort))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_sort, sortLabel),
+                    icon = ReaderIcons.ChevronDown,
+                    onClick = onSort,
+                ),
+            )
         }
         if (onOpenMedia != null) {
-            add(ReaderMenuItem(stringResource(Res.string.next_board_media), icon = ReaderIcons.Album, onClick = onOpenMedia))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.next_board_media),
+                    icon = ReaderIcons.Album,
+                    onClick = onOpenMedia,
+                ),
+            )
         }
         if (onOpenBrowser != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), icon = ReaderIcons.ShareForward, onClick = onOpenBrowser))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_open_browser),
+                    icon = ReaderIcons.ShareForward,
+                    onClick = onOpenBrowser,
+                ),
+            )
         }
     }
 
@@ -728,7 +745,12 @@ internal fun CatalogCard(
                     onClick = { onOpen(row) },
                 ),
         containerColor = if (selected) colors.selected else null,
-        border = if (selected) BorderStroke(2.dp, colors.accent) else BorderStroke(ReaderSize.hairline, colors.hairline),
+        border =
+            if (selected) {
+                BorderStroke(2.dp, colors.accent)
+            } else {
+                BorderStroke(ReaderSize.hairline, colors.hairline)
+            },
         elevated = false,
         shape = RoundedCornerShape(NEKO_CARD_RADIUS_DP.dp),
     ) {

@@ -164,7 +164,9 @@ fun ReaderBoardPicker(
                                 .testTag("reader-board-option-${board.providerId}/${board.boardId}")
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(OrbinRadius.small))
-                                .background(if (isSelected) reader.selected else androidx.compose.ui.graphics.Color.Transparent)
+                                .background(
+                                    if (isSelected) reader.selected else androidx.compose.ui.graphics.Color.Transparent,
+                                )
                                 .selectable(
                                     selected = isSelected,
                                     role = Role.Button,
