@@ -42,6 +42,7 @@ import javax.inject.Singleton
  * range upstream without blocking the sequential download.
  */
 @Singleton
+@Suppress("TooManyFunctions")
 class VideoServer internal constructor(
     private val cacheDirProvider: () -> File,
     private val client: OkHttpClient,
