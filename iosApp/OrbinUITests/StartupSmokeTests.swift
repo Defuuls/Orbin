@@ -16,10 +16,20 @@ final class StartupSmokeTests: XCTestCase {
     func testFirstLaunchRequiresAPersistedBoardBeforeOpeningHome() {
         app.launch()
 
+        let getStarted = app.buttons.matching(NSPredicate(format: "label == %@", "Get started")).firstMatch
         let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
         let done = releaseNotesDoneButton()
-        waitUntilExists([startBrowsing, done], description: "Onboarding or this release's notes")
+        waitUntilExists([getStarted, startBrowsing, done], description: "Onboarding or this release's notes")
         dismissReleaseNotesIfPresent()
+        if getStarted.exists {
+            waitUntilHittable([getStarted], description: "The setup welcome Get started button")
+            getStarted.tap()
+            let continueButton = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).firstMatch
+            waitUntilHittable([continueButton], description: "The appearance setup Continue button")
+            continueButton.tap()
+            waitUntilHittable([continueButton], description: "The privacy setup Continue button")
+            continueButton.tap()
+        }
         waitUntilExists([startBrowsing], description: "The disabled Start browsing button")
 
         let welcome = labeled("Welcome to Orbin")
