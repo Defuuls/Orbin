@@ -34,15 +34,18 @@ BASE_URL = "https://github.com/Defuuls/Orbin"
 HERO_SVG = "docs/assets/orbin-hero-screenshot.svg"
 CODENAMES_FILE = ROOT / "release" / "codenames.txt"
 # Codename eras (Japanese-name era ended at v128 — Rei):
-#   disease  v129–v135 (closed; shipped names kept in [disease])
-#   fruit    v136 onward (current; pick from [fruit])
+#   disease    v129–v135 (closed; shipped names kept in [disease])
+#   fruit      v136–v167 (closed; shipped names kept in [fruit])
+#   vegetable  v168–v206 (closed; shipped names kept in [vegetable])
+#   mineral    v207 onward (current; pick from [mineral])
 DISEASE_ERA_FROM = 129
 FRUIT_ERA_FROM = 136
 VEGETABLE_ERA_FROM = 168
+MINERAL_ERA_FROM = 207
 CODENAME = re.compile(r"^[A-Za-z][A-Za-z0-9 '-]*$")
 # README's one-line release highlight: **What's new in <number>:** <highlight>
 HIGHLIGHT_LINE = re.compile(r"^\*\*What's new in [^:\n]*:\*\*.*$", re.M)
-SECTION_HEADER = re.compile(r"^\[(disease|fruit|vegetable)\]\s*$", re.IGNORECASE)
+SECTION_HEADER = re.compile(r"^\[(disease|fruit|vegetable|mineral)\]\s*$", re.IGNORECASE)
 
 
 class ManifestError(Exception):
@@ -99,10 +102,10 @@ def _require(data: dict, key: str, kind: type):
 
 
 def load_codename_sections() -> dict[str, list[str]]:
-    """Display-name pools from release/codenames.txt, keyed by section (disease/fruit/vegetable)."""
+    """Display-name pools from release/codenames.txt, keyed by section (disease/fruit/vegetable/mineral)."""
     if not CODENAMES_FILE.exists():
         raise ManifestError(f"missing codename pool at {CODENAMES_FILE.relative_to(ROOT)}")
-    sections: dict[str, list[str]] = {"disease": [], "fruit": [], "vegetable": []}
+    sections: dict[str, list[str]] = {"disease": [], "fruit": [], "vegetable": [], "mineral": []}
     current: str | None = None
     for line in CODENAMES_FILE.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
@@ -116,7 +119,7 @@ def load_codename_sections() -> dict[str, list[str]]:
             continue
         if current is None:
             raise ManifestError(
-                f"{CODENAMES_FILE.name}: name {stripped!r} appears before a [disease]/[fruit]/[vegetable] section"
+                f"{CODENAMES_FILE.name}: name {stripped!r} appears before a [disease]/[fruit]/[vegetable]/[mineral] section"
             )
         sections[current].append(" ".join(stripped.split()))
     if not sections["disease"]:
@@ -125,6 +128,8 @@ def load_codename_sections() -> dict[str, list[str]]:
         raise ManifestError(f"{CODENAMES_FILE.name} [fruit] section has no codename entries")
     if not sections["vegetable"]:
         raise ManifestError(f"{CODENAMES_FILE.name} [vegetable] section has no codename entries")
+    if not sections["mineral"]:
+        raise ManifestError(f"{CODENAMES_FILE.name} [mineral] section has no codename entries")
     return sections
 
 
@@ -139,8 +144,13 @@ def load_fruit_codenames() -> list[str]:
 
 
 def load_vegetable_codenames() -> list[str]:
-    """Ordered vegetable-era Display names (v168+)."""
+    """Ordered vegetable-era Display names (v168–v206)."""
     return load_codename_sections()["vegetable"]
+
+
+def load_mineral_codenames() -> list[str]:
+    """Ordered mineral-era Display names (v207+)."""
+    return load_codename_sections()["mineral"]
 
 
 def require_era_codename(number: int, codename: str) -> None:
@@ -156,10 +166,14 @@ def require_era_codename(number: int, codename: str) -> None:
         pool = sections["fruit"]
         label = "fruits"
         era_hint = f"v{FRUIT_ERA_FROM}–v{VEGETABLE_ERA_FROM - 1}"
-    else:
+    elif number < MINERAL_ERA_FROM:
         pool = sections["vegetable"]
         label = "unusual vegetables"
-        era_hint = f"v{VEGETABLE_ERA_FROM}+"
+        era_hint = f"v{VEGETABLE_ERA_FROM}–v{MINERAL_ERA_FROM - 1}"
+    else:
+        pool = sections["mineral"]
+        label = "minerals and gemstones"
+        era_hint = f"v{MINERAL_ERA_FROM}+"
     if codename not in pool:
         preview = ", ".join(pool[:8])
         raise ManifestError(
