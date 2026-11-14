@@ -1,7 +1,5 @@
 package com.orbin.feature.gallery
 
-import android.os.Build
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -162,9 +160,6 @@ fun GalleryScreen(
         val save: (MediaAttachment) -> Unit = { attachment ->
             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
             viewModel.download(attachment)
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
-            }
         }
         val closeThresholdPx = with(density) { CLOSE_PULL_THRESHOLD.toPx() }
         val currentType = media.getOrNull(currentIndex)?.type?.takeUnless { waitingForRestoredPage }
