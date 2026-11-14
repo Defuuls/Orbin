@@ -652,8 +652,7 @@ class VideoServer internal constructor(
             streamBody(output, start, end)
         }
 
-        private fun isAwaitingHeaders(): Boolean =
-            totalLength < 0L && !failed && !cancelled && !done.isCompleted
+        private fun isAwaitingHeaders(): Boolean = totalLength < 0L && !failed && !cancelled && !done.isCompleted
 
         private fun waitForHeaders() {
             val deadline = System.currentTimeMillis() + HEADER_WAIT_TIMEOUT_MS
