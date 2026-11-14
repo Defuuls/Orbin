@@ -65,6 +65,7 @@ val LocalReaderOpenDrawer = staticCompositionLocalOf<(() -> Unit)?> { null }
 
 object ReaderDrawerTags {
     const val DRAWER = "reader-navigation-drawer"
+    const val HEADER = "reader-navigation-header"
     const val ENTRY = "reader-navigation-entry-"
     const val ITEM_PREFIX = ENTRY
 }
@@ -188,6 +189,18 @@ fun ReaderDrawer(
             .padding(vertical = ReaderSpace.gapSmall)
             .semantics { paneTitle = drawerTitle },
     ) {
+        Row(
+            Modifier
+                .testTag(ReaderDrawerTags.HEADER)
+                .fillMaxWidth()
+                .padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.gapSmall),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gap),
+        ) {
+            OrbinLogoMark(Modifier.size(32.dp))
+            Text("Orbin", style = OrbinType.appBarTitle.withReaderFont(), color = reader.ink)
+        }
+        ReaderHairline(Modifier.padding(vertical = ReaderSpace.gapSmall))
         readerDrawerEntries().filter { destinations == null || it.destination in destinations }.forEach { entry ->
             if (entry.destination == NextDestination.SETTINGS) {
                 ReaderHairline(Modifier.padding(vertical = ReaderSpace.gapSmall))

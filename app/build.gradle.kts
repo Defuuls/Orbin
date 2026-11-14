@@ -137,5 +137,6 @@ dependencies {
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.androidx.datastore.preferences)
     kspAndroidTest(libs.hilt.compiler)
+    implementation(libs.slf4j.nop)
     debugImplementation(libs.compose.ui.test.manifest)
 }

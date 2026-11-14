@@ -1,1 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><path fill="#B8323F" fill-opacity="1" d="M414.000,140.000 H754.000 A80.000,80.000 0 0 1 834.000,220.000 V660.000 A80.000,80.000 0 0 1 754.000,740.000 H414.000 A80.000,80.000 0 0 1 334.000,660.000 V220.000 A80.000,80.000 0 0 1 414.000,140.000 Z"/><path fill="#FFFFFF" d="M253.000,270.000 H627.000 A88.000,88.000 0 0 1 715.000,358.000 V842.000 A88.000,88.000 0 0 1 627.000,930.000 H253.000 A88.000,88.000 0 0 1 165.000,842.000 V358.000 A88.000,88.000 0 0 1 253.000,270.000 Z"/><path fill="#FF5D68" d="M363.220,614.300 L363.220,823.300 L555.500,718.800 Z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="64" height="64">
+  <defs>
+    <linearGradient id="electricGrad" x1="192" y1="262" x2="674" y2="762" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5B5BFF"/>
+      <stop offset="55%" stop-color="#229BFF"/>
+      <stop offset="100%" stop-color="#00D4FF"/>
+    </linearGradient>
+    <linearGradient id="sparkGrad" x1="652" y1="384" x2="832" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#67E8F9"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" fill="#0B1021"/>
+  <path d="M192,262 L294,262 L508,512 L294,762 L192,762 L406,512 Z" fill="url(#electricGrad)"/>
+  <path d="M358,262 L460,262 L674,512 L460,762 L358,762 L572,512 Z" fill="url(#electricGrad)"/>
+  <path d="M652,384 L832,512 L652,640 L702,512 Z" fill="url(#sparkGrad)"/>
+</svg>

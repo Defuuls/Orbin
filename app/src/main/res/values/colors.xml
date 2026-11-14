@@ -6,8 +6,7 @@
     <color name="orbinx_navigation_bar">#FFFFFF</color>
     <color name="orbinx_window_background">#FFFFFF</color>
 
-    <!-- Adaptive-icon tile: Orbin coral. Splash ground is set separately. -->
-    <color name="ic_launcher_background">#FF5D68</color>
-    <!-- Splash ground: the card-stack mark sits on the ReaderTokens surface. -->
-    <color name="splash_background">#FFFFFF</color>
+    <!-- Adaptive-icon tile: Midnight Navy. Splash ground matches the Midnight Electric icon. -->
+    <color name="ic_launcher_background">#0B1021</color>
+    <color name="splash_background">#0B1021</color>
 </resources>

@@ -213,11 +213,23 @@ class ReaderMediaChromeTest {
             }
         }
         val panel = compose.onNodeWithTag(ReaderMediaControlsTags.PANEL).fetchSemanticsNode().boundsInRoot
-        listOf("Restart", "Rewind 5 seconds", "Pause", "Forward 15 seconds", "Next").forEach { label ->
+        listOf("Restart", "Rewind 5 seconds", "Pause", "Forward 5 seconds", "Next").forEach { label ->
             val bounds = compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot
             assertTrue(bounds.width >= 48f)
             assertTrue(bounds.left >= panel.left)
             assertTrue(bounds.right <= panel.right + 0.1f)
         }
+    }
+
+    @Test
+    fun shortClipsForwardByFiveSecondsInsteadOfFifteen() {
+        val seeks = mutableListOf<Double>()
+        compose.setContent {
+            NextTheme {
+                ReaderMediaControls(false, 0.0, 6.0, {}, { seeks += it }, Modifier.width(390.dp))
+            }
+        }
+        compose.onNodeWithContentDescription("Forward 5 seconds").performClick()
+        assertEquals(listOf(5.0), seeks)
     }
 }

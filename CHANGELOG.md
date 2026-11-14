@@ -11,6 +11,7 @@ All notable changes to Orbin are documented here. The format is based on
 ### Added
 - Added Card view to Feed and board catalogs: one full-width card per row with a larger image preview, alongside the existing Grid and List layouts.
 - Added Card to Appearance settings and layout menus; the Home layout button cycles Grid, List and Card.
+- Added Card view to Thread view alongside Posts and Files; the Thread layout button cycles Posts, Files and Card view.
 
 ### Changed
 - Saved Card view as a shared layout preference on Android and iOS, including backup restoration, while retaining existing Grid and List selections.

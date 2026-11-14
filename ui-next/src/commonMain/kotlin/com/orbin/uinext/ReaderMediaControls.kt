@@ -75,12 +75,20 @@ fun ReaderMediaControls(
     pauseLabel: String = "Pause",
     restartLabel: String = "Restart",
     rewindLabel: String = "Rewind 5 seconds",
-    fastForwardLabel: String = "Forward 15 seconds",
+    fastForwardLabel: String = DEFAULT_FAST_FORWARD_LABEL,
     nextLabel: String = "Next",
 ) {
     val seekable = durationSeconds.isFinite() && durationSeconds > 0.0
     val duration = if (seekable) durationSeconds else 0.0
     val position = positionSeconds.takeIf { it.isFinite() }?.coerceIn(0.0, duration) ?: 0.0
+    val shortClip = seekable && duration <= SHORT_CLIP_SECONDS
+    val forwardStep = if (shortClip) REWIND_SECONDS else FAST_FORWARD_SECONDS
+    val resolvedFastForwardLabel =
+        if (shortClip && fastForwardLabel == DEFAULT_FAST_FORWARD_LABEL) {
+            "Forward 5 seconds"
+        } else {
+            fastForwardLabel
+        }
     // Background may draw behind the navigation bar; the transport and time bar stay in the
     // safe drawing area so they are not covered on edge-to-edge displays.
     Column(
@@ -104,15 +112,20 @@ fun ReaderMediaControls(
                     seekable,
                 ) { onSeek(0.0) }
                 MediaTransportButton(MediaTransportIcons.Rewind, rewindLabel, transportWidth, seekable) {
-                    onSeek((position - 5.0).coerceAtLeast(0.0))
+                    onSeek((position - REWIND_SECONDS).coerceAtLeast(0.0))
                 }
                 MediaTransportButton(
                     if (playing || loading) MediaTransportIcons.Pause else MediaTransportIcons.Play,
                     if (playing || loading) pauseLabel else playLabel,
                     transportWidth,
                 ) { onPlayPause() }
-                MediaTransportButton(MediaTransportIcons.FastForward, fastForwardLabel, transportWidth, seekable) {
-                    onSeek((position + 15.0).coerceAtMost(duration))
+                MediaTransportButton(
+                    MediaTransportIcons.FastForward,
+                    resolvedFastForwardLabel,
+                    transportWidth,
+                    seekable,
+                ) {
+                    onSeek((position + forwardStep).coerceAtMost(duration))
                 }
                 MediaTransportButton(MediaTransportIcons.Next, nextLabel, transportWidth, enabled = false) {}
             }
@@ -264,3 +277,7 @@ private fun mediaSeekFraction(
 ): Double = ((x - inset) / (width - inset * 2).coerceAtLeast(1f)).coerceIn(0f, 1f).toDouble()
 
 private const val MEDIA_TRANSPORT_VIEWPORT = 24f
+private const val REWIND_SECONDS = 5.0
+private const val FAST_FORWARD_SECONDS = 15.0
+private const val SHORT_CLIP_SECONDS = 20.0
+private const val DEFAULT_FAST_FORWARD_LABEL = "Forward 15 seconds"
