@@ -1,35 +1,27 @@
-# Orbin 206 - Sea Beet
+# Orbin 207 - Actinolite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 206
-codename = "Sea Beet"
-version_code = 224
+number = 207
+codename = "Actinolite"
+version_code = 225
 
-highlight = "Full-width Card view and faster selected-video startup on Android and iOS."
+highlight = "Full-screen Midnight Electric setup splash, multi-step onboarding, update setup, and refreshed board icons."
 
 summary = [
-  "bump Orbin to 206-Sea-Beet / versionCode 224",
-  "add a full-width Card layout to Feed and board catalogs on Android and iOS",
-  "preserve the selected layout across navigation, relaunches and backups",
-  "start known selected videos before loading the rest of the thread",
+  "bump Orbin to 207-Actinolite / versionCode 225",
+  "add full-screen Midnight Electric setup splash and multi-step onboarding wizard",
+  "add full-screen update setup and migration screen with theme picker",
+  "refresh 4chan and BBWChan board icons in the Midnight Electric palette",
 ]
 
 [changelog]
 Added = [
-  "Added Card view to Feed and board catalogs: one full-width card per row with a larger image preview, alongside the existing Grid and List layouts.",
-  "Added Card to Appearance settings and layout menus; the Home layout button cycles Grid, List and Card.",
-  "Added Card view to Thread view alongside Posts and Files; the Thread layout button cycles Posts, Files and Card view.",
+  "Added a full-screen Midnight Electric welcome splash on first run that expands into Appearance, Privacy & content, and Board selection steps on Android and iOS.",
+  "Added a full-screen update setup and migration screen with theme selection when updating to a new release.",
 ]
 Changed = [
-  "Saved Card view as a shared layout preference on Android and iOS, including backup restoration, while retaining existing Grid and List selections.",
-]
-Fixed = [
-  "Opened known selected attachments immediately while the rest of their thread loads in the background, retaining the selected player when the playlist expands.",
-  "Corrected iOS WebM buffering and playback readiness reporting, and held next-video preloading until the current video is ready.",
-  "Batched Android encrypted video-cache writes in 64 KiB chunks while continuing to deliver network packets immediately to the player.",
+  "Refreshed board icon badges for 4chan and BBWChan boards using the Midnight Electric palette and updated visual test goldens.",
 ]
 Testing = [
-  "Added full-width Card geometry, mode selection, navigation and accessibility regressions, with shared screenshots for phone and tablet layouts.",
-  "Expanded preference, backup and destination tests to cover Card persistence and installed Android layout switching.",
-  "Added delayed-thread, selected-player continuity and video-readiness regressions, plus cache streaming, cancellation, truncation and failure tests.",
+  "Added unit tests for the multi-step setup wizard and updated Android and iOS startup smoke tests for the new setup flow.",
 ]
