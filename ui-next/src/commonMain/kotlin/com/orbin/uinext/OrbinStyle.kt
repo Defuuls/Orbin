@@ -1,7 +1,6 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,14 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -61,7 +54,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Shared Orbin Coral chrome: the offset-card mark, wordmark, and softly elevated cards.
+ * Shared Orbin chrome: the Midnight Electric mark, wordmark, and softly elevated cards.
  *
  * Screens opt into these primitives as they are restyled. They do not, by themselves, replace
  * the Clover-derived reader cells.
@@ -71,15 +64,8 @@ object OrbinStyle {
 }
 
 /**
- * The Orbin mark: two offset rounded cards on a coral tile, matching the
- * variant-B brand icon. A dark-coral back card sits behind a white front
- * card that holds a coral play triangle and, at 32dp and above, two thread
- * lines. Below 32dp the lines are dropped and the front card and triangle
- * are drawn about 10% larger so the mark still reads at wordmark size.
- *
- * Colors are the brand values (#FF5D68 tile and play, #B8323F back card,
- * white front), not the theme accent, so the mark is identical on light
- * and dark chrome.
+ * The Orbin Midnight Electric mark (`>>` quote chevrons + interlocking play spark),
+ * delegating to [OrbinLogoMark] with optional accessibility semantics.
  */
 @Composable
 fun OrbinLogo(
@@ -87,98 +73,13 @@ fun OrbinLogo(
     size: Dp = 28.dp,
     contentDescription: String? = OrbinStyle.WORDMARK,
 ) {
-    val compact = size < ORBIN_LOGO_COMPACT_BELOW
     val semanticsModifier =
         if (contentDescription != null) {
             Modifier.semantics { this.contentDescription = contentDescription }
         } else {
             Modifier
         }
-    Canvas(modifier = modifier.size(size).then(semanticsModifier)) {
-        val canvas = this.size.minDimension
-        val u = canvas / ORBIN_LOGO_VIEWPORT
-        val tile =
-            Path().apply {
-                addRoundRect(
-                    RoundRect(
-                        0f,
-                        0f,
-                        canvas,
-                        canvas,
-                        CornerRadius(canvas * ORBIN_LOGO_TILE_RADIUS),
-                    ),
-                )
-            }
-        clipPath(tile) {
-            drawPath(tile, OrbinLogoTile)
-            drawRoundRect(
-                color = OrbinLogoBack,
-                topLeft = Offset(334f * u, 140f * u),
-                size = Size(500f * u, 600f * u),
-                cornerRadius = CornerRadius(80f * u),
-            )
-            val frontLeft: Offset
-            val frontSize: Size
-            val frontRadius: Float
-            val p1: Offset
-            val p2: Offset
-            val p3: Offset
-            if (compact) {
-                val cx = 440f
-                val cy = 600f
-                val scale = ORBIN_LOGO_COMPACT_SCALE
-
-                fun scaled(
-                    x: Float,
-                    y: Float,
-                ): Offset = Offset((cx + (x - cx) * scale) * u, (cy + (y - cy) * scale) * u)
-                val frontW = 500f * scale
-                val frontH = 600f * scale
-                frontLeft = Offset((cx - frontW / 2f) * u, (cy - frontH / 2f) * u)
-                frontSize = Size(frontW * u, frontH * u)
-                frontRadius = 80f * scale * u
-                p1 = scaled(370.2f, 613f)
-                p2 = scaled(370.2f, 803f)
-                p3 = scaled(545f, 708f)
-            } else {
-                frontLeft = Offset(190f * u, 300f * u)
-                frontSize = Size(500f * u, 600f * u)
-                frontRadius = 80f * u
-                p1 = Offset(370.2f * u, 613f * u)
-                p2 = Offset(370.2f * u, 803f * u)
-                p3 = Offset(545f * u, 708f * u)
-            }
-            drawRoundRect(
-                color = OrbinLogoFront,
-                topLeft = frontLeft,
-                size = frontSize,
-                cornerRadius = CornerRadius(frontRadius),
-            )
-            if (!compact) {
-                val line = OrbinLogoTile.copy(alpha = 0.9f)
-                drawRoundRect(
-                    color = line,
-                    topLeft = Offset(260f * u, 370f * u),
-                    size = Size(300f * u, 34f * u),
-                    cornerRadius = CornerRadius(17f * u),
-                )
-                drawRoundRect(
-                    color = line,
-                    topLeft = Offset(260f * u, 434f * u),
-                    size = Size(220f * u, 34f * u),
-                    cornerRadius = CornerRadius(17f * u),
-                )
-            }
-            val play =
-                Path().apply {
-                    moveTo(p1.x, p1.y)
-                    lineTo(p2.x, p2.y)
-                    lineTo(p3.x, p3.y)
-                    close()
-                }
-            drawPath(play, OrbinLogoTile)
-        }
-    }
+    OrbinLogoMark(modifier = modifier.size(size).then(semanticsModifier))
 }
 
 /**
@@ -394,11 +295,3 @@ private fun orbinBottomIcon(
         NextDestination.SEARCH -> ReaderIcons.Search
         NextDestination.DOWNLOADS -> ReaderIcons.Download
     }
-
-private val OrbinLogoTile = Color(0xFFFF5D68)
-private val OrbinLogoBack = Color(0xFFB8323F)
-private val OrbinLogoFront = Color.White
-private const val ORBIN_LOGO_VIEWPORT = 1024f
-private const val ORBIN_LOGO_TILE_RADIUS = 0.22f
-private const val ORBIN_LOGO_COMPACT_SCALE = 1.1f
-private val ORBIN_LOGO_COMPACT_BELOW = 32.dp
