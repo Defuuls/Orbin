@@ -52,7 +52,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.SessionAudio
