@@ -71,6 +71,7 @@ fun NextSettingsScreen(
     val strictDns by viewModel.strictDns.collectAsStateWithLifecycle()
     val dnsFallbackActive by viewModel.dnsFallbackActive.collectAsStateWithLifecycle()
     val imageCacheUsageBytes by viewModel.imageCacheUsageBytes.collectAsStateWithLifecycle()
+    val videoCacheUsageBytes by viewModel.videoCacheUsageBytes.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val strings = remember(context) { context.settingsStrings() }
     val scope = rememberCoroutineScope()
@@ -119,11 +120,13 @@ fun NextSettingsScreen(
     }
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel(strings)
+    val videoCacheLabel = videoCacheUsageBytes.cacheSizeLabel(strings)
     val model =
         remember(
             settings,
             updateCheck,
             cacheLabel,
+            videoCacheLabel,
             clearArmed,
             checkUpdatesOnLaunch,
             strictDns,
@@ -135,6 +138,7 @@ fun NextSettingsScreen(
                 updateCheck.rowValue(context, strings),
                 strings,
                 cacheLabel,
+                videoCacheLabel,
                 clearArmed,
                 checkUpdatesOnLaunch,
                 DnsRowState(strict = strictDns, fallbackActive = dnsFallbackActive),
@@ -197,6 +201,7 @@ fun NextSettingsScreen(
                                     }
                                 },
                                 onClearImageCache = viewModel::clearImageCache,
+                                onClearVideoCache = viewModel::clearVideoCache,
                                 onCheckUpdates = {
                                     if (updateCheck != UpdateCheckState.Checking) {
                                         viewModel.checkForUpdate(appVersionName(context))
@@ -243,6 +248,7 @@ private fun dispatch(
     onImport: () -> Unit,
     onClear: () -> Unit,
     onClearImageCache: () -> Unit,
+    onClearVideoCache: () -> Unit,
     onCheckUpdates: () -> Unit,
 ) {
     when (item.id) {
@@ -250,6 +256,7 @@ private fun dispatch(
         "importBackup" -> onImport()
         "clearActivity" -> onClear()
         "clearImageCache" -> onClearImageCache()
+        "clearVideoCache" -> onClearVideoCache()
         "checkUpdates" -> onCheckUpdates()
     }
 }

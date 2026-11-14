@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -44,6 +45,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -533,7 +536,13 @@ private fun threadOverflow(
     buildList {
         if (onLayoutChange != null) {
             ThreadLayout.entries.filter { it != layout }.forEach { target ->
-                add(ReaderMenuItem(stringResource(threadLayoutLabel(target))) { onLayoutChange(target) })
+                val icon =
+                    when (target) {
+                        ThreadLayout.POSTS -> ReaderIcons.Chat
+                        ThreadLayout.FILES -> ReaderIcons.Album
+                        ThreadLayout.CARDS -> ReaderIcons.Boards
+                    }
+                add(ReaderMenuItem(stringResource(threadLayoutLabel(target)), icon = icon) { onLayoutChange(target) })
             }
         }
         if (onToggleSaved != null) {
@@ -544,30 +553,73 @@ private fun threadOverflow(
                         ReaderMenuItem(
                             label = stringResource(Res.string.reader_feed_saved_while_watching, subject),
                             enabled = false,
+                            icon = ReaderIcons.SavedFilled,
                             onClick = {},
                         ),
                     )
                 saved ->
                     add(
-                        ReaderMenuItem(stringResource(Res.string.reader_feed_unsave, subject), onClick = onToggleSaved),
+                        ReaderMenuItem(
+                            stringResource(Res.string.reader_feed_unsave, subject),
+                            icon = ReaderIcons.SavedFilled,
+                            onClick = onToggleSaved,
+                        ),
                     )
                 else ->
                     add(
-                        ReaderMenuItem(stringResource(Res.string.reader_feed_save, subject), onClick = onToggleSaved),
+                        ReaderMenuItem(
+                            stringResource(Res.string.reader_feed_save, subject),
+                            icon = ReaderIcons.Saved,
+                            onClick = onToggleSaved,
+                        ),
                     )
             }
         }
-        if (onShare != null) add(ReaderMenuItem(stringResource(Res.string.reader_thread_share), onClick = onShare))
-        if (onReload != null) add(ReaderMenuItem(stringResource(Res.string.reader_reload), onClick = onReload))
+        if (onShare != null) {
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_thread_share),
+                    icon = ReaderIcons.Share,
+                    onClick = onShare,
+                ),
+            )
+        }
+        if (onReload != null) {
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_reload),
+                    icon = ReaderIcons.Refresh,
+                    onClick = onReload,
+                ),
+            )
+        }
         if (onOpenBrowser != null) {
-            add(ReaderMenuItem(stringResource(Res.string.reader_open_browser), onClick = onOpenBrowser))
+            add(
+                ReaderMenuItem(
+                    stringResource(Res.string.reader_open_browser),
+                    icon = ReaderIcons.ShareForward,
+                    onClick = onOpenBrowser,
+                ),
+            )
         }
         if (!showingPosts) {
             if (onDownloadAll != null) {
-                add(ReaderMenuItem(stringResource(Res.string.next_thread_download_all), onClick = onDownloadAll))
+                add(
+                    ReaderMenuItem(
+                        stringResource(Res.string.next_thread_download_all),
+                        icon = ReaderIcons.Download,
+                        onClick = onDownloadAll,
+                    ),
+                )
             }
             if (onSavePage != null) {
-                add(ReaderMenuItem(stringResource(Res.string.next_thread_save_page), onClick = onSavePage))
+                add(
+                    ReaderMenuItem(
+                        stringResource(Res.string.next_thread_save_page),
+                        icon = ReaderIcons.Saved,
+                        onClick = onSavePage,
+                    ),
+                )
             }
         }
     }
@@ -645,6 +697,20 @@ private fun PostCell(
                     .semantics(mergeDescendants = true) {},
             ) {
                 ReaderPostLayout(
+                    modifier =
+                        if (post.depth > 0) {
+                            Modifier.drawBehind {
+                                val barX = indent.toPx() - 2.dp.toPx()
+                                drawLine(
+                                    color = colors.quoteLink.copy(alpha = 0.55f),
+                                    start = Offset(barX.coerceAtLeast(0f), 0f),
+                                    end = Offset(barX.coerceAtLeast(0f), size.height),
+                                    strokeWidth = 2.dp.toPx(),
+                                )
+                            }
+                        } else {
+                            Modifier
+                        },
                     wideWindow = wideWindow,
                     indent = indent,
                     thumbnail =
@@ -680,7 +746,7 @@ private fun PostThumbnail(
     modifier: Modifier = Modifier,
 ) {
     val colors = reader
-    var revealed by rememberSaveable(post.stableKey) { mutableStateOf(false) }
+    var revealed by rememberSaveable(post.stableKey, post.imageSpoiler) { mutableStateOf(false) }
     val covered = post.imageSpoiler && !revealed
     Box(
         modifier
@@ -694,6 +760,7 @@ private fun PostThumbnail(
             media?.invoke(post, Modifier.fillMaxSize())
         }
         if (post.mediaCount > 1) {
+            val badgeShape = RoundedCornerShape(topStart = 6.dp)
             Text(
                 text = stringResource(Res.string.reader_media_more, post.mediaCount - 1),
                 style = OrbinType.meta.withReaderFont().copy(textDirection = TextDirection.Ltr),
@@ -701,7 +768,9 @@ private fun PostThumbnail(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
+                        .clip(badgeShape)
                         .background(colors.surfaceVariant)
+                        .border(ReaderSize.hairline, colors.hairline, badgeShape)
                         .padding(horizontal = ReaderSpace.line),
             )
         }
@@ -738,11 +807,19 @@ private fun PostHeader(
                 ),
     ) {
         if (post.subject.isNotBlank()) {
-            Text(post.subject, style = LocalReaderPostBodyStyle.current, color = colors.subject)
+            Text(
+                post.subject,
+                style = LocalReaderPostBodyStyle.current.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.subject,
+            )
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.line), verticalArrangement = Arrangement.Top) {
             if (post.author.isNotBlank() && post.author != "Anonymous") {
-                Text(text = post.author, style = LocalReaderPostBodyStyle.current, color = colors.author)
+                Text(
+                    text = post.author,
+                    style = LocalReaderPostBodyStyle.current.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.author,
+                )
             }
             Text(text = post.number, style = detailStyle, color = colors.inkMuted)
             if (post.time.isNotBlank()) {
@@ -751,15 +828,15 @@ private fun PostHeader(
             if (original) {
                 Text(
                     text = stringResource(Res.string.reader_thread_op),
-                    style = detailStyle,
-                    color = colors.inkMuted,
+                    style = detailStyle.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.accent,
                 )
             }
         }
         if (post.fileLabel.isNotBlank()) {
             Text(
                 text = post.fileLabel,
-                style = detailStyle,
+                style = detailStyle.copy(textDecoration = TextDecoration.Underline),
                 color = colors.inkMuted,
             )
         }

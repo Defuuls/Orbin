@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.res.Configuration
 import android.util.Rational
+import android.view.LayoutInflater
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +58,7 @@ import androidx.media3.ui.PlayerView
 import co.touchlab.kermit.Logger
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.media.R
+import com.orbin.media.di.VideoMediaEntryPoint
 import com.orbin.media.hasHttpStatus
 import com.orbin.network.interceptor.RetryAfter
 import com.orbin.network.interceptor.RetryAfterTracker
@@ -65,6 +67,7 @@ import com.orbin.uinext.InlineAction
 import com.orbin.uinext.NextCircularProgress
 import com.orbin.uinext.mediaPlaybackSpeed
 import com.orbin.uinext.tokens.OrbinType
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.delay
 import okhttp3.HttpUrl.Companion.toHttpUrl
 
@@ -107,6 +110,12 @@ fun VideoPlayer(
     val currentSession by rememberUpdatedState(playbackSession)
     var playRequested by remember(playbackSession) { mutableStateOf(playbackSession.requestedPlaying) }
     val dataSourceFactory = remember(appContext) { appContext.videoMediaDataSourceFactory() }
+    val videoServer =
+        remember(appContext) {
+            runCatching {
+                EntryPointAccessors.fromApplication(appContext, VideoMediaEntryPoint::class.java).videoServer()
+            }.getOrNull()
+        }
     var isMuted by rememberSaveable(url, muted) { mutableStateOf(muted) }
     var isBuffering by remember { mutableStateOf(false) }
     var isPlaying by remember { mutableStateOf(false) }
@@ -201,16 +210,31 @@ fun VideoPlayer(
         }
     }
 
-    LaunchedEffect(url, loadAttempt) {
+    DisposableEffect(videoServer, url, active) {
+        if (videoServer != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+            if (active) videoServer.watch(url) else videoServer.unwatch(url)
+        }
+        onDispose {
+            videoServer?.unwatch(url)
+        }
+    }
+
+    LaunchedEffect(exoPlayer, url, loadAttempt) {
         playbackError = null
         isRateLimited = false
         rateLimitCooldownSeconds = 0L
         positionMs = 0L
         durationMs = 0L
         bufferedProgress = 0f
-        // The data source checks encrypted media first, then applies CDN backoff to cache misses.
-        // A UI-level cooldown gate would prevent already-cached clips from playing.
-        exoPlayer.setMediaItem(MediaItem.fromUri(url))
+        // Stream HTTP(S) videos through VideoServer so they play immediately while caching to disk,
+        // and play directly from disk once cached.
+        val resolvedUri =
+            if (videoServer != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                videoServer.source(url)
+            } else {
+                url
+            }
+        exoPlayer.setMediaItem(MediaItem.fromUri(resolvedUri))
         exoPlayer.prepare()
         exoPlayer.seekTo(PlaybackPositions.resumeAt(url))
         exoPlayer.playWhenReady = playbackSession.shouldPlay(active, hasError = false)
@@ -420,17 +444,21 @@ fun VideoPlayer(
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = false
-                    // Let the Compose pointerInput above receive taps (controls toggle).
-                    isClickable = false
-                    isFocusable = false
-                }
+                (LayoutInflater.from(ctx).inflate(R.layout.media_texture_player_view, null, false) as PlayerView)
+                    .apply {
+                        player = exoPlayer
+                        useController = false
+                        // Let the Compose pointerInput above receive taps (controls toggle).
+                        isClickable = false
+                        isFocusable = false
+                    }
             },
             update = { playerView ->
                 playerView.player = exoPlayer
                 playerView.useController = false
+            },
+            onRelease = { playerView ->
+                playerView.player = null
             },
         )
         if (isBuffering) {

@@ -1,6 +1,5 @@
 package com.orbin.feature.gallery
 
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,7 +52,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.SessionAudio
@@ -146,8 +144,6 @@ fun GalleryScreen(
         // Exit and download remain visible while viewing or playing media.
         val closeLabel = stringResource(R.string.gallery_close)
         val downloadLabel = stringResource(R.string.gallery_download)
-        val imageCopiedMessage = stringResource(R.string.gallery_image_copied)
-        val urlCopiedMessage = stringResource(R.string.gallery_url_copied)
         var actionsFor by remember { mutableStateOf<MediaAttachment?>(null) }
 
         LaunchedEffect(selection.activePageKey, media, playback.preloadNextClip) {
@@ -162,9 +158,6 @@ fun GalleryScreen(
         val save: (MediaAttachment) -> Unit = { attachment ->
             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
             viewModel.download(attachment)
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                Toast.makeText(context, R.string.gallery_saving, Toast.LENGTH_SHORT).show()
-            }
         }
         val closeThresholdPx = with(density) { CLOSE_PULL_THRESHOLD.toPx() }
         val currentType = media.getOrNull(currentIndex)?.type?.takeUnless { waitingForRestoredPage }
@@ -188,7 +181,7 @@ fun GalleryScreen(
                     selection = selection,
                     modifier = Modifier.fillMaxSize(),
                 ) { item, isActive, isNear ->
-                    var revealed by remember(item.id) { mutableStateOf(!item.isSpoiler) }
+                    var revealed by remember(item.id, item.isSpoiler) { mutableStateOf(!item.isSpoiler) }
                     Box(
                         modifier = Modifier.fillMaxSize().background(Color.Black),
                         contentAlignment = Alignment.Center,
@@ -311,16 +304,8 @@ fun GalleryScreen(
                     onPlaybackSpeedChange = { playbackSpeed = it },
                     onCopyImage = { attachment ->
                         scope.launch {
-                            val result = viewModel.copyImage(attachment.sourceUrl)
+                            viewModel.copyImage(attachment.sourceUrl)
                             haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                                val message =
-                                    when (result) {
-                                        ImageCopyResult.IMAGE -> imageCopiedMessage
-                                        ImageCopyResult.URL -> urlCopiedMessage
-                                    }
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                            }
                         }
                     },
                 )

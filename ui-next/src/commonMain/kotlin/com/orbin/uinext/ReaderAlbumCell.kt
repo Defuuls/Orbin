@@ -54,7 +54,7 @@ internal fun ReaderAlbumCell(
     detailsTag: String = ReaderAlbumTags.details(cell.id),
     coral: Boolean = false,
 ) {
-    var revealed by rememberSaveable(cell.id) { mutableStateOf(false) }
+    var revealed by rememberSaveable(cell.id, cell.spoiler) { mutableStateOf(false) }
     val covered = cell.spoiler && !revealed
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val openLabel = stringResource(Res.string.next_open_file)

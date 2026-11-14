@@ -11,6 +11,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -251,6 +252,8 @@ private fun LoadedThread(
         onDispose { saveVisiblePost(flush = true) }
     }
 
+    val collapsedSet by remember { derivedStateOf { collapsed.toSet() } }
+
     NextPullToRefresh(
         isRefreshing = isRefreshing,
         onRefresh = viewModel::refresh,
@@ -288,7 +291,7 @@ private fun LoadedThread(
                         )
                     }
                 },
-                collapsed = collapsed.toSet(),
+                collapsed = collapsedSet,
                 onToggleCollapse = { post ->
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
                     if (!collapsed.remove(post.id)) collapsed.add(post.id)

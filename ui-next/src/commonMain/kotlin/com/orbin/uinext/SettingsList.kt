@@ -351,6 +351,12 @@ private fun SettingsDirectoryRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Icon(
+                imageVector = settingsDirectoryIcon(destination),
+                contentDescription = null,
+                tint = reader.accent,
+                modifier = Modifier.size(20.dp),
+            )
             Column(Modifier.weight(1f)) {
                 Text(label, style = preferenceTitleStyle, color = preferencePrimaryColor)
                 Text(
@@ -369,6 +375,18 @@ private fun SettingsDirectoryRow(
         ReaderHairline(Modifier.padding(horizontal = 16.dp))
     }
 }
+
+private fun settingsDirectoryIcon(destination: String): androidx.compose.ui.graphics.vector.ImageVector =
+    when (destination) {
+        "appearance" -> ReaderIcons.Palette
+        "playback" -> ReaderIcons.Play
+        "boards" -> ReaderIcons.Boards
+        "favorites" -> ReaderIcons.Heart
+        "privacy" -> ReaderIcons.Shield
+        "storage" -> ReaderIcons.Storage
+        "about" -> ReaderIcons.Info
+        else -> ReaderIcons.Settings
+    }
 
 @Composable
 private fun SettingsChoiceList(
@@ -510,6 +528,13 @@ private fun SettingRow(
                     Box(Modifier.clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
                         ReaderSettingsSwitch(checked = item.isOn())
                     }
+                } else if (item.kind == SettingKind.CHOICE) {
+                    Icon(
+                        imageVector = if (item.options.size > 8) ReaderIcons.ChevronRight else ReaderIcons.ChevronDown,
+                        contentDescription = null,
+                        tint = reader.inkSecondary,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
             if (item.copyable && item.text.isNotBlank()) {

@@ -15,6 +15,7 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
+import com.orbin.core.model.withViolentMediaCovered
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -216,7 +217,14 @@ class GalleryViewModel
             val thread =
                 when (result) {
                     is OrbinResult.Success -> result.data
-                    is OrbinResult.Failure -> savedThreadRepository.load(threadKey)
+                    is OrbinResult.Failure ->
+                        savedThreadRepository.load(threadKey)?.let { saved ->
+                            if (settings.value.coverViolentMedia) {
+                                saved.withViolentMediaCovered()
+                            } else {
+                                saved
+                            }
+                        }
                 }
             if (thread == null) {
                 return retained ?: GalleryContentState.Error(

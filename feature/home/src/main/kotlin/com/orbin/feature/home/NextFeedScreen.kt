@@ -41,7 +41,6 @@ import com.orbin.uinext.sourceLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 private const val RELATIVE_TIME_TICK_MS = 60_000L
 
@@ -203,12 +202,7 @@ fun NextFeedScreen(
             onRefresh = viewModel::refresh,
             modifier = modifier.fillMaxSize(),
         ) {
-            val catalogMode =
-                when (settings.catalogMode) {
-                    StoredCatalogMode.LIST -> CatalogMode.LIST
-                    StoredCatalogMode.GRID -> CatalogMode.GRID
-                    StoredCatalogMode.CARD -> CatalogMode.CARD
-                }
+            val catalogMode = CatalogMode.CARD
             FeedScreen(
                 rows = rows,
                 isLoading = loading,
@@ -233,15 +227,7 @@ fun NextFeedScreen(
                 onQueryChange = { localQuery = it },
                 mode = catalogMode,
                 downloadBadge = activeDownloads,
-                onModeChange = { selected ->
-                    viewModel.setCatalogMode(
-                        when (selected) {
-                            CatalogMode.LIST -> StoredCatalogMode.LIST
-                            CatalogMode.GRID -> StoredCatalogMode.GRID
-                            CatalogMode.CARD -> StoredCatalogMode.CARD
-                        },
-                    )
-                },
+                onModeChange = null,
                 wideWindow = wideWindow,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -422,6 +408,7 @@ private fun CatalogThread.toEntry(
                 replies = stats.replyCount,
                 media = stats.imageCount,
                 hasPreview = preview != null,
+                imageSpoiler = preview?.isSpoiler == true,
                 read = key in visited,
                 // The parsed comment, not the raw markup: entities decoded, line breaks kept.
                 excerpt = originalPost.comment.plainText(),

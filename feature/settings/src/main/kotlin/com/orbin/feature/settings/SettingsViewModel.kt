@@ -20,6 +20,7 @@ import com.orbin.domain.repository.ImageCacheRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.UpdateRepository
+import com.orbin.domain.repository.VideoCacheRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,10 +52,12 @@ class SettingsViewModel
         private val dnsPrivacyMonitor: DnsPrivacyMonitor,
         private val registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
+        private val videoCacheRepository: VideoCacheRepository = EmptyVideoCacheRepository,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
         private val _imageCacheUsageBytes = MutableStateFlow(0L)
+        private val _videoCacheUsageBytes = MutableStateFlow(0L)
         private val mutablePlaybackScopes =
             MutableStateFlow(
                 listOf(PlaybackScopeChoice(PlaybackScope(), "App defaults")) +
@@ -100,6 +103,7 @@ class SettingsViewModel
         ) = update { repository.setPlaybackSettings(scope, settings) }
 
         val imageCacheUsageBytes: StateFlow<Long> = _imageCacheUsageBytes.asStateFlow()
+        val videoCacheUsageBytes: StateFlow<Long> = _videoCacheUsageBytes.asStateFlow()
 
         /** Whether the app looks for a new release when it opens. */
         val checkUpdatesOnLaunch: StateFlow<Boolean> = appUpdater.checkOnLaunch
@@ -149,6 +153,7 @@ class SettingsViewModel
 
         init {
             refreshImageCacheUsage()
+            refreshVideoCacheUsage()
         }
 
         fun setActiveProvider(id: ProviderId) = update { repository.setActiveProviderId(id) }
@@ -168,6 +173,13 @@ class SettingsViewModel
 
         fun setCatalogMode(mode: CatalogMode) = update { repository.setCatalogMode(mode) }
 
+        fun setVideoCacheMegabytes(megabytes: Int) =
+            update {
+                repository.setVideoCacheMegabytes(megabytes)
+                videoCacheRepository.setMaxCacheBytes(megabytes.toLong() * BYTES_PER_MIB)
+                _videoCacheUsageBytes.value = videoCacheRepository.usageBytes()
+            }
+
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
@@ -181,6 +193,17 @@ class SettingsViewModel
             update {
                 imageCacheRepository.clear()
                 _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+            }
+
+        fun refreshVideoCacheUsage() =
+            update {
+                _videoCacheUsageBytes.value = videoCacheRepository.usageBytes()
+            }
+
+        fun clearVideoCache() =
+            update {
+                videoCacheRepository.clear()
+                _videoCacheUsageBytes.value = videoCacheRepository.usageBytes()
             }
 
         fun setBiometricLock(enabled: Boolean) = update { repository.setBiometricLockEnabled(enabled) }
@@ -202,6 +225,8 @@ class SettingsViewModel
                         downloadRepository.clearHistory()
                         imageCacheRepository.clear()
                         _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+                        videoCacheRepository.clear()
+                        _videoCacheUsageBytes.value = videoCacheRepository.usageBytes()
                     }
                 val failure = result.exceptionOrNull()
                 if (failure is CancellationException) throw failure
@@ -259,6 +284,7 @@ class SettingsViewModel
 
         private companion object {
             const val STOP_TIMEOUT_MS = 5_000L
+            const val BYTES_PER_MIB = 1024L * 1024L
         }
     }
 
@@ -266,6 +292,14 @@ private object EmptyImageCacheRepository : ImageCacheRepository {
     override suspend fun usageBytes(): Long = 0L
 
     override suspend fun clear() = Unit
+}
+
+private object EmptyVideoCacheRepository : VideoCacheRepository {
+    override suspend fun usageBytes(): Long = 0L
+
+    override suspend fun clear() = Unit
+
+    override suspend fun setMaxCacheBytes(bytes: Long) = Unit
 }
 
 sealed interface BackupStatus {

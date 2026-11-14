@@ -140,6 +140,7 @@ fun OrbinCard(
     // next.elevated equals the page ground, so dark/AMOLED cards would vanish.
     // Use the lifted surfaceVariant fill against the darker page background.
     val color = containerColor ?: if (next.dark) reader.surfaceVariant else reader.background
+    val cardBorder = border ?: BorderStroke(1.dp, reader.hairline)
     Surface(
         modifier =
             if (onClick != null) {
@@ -149,7 +150,7 @@ fun OrbinCard(
             },
         shape = shape,
         color = color,
-        border = border,
+        border = cardBorder,
         shadowElevation = shadow,
         tonalElevation = tonal,
         content = { Column(content = content) },
@@ -191,77 +192,80 @@ fun OrbinBottomBar(
         shadowElevation = shadow,
         tonalElevation = tonal,
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
-                        ),
-                    ).heightIn(min = MIN_TOUCH_TARGET)
-                    .padding(top = 6.dp, bottom = 4.dp)
-                    .selectableGroup(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            destinations.forEach { destination ->
-                val isSelected = destination == selected
-                val label = orbinBottomLabel(destination)
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .heightIn(min = MIN_TOUCH_TARGET)
-                            .selectable(
-                                selected = isSelected,
-                                role = Role.Tab,
-                                onClick = { if (!isSelected) onSelect(destination) },
-                            ).semantics {
-                                contentDescription = label
-                                if (destination == NextDestination.DOWNLOADS && activeDownloads != null) {
-                                    stateDescription = activeDownloads
+        Column(Modifier.fillMaxWidth()) {
+            ReaderHairline()
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+                            ),
+                        ).heightIn(min = MIN_TOUCH_TARGET)
+                        .padding(top = 6.dp, bottom = 4.dp)
+                        .selectableGroup(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                destinations.forEach { destination ->
+                    val isSelected = destination == selected
+                    val label = orbinBottomLabel(destination)
+                    Column(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .heightIn(min = MIN_TOUCH_TARGET)
+                                .selectable(
+                                    selected = isSelected,
+                                    role = Role.Tab,
+                                    onClick = { if (!isSelected) onSelect(destination) },
+                                ).semantics {
+                                    contentDescription = label
+                                    if (destination == NextDestination.DOWNLOADS && activeDownloads != null) {
+                                        stateDescription = activeDownloads
+                                    }
+                                },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Box {
+                            Icon(
+                                imageVector = orbinBottomIcon(destination, isSelected),
+                                contentDescription = null,
+                                tint = if (isSelected) reader.accent else next.muted,
+                                modifier = Modifier.size(24.dp),
+                            )
+                            if (destination == NextDestination.DOWNLOADS && downloadBadge > 0) {
+                                val badgeLabel = if (downloadBadge > 99) "99+" else downloadBadge.toString()
+                                Box(
+                                    Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 8.dp, y = (-4).dp)
+                                        .heightIn(min = 16.dp)
+                                        .background(reader.accent, CircleShape)
+                                        .padding(horizontal = 4.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        badgeLabel,
+                                        style = OrbinType.caption2.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                        color = reader.onAccent,
+                                        maxLines = 1,
+                                        modifier = Modifier.clearAndSetSemantics {},
+                                    )
                                 }
-                            },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Box {
-                        Icon(
-                            imageVector = orbinBottomIcon(destination, isSelected),
-                            contentDescription = null,
-                            tint = if (isSelected) reader.accent else next.muted,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        if (destination == NextDestination.DOWNLOADS && downloadBadge > 0) {
-                            val badgeLabel = if (downloadBadge > 99) "99+" else downloadBadge.toString()
-                            Box(
-                                Modifier
-                                    .align(Alignment.TopEnd)
-                                    .offset(x = 8.dp, y = (-4).dp)
-                                    .heightIn(min = 16.dp)
-                                    .background(reader.accent, CircleShape)
-                                    .padding(horizontal = 4.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    badgeLabel,
-                                    style = OrbinType.caption2.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                    color = reader.onAccent,
-                                    maxLines = 1,
-                                    modifier = Modifier.clearAndSetSemantics {},
-                                )
                             }
                         }
+                        Text(
+                            label,
+                            modifier = Modifier.clearAndSetSemantics {},
+                            style = OrbinType.caption1,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (isSelected) reader.accent else next.muted,
+                            textAlign = TextAlign.Center,
+                        )
                     }
-                    Text(
-                        label,
-                        modifier = Modifier.clearAndSetSemantics {},
-                        style = OrbinType.caption1,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (isSelected) reader.accent else next.muted,
-                        textAlign = TextAlign.Center,
-                    )
                 }
             }
         }

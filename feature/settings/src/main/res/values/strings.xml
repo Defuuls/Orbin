@@ -38,6 +38,8 @@
     <string name="settings_clear_activity_done">Local activity cleared</string>
     <string name="settings_clear_activity_failed">Could not clear all local activity. Try again.</string>
     <string name="settings_clear_image_cache">Clear image cache</string>
+    <string name="settings_video_cache_limit">Video cache limit</string>
+    <string name="settings_clear_video_cache">Clear video cache</string>
     <string name="settings_image_cache_empty">Empty · Clear</string>
     <string name="settings_image_cache_small">&lt;1 MB · Clear</string>
     <string name="settings_image_cache_size">%1$d MB · Clear</string>

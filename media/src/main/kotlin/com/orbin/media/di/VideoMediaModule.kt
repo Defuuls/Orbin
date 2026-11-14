@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.orbin.domain.repository.VideoCacheRepository
 import com.orbin.media.video.VideoPrefixCache
 import com.orbin.media.video.VideoPrefixDataSource
+import com.orbin.media.video.VideoServer
 import com.orbin.network.di.VideoOkHttp
 import dagger.Module
 import dagger.Provides
@@ -38,4 +40,15 @@ object VideoMediaModule {
             DefaultDataSource.Factory(context, OkHttpDataSource.Factory(okHttpClient)),
             cache,
         )
+
+    @Provides
+    @Singleton
+    fun providesVideoCacheRepository(videoServer: VideoServer): VideoCacheRepository =
+        object : VideoCacheRepository {
+            override suspend fun usageBytes(): Long = videoServer.cacheSize()
+
+            override suspend fun clear() = videoServer.clearCache()
+
+            override suspend fun setMaxCacheBytes(bytes: Long) = videoServer.setMaxCacheBytes(bytes)
+        }
 }

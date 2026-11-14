@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
+import com.orbin.core.model.DEFAULT_VIDEO_CACHE_MEGABYTES
 import com.orbin.core.model.DEFAULT_WIDE_FEED_COLUMNS
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
@@ -124,6 +125,10 @@ class SettingsStore(
         edit { it[Keys.catalogMode] = mode.name }
     }
 
+    override suspend fun setVideoCacheMegabytes(megabytes: Int) {
+        edit { it[Keys.videoCacheMegabytes] = megabytes.coerceAtLeast(0) }
+    }
+
     private suspend fun edit(block: (MutablePreferences) -> Unit) {
         dataStore.edit { block(it) }
     }
@@ -151,6 +156,7 @@ class SettingsStore(
             unfoldedFeedColumns = this[Keys.unfoldedFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
             tabletFeedColumns = this[Keys.tabletFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
             catalogMode = CatalogMode.entries.firstOrNull { it.name == this[Keys.catalogMode] } ?: CatalogMode.GRID,
+            videoCacheMegabytes = this[Keys.videoCacheMegabytes] ?: DEFAULT_VIDEO_CACHE_MEGABYTES,
         )
 
     private fun Preferences.playbackPreferences(): PlaybackPreferences =
@@ -179,5 +185,6 @@ class SettingsStore(
         val unfoldedFeedColumns = intPreferencesKey("unfolded_feed_columns")
         val tabletFeedColumns = intPreferencesKey("tablet_feed_columns")
         val catalogMode = stringPreferencesKey("catalog_mode")
+        val videoCacheMegabytes = intPreferencesKey("video_cache_megabytes")
     }
 }

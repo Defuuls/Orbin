@@ -194,6 +194,7 @@ fun UpdateSetupScreen(
                 }
             }
         }
+        ReaderHairline()
         Row(
             modifier =
                 Modifier
