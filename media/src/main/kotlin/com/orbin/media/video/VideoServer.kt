@@ -255,7 +255,8 @@ class VideoServer internal constructor(
             if (existing != null && !existing.isClosed && serverPort > 0) {
                 return serverPort
             }
-            val socket = ServerSocket(0, 50, InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1)))
+            val loopback = InetAddress.getByAddress(byteArrayOf(LOOPBACK_OCTET_1, 0, 0, 1))
+            val socket = ServerSocket(0, SERVER_BACKLOG, loopback)
             serverSocket = socket
             serverPort = socket.localPort
             scope.launch { acceptLoop(socket) }
@@ -279,7 +280,7 @@ class VideoServer internal constructor(
         socket.use { s ->
             val input = s.getInputStream()
             val output = s.getOutputStream()
-            val requestLine = readLine(input) ?: return
+            val requestLine = readHttpLine(input) ?: return
             val parts = requestLine.split(' ')
             if (parts.size < 2) return
             val method = parts[0].uppercase(Locale.US)
@@ -287,7 +288,7 @@ class VideoServer internal constructor(
 
             val headers = mutableMapOf<String, String>()
             while (true) {
-                val line = readLine(input) ?: break
+                val line = readHttpLine(input) ?: break
                 if (line.isEmpty()) break
                 val colon = line.indexOf(':')
                 if (colon > 0) {
@@ -298,45 +299,16 @@ class VideoServer internal constructor(
 
             val download = ids[path]
             if (download == null) {
-                writeStatus(output, 404, "Not Found")
+                writeHttpStatus(output, HTTP_NOT_FOUND, "Not Found")
                 return
             }
 
             if (method != "GET" && method != "HEAD") {
-                writeStatus(output, 405, "Method Not Allowed")
+                writeHttpStatus(output, HTTP_METHOD_NOT_ALLOWED, "Method Not Allowed")
                 return
             }
 
             download.serve(output, headers["range"], headOnly = method == "HEAD")
-        }
-    }
-
-    private fun readLine(input: InputStream): String? {
-        val sb = StringBuilder()
-        var prev = -1
-        while (true) {
-            val b = input.read()
-            if (b == -1) return if (sb.isEmpty()) null else sb.toString()
-            if (b == '\n'.code) {
-                if (prev == '\r'.code && sb.isNotEmpty()) {
-                    sb.setLength(sb.length - 1)
-                }
-                return sb.toString()
-            }
-            sb.append(b.toChar())
-            prev = b
-        }
-    }
-
-    private fun writeStatus(
-        output: OutputStream,
-        code: Int,
-        reason: String,
-    ) {
-        val response = "HTTP/1.1 $code $reason\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        runCatching {
-            output.write(response.toByteArray(Charsets.US_ASCII))
-            output.flush()
         }
     }
 
@@ -350,19 +322,21 @@ class VideoServer internal constructor(
         file: File,
     ): Download {
         downloads[url]?.let { return it }
-        val id = sha256Hex(url).take(24)
+        val id = sha256Hex(url).take(ID_HEX_LENGTH)
         val download = Download(id = id, url = url, finalFile = file)
         downloads[url] = download
         ids[id] = download
         return download
     }
 
+    private fun isPriorityUrl(url: String): Boolean = url in watched || (awaited[url] ?: 0) > 0
+
     private fun schedule() {
         val toStart = mutableListOf<Download>()
         synchronized(lock) {
             val activeWatched =
                 downloads.values.filter { d ->
-                    !d.cancelled && !d.done.isCompleted && (d.url in watched || (awaited[d.url] ?: 0) > 0)
+                    !d.cancelled && !d.done.isCompleted && isPriorityUrl(d.url)
                 }
             for (d in activeWatched) {
                 if (!d.started) {
@@ -375,7 +349,7 @@ class VideoServer internal constructor(
             val hasWatchedPending = activeWatched.isNotEmpty()
             var runningBg = 0
             for (d in downloads.values) {
-                if (d.url !in watched && (awaited[d.url] ?: 0) == 0 && d.started && !d.done.isCompleted) {
+                if (!isPriorityUrl(d.url) && d.started && !d.done.isCompleted) {
                     if (hasWatchedPending) {
                         d.paused = true
                     } else {
@@ -490,48 +464,14 @@ class VideoServer internal constructor(
             try {
                 var attempt = 0
                 while (!cancelled && (totalLength < 0L || sequentialEnd < totalLength)) {
-                    while (paused && !cancelled) {
-                        delay(50)
-                    }
+                    waitWhilePaused()
                     if (cancelled) break
-
-                    val address = url.toHttpUrlOrNull() ?: throw IOException("Invalid URL: $url")
-                    val offset = sequentialEnd
-                    val reqBuilder = Request.Builder().url(address)
-                    if (offset > 0L) {
-                        reqBuilder.header("Range", "bytes=$offset-")
-                    }
-                    var retryDelayMs = 0L
-                    try {
-                        client.newCall(reqBuilder.build()).execute().use { response ->
-                            if (response.code == RetryAfter.HTTP_TOO_MANY_REQUESTS) {
-                                val blockedUntil = RetryAfterTracker.blockedUntilMs(address.host, address.toString())
-                                val waitMs =
-                                    if (blockedUntil != null) {
-                                        (blockedUntil - System.currentTimeMillis()).coerceAtLeast(0L)
-                                    } else {
-                                        0L
-                                    }
-                                retryDelayMs = maxOf(waitMs, 1500L)
-                            } else if (!response.isSuccessful && response.code != 206) {
-                                throw IOException("HTTP ${response.code}")
-                            } else {
-                                consumeResponse(response, offset)
-                            }
-                        }
-                    } catch (e: IOException) {
-                        if (cancelled) break
-                        attempt++
-                        if (attempt > MAX_RETRIES) {
-                            throw e
-                        }
-                        retryDelayMs = minOf(500L * (1 shl (attempt - 1)), 5_000L)
-                    }
-                    if (retryDelayMs > 0L && !cancelled) {
-                        delay(retryDelayMs)
+                    val outcome = executeAttempt(attempt)
+                    attempt = outcome.nextAttempt
+                    if (outcome.delayMs > 0L && !cancelled) {
+                        delay(outcome.delayMs)
                     }
                 }
-
                 if (!cancelled && (totalLength < 0L || sequentialEnd >= totalLength)) {
                     finalizeFile()
                 } else {
@@ -540,17 +480,74 @@ class VideoServer internal constructor(
             } catch (_: Throwable) {
                 failed = true
             } finally {
-                synchronized(dataLock) { dataLock.notifyAll() }
-                synchronized(lock) {
-                    if (downloads[url] === this@Download) {
-                        downloads.remove(url)
-                        ids.remove(id)
-                    }
-                    queued.remove(this@Download)
-                }
-                if (!done.isCompleted) done.complete(Unit)
-                schedule()
+                cleanupDownload()
             }
+        }
+
+        private suspend fun waitWhilePaused() {
+            while (paused && !cancelled) {
+                delay(POLL_INTERVAL_MS)
+            }
+        }
+
+        private fun executeAttempt(currentAttempt: Int): AttemptOutcome {
+            val address = url.toHttpUrlOrNull() ?: throw IOException("Invalid URL: $url")
+            val offset = sequentialEnd
+            val reqBuilder = Request.Builder().url(address)
+            if (offset > 0L) {
+                reqBuilder.header("Range", "bytes=$offset-")
+            }
+            return try {
+                client.newCall(reqBuilder.build()).execute().use { response ->
+                    handleResponse(response, address.host, address.toString(), offset, currentAttempt)
+                }
+            } catch (e: IOException) {
+                if (cancelled) return AttemptOutcome(currentAttempt, 0L)
+                val nextAttempt = currentAttempt + 1
+                if (nextAttempt > MAX_RETRIES) throw e
+                val backoff = minOf(RETRY_BASE_DELAY_MS * (1 shl (nextAttempt - 1)), RETRY_MAX_DELAY_MS)
+                AttemptOutcome(nextAttempt, backoff)
+            }
+        }
+
+        private fun handleResponse(
+            response: Response,
+            host: String,
+            requestUrl: String,
+            offset: Long,
+            currentAttempt: Int,
+        ): AttemptOutcome =
+            when {
+                response.code == RetryAfter.HTTP_TOO_MANY_REQUESTS -> {
+                    val blockedUntil = RetryAfterTracker.blockedUntilMs(host, requestUrl)
+                    val waitMs =
+                        if (blockedUntil != null) {
+                            (blockedUntil - System.currentTimeMillis()).coerceAtLeast(0L)
+                        } else {
+                            0L
+                        }
+                    AttemptOutcome(currentAttempt, maxOf(waitMs, RATE_LIMIT_MIN_DELAY_MS))
+                }
+                !response.isSuccessful && response.code != HTTP_PARTIAL_CONTENT -> {
+                    throw IOException("HTTP ${response.code}")
+                }
+                else -> {
+                    consumeResponse(response, offset)
+                    AttemptOutcome(currentAttempt, 0L)
+                }
+            }
+
+        private fun cleanupDownload() {
+            synchronized(dataLock) { dataLock.notifyAll() }
+            synchronized(lock) {
+                if (downloads[url] === this@Download) {
+                    downloads.remove(url)
+                    ids.remove(id)
+                }
+                queued.remove(this@Download)
+            }
+            if (!done.isCompleted) done.complete(Unit)
+            schedule()
         }
 
         private fun consumeResponse(
@@ -560,11 +557,11 @@ class VideoServer internal constructor(
             val body = response.body
             response.header("Content-Type")?.let { contentType = it }
             val resolvedTotal =
-                if (response.code == 206) {
+                if (response.code == HTTP_PARTIAL_CONTENT) {
                     parseContentRangeTotal(response.header("Content-Range"))
                         ?: (requestedOffset + body.contentLength().coerceAtLeast(0L))
                 } else {
-                    if (requestedOffset > 0L && response.code == 200) {
+                    if (requestedOffset > 0L && response.code == HTTP_OK) {
                         // Server ignored Range; restart from 0.
                         sequentialEnd = 0L
                     }
@@ -580,15 +577,11 @@ class VideoServer internal constructor(
                 if (totalLength > 0L && raf.length() < totalLength) {
                     raf.setLength(totalLength)
                 }
-                var writePos = if (response.code == 200 && requestedOffset > 0L) 0L else requestedOffset
+                var writePos = if (response.code == HTTP_OK && requestedOffset > 0L) 0L else requestedOffset
                 raf.seek(writePos)
-                val buffer = ByteArray(16 * 1024)
+                val buffer = ByteArray(STREAM_BUFFER_BYTES)
                 val stream = body.byteStream()
-                while (!cancelled) {
-                    if (paused) {
-                        // Release network stream when paused for a watched video; resume later via Range.
-                        break
-                    }
+                while (!cancelled && !paused) {
                     val count = stream.read(buffer)
                     if (count < 0) break
                     if (count > 0) {
@@ -631,21 +624,9 @@ class VideoServer internal constructor(
             rangeHeader: String?,
             headOnly: Boolean,
         ) {
-            // Wait briefly for headers/totalLength if download just started.
-            val deadline = System.currentTimeMillis() + 10_000L
-            synchronized(dataLock) {
-                while (
-                    totalLength < 0L &&
-                    !failed &&
-                    !cancelled &&
-                    !done.isCompleted &&
-                    System.currentTimeMillis() < deadline
-                ) {
-                    dataLock.wait(50)
-                }
-            }
+            waitForHeaders()
             if (failed && totalLength < 0L) {
-                writeStatus(output, 502, "Bad Gateway")
+                writeHttpStatus(output, HTTP_BAD_GATEWAY, "Bad Gateway")
                 return
             }
 
@@ -653,27 +634,60 @@ class VideoServer internal constructor(
             val range = parseRequestRange(rangeHeader, total)
             if (rangeHeader != null && range == null && total > 0L) {
                 val resp =
-                    "HTTP/1.1 416 Range Not Satisfiable\r\nContent-Range: bytes */$total\r\nConnection: close\r\n\r\n"
+                    "HTTP/1.1 $HTTP_RANGE_NOT_SATISFIABLE Range Not Satisfiable\r\n" +
+                        "Content-Range: bytes */$total\r\nConnection: close\r\n\r\n"
                 output.write(resp.toByteArray(Charsets.US_ASCII))
                 output.flush()
                 return
             }
 
             val start = range?.first ?: 0L
-            val end =
-                when {
-                    range != null -> range.last
-                    total > 0L -> total - 1L
-                    else -> -1L
-                }
-            val length = if (end >= start) end - start + 1L else -1L
+            val end = resolveServeEnd(range, total)
+            writeServeHeaders(output, range, total, start, end)
+            if (headOnly) return
 
+            if (start > sequentialEnd + AHEAD_FETCH_THRESHOLD_BYTES && !hasRange(start, end)) {
+                fetchAheadRange(start, end)
+            }
+            streamBody(output, start, end)
+        }
+
+        private fun isAwaitingHeaders(): Boolean =
+            totalLength < 0L && !failed && !cancelled && !done.isCompleted
+
+        private fun waitForHeaders() {
+            val deadline = System.currentTimeMillis() + HEADER_WAIT_TIMEOUT_MS
+            synchronized(dataLock) {
+                while (isAwaitingHeaders() && System.currentTimeMillis() < deadline) {
+                    dataLock.wait(POLL_INTERVAL_MS)
+                }
+            }
+        }
+
+        private fun resolveServeEnd(
+            range: LongRange?,
+            total: Long,
+        ): Long =
+            when {
+                range != null -> range.last
+                total > 0L -> total - 1L
+                else -> -1L
+            }
+
+        private fun writeServeHeaders(
+            output: OutputStream,
+            range: LongRange?,
+            total: Long,
+            start: Long,
+            end: Long,
+        ) {
+            val length = if (end >= start) end - start + 1L else -1L
             val headerBuilder = StringBuilder()
             if (range != null && total > 0L) {
-                headerBuilder.append("HTTP/1.1 206 Partial Content\r\n")
+                headerBuilder.append("HTTP/1.1 $HTTP_PARTIAL_CONTENT Partial Content\r\n")
                 headerBuilder.append("Content-Range: bytes $start-$end/$total\r\n")
             } else {
-                headerBuilder.append("HTTP/1.1 200 OK\r\n")
+                headerBuilder.append("HTTP/1.1 $HTTP_OK OK\r\n")
             }
             headerBuilder.append("Content-Type: $contentType\r\n")
             headerBuilder.append("Accept-Ranges: bytes\r\n")
@@ -681,54 +695,62 @@ class VideoServer internal constructor(
                 headerBuilder.append("Content-Length: $length\r\n")
             }
             headerBuilder.append("Connection: close\r\n\r\n")
-
             output.write(headerBuilder.toString().toByteArray(Charsets.US_ASCII))
             output.flush()
-            if (headOnly) return
+        }
 
-            // If requesting far ahead of sequentialEnd (e.g., WebM cue index at EOF), fetch directly upstream.
-            if (start > sequentialEnd + AHEAD_FETCH_THRESHOLD_BYTES && !hasRange(start, end)) {
-                fetchAheadRange(start, end)
-            }
-
+        private fun streamBody(
+            output: OutputStream,
+            start: Long,
+            end: Long,
+        ) {
             var pos = start
-            val buffer = ByteArray(16 * 1024)
+            val buffer = ByteArray(STREAM_BUFFER_BYTES)
             while (!cancelled && (end < 0L || pos <= end)) {
                 val availableEnd = availableEndAt(pos)
                 if (availableEnd > pos) {
-                    val toRead =
-                        if (end >= 0L) {
-                            minOf(buffer.size.toLong(), availableEnd - pos, end - pos + 1L).toInt()
-                        } else {
-                            minOf(buffer.size.toLong(), availableEnd - pos).toInt()
-                        }
-                    val sourceFile = if (finalFile.exists()) finalFile else partFile
-                    if (!sourceFile.exists()) break
-                    val read =
-                        RandomAccessFile(sourceFile, "r").use { raf ->
-                            raf.seek(pos)
-                            raf.read(buffer, 0, toRead)
-                        }
-                    if (read <= 0) break
-                    try {
-                        output.write(buffer, 0, read)
-                        output.flush()
-                    } catch (_: IOException) {
-                        break
-                    }
+                    val read = readNextChunk(pos, end, availableEnd, buffer)
+                    if (read <= 0 || !writeChunk(output, buffer, read)) break
                     pos += read
+                } else if (done.isCompleted) {
+                    if (finalFile.exists() && pos < finalFile.length()) continue
+                    break
                 } else {
-                    if (done.isCompleted) {
-                        // Download finished while serving; check once more for finalFile.
-                        if (finalFile.exists() && pos < finalFile.length()) continue
-                        break
-                    }
                     synchronized(dataLock) {
-                        dataLock.wait(50)
+                        dataLock.wait(POLL_INTERVAL_MS)
                     }
                 }
             }
         }
+
+        private fun readNextChunk(
+            pos: Long,
+            end: Long,
+            availableEnd: Long,
+            buffer: ByteArray,
+        ): Int {
+            val sourceFile = if (finalFile.exists()) finalFile else partFile
+            if (!sourceFile.exists()) return -1
+            val remaining = if (end >= 0L) minOf(availableEnd - pos, end - pos + 1L) else availableEnd - pos
+            val toRead = minOf(buffer.size.toLong(), remaining).toInt()
+            return RandomAccessFile(sourceFile, "r").use { raf ->
+                raf.seek(pos)
+                raf.read(buffer, 0, toRead)
+            }
+        }
+
+        private fun writeChunk(
+            output: OutputStream,
+            buffer: ByteArray,
+            count: Int,
+        ): Boolean =
+            try {
+                output.write(buffer, 0, count)
+                output.flush()
+                true
+            } catch (_: IOException) {
+                false
+            }
 
         private fun hasRange(
             start: Long,
@@ -760,7 +782,7 @@ class VideoServer internal constructor(
                     .build()
             runCatching {
                 client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful && response.code != 206) return@use
+                    if (!response.isSuccessful && response.code != HTTP_PARTIAL_CONTENT) return@use
                     val bytes = response.body.bytes()
                     if (bytes.isEmpty()) return@use
                     partFile.parentFile?.mkdirs()
@@ -797,6 +819,11 @@ class VideoServer internal constructor(
         }
     }
 
+    private data class AttemptOutcome(
+        val nextAttempt: Int,
+        val delayMs: Long,
+    )
+
     companion object {
         private const val CACHE_DIR_NAME = "orbin_video_cache"
         private const val PART_SUFFIX = ".part"
@@ -805,6 +832,21 @@ class VideoServer internal constructor(
         private const val MAX_QUEUED = 6
         private const val MAX_RETRIES = 4
         private const val AHEAD_FETCH_THRESHOLD_BYTES = 256L * 1024L
+        private const val SERVER_BACKLOG = 50
+        private const val LOOPBACK_OCTET_1: Byte = 127
+        private const val ID_HEX_LENGTH = 24
+        private const val STREAM_BUFFER_BYTES = 16 * 1024
+        private const val POLL_INTERVAL_MS = 50L
+        private const val HEADER_WAIT_TIMEOUT_MS = 10_000L
+        private const val RATE_LIMIT_MIN_DELAY_MS = 1_500L
+        private const val RETRY_BASE_DELAY_MS = 500L
+        private const val RETRY_MAX_DELAY_MS = 5_000L
+        private const val HTTP_OK = 200
+        private const val HTTP_PARTIAL_CONTENT = 206
+        private const val HTTP_NOT_FOUND = 404
+        private const val HTTP_METHOD_NOT_ALLOWED = 405
+        private const val HTTP_RANGE_NOT_SATISFIABLE = 416
+        private const val HTTP_BAD_GATEWAY = 502
         private val ALL_LOADED = listOf(0f to 1f)
 
         private fun sha256Hex(value: String): String {
@@ -830,20 +872,74 @@ class VideoServer internal constructor(
             val startPart = spec.substring(0, dash).trim()
             val endPart = spec.substring(dash + 1).trim()
             return if (startPart.isEmpty()) {
-                val suffix = endPart.toLongOrNull() ?: return null
-                if (totalLength <= 0L) return null
-                val start = (totalLength - suffix).coerceAtLeast(0L)
-                start until totalLength
+                parseSuffixRange(endPart, totalLength)
             } else {
-                val start = startPart.toLongOrNull() ?: return null
-                if (totalLength > 0L && start >= totalLength) return null
-                val end =
-                    endPart.toLongOrNull()?.let {
-                        if (totalLength > 0L) minOf(it, totalLength - 1L) else it
-                    } ?: if (totalLength > 0L) totalLength - 1L else Long.MAX_VALUE - 1L
-                if (end < start) return null
-                start..end
+                parseExplicitRange(startPart, endPart, totalLength)
             }
         }
+
+        private fun parseSuffixRange(
+            endPart: String,
+            totalLength: Long,
+        ): LongRange? {
+            val suffix = endPart.toLongOrNull()
+            return if (suffix == null || totalLength <= 0L) {
+                null
+            } else {
+                val start = (totalLength - suffix).coerceAtLeast(0L)
+                start until totalLength
+            }
+        }
+
+        private fun parseExplicitRange(
+            startPart: String,
+            endPart: String,
+            totalLength: Long,
+        ): LongRange? {
+            val start = startPart.toLongOrNull()
+            val invalidStart = start == null || (totalLength > 0L && start >= totalLength)
+            return if (invalidStart) {
+                null
+            } else {
+                val parsedEnd = endPart.toLongOrNull()
+                val end =
+                    when {
+                        parsedEnd != null && totalLength > 0L -> minOf(parsedEnd, totalLength - 1L)
+                        parsedEnd != null -> parsedEnd
+                        totalLength > 0L -> totalLength - 1L
+                        else -> Long.MAX_VALUE - 1L
+                    }
+                if (end < start) null else start..end
+            }
+        }
+    }
+}
+
+private fun readHttpLine(input: InputStream): String? {
+    val sb = StringBuilder()
+    var prev = -1
+    while (true) {
+        val b = input.read()
+        if (b == -1) return if (sb.isEmpty()) null else sb.toString()
+        if (b == '\n'.code) {
+            if (prev == '\r'.code && sb.isNotEmpty()) {
+                sb.setLength(sb.length - 1)
+            }
+            return sb.toString()
+        }
+        sb.append(b.toChar())
+        prev = b
+    }
+}
+
+private fun writeHttpStatus(
+    output: OutputStream,
+    code: Int,
+    reason: String,
+) {
+    val response = "HTTP/1.1 $code $reason\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    runCatching {
+        output.write(response.toByteArray(Charsets.US_ASCII))
+        output.flush()
     }
 }

@@ -97,10 +97,10 @@ object VideoPlayers {
             DefaultLoadControl
                 .Builder()
                 .setBufferDurationsMs(
-                    1_500,
-                    8_000,
-                    500,
-                    1_000,
+                    MIN_BUFFER_MS,
+                    MAX_BUFFER_MS,
+                    BUFFER_FOR_PLAYBACK_MS,
+                    BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
                 ).build()
         val player =
             ExoPlayer
@@ -174,6 +174,11 @@ object VideoPlayers {
 
     fun defaultMediaSourceFactory(context: Context): DefaultMediaSourceFactory =
         DefaultMediaSourceFactory(context.videoMediaDataSourceFactory(), DefaultExtractorsFactory())
+
+    private const val MIN_BUFFER_MS = 1_500
+    private const val MAX_BUFFER_MS = 8_000
+    private const val BUFFER_FOR_PLAYBACK_MS = 500
+    private const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 1_000
 }
 
 class VideoLease internal constructor(

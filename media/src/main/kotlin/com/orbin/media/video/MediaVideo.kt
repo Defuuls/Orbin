@@ -267,7 +267,7 @@ class MediaVideo private constructor(
                     if (!scrubbing) {
                         _positionMs.value = player.currentPosition.coerceAtLeast(0L)
                     }
-                    delay(50L)
+                    delay(PROGRESS_POLL_INTERVAL_MS)
                 }
             }
 
@@ -308,6 +308,7 @@ class MediaVideo private constructor(
 
     companion object {
         private const val PAUSE_GRACE_MS = 250L
+        private const val PROGRESS_POLL_INTERVAL_MS = 50L
         private val allVideos = mutableMapOf<String, MediaVideo>()
 
         fun obtain(

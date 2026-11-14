@@ -250,8 +250,14 @@ private class Rows(
     )
 }
 
+private const val MEGABYTES_PER_GIGABYTE = 1024
+
 private fun formatCacheLimitMb(megabytes: Int): String =
-    if (megabytes >= 1024 && megabytes % 1024 == 0) "${megabytes / 1024} GB" else "$megabytes MB"
+    if (megabytes >= MEGABYTES_PER_GIGABYTE && megabytes % MEGABYTES_PER_GIGABYTE == 0) {
+        "${megabytes / MEGABYTES_PER_GIGABYTE} GB"
+    } else {
+        "$megabytes MB"
+    }
 
 /**
  * The rows, plus what each one does.
