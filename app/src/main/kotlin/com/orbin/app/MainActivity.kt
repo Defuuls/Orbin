@@ -30,10 +30,13 @@ import com.orbin.app.routing.IntentRoute
 import com.orbin.app.routing.parseRoute
 import com.orbin.app.update.LocalDataNoticeDialog
 import com.orbin.core.common.lock.AppLockController
+import com.orbin.core.model.AppThemeMode
 import com.orbin.data.notification.NotificationLaunchToken
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WhatsNewRepository
+import com.orbin.uinext.SetupThemeOption
+import com.orbin.uinext.UpdateThemeConfig
 import com.orbin.uinext.WhatsNewOnUpdate
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -277,7 +280,29 @@ class MainActivity : FragmentActivity() {
             updateDialog = {
                 val visible = settings.onboardingCompleted && (!shouldLock || unlocked)
                 AppUpdateDialog(viewModel, visible)
-                WhatsNewOnUpdate(whatsNew.lastSeen, whatsNew::markSeen, visible)
+                WhatsNewOnUpdate(
+                    lastSeen = whatsNew.lastSeen,
+                    onSeen = whatsNew::markSeen,
+                    visible = visible,
+                    themeConfig =
+                        UpdateThemeConfig(
+                            theme =
+                                when {
+                                    settings.themeMode == AppThemeMode.SYSTEM -> SetupThemeOption.SYSTEM
+                                    settings.themeMode == AppThemeMode.LIGHT -> SetupThemeOption.LIGHT
+                                    settings.amoled -> SetupThemeOption.AMOLED
+                                    else -> SetupThemeOption.DARK
+                                },
+                            onThemeChange = { option ->
+                                when (option) {
+                                    SetupThemeOption.SYSTEM -> viewModel.setTheme(AppThemeMode.SYSTEM, false)
+                                    SetupThemeOption.LIGHT -> viewModel.setTheme(AppThemeMode.LIGHT, false)
+                                    SetupThemeOption.DARK -> viewModel.setTheme(AppThemeMode.DARK, false)
+                                    SetupThemeOption.AMOLED -> viewModel.setTheme(AppThemeMode.DARK, true)
+                                }
+                            },
+                        ),
+                )
                 LocalDataNoticeDialog(visible, onOpenSettings = { pendingRoute = Route.Settings })
             },
         )

@@ -3,6 +3,8 @@ package com.orbin.feature.onboarding
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
+import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
@@ -103,6 +105,9 @@ class OnboardingViewModel
         private val _setupState = MutableStateFlow(OnboardingSetupState())
         val setupState: StateFlow<OnboardingSetupState> = _setupState.asStateFlow()
 
+        val settings: StateFlow<AppSettings> =
+            settingsRepository.settings.stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
+
         private val writes = Mutex()
         private var pendingWrites = 0
         private var completing = false
@@ -180,6 +185,29 @@ class OnboardingViewModel
             if (_selectedProvider.value.metadata.id == provider.metadata.id) return
             _boards.value = OnboardingBoardsState.Loading
             _selectedProvider.value = provider
+        }
+
+        fun setTheme(
+            mode: AppThemeMode,
+            amoled: Boolean,
+        ) {
+            viewModelScope.launch {
+                settingsRepository.setThemeMode(mode)
+                settingsRepository.setAmoled(amoled)
+            }
+        }
+
+        fun setHideNsfwBoards(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsRepository.setHideNsfwBoards(enabled)
+                loadBoards()
+            }
+        }
+
+        fun setCoverViolentMedia(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsRepository.setCoverViolentMedia(enabled)
+            }
         }
 
         /** Complete only after the followed boards and both settings writes have reached storage. */

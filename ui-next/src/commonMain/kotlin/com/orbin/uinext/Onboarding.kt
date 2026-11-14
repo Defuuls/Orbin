@@ -23,6 +23,10 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,10 +79,8 @@ sealed interface OnboardingBoards {
 }
 
 /**
- * First run, in one step: pick the boards to follow. The same screen on Android and iOS.
- *
- * Everything else a wizard used to ask — theme, playback, privacy — either has a sensible default
- * or lives in Settings, so a new reader is one screen away from their feed.
+ * First run: either the multi-step setup wizard (when [setupWizard] is supplied) or the direct
+ * board picker. The same screen on Android and iOS.
  *
  * [sites] are the sites' names; the switcher shows only when there is more than one.
  */
@@ -97,6 +99,91 @@ fun OnboardingScreen(
     isSaving: Boolean = false,
     errorMessage: String? = null,
     canStart: Boolean = totalFollowing > 0 && !isSaving,
+    setupWizard: OnboardingSetupConfig? = null,
+) {
+    if (setupWizard != null) {
+        var step by rememberSaveable { mutableStateOf(OnboardingStep.WELCOME) }
+        when (step) {
+            OnboardingStep.WELCOME ->
+                WelcomeSplashStep(
+                    onContinue = { step = OnboardingStep.APPEARANCE },
+                    modifier = modifier,
+                )
+            OnboardingStep.APPEARANCE ->
+                AppearanceSetupStep(
+                    theme = setupWizard.theme,
+                    onThemeChange = setupWizard.onThemeChange,
+                    onBack = { step = OnboardingStep.WELCOME },
+                    onContinue = { step = OnboardingStep.PRIVACY },
+                    modifier = modifier,
+                )
+            OnboardingStep.PRIVACY ->
+                PrivacySetupStep(
+                    hideNsfwBoards = setupWizard.hideNsfwBoards,
+                    coverViolentMedia = setupWizard.coverViolentMedia,
+                    onHideNsfwChange = setupWizard.onHideNsfwChange,
+                    onCoverViolentMediaChange = setupWizard.onCoverViolentMediaChange,
+                    onBack = { step = OnboardingStep.APPEARANCE },
+                    onContinue = { step = OnboardingStep.BOARDS },
+                    modifier = modifier,
+                )
+            OnboardingStep.BOARDS ->
+                OnboardingBoardsStep(
+                    boards = boards,
+                    following = following,
+                    sites = sites,
+                    selectedSite = selectedSite,
+                    onSelectSite = onSelectSite,
+                    onFollow = onFollow,
+                    onRetry = onRetry,
+                    onStart = onStart,
+                    modifier = modifier,
+                    totalFollowing = totalFollowing,
+                    isSaving = isSaving,
+                    errorMessage = errorMessage,
+                    canStart = canStart,
+                    showStepIndicator = true,
+                    onBack = { step = OnboardingStep.PRIVACY },
+                )
+        }
+    } else {
+        OnboardingBoardsStep(
+            boards = boards,
+            following = following,
+            sites = sites,
+            selectedSite = selectedSite,
+            onSelectSite = onSelectSite,
+            onFollow = onFollow,
+            onRetry = onRetry,
+            onStart = onStart,
+            modifier = modifier,
+            totalFollowing = totalFollowing,
+            isSaving = isSaving,
+            errorMessage = errorMessage,
+            canStart = canStart,
+            showStepIndicator = false,
+            onBack = null,
+        )
+    }
+}
+
+@Composable
+private fun OnboardingBoardsStep(
+    boards: OnboardingBoards,
+    following: Set<String>,
+    sites: List<String>,
+    selectedSite: Int,
+    onSelectSite: (Int) -> Unit,
+    onFollow: (board: String, follow: Boolean) -> Unit,
+    onRetry: () -> Unit,
+    onStart: () -> Unit,
+    modifier: Modifier,
+    totalFollowing: Int,
+    isSaving: Boolean,
+    errorMessage: String?,
+    canStart: Boolean,
+    showStepIndicator: Boolean,
+    onBack: (() -> Unit)?,
 ) {
     Column(
         modifier =
@@ -115,6 +202,9 @@ fun OnboardingScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OrbinWordmark(logoSize = 32.dp)
+            if (showStepIndicator) {
+                SetupStepIndicator(step = 4, total = 4)
+            }
             Text(
                 text = stringResource(Res.string.next_onboarding_title),
                 style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
@@ -155,6 +245,9 @@ fun OnboardingScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (onBack != null) {
+                OrbinTextButton(label = "Back", enabled = !isSaving, onClick = onBack)
+            }
             Text(
                 text =
                     when {

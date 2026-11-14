@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.network.NetworkMonitor
 import com.orbin.core.model.AppSettings
+import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.AppUpdateState
 import com.orbin.data.settings.FixedNetworkConfigProvider
 import com.orbin.domain.repository.AppUpdater
@@ -28,7 +29,7 @@ import javax.inject.Inject
 class MainViewModel
     @Inject
     constructor(
-        settingsRepository: SettingsRepository,
+        private val settingsRepository: SettingsRepository,
         networkMonitor: NetworkMonitor,
         private val appUpdater: AppUpdater,
         boardPreferencesRepository: BoardPreferencesRepository,
@@ -82,6 +83,16 @@ class MainViewModel
         /** Called by the wizard only after its followed boards and completion settings persist. */
         fun onOnboardingCompleted() {
             startupOnboardingOverride.value = null
+        }
+
+        fun setTheme(
+            mode: AppThemeMode,
+            amoled: Boolean,
+        ) {
+            viewModelScope.launch {
+                settingsRepository.setThemeMode(mode)
+                settingsRepository.setAmoled(amoled)
+            }
         }
 
         /** Starts `true` so a fresh launch never flashes an offline banner before the first callback. */
