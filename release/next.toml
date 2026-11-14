@@ -1,27 +1,28 @@
-# Orbin 207 - Actinolite
+# Orbin 208 - Adamite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 207
-codename = "Actinolite"
-version_code = 225
+number = 208
+codename = "Adamite"
+version_code = 226
 
-highlight = "Full-screen Midnight Electric setup splash, multi-step onboarding, update setup, and refreshed board icons."
+highlight = "Loopback video streaming with encrypted caching, full-width feed cards, smooth video scrolling, and Android 15 (minSdk 35)."
 
 summary = [
-  "bump Orbin to 207-Actinolite / versionCode 225",
-  "add full-screen Midnight Electric setup splash and multi-step onboarding wizard",
-  "add full-screen update setup and migration screen with theme picker",
-  "refresh 4chan and BBWChan board icons in the Midnight Electric palette",
+  "bump Orbin to 208-Adamite / versionCode 226",
+  "add local loopback video streaming and encrypted video cache",
+  "adopt full-width feed cards and smooth inline video scrolling",
+  "raise Android minSdk to 35 (Android 15)",
 ]
 
 [changelog]
 Added = [
-  "Added a full-screen Midnight Electric welcome splash on first run that expands into Appearance, Privacy & content, and Board selection steps on Android and iOS.",
-  "Added a full-screen update setup and migration screen with theme selection when updating to a new release.",
+  "Added local HTTP loopback video streaming and an encrypted video cache with configurable cache size in Settings.",
 ]
 Changed = [
-  "Refreshed board icon badges for 4chan and BBWChan boards using the Midnight Electric palette and updated visual test goldens.",
+  "Updated the Home feed to use full-width cards with refreshed catalog, thread, and navigation styling.",
+  "Raised Android minSdk to 35 (Android 15) and removed obsolete pre-API 35 compatibility checks.",
 ]
-Testing = [
-  "Added unit tests for the multi-step setup wizard and updated Android and iOS startup smoke tests for the new setup flow.",
+Fixed = [
+  "Improved inline video playback and scrolling smoothness across feeds and threads.",
+  "Restored standard splash screen startup behavior and updated Android and iOS smoke tests.",
 ]
