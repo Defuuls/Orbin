@@ -176,12 +176,15 @@ final class StartupSmokeTests: XCTestCase {
         app.launchArguments = []
     }
 
+    // The wizard step is not persisted until setup completes. Every cold launch used for
+    // Dynamic Type measurements must traverse the splash, appearance, and privacy steps.
     private func advanceToBoardSelection() {
         let getStarted = app.buttons.matching(NSPredicate(format: "label == %@", "Get started")).firstMatch
         let startBrowsing = app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch
         let done = releaseNotesDoneButton()
         waitUntilExists([getStarted, startBrowsing, done], description: "Onboarding or this release's notes")
         dismissReleaseNotesIfPresent()
+        waitUntilExists([getStarted, startBrowsing], description: "The setup splash or board selection")
         if getStarted.exists {
             waitUntilHittable([getStarted], description: "The setup welcome Get started button")
             getStarted.tap()
