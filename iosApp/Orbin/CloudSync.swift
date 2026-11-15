@@ -137,8 +137,9 @@ final class OrbinCloudSync {
         let reply: Reply
         do {
             try Task.checkCancellation()
-            reply = try await handle(operation, request: request)
+            let handledReply = try await handle(operation, request: request)
             try Task.checkCancellation()
+            reply = handledReply
         } catch is CancellationError {
             closeSession(request.sessionId, excluding: request.requestId)
             reply = Self.cancelledReply()

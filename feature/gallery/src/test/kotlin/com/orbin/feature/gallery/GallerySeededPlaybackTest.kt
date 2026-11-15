@@ -1,6 +1,8 @@
 package com.orbin.feature.gallery
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
@@ -25,12 +27,16 @@ import io.mockk.mockk
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
@@ -39,6 +45,18 @@ import org.junit.Test
 class GallerySeededPlaybackTest {
     @get:Rule
     val dispatcher = MainDispatcherRule()
+
+    private val viewModelStore = ViewModelStore()
+    private val viewModelJobs = mutableListOf<Job>()
+
+    @After
+    fun clearViewModelsBeforeMainDispatcherIsReset() =
+        runTest {
+            // Seeded content can start Default-backed presentation before a response arrives.
+            // Join cancellation before the surrounding rule releases the test Main dispatcher.
+            viewModelStore.clear()
+            viewModelJobs.joinAll()
+        }
 
     private val key = ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(91L))
     private val selected =
@@ -262,7 +280,10 @@ class GallerySeededPlaybackTest {
         imageClipboard = mockk(relaxed = true),
         imagePreloader = mockk(relaxed = true),
         videoPreloader = mockk(relaxed = true),
-    )
+    ).also { model ->
+        viewModelJobs += model.viewModelScope.coroutineContext.job
+        viewModelStore.put("seeded-gallery-${viewModelJobs.size}", model)
+    }
 
     private fun thread(attachments: List<MediaAttachment>) =
         Thread(
