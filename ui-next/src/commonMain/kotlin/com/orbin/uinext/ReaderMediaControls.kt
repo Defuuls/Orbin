@@ -109,7 +109,7 @@ fun ReaderMediaControls(
     Column(
         modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))))
+            .background(MediaControlsShade)
             .windowInsetsPadding(
                 WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
             ).padding(start = 12.dp, end = 12.dp, top = 44.dp, bottom = 12.dp),
@@ -344,3 +344,6 @@ private const val REWIND_SECONDS = 5.0
 private const val FAST_FORWARD_SECONDS = 15.0
 private const val SHORT_CLIP_SECONDS = 20.0
 private const val DEFAULT_FAST_FORWARD_LABEL = "Forward 15 seconds"
+
+/** The bottom shade behind the controls; constant, so built once rather than per frame. */
+private val MediaControlsShade = Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)))

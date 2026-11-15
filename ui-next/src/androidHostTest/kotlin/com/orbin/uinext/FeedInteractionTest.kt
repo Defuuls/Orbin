@@ -45,7 +45,11 @@ class FeedInteractionTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan", "4chan").copy(hasPreview = false)),
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row("fourchan", "4chan").copy(hasPreview = false)),
+                        ),
+                    actions = FeedScreenActions(),
                     thumbnail = { _, _ -> previewRequested = true },
                 )
             }
@@ -59,7 +63,18 @@ class FeedInteractionTest {
         val rows = listOf(row("fourchan", "4chan"), row("bbwchan", "BBWChan").copy(subject = "Another source"))
         val opened = mutableListOf<String>()
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = rows, onOpenRow = { opened += it.id }) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { opened += it.id },
+                        ),
+                )
+            }
         }
         composeRule
             .onNodeWithTag(ReaderFeedTags.row(rows[0].id))
@@ -103,11 +118,17 @@ class FeedInteractionTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan", "4chan")),
-                    onOpenRow = { opened++ },
-                    onToggleWatch = { watched++ },
-                    onToggleSaved = { saved++ },
-                    onShareRow = { shared++ },
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row("fourchan", "4chan")),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { opened++ },
+                            onToggleWatch = { watched++ },
+                            onToggleSaved = { saved++ },
+                            onShareRow = { shared++ },
+                        ),
                 )
             }
         }
@@ -132,9 +153,15 @@ class FeedInteractionTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan", "4chan").copy(watched = true, bookmarked = true)),
-                    onToggleWatch = {},
-                    onToggleSaved = {},
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row("fourchan", "4chan").copy(watched = true, bookmarked = true)),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onToggleWatch = {},
+                            onToggleSaved = {},
+                        ),
                 )
             }
         }
@@ -153,13 +180,19 @@ class FeedInteractionTest {
             var selected by remember { mutableIntStateOf(0) }
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan", "4chan")),
-                    sourceLabels = listOf("All sites", "4chan", "BBWChan"),
-                    selectedSource = selected,
-                    onSelectSource = {
-                        selected = it
-                        choice = it
-                    },
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row("fourchan", "4chan")),
+                            sourceLabels = listOf("All sites", "4chan", "BBWChan"),
+                            selectedSource = selected,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onSelectSource = {
+                                selected = it
+                                choice = it
+                            },
+                        ),
                 )
             }
         }
@@ -179,9 +212,13 @@ class FeedInteractionTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan", "4chan")),
-                    subtitle = "1 thread · 1 board",
-                    statusMessage = "Showing previously loaded threads",
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row("fourchan", "4chan")),
+                            subtitle = "1 thread · 1 board",
+                            statusMessage = "Showing previously loaded threads",
+                        ),
+                    actions = FeedScreenActions(),
                 )
             }
         }
@@ -197,10 +234,16 @@ class FeedInteractionTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row("fourchan", "4chan")),
-                    onOpenRow = { opened++ },
-                    onSettings = { settings++ },
-                    onOpenBoards = {},
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row("fourchan", "4chan")),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { opened++ },
+                            onSettings = { settings++ },
+                            onOpenBoards = {},
+                        ),
                 )
             }
         }

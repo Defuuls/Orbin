@@ -86,45 +86,50 @@ class OrbinAdaptiveNavigationScreenshotTest {
 @Composable
 private fun ShellFeed() {
     FeedScreen(
-        rows =
-            listOf(
-                FeedRow(
-                    "A quiet landscape",
-                    "/p/",
-                    "5m",
-                    24,
-                    8,
-                    id = "fourchan/p/1042",
-                    site = "4chan",
-                    poster = "Anonymous",
-                    excerpt = "Share a favorite view from a recent walk.",
-                    mediaLabel = "JPG",
-                ),
-                FeedRow(
-                    "This week's projects",
-                    "/g/",
-                    "12m",
-                    48,
-                    3,
-                    id = "fourchan/g/2084",
-                    site = "4chan",
-                    excerpt = "What are you working on this week?",
-                ),
+        state =
+            FeedScreenState(
+                rows =
+                    listOf(
+                        FeedRow(
+                            "A quiet landscape",
+                            "/p/",
+                            "5m",
+                            24,
+                            8,
+                            id = "fourchan/p/1042",
+                            site = "4chan",
+                            poster = "Anonymous",
+                            excerpt = "Share a favorite view from a recent walk.",
+                            mediaLabel = "JPG",
+                        ),
+                        FeedRow(
+                            "This week's projects",
+                            "/g/",
+                            "12m",
+                            48,
+                            3,
+                            id = "fourchan/g/2084",
+                            site = "4chan",
+                            excerpt = "What are you working on this week?",
+                        ),
+                    ),
+                sourceLabels = listOf("All sites", "4chan", "BBWChan"),
+                mode = CatalogMode.CARD,
+                downloadBadge = 2,
             ),
-        sourceLabels = listOf("All sites", "4chan", "BBWChan"),
-        onSelectSource = {},
-        onOpenRow = {},
-        onOpenBoards = {},
-        onOpenDownloads = {},
-        onSettings = {},
-        onOpenSearch = {},
-        onOpenSaved = {},
-        onOpenWatched = {},
-        onToggleWatch = {},
-        onModeChange = {},
-        mode = CatalogMode.CARD,
-        hideRailOnScroll = false,
-        downloadBadge = 2,
+        actions =
+            FeedScreenActions(
+                onSelectSource = {},
+                onOpenRow = {},
+                onOpenBoards = {},
+                onOpenDownloads = {},
+                onSettings = {},
+                onOpenSearch = {},
+                onOpenSaved = {},
+                onOpenWatched = {},
+                onToggleWatch = {},
+                onModeChange = {},
+            ),
         thumbnail = { _, modifier -> Box(modifier.background(reader.selected)) },
     )
 }

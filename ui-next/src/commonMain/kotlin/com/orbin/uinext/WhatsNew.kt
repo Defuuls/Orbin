@@ -136,6 +136,10 @@ fun UpdateSetupScreen(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                 ),
     ) {
+        val accent = reader.accent
+        val selectedFill = reader.selected
+        val bannerFill =
+            remember(accent, selectedFill) { Brush.linearGradient(listOf(accent.copy(alpha = 0.22f), selectedFill)) }
         Column(
             modifier =
                 Modifier
@@ -148,7 +152,7 @@ fun UpdateSetupScreen(
                     Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Brush.linearGradient(listOf(reader.accent.copy(alpha = 0.22f), reader.selected)))
+                        .background(bannerFill)
                         .border(1.dp, reader.accent.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
                         .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,

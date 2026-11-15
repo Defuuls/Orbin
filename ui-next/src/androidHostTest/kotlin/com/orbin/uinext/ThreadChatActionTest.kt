@@ -26,10 +26,16 @@ class ThreadChatActionTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row()),
-                    onOpenRow = { captions++ },
-                    onOpenReplies = { videos++ },
-                    repliesOpenComments = false,
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row()),
+                            repliesOpenComments = false,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { captions++ },
+                            onOpenReplies = { videos++ },
+                        ),
                 )
             }
         }
@@ -54,9 +60,15 @@ class ThreadChatActionTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(row()),
-                    onOpenReplies = { comments++ },
-                    repliesOpenComments = true,
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row()),
+                            repliesOpenComments = true,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenReplies = { comments++ },
+                        ),
                 )
             }
         }

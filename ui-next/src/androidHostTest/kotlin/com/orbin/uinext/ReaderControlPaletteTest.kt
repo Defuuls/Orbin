@@ -113,7 +113,16 @@ class ReaderControlPaletteTest(
         val row = FeedRow("Palette fixture", "/g/", "1m", 2, 0, hasPreview = false, watched = true)
         compose.setContent {
             NextTheme(darkTheme = mode != "light", amoled = mode == "amoled") {
-                FeedScreen(rows = listOf(row), onToggleWatch = {})
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onToggleWatch = {},
+                        ),
+                )
             }
         }
         compose.onNodeWithTag(ReaderFeedTags.more(row.id)).assertDoesNotExist()

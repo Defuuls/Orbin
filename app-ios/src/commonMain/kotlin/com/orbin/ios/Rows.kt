@@ -7,12 +7,14 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Thread
 import com.orbin.core.model.toSearchResult
-import com.orbin.core.reader.boardLabel
 import com.orbin.core.reader.catalogRow
+import com.orbin.core.reader.feedRow
 import com.orbin.core.reader.firstMediaIndex
 import com.orbin.core.reader.mediaPostId
 import com.orbin.core.reader.preparePresentation
+import com.orbin.core.reader.providerLabel
 import com.orbin.core.reader.threadFiles
+import com.orbin.core.reader.threadRowId
 import com.orbin.uinext.BoardTile
 import com.orbin.uinext.FeedRow
 import com.orbin.uinext.SearchRow
@@ -53,18 +55,10 @@ internal fun SiteBoard.toTile(
 internal fun FeedThread.toFeedRow(
     nowMillis: Long,
     read: Boolean,
-): FeedRow =
-    thread.toRow(nowMillis, read).copy(
-        id = feedRowId,
-        site = sourceLabel(provider.value),
-        board = boardLabel(thread.key.board.value),
-        threadNumber =
-            thread.key.thread.value
-                .toString(),
-    )
+): FeedRow = thread.feedRow(provider.value, nowMillis, read)
 
 internal val FeedThread.feedRowId: String
-    get() = "${provider.value}/${thread.key.board.value}/${thread.key.thread.value}"
+    get() = threadRowId(provider.value, thread.key.board.value, thread.key.thread.value)
 
 /** A catalog can attach an image before a clip; the video feed always previews an actual video. */
 internal fun FeedThread.videoFeedPreview(): FeedThread? {
@@ -82,7 +76,7 @@ internal fun FeedThread.toSearchRow(): SearchRow {
     return SearchRow(
         id = feedRowId,
         title = result.title,
-        board = "${sourceLabel(provider.value)} · /${thread.key.board.value}/",
+        board = "${providerLabel(provider.value)} · /${thread.key.board.value}/",
         snippet =
             thread.originalPost.comment
                 .plainText()
@@ -139,10 +133,3 @@ internal fun Thread.firstFileIndex(postId: String): Int? = firstMediaIndex(postI
 
 /** The shared HTTPS-only rule is used by both platform readers. */
 internal fun safeExternalLink(url: String): String? = sharedSafeExternalLink(url)
-
-private fun sourceLabel(provider: String): String =
-    when (provider) {
-        "fourchan" -> "4chan"
-        "bbwchan" -> "BBWChan"
-        else -> provider
-    }

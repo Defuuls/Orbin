@@ -40,12 +40,18 @@ class WindowInsetsTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
-                    subtitle = "1 thread",
-                    onOpenBoards = {},
-                    onOpenWatched = {},
-                    onOpenSearch = {},
-                    onOpenSaved = {},
+                    state =
+                        FeedScreenState(
+                            rows = listOf(FeedRow("A thread that has to stay readable", "/g/", "4m", 12, 3)),
+                            subtitle = "1 thread",
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = {},
+                            onOpenWatched = {},
+                            onOpenSearch = {},
+                            onOpenSaved = {},
+                        ),
                     thumbnail = { _, modifier ->
                         Box(modifier.testTag("feed-media").background(Color.Green))
                     },
@@ -72,7 +78,18 @@ class WindowInsetsTest {
     fun `the final Home row stops above the bottom system inset`() {
         val rows = List(30) { FeedRow("Thread $it", "/g/", "now", it, 0, hasPreview = false, id = "row-$it") }
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = rows, onOpenBoards = {}) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = {},
+                        ),
+                )
+            }
         }
         applySystemBars()
         composeRule.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(rows.lastIndex)
@@ -85,7 +102,18 @@ class WindowInsetsTest {
     fun `empty Home grid keeps its Boards action above the bottom system inset without scrolling`() {
         composeRule.setContent {
             NextTheme {
-                FeedScreen(rows = emptyList(), mode = CatalogMode.GRID, onOpenBoards = {}, onRetry = {})
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = emptyList(),
+                            mode = CatalogMode.GRID,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = {},
+                            onRetry = {},
+                        ),
+                )
             }
         }
         applySystemBars()

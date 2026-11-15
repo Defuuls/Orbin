@@ -215,17 +215,27 @@ class ReaderThemeFontTest(
                 when (screen) {
                     0 ->
                         FeedScreen(
-                            rows = listOf(fontRow("Home typeface fixture")),
-                            onOpenBoards = {},
-                            onOpenSearch = {},
-                            onSettings = {},
+                            state =
+                                FeedScreenState(
+                                    rows = listOf(fontRow("Home typeface fixture")),
+                                ),
+                            actions =
+                                FeedScreenActions(
+                                    onOpenBoards = {},
+                                    onOpenSearch = {},
+                                    onSettings = {},
+                                ),
                         )
                     1 ->
                         BoardScreen(
-                            board = "/g/",
-                            description = "Typeface catalog",
-                            itemCount = 1,
-                            rowAt = { fontRow("Catalog typeface fixture") },
+                            state =
+                                BoardScreenState(
+                                    board = "/g/",
+                                    description = "Typeface catalog",
+                                    itemCount = 1,
+                                    rowAt = { fontRow("Catalog typeface fixture") },
+                                ),
+                            actions = BoardScreenActions(),
                         )
                     2 ->
                         SettingsScreen(

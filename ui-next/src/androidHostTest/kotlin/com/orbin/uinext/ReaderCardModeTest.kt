@@ -209,24 +209,36 @@ class ReaderCardModeTest(
     ) {
         if (isHome) {
             FeedScreen(
-                rows = if (isLoading) emptyList() else ROWS,
-                mode = mode,
-                isLoading = isLoading,
-                onModeChange = onModeChange,
-                onOpenRow = onOpenRow,
-                onOpenMedia = onOpenMedia,
+                state =
+                    FeedScreenState(
+                        rows = if (isLoading) emptyList() else ROWS,
+                        mode = mode,
+                        isLoading = isLoading,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onModeChange = onModeChange,
+                        onOpenRow = onOpenRow,
+                        onOpenMedia = onOpenMedia,
+                    ),
                 thumbnail = { _, modifier -> Box(modifier) },
             )
         } else {
             BoardScreen(
-                board = "/g/",
-                description = "Technology",
-                itemCount = ROWS.size,
-                rowAt = ROWS::getOrNull,
-                mode = mode,
-                onModeChange = onModeChange,
-                onOpenRow = onOpenRow,
-                selectedRowId = ROWS[1].id,
+                state =
+                    BoardScreenState(
+                        board = "/g/",
+                        description = "Technology",
+                        itemCount = ROWS.size,
+                        rowAt = ROWS::getOrNull,
+                        mode = mode,
+                        selectedRowId = ROWS[1].id,
+                    ),
+                actions =
+                    BoardScreenActions(
+                        onModeChange = onModeChange,
+                        onOpenRow = onOpenRow,
+                    ),
                 thumbnail = { _, modifier -> Box(modifier) },
                 stateContent = if (isLoading) ({ ReaderCatalogSkeleton(mode = mode) }) else null,
             )

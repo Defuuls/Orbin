@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -182,38 +183,20 @@ fun catalogSortTabs(): List<CatalogSortTab> =
  */
 @Composable
 fun BoardScreen(
-    board: String,
-    description: String,
-    itemCount: Int,
-    rowAt: (Int) -> FeedRow?,
-    rowKey: (Int) -> Any = { index -> rowAt(index)?.id ?: "catalog-pending-$index" },
+    state: BoardScreenState,
+    actions: BoardScreenActions,
     modifier: Modifier = Modifier,
-    mode: CatalogMode = CatalogMode.LIST,
-    onModeChange: ((CatalogMode) -> Unit)? = null,
-    sortLabel: String? = null,
-    onSort: () -> Unit = {},
-    sortTabs: List<CatalogSortTab> = emptyList(),
-    selectedSortId: String? = null,
-    onSelectSort: (String) -> Unit = {},
-    onOpenMedia: (() -> Unit)? = null,
-    onOpenRow: (FeedRow) -> Unit = {},
+    gridState: LazyGridState = rememberLazyGridState(),
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
-    navigation: ReaderNavigation = ReaderNavigation.NONE,
-    onNavigation: () -> Unit = {},
-    onPickBoard: (() -> Unit)? = null,
-    onReload: (() -> Unit)? = null,
-    onSearch: (() -> Unit)? = null,
-    reloading: Boolean = false,
-    wideWindow: Boolean = false,
-    selectedRowId: String? = null,
-    state: LazyGridState = rememberLazyGridState(),
-    onOpenBrowser: (() -> Unit)? = null,
     headerContent: (@Composable () -> Unit)? = null,
     stateContent: (@Composable () -> Unit)? = null,
 ) {
+    val mode = state.mode
+    val navigation = state.navigation
+    val onNavigation = actions.onNavigation
     val colors = reader
-    val heading = catalogHeading(board, description)
-    PreserveCatalogScrollAnchor(state, mode)
+    val heading = catalogHeading(state.board, state.description)
+    PreserveCatalogScrollAnchor(gridState, mode)
     Column(
         modifier =
             modifier
@@ -222,31 +205,31 @@ fun BoardScreen(
                         onNavigation.takeIf {
                             navigation == ReaderNavigation.BACK
                         },
-                    onRefresh = onReload,
-                    onSearch = onSearch,
+                    onRefresh = actions.onReload,
+                    onSearch = actions.onSearch,
                 ).readerBackSwipe(onNavigation.takeIf { navigation == ReaderNavigation.BACK })
                 .fillMaxSize()
                 .background(colors.background)
-                .semantics { paneTitle = board },
+                .semantics { paneTitle = state.board },
     ) {
         ReaderAppBar(
             title = heading,
             navigation = navigation,
             onNavigation = onNavigation,
-            onTitleClick = onPickBoard,
+            onTitleClick = actions.onPickBoard,
             titleClickLabel = stringResource(Res.string.reader_pick_board),
-            actions = catalogActions(onReload, onSearch),
+            actions = catalogActions(actions.onReload, actions.onSearch),
             overflow =
                 catalogOverflow(
                     mode,
-                    onModeChange,
-                    sortLabel,
-                    onSort,
-                    onOpenMedia,
-                    onOpenBrowser,
+                    actions.onModeChange,
+                    state.sortLabel,
+                    actions.onSort,
+                    actions.onOpenMedia,
+                    actions.onOpenBrowser,
                 ),
         )
-        if (reloading) {
+        if (state.reloading) {
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -255,8 +238,8 @@ fun BoardScreen(
                     .testTag(CatalogTags.PROGRESS),
             )
         }
-        if (sortTabs.isNotEmpty()) {
-            CatalogSortTabRow(tabs = sortTabs, selectedId = selectedSortId, onSelect = onSelectSort)
+        if (state.sortTabs.isNotEmpty()) {
+            CatalogSortTabRow(tabs = state.sortTabs, selectedId = state.selectedSortId, onSelect = actions.onSelectSort)
         }
         headerContent?.invoke()
         if (stateContent != null) {
@@ -278,10 +261,11 @@ fun BoardScreen(
             val columns = if (cards) gridSpec.columns else 1
             val gap = ORBIN_CATALOG_GAP
             val outer = ORBIN_CATALOG_GUTTER
-            val cellMin = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
+            val cellMin = if (state.wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
+            val itemType = feedItemType(mode)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                state = state,
+                state = gridState,
                 modifier = Modifier.fillMaxSize().testTag(CatalogTags.GRID),
                 contentPadding =
                     PaddingValues(
@@ -294,52 +278,77 @@ fun BoardScreen(
                 verticalArrangement = Arrangement.spacedBy(gap),
             ) {
                 items(
-                    count = itemCount,
-                    key = rowKey,
-                    contentType = { mode },
+                    count = state.itemCount,
+                    key = state.rowKey,
+                    // By mode only: reading a row here would trigger the host's paging prefetch early.
+                    contentType = { itemType },
                 ) { index ->
-                    val row = rowAt(index)
-                    when {
-                        row == null && cards ->
-                            OrbinCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevated = false,
-                                containerColor = reader.surfaceVariant,
-                            ) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(gridSpec.imageHeight)
-                                        .testTag(CatalogTags.PENDING),
-                                )
-                            }
-                        row == null -> Box(Modifier.fillMaxWidth().height(cellMin))
-                        cards ->
-                            CatalogCard(
-                                row = row,
-                                selected = row.id == selectedRowId,
-                                onOpen = onOpenRow,
-                                thumbnail = thumbnail,
-                                imageHeight = gridSpec.imageHeight,
-                                wideWindow = wideWindow,
-                                compactGrid = mode == CatalogMode.GRID,
-                            )
-                        else ->
-                            OrbinCard(modifier = Modifier.fillMaxWidth(), elevated = false) {
-                                CatalogRow(
-                                    row = row,
-                                    selected = row.id == selectedRowId,
-                                    wideWindow = wideWindow,
-                                    onOpen = onOpenRow,
-                                    thumbnail = thumbnail,
-                                    showDivider = false,
-                                    containerColor = colors.surfaceVariant,
-                                )
-                            }
-                    }
+                    CatalogCell(
+                        row = state.rowAt(index),
+                        mode = mode,
+                        selectedRowId = state.selectedRowId,
+                        wideWindow = state.wideWindow,
+                        imageHeight = gridSpec.imageHeight,
+                        cellMin = cellMin,
+                        onOpenRow = actions.onOpenRow,
+                        thumbnail = thumbnail,
+                    )
                 }
             }
         }
+    }
+}
+
+/** One catalog cell in any [mode]; a `null` [row] is still loading and keeps its cell's size. */
+@Composable
+private fun CatalogCell(
+    row: FeedRow?,
+    mode: CatalogMode,
+    selectedRowId: String?,
+    wideWindow: Boolean,
+    imageHeight: Dp,
+    cellMin: Dp,
+    onOpenRow: (FeedRow) -> Unit,
+    thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+) {
+    val cards = mode != CatalogMode.LIST
+    when {
+        row == null && cards ->
+            OrbinCard(
+                modifier = Modifier.fillMaxWidth(),
+                elevated = false,
+                containerColor = reader.surfaceVariant,
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(imageHeight)
+                        .testTag(CatalogTags.PENDING),
+                )
+            }
+        row == null -> Box(Modifier.fillMaxWidth().height(cellMin))
+        cards ->
+            CatalogCard(
+                row = row,
+                selected = row.id == selectedRowId,
+                onOpen = onOpenRow,
+                thumbnail = thumbnail,
+                imageHeight = imageHeight,
+                wideWindow = wideWindow,
+                compactGrid = mode == CatalogMode.GRID,
+            )
+        else ->
+            OrbinCard(modifier = Modifier.fillMaxWidth(), elevated = false) {
+                CatalogRow(
+                    row = row,
+                    selected = row.id == selectedRowId,
+                    wideWindow = wideWindow,
+                    onOpen = onOpenRow,
+                    thumbnail = thumbnail,
+                    showDivider = false,
+                    containerColor = reader.surfaceVariant,
+                )
+            }
     }
 }
 
@@ -706,8 +715,24 @@ private fun CatalogCounts(
     }
 }
 
+/**
+ * How a card's image behaves: whether it shows, whether a spoiler covers it, and what tapping or
+ * long-pressing it does. Built once per card and shared by both card layouts.
+ */
+private class CatalogCardMedia(
+    val row: FeedRow,
+    val thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
+    val showThumbnail: Boolean,
+    val covered: Boolean,
+    val reveal: () -> Unit,
+    val tag: String,
+    val onOpenThumbnail: ((FeedRow) -> Unit)? = null,
+    val thumbnailClickLabel: String? = null,
+    val onLongClick: (() -> Unit)? = null,
+    val onLongClickLabel: String? = null,
+)
+
 /** Compact image tiles and full social cards share the same identities, actions, and spoiler state. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun CatalogCard(
     row: FeedRow,
@@ -731,33 +756,25 @@ internal fun CatalogCard(
 ) {
     val colors = reader
     val title = rowTitle(row)
-    val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.postBody.withReaderFont()
     val summary = listOfNotNull(rowSummary(row, title), metadata).joinToString(", ")
     val showThumbnail = row.hasPreview && !row.muted && thumbnail != null
     var revealed by rememberSaveable(row.id, row.imageSpoiler) { mutableStateOf(false) }
     val covered = showThumbnail && row.imageSpoiler && !(spoilerRevealed ?: revealed)
     val reveal = { if (onRevealSpoiler != null) onRevealSpoiler() else revealed = true }
-    val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
-    val actions =
-        buildList {
-            if (covered) {
-                add(
-                    CustomAccessibilityAction(revealLabel) {
-                        reveal()
-                        true
-                    },
-                )
-            } else if (showThumbnail && onOpenThumbnail != null && thumbnailClickLabel != null) {
-                add(
-                    CustomAccessibilityAction(thumbnailClickLabel) {
-                        onOpenThumbnail(row)
-                        true
-                    },
-                )
-            }
-            addAll(accessibilityActions)
-        }
-    val titleMaxLines = 2
+    val media =
+        CatalogCardMedia(
+            row = row,
+            thumbnail = thumbnail,
+            showThumbnail = showThumbnail,
+            covered = covered,
+            reveal = reveal,
+            tag = thumbnailTag ?: CatalogTags.THUMBNAIL,
+            onOpenThumbnail = onOpenThumbnail,
+            thumbnailClickLabel = thumbnailClickLabel,
+            onLongClick = onLongClick,
+            onLongClickLabel = onLongClickLabel,
+        )
+    val actions = catalogCardAccessibilityActions(media, accessibilityActions)
     OrbinCard(
         modifier =
             modifier
@@ -785,234 +802,309 @@ internal fun CatalogCard(
         shape = RoundedCornerShape(if (compactGrid) 22.dp else NEKO_CARD_RADIUS_DP.dp),
     ) {
         if (compactGrid && LocalDensity.current.fontScale < READER_TRAILING_BELOW_FONT_SCALE) {
-            Box(Modifier.fillMaxWidth().height(imageHeight)) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(colors.surfaceVariant)
-                        .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
-                        .clearAndSetSemantics {}
-                        .then(
-                            catalogThumbnailAction(
-                                covered,
-                                row,
-                                onOpenThumbnail,
-                                thumbnailClickLabel,
-                                onLongClick,
-                                onLongClickLabel,
-                            ),
-                        ),
-                ) {
-                    if (covered) {
-                        ReaderSpoilerCover(
-                            onReveal = reveal,
-                            modifier = Modifier.fillMaxSize(),
-                            onLongClick = onLongClick,
-                            onLongClickLabel = onLongClickLabel,
-                        )
-                    } else if (showThumbnail) {
-                        thumbnail.invoke(row, Modifier.fillMaxSize())
-                    }
-                }
-                Box(Modifier.fillMaxSize().background(GridScrim.brush))
-                FlowRow(
-                    Modifier.align(Alignment.TopStart).padding(10.dp).padding(end = 20.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    if (row.threadNumber.isNotBlank()) {
-                        OrbinPill(
-                            stringResource(Res.string.reader_post_number, row.threadNumber),
-                            variant = PillVariant.Media,
-                        )
-                    }
-                    if (metadata != null && row.board.isNotBlank()) {
-                        OrbinPill(row.board, variant = PillVariant.Filled)
-                    }
-                }
-                if (row.watched || row.bookmarked) {
-                    Icon(
-                        ReaderIcons.SavedFilled,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(18.dp),
-                    )
-                }
-                Column(
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth()
-                        .pointerInput(row.id, onOpen, onLongClick) {
-                            detectTapGestures(
-                                onTap = { onOpen(row) },
-                                onLongPress = onLongClick?.let { action -> { _: Offset -> action() } },
-                            )
-                        }.padding(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (title.isNotBlank()) {
-                        Text(
-                            title,
-                            style = OrbinType.body.withReaderFont().copy(fontWeight = FontWeight.Bold),
-                            color = Color.White,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    FlowRow(
-                        Modifier.testTag(CatalogTags.COUNTS),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        OrbinPill(
-                            pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
-                            variant = PillVariant.Media,
-                            icon = ReaderIcons.Chat,
-                        )
-                        OrbinPill(
-                            pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
-                            variant = PillVariant.Media,
-                            icon = ReaderIcons.Album,
-                        )
-                        UnreadLabel(row.unread)
-                        if (row.mediaLabel.isNotBlank() && !covered) {
-                            OrbinPill(row.mediaLabel, variant = PillVariant.Media)
-                        }
-                    }
-                }
-            }
-            return@OrbinCard
-        }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(28.dp)
-                        .background(
-                            if (selected) colors.accent else colors.accent.copy(alpha = 0.16f),
-                            CircleShape,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val initial =
-                        row.poster
-                            .firstOrNull()
-                            ?.uppercaseChar()
-                            ?.toString() ?: "A"
-                    Text(
-                        initial,
-                        style = OrbinType.meta.withReaderFont().copy(fontWeight = FontWeight.Bold),
-                        color = if (selected) colors.onAccent else colors.accent,
-                        maxLines = 1,
-                    )
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        if (row.poster.isNotBlank()) {
-                            Text(
-                                row.poster,
-                                style = OrbinType.meta.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-                                color = colors.ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false),
-                            )
-                        }
-                        if (metadata != null && row.board.isNotBlank()) {
-                            OrbinPill(text = row.board)
-                        }
-                    }
-                    val subtitleLine = metadata?.takeIf { it.isNotBlank() } ?: row.activity.takeIf { it.isNotBlank() }
-                    if (subtitleLine != null) {
-                        Text(
-                            subtitleLine,
-                            style = OrbinType.caption2.withReaderFont(),
-                            color = colors.inkMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                if (row.watched || row.bookmarked) {
-                    Icon(
-                        imageVector = ReaderIcons.SavedFilled,
-                        contentDescription = null,
-                        tint = colors.accent,
-                        modifier = Modifier.size(16.dp).clearAndSetSemantics {},
-                    )
-                }
-            }
-            if (title.isNotBlank()) {
-                CatalogTitle(
-                    row,
-                    title,
-                    bodyStyle.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = titleMaxLines,
-                )
-            }
-            if (row.excerpt.isNotBlank() && row.excerpt != title) {
-                Text(
-                    text = previewText(row.previewLines, colors),
-                    style = OrbinType.body.withReaderFont(),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (showThumbnail) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(imageHeight)
-                        .clip(RoundedCornerShape(OrbinRadius.compactCard))
-                        .background(colors.surfaceVariant)
-                        .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
-                        .clearAndSetSemantics {}
-                        .then(
-                            catalogThumbnailAction(
-                                covered,
-                                row,
-                                onOpenThumbnail,
-                                thumbnailClickLabel,
-                                onLongClick,
-                                onLongClickLabel,
-                            ),
-                        ),
-                ) {
-                    if (covered) {
-                        ReaderSpoilerCover(
-                            onReveal = reveal,
-                            modifier = Modifier.fillMaxSize(),
-                            onLongClick = onLongClick,
-                            onLongClickLabel = onLongClickLabel,
-                        )
-                    } else {
-                        thumbnail(row, Modifier.fillMaxSize())
-                        if (row.mediaLabel.isNotBlank()) {
-                            OrbinPill(
-                                text = row.mediaLabel,
-                                variant = PillVariant.Media,
-                                maxLines = 1,
-                                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clearAndSetSemantics {},
-                            )
-                        }
-                    }
-                }
-            }
-            CatalogIconCounts(row, style = bodyStyle, compactGrid = compactGrid)
+            CatalogGridTile(media, title, metadata, imageHeight, onOpen)
+        } else {
+            CatalogFullCard(media, title, metadata, selected, imageHeight, wideWindow, compactGrid)
         }
     }
 }
+
+/** Reveal comes first while a spoiler covers the image; otherwise opening the media, if offered. */
+@Composable
+private fun catalogCardAccessibilityActions(
+    media: CatalogCardMedia,
+    extra: List<CustomAccessibilityAction>,
+): List<CustomAccessibilityAction> {
+    val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
+    return buildList {
+        val onOpenThumbnail = media.onOpenThumbnail
+        val clickLabel = media.thumbnailClickLabel
+        if (media.covered) {
+            add(
+                CustomAccessibilityAction(revealLabel) {
+                    media.reveal()
+                    true
+                },
+            )
+        } else if (media.showThumbnail && onOpenThumbnail != null && clickLabel != null) {
+            add(
+                CustomAccessibilityAction(clickLabel) {
+                    onOpenThumbnail(media.row)
+                    true
+                },
+            )
+        }
+        addAll(extra)
+    }
+}
+
+/**
+ * The image area of either card layout. [modifier] sizes and shapes it; the spoiler cover, tap
+ * target and test tag are the same in both layouts. [content] draws the uncovered image.
+ */
+@Composable
+private fun CatalogCardImage(
+    media: CatalogCardMedia,
+    modifier: Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(
+        modifier
+            .background(reader.surfaceVariant)
+            .testTag(media.tag)
+            .clearAndSetSemantics {}
+            .then(
+                catalogThumbnailAction(
+                    media.covered,
+                    media.row,
+                    media.onOpenThumbnail,
+                    media.thumbnailClickLabel,
+                    media.onLongClick,
+                    media.onLongClickLabel,
+                ),
+            ),
+    ) {
+        if (media.covered) {
+            ReaderSpoilerCover(
+                onReveal = media.reveal,
+                modifier = Modifier.fillMaxSize(),
+                onLongClick = media.onLongClick,
+                onLongClickLabel = media.onLongClickLabel,
+            )
+        } else {
+            content()
+        }
+    }
+}
+
+/** Grid at normal text sizes: the title and counts sit on the image, over the shared scrim. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CatalogGridTile(
+    media: CatalogCardMedia,
+    title: String,
+    metadata: String?,
+    imageHeight: Dp,
+    onOpen: (FeedRow) -> Unit,
+) {
+    val row = media.row
+    val onLongClick = media.onLongClick
+    Box(Modifier.fillMaxWidth().height(imageHeight)) {
+        CatalogCardImage(media, Modifier.fillMaxSize()) {
+            if (media.showThumbnail) media.thumbnail?.invoke(row, Modifier.fillMaxSize())
+        }
+        Box(Modifier.fillMaxSize().background(GridScrim.brush))
+        FlowRow(
+            Modifier.align(Alignment.TopStart).padding(10.dp).padding(end = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (row.threadNumber.isNotBlank()) {
+                OrbinPill(
+                    stringResource(Res.string.reader_post_number, row.threadNumber),
+                    variant = PillVariant.Media,
+                )
+            }
+            if (metadata != null && row.board.isNotBlank()) {
+                OrbinPill(row.board, variant = PillVariant.Filled)
+            }
+        }
+        if (row.watched || row.bookmarked) {
+            Icon(
+                ReaderIcons.SavedFilled,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(18.dp),
+            )
+        }
+        Column(
+            Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .pointerInput(row.id, onOpen, onLongClick) {
+                    detectTapGestures(
+                        onTap = { onOpen(row) },
+                        onLongPress = onLongClick?.let { action -> { _: Offset -> action() } },
+                    )
+                }.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (title.isNotBlank()) {
+                Text(
+                    title,
+                    style = OrbinType.body.withReaderFont().copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            CatalogGridTileCounts(row, covered = media.covered)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CatalogGridTileCounts(
+    row: FeedRow,
+    covered: Boolean,
+) {
+    FlowRow(
+        Modifier.testTag(CatalogTags.COUNTS),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        OrbinPill(
+            pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
+            variant = PillVariant.Media,
+            icon = ReaderIcons.Chat,
+        )
+        OrbinPill(
+            pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
+            variant = PillVariant.Media,
+            icon = ReaderIcons.Album,
+        )
+        UnreadLabel(row.unread)
+        if (row.mediaLabel.isNotBlank() && !covered) {
+            OrbinPill(row.mediaLabel, variant = PillVariant.Media)
+        }
+    }
+}
+
+/** Card view, and grid at large text: poster header, title, preview, image, then counts. */
+@Composable
+private fun CatalogFullCard(
+    media: CatalogCardMedia,
+    title: String,
+    metadata: String?,
+    selected: Boolean,
+    imageHeight: Dp,
+    wideWindow: Boolean,
+    compactGrid: Boolean,
+) {
+    val row = media.row
+    val colors = reader
+    val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.postBody.withReaderFont()
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        CatalogCardHeader(row, metadata, selected)
+        if (title.isNotBlank()) {
+            CatalogTitle(
+                row,
+                title,
+                bodyStyle.copy(fontWeight = FontWeight.SemiBold),
+                maxLines = CATALOG_CARD_TITLE_LINES,
+            )
+        }
+        if (row.excerpt.isNotBlank() && row.excerpt != title) {
+            Text(
+                text = previewText(row.previewLines, colors),
+                style = OrbinType.body.withReaderFont(),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        val thumbnail = media.thumbnail
+        if (media.showThumbnail && thumbnail != null) {
+            CatalogCardImage(
+                media,
+                Modifier
+                    .fillMaxWidth()
+                    .height(imageHeight)
+                    .clip(RoundedCornerShape(OrbinRadius.compactCard)),
+            ) {
+                thumbnail(row, Modifier.fillMaxSize())
+                if (row.mediaLabel.isNotBlank()) {
+                    OrbinPill(
+                        text = row.mediaLabel,
+                        variant = PillVariant.Media,
+                        maxLines = 1,
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clearAndSetSemantics {},
+                    )
+                }
+            }
+        }
+        CatalogIconCounts(row, style = bodyStyle, compactGrid = compactGrid)
+    }
+}
+
+/** The poster's initial, name, board and time, with the saved mark at the end. */
+@Composable
+private fun CatalogCardHeader(
+    row: FeedRow,
+    metadata: String?,
+    selected: Boolean,
+) {
+    val colors = reader
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier
+                .size(28.dp)
+                .background(
+                    if (selected) colors.accent else colors.accent.copy(alpha = 0.16f),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                posterInitial(row.poster),
+                style = OrbinType.meta.withReaderFont().copy(fontWeight = FontWeight.Bold),
+                color = if (selected) colors.onAccent else colors.accent,
+                maxLines = 1,
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (row.poster.isNotBlank()) {
+                    Text(
+                        row.poster,
+                        style = OrbinType.meta.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                        color = colors.ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                }
+                if (metadata != null && row.board.isNotBlank()) {
+                    OrbinPill(text = row.board)
+                }
+            }
+            val subtitleLine = metadata?.takeIf { it.isNotBlank() } ?: row.activity.takeIf { it.isNotBlank() }
+            if (subtitleLine != null) {
+                Text(
+                    subtitleLine,
+                    style = OrbinType.caption2.withReaderFont(),
+                    color = colors.inkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        if (row.watched || row.bookmarked) {
+            Icon(
+                imageVector = ReaderIcons.SavedFilled,
+                contentDescription = null,
+                tint = colors.accent,
+                modifier = Modifier.size(16.dp).clearAndSetSemantics {},
+            )
+        }
+    }
+}
+
+/** The avatar letter: the poster's first character, upper-cased, or "A" for Anonymous. */
+internal fun posterInitial(poster: String): String = poster.firstOrNull()?.uppercaseChar()?.toString() ?: "A"
+
+private const val CATALOG_CARD_TITLE_LINES = 2
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

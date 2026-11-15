@@ -24,8 +24,8 @@ fun CatalogThread.catalogRow(nowMillis: Long): FeedRow {
     val excerpt = originalPost.comment.plainText()
     val preview = originalPost.attachments.firstOrNull()
     return FeedRow(
-        id = "${key.provider.value}/${key.board.value}/${key.thread.value}",
-        site = sourceLabel(key.provider.value),
+        id = threadRowId(key.provider.value, key.board.value, key.thread.value),
+        site = providerLabel(key.provider.value),
         poster = originalPost.poster.name?.takeIf(String::isNotBlank) ?: "Anonymous",
         mediaLabel = preview?.extension.orEmpty().uppercase(),
         subject =
@@ -48,10 +48,3 @@ fun CatalogThread.catalogRow(nowMillis: Long): FeedRow {
         closed = stats.isClosed,
     )
 }
-
-private fun sourceLabel(provider: String): String =
-    when (provider) {
-        "fourchan" -> "4chan"
-        "bbwchan" -> "BBWChan"
-        else -> provider
-    }

@@ -40,6 +40,8 @@ import com.orbin.ios.resources.ios_catalog_no_matches_message
 import com.orbin.ios.resources.ios_catalog_no_matches_title
 import com.orbin.ios.resources.ios_reader_reload
 import com.orbin.uinext.BoardScreen
+import com.orbin.uinext.BoardScreenActions
+import com.orbin.uinext.BoardScreenState
 import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.NextDestination
@@ -174,42 +176,47 @@ internal fun CatalogDestination(
                             }
                     }
                 BoardScreen(
-                    wideWindow = wide,
-                    navigation =
-                        if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
-                    onNavigation = onBack ?: {},
-                    onPickBoard = { pickerVisible = true },
-                    onSearch = {
-                        searchVisible = !searchVisible
-                        if (!searchVisible) query = ""
-                    },
-                    onReload = reload,
-                    reloading = refreshing || catalog is Load.Loading,
-                    board = "/${board.board.id.value}/",
-                    description = board.board.title,
-                    itemCount = rows.size,
-                    selectedRowId = selectedThread?.catalogRowId,
-                    rowAt = { index -> rows.getOrNull(index) },
-                    sortLabel = sort.label,
-                    onSort = browser::cycleCatalogSort,
-                    sortTabs = catalogSortTabs(),
-                    selectedSortId = sort.name,
-                    onSelectSort = { id ->
-                        runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(browser::setCatalogSort)
-                    },
-                    mode = mode,
-                    onModeChange = { selected ->
-                        browser.settings.setCatalogMode(
-                            when (selected) {
-                                CatalogMode.LIST -> StoredCatalogMode.LIST
-                                CatalogMode.GRID -> StoredCatalogMode.GRID
-                                CatalogMode.CARD -> StoredCatalogMode.CARD
+                    state =
+                        BoardScreenState(
+                            wideWindow = wide,
+                            navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+                            reloading = refreshing || catalog is Load.Loading,
+                            board = "/${board.board.id.value}/",
+                            description = board.board.title,
+                            itemCount = rows.size,
+                            selectedRowId = selectedThread?.catalogRowId,
+                            rowAt = { index -> rows.getOrNull(index) },
+                            sortLabel = sort.label,
+                            sortTabs = catalogSortTabs(),
+                            selectedSortId = sort.name,
+                            mode = mode,
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onNavigation = onBack ?: {},
+                            onPickBoard = { pickerVisible = true },
+                            onSearch = {
+                                searchVisible = !searchVisible
+                                if (!searchVisible) query = ""
                             },
-                        )
-                    },
-                    onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
-                    onOpenMedia = { browser.open(Route.BoardMedia(board)) },
-                    onOpenBrowser = webUrl?.let { url -> { uriHandler.openUri(url) } },
+                            onReload = reload,
+                            onSort = browser::cycleCatalogSort,
+                            onSelectSort = { id ->
+                                runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(browser::setCatalogSort)
+                            },
+                            onModeChange = { selected ->
+                                browser.settings.setCatalogMode(
+                                    when (selected) {
+                                        CatalogMode.LIST -> StoredCatalogMode.LIST
+                                        CatalogMode.GRID -> StoredCatalogMode.GRID
+                                        CatalogMode.CARD -> StoredCatalogMode.CARD
+                                    },
+                                )
+                            },
+                            onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
+                            onOpenMedia = { browser.open(Route.BoardMedia(board)) },
+                            onOpenBrowser = webUrl?.let { url -> { uriHandler.openUri(url) } },
+                        ),
                     headerContent =
                         if (searchVisible) {
                             {

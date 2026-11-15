@@ -37,7 +37,17 @@ class FeedChromeTest {
         val rows = rows()
         compose.setContent {
             NextTheme {
-                FeedScreen(rows = rows, mode = mode, onModeChange = { mode = it })
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onModeChange = { mode = it },
+                        ),
+                )
             }
         }
         compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Feed")
@@ -79,11 +89,17 @@ class FeedChromeTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = emptyList(),
-                    downloadBadge = badge,
-                    onOpenBoards = { opened += "boards" },
-                    onOpenDownloads = { opened += "downloads" },
-                    onSettings = { opened += "settings" },
+                    state =
+                        FeedScreenState(
+                            rows = emptyList(),
+                            downloadBadge = badge,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = { opened += "boards" },
+                            onOpenDownloads = { opened += "downloads" },
+                            onSettings = { opened += "settings" },
+                        ),
                 )
             }
         }
