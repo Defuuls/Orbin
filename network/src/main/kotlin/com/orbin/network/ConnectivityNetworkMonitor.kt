@@ -83,9 +83,7 @@ class ConnectivityNetworkMonitor
                     activeCaps != null &&
                         activeCaps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
                         activeCaps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-                if (initiallyOnline && activeNetwork != null) {
-                    networks.add(activeNetwork)
-                }
+                activeNetwork?.takeIf { initiallyOnline }?.let(networks::add)
                 emitPolicy()
 
                 val request =
