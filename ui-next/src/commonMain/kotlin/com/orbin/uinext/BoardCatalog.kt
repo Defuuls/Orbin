@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -815,15 +814,7 @@ internal fun CatalogCard(
                         thumbnail.invoke(row, Modifier.fillMaxSize())
                     }
                 }
-                Box(
-                    Modifier.fillMaxSize().background(
-                        Brush.verticalGradient(
-                            0f to Color.Black.copy(alpha = 0.08f),
-                            0.4f to Color.Black.copy(alpha = 0.02f),
-                            1f to Color.Black.copy(alpha = 0.78f),
-                        ),
-                    ),
-                )
+                Box(Modifier.fillMaxSize().background(GridScrim.brush))
                 FlowRow(
                     Modifier.align(Alignment.TopStart).padding(10.dp).padding(end = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -836,7 +827,7 @@ internal fun CatalogCard(
                         )
                     }
                     if (metadata != null && row.board.isNotBlank()) {
-                        OrbinPill("/${row.board}/", variant = PillVariant.Filled)
+                        OrbinPill(row.board, variant = PillVariant.Filled)
                     }
                 }
                 if (row.watched || row.bookmarked) {
@@ -939,7 +930,7 @@ internal fun CatalogCard(
                             )
                         }
                         if (metadata != null && row.board.isNotBlank()) {
-                            OrbinPill(text = "/${row.board}/")
+                            OrbinPill(text = row.board)
                         }
                     }
                     val subtitleLine = metadata?.takeIf { it.isNotBlank() } ?: row.activity.takeIf { it.isNotBlank() }

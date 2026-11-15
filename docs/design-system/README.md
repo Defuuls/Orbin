@@ -54,7 +54,7 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 | `color.quoteLink` | `#0369A1` | `#6DD4EC` | `#6DD4EC` | Post references and backlinks |
 | `color.error` | `#B91C35` | `#FF5D6C` | `#FF5D6C` | Error titles |
 
-The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin indigo `#4338CA`; Dark and AMOLED keep cyan `#A5B4FC`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
+The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin indigo `#4338CA`; Dark and AMOLED use its indigo tint `#A5B4FC`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
 
 ### Contrast
 

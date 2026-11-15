@@ -113,6 +113,14 @@ object ReaderIcons {
                 "c3 0 5-2 5-4.7C21 6.2 16.9 3 12 3ZM7 11h.01M9 7.5h.01M13 6.5h.01M17 9h.01",
         )
     }
+
+    /** True black: a crescent moon, distinct from the Theme palette. */
+    val TrueBlack: ImageVector by lazy {
+        outline(
+            "TrueBlack",
+            "M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7Z",
+        )
+    }
     val Globe: ImageVector by lazy {
         outline("Globe", "$CIRCLE M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9c-3-3-4-6-4-9s1-6 4-9Z")
     }

@@ -55,10 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_downloads_active
-import com.orbin.uinext.resources.reader_nav_boards
-import com.orbin.uinext.resources.reader_nav_downloads
-import com.orbin.uinext.resources.reader_nav_feed
-import com.orbin.uinext.resources.reader_nav_settings
 import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
@@ -177,13 +173,7 @@ fun OrbinBottomBar(
     selected: NextDestination,
     onSelect: (NextDestination) -> Unit,
     modifier: Modifier = Modifier,
-    destinations: List<NextDestination> =
-        listOf(
-            NextDestination.BOARDS,
-            NextDestination.FEED,
-            NextDestination.DOWNLOADS,
-            NextDestination.SETTINGS,
-        ),
+    destinations: List<NextDestination> = ReaderNavigationSpec.destinations(NavSurface.BAR, NavWindow.COMPACT),
     downloadBadge: Int = 0,
 ) {
     val shownDestinations =
@@ -248,8 +238,7 @@ fun OrbinSideBar(
     selected: NextDestination,
     onSelect: (NextDestination) -> Unit,
     modifier: Modifier = Modifier,
-    destinations: List<NextDestination> =
-        listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.SETTINGS),
+    destinations: List<NextDestination> = ReaderNavigationSpec.destinations(NavSurface.RAIL, NavWindow.EXPANDED),
     downloadBadge: Int = 0,
 ) {
     val shownDestinations =
@@ -381,28 +370,9 @@ private fun OrbinNavigationTab(
 
 @Composable
 private fun orbinBottomLabel(destination: NextDestination): String =
-    when (destination) {
-        NextDestination.BOARDS -> stringResource(Res.string.reader_nav_boards)
-        NextDestination.FEED -> stringResource(Res.string.reader_nav_feed)
-        NextDestination.SETTINGS -> stringResource(Res.string.reader_nav_settings)
-        NextDestination.DOWNLOADS -> stringResource(Res.string.reader_nav_downloads)
-        NextDestination.WATCHED,
-        NextDestination.SAVED,
-        NextDestination.SEARCH,
-        -> destination.name.lowercase().replaceFirstChar { it.titlecase() }
-    }
+    stringResource(ReaderNavigationSpec.entry(destination).label)
 
-@Composable
 private fun orbinBottomIcon(
     destination: NextDestination,
     selected: Boolean,
-): ImageVector =
-    when (destination) {
-        NextDestination.BOARDS -> if (selected) ReaderIcons.BoardsFilled else ReaderIcons.Boards
-        NextDestination.FEED -> if (selected) ReaderIcons.HomeFilled else ReaderIcons.Home
-        NextDestination.SETTINGS -> ReaderIcons.Settings
-        NextDestination.WATCHED -> ReaderIcons.Watched
-        NextDestination.SAVED -> ReaderIcons.Saved
-        NextDestination.SEARCH -> ReaderIcons.Search
-        NextDestination.DOWNLOADS -> ReaderIcons.Download
-    }
+): ImageVector = ReaderNavigationSpec.entry(destination).icon(selected)

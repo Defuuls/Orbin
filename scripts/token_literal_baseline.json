@@ -1,6 +1,6 @@
 {
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/BoardCatalog.kt": {
-    "opacity": 5,
+    "opacity": 2,
     "radius": 3
   },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/BoardIcons.kt": {
