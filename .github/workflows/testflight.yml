@@ -97,6 +97,17 @@ jobs:
           # From a release, build exactly the tag it published.
           ref: ${{ inputs.ref || github.sha }}
 
+      - name: Check out archive tooling
+        if: steps.config.outputs.configured == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Keep release source pinned while using tooling from this workflow's commit.
+          ref: ${{ github.workflow_sha }}
+          path: .testflight-ci-tools
+          sparse-checkout: scripts/prepare_ios_framework_metadata.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Set up JDK and Gradle
         if: steps.config.outputs.configured == 'true'
         uses: ./.github/actions/setup-jdk-gradle
@@ -158,6 +169,7 @@ jobs:
       # The team id is the only signing value the archive needs, and it is not a credential: it is
       # printed in every app the team ships.
       - name: Archive
+        id: archive
         if: steps.config.outputs.configured == 'true'
         timeout-minutes: 90
         env:
@@ -181,6 +193,41 @@ jobs:
             MARKETING_VERSION="${{ steps.version.outputs.marketing }}" \
             ORBIN_VERSION_NAME="${{ steps.version.outputs.name }}" \
             CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build }}"
+
+      - name: Prepare and validate archived framework metadata
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          python3 "$GITHUB_WORKSPACE/.testflight-ci-tools/scripts/prepare_ios_framework_metadata.py" \
+            "$RUNNER_TEMP/Orbin.xcarchive" | tee "$RUNNER_TEMP/orbin-framework-metadata.json"
+
+      - name: Preserve the unsigned archive
+        id: preserve_archive
+        if: ${{ !cancelled() && steps.archive.outcome == 'success' }}
+        shell: bash
+        run: |
+          # Tar preserves the executable modes and symlinks that artifact ZIPs do not.
+          tar -C "$RUNNER_TEMP" -czf "$RUNNER_TEMP/Orbin-unsigned.xcarchive.tar.gz" Orbin.xcarchive
+          git rev-parse HEAD > "$RUNNER_TEMP/Orbin-source-sha.txt"
+          git -C "$GITHUB_WORKSPACE/.testflight-ci-tools" rev-parse HEAD > "$RUNNER_TEMP/Orbin-tooling-sha.txt"
+          printf '%s\n' \
+            'version=${{ steps.version.outputs.name }}' \
+            'marketing=${{ steps.version.outputs.marketing }}' \
+            'build=${{ steps.version.outputs.build }}' > "$RUNNER_TEMP/Orbin-build.txt"
+
+      - name: Keep the unsigned archive for export recovery
+        if: ${{ !cancelled() && steps.preserve_archive.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-unsigned-${{ steps.version.outputs.build }}
+          path: |
+            ${{ runner.temp }}/Orbin-unsigned.xcarchive.tar.gz
+            ${{ runner.temp }}/Orbin-source-sha.txt
+            ${{ runner.temp }}/Orbin-tooling-sha.txt
+            ${{ runner.temp }}/Orbin-build.txt
+            ${{ runner.temp }}/orbin-framework-metadata.json
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Upload to App Store Connect
         if: steps.config.outputs.configured == 'true'
