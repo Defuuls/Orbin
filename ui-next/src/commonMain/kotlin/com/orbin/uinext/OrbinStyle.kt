@@ -434,7 +434,7 @@ private fun NavigationTooltip(
             modifier =
                 Modifier
                     .testTag(OrbinNavigationTags.TOOLTIP)
-                    .background(reader.ink, RoundedCornerShape(8.dp))
+                    .background(reader.ink, RoundedCornerShape(OrbinRadius.compact))
                     .padding(horizontal = 10.dp, vertical = 6.dp)
                     // The tab already speaks this label; the tooltip is for sighted users only.
                     .clearAndSetSemantics {},
