@@ -135,8 +135,8 @@ fun OrbinDialogMessage(
 }
 
 /**
- * A filled Coral action: coral by default, [reader.error] when [destructive]. The target is at
- * least [MIN_TOUCH_TARGET] and grows with the label at 200% font. This is not a posting control.
+ * A filled action: the accent by default, [reader.error] with [reader.onError] text when [destructive].
+ * The target is at least [MIN_TOUCH_TARGET] and grows with the label at 200% font. This is not a posting control.
  */
 @Composable
 fun OrbinFilledButton(
@@ -149,13 +149,13 @@ fun OrbinFilledButton(
     val fill =
         when {
             !enabled -> reader.inkMuted.copy(alpha = 0.14f)
-            destructive -> reader.error.copy(alpha = 0.16f)
+            destructive -> reader.error
             else -> reader.accent
         }
     val ink =
         when {
             !enabled -> reader.inkMuted
-            destructive -> reader.error
+            destructive -> reader.onError
             else -> reader.onAccent
         }
     val shape = RoundedCornerShape(16.dp)

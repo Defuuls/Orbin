@@ -70,6 +70,16 @@ class SettingsStoreTest {
         }
 
     @Test
+    fun aSavedOrangeAccentMigratesToTheOrangeDefault() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit { it[stringPreferencesKey("accent_theme")] = "ORANGE" }
+            assertEquals(AccentTheme.ORBIN, SettingsStore(dataStore).settings.first().accentTheme)
+            assertTrue(AccentTheme.entries.none { it.name == "ORANGE" })
+            assertEquals(AccentTheme.TEAL, storedAccentTheme("TEAL"))
+        }
+
+    @Test
     fun scopedPlaybackPersistsAndResetResumesInheritance() =
         runTest {
             val dataStore = backgroundScope.dataStore()

@@ -2,7 +2,7 @@
 
 This is the normative design for Orbin's Home, board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
-The current visual reference is [NekoSurf](https://github.com/NekoSurf/NekoSurf/tree/6e8593d3e94b6d1e0077b7c48777ac795f8a537a): quiet page surfaces, rounded cards, compact headers and controls, and a continuous grouped Settings page. Orbin retains its name, Midnight Electric mark, indigo accent and functional destinations. The adaptation covers the whole app, including Home, Boards, catalogs, threads, stored collections, Search, Downloads, media and setup. It does not replace Orbin's subscriptions, source identities, saved/watch tools or playback behavior.
+The current visual reference is [NekoSurf](https://github.com/NekoSurf/NekoSurf/tree/6e8593d3e94b6d1e0077b7c48777ac795f8a537a): quiet page surfaces, rounded cards, compact headers and controls, and a continuous grouped Settings page. Orbin retains its name, Midnight Electric mark, orange accent and functional destinations. The adaptation covers the whole app, including Home, Boards, catalogs, threads, stored collections, Search, Downloads, media and setup. It does not replace Orbin's subscriptions, source identities, saved/watch tools or playback behavior.
 
 Clover 3.0.2 and Orbin Coral are historical design stages. The compact reader metrics and reference diagrams below retain that provenance; the drawings are measurements of the earlier structure, not screenshots of the current app. [Source record](#source-record) separates the current NekoSurf source reference from the supplied APK and earlier evidence.
 
@@ -41,20 +41,21 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 | `color.onAppBar` | `#14161F` | `#E8EAF0` | `#ECECEF` | App bar labels and icons |
 | `color.background` | `#F4F5F7` | `#0B0D11` | `#000000` | Page ground behind cards and content |
 | `color.surfaceVariant` | `#FFFFFF` | `#141520` | `#0E0E10` | Card surfaces, placeholders and skeletons |
-| `color.selected` | `#F4F3FD` | `#102B33` | `#0E252B` | Open row in two panes |
+| `color.selected` | `#FFF4ED` | `#2A1A10` | `#1F130B` | Open row in two panes |
 | `color.ink` | `#14161F` | `#E8EAF0` | `#ECECEF` | Primary body text |
 | `color.inkSecondary` | `#696F83` | `#8A8FA8` | `#8C8C93` | Generic secondary UI text |
 | `color.inkMuted` | `#696F83` | `#8A8FA8` | `#8C8C93` | Post numbers, dates and attachment details |
 | `color.hairline` | `#0F000000` | `#12FFFFFF` | `#14FFFFFF` | Decorative row and post dividers |
-| `color.accent` | `#4338CA` | `#A5B4FC` | `#A5B4FC` | Orbin progress and actions |
-| `color.onAccent` | `#FFFFFF` | `#1E1B4B` | `#1E1B4B` | Text on an accent-filled control |
+| `color.accent` | `#C2410C` | `#FB923C` | `#FB923C` | Orbin progress and actions |
+| `color.onAccent` | `#FFFFFF` | `#431407` | `#431407` | Text on an accent-filled control |
 | `color.quote` | `#2E7D32` | `#34D399` | `#34D399` | Quoted lines |
-| `color.author` | `#14161F` | `#6DD4EC` | `#6DD4EC` | Post author name |
+| `color.author` | `#14161F` | `#FDBA74` | `#FDBA74` | Post author name |
 | `color.subject` | `#14161F` | `#E8EAF0` | `#ECECEF` | Post and catalog subjects |
-| `color.quoteLink` | `#0369A1` | `#6DD4EC` | `#6DD4EC` | Post references and backlinks |
-| `color.error` | `#B91C35` | `#FF5D6C` | `#FF5D6C` | Error titles |
+| `color.quoteLink` | `#0369A1` | `#7DD3FC` | `#7DD3FC` | Post references and backlinks |
+| `color.error` | `#BE185D` | `#F472B6` | `#F472B6` | Error titles, text and icon; always paired with the error icon |
+| `color.onError` | `#FFFFFF` | `#500724` | `#500724` | Text on an error-filled control |
 
-The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin indigo `#4338CA`; Dark and AMOLED use its indigo tint `#A5B4FC`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
+The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin burnt orange `#C2410C`; Dark and AMOLED use its lighter orange `#FB923C`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
 
 ### Contrast
 
@@ -78,6 +79,10 @@ The following pairs are checked after compositing alpha over the stated ground. 
 | `color.author` | `color.background` | 4.5 |
 | `color.quoteLink` | `color.background` | 4.5 |
 | `color.error` | `color.background` | 4.5 |
+| `color.error` | `color.surfaceVariant` | 4.5 |
+| `color.author` | `color.surfaceVariant` | 4.5 |
+| `color.quoteLink` | `color.surfaceVariant` | 4.5 |
+| `color.onError` | `color.error` | 4.5 |
 | `color.accent` | `color.background` | 3.0 |
 | `color.onAccent` | `color.accent` | 4.5 |
 
@@ -342,7 +347,7 @@ Reader app bars use size.appBar (62dp) minimum content height with system insets
 
 The four-destination primary bar complements the drawer. It has no synthetic creation destination. Home keeps its bar outside the list, and loading/empty/error states retain navigation. Badge updates depend on active queue membership, not every downloaded byte.
 
-The bar is a centered floating card with 28dp corners, 16dp outer gutters, 6dp inner padding and a 64dp minimum content height. Its maximum width is the destination count times 76dp plus 12dp; safe-area padding remains outside it. Selected tabs use an indigo/cyan-to-violet wash, 21dp icons and bold 10.5sp/14sp labels. Labels keep system scaling and the bar grows when they wrap. A wide-screen rail uses the same destination state and selection style.
+The bar is a centered floating card with 28dp corners, 16dp outer gutters, 6dp inner padding and a 64dp minimum content height. Its maximum width is the destination count times 76dp plus 12dp; safe-area padding remains outside it. Selected tabs use an orange-to-pink wash, 21dp icons and bold 10.5sp/14sp labels. Labels keep system scaling and the bar grows when they wrap. A wide-screen rail uses the same destination state and selection style.
 
 The drawer retains its measured maximum width, selected-state announcement and source-qualified routes. Menu opens it on both platforms; Android also supports the existing leading-edge gesture. The closed iOS drawer does not capture the system Back edge. Selecting an entry closes the drawer before changing destination.
 
@@ -352,7 +357,7 @@ Orbin remains read-only: saving, watching, sharing, downloading and following bo
 
 ## Other screens
 
-Reader and supporting screens use the NekoSurf-inspired page and card surfaces with shared typography metrics, compact headers and rounded controls. Light, Dark and AMOLED keep Orbin's contrast-safe indigo/cyan identity. Settings follows the same visual system with its grouped controls described below. Each screen retains its real data, identifiers and callbacks.
+Reader and supporting screens use the NekoSurf-inspired page and card surfaces with shared typography metrics, compact headers and rounded controls. Light, Dark and AMOLED keep Orbin's contrast-safe orange identity. Settings follows the same visual system with its grouped controls described below. Each screen retains its real data, identifiers and callbacks.
 
 ### Home / Feed
 
@@ -395,7 +400,7 @@ Archive pages use the same light/dark color roles, including distinct links, aut
 
 ## Settings
 
-Settings is one continuous page, following NekoSurf's grouped layout while retaining Orbin's name, icon, indigo accent and persisted behavior:
+Settings is one continuous page, following NekoSurf's grouped layout while retaining Orbin's name, icon, orange accent and persisted behavior:
 
 | Setting | Choices | Default |
 | --- | --- | --- |
@@ -407,7 +412,7 @@ An Orbin identity card shows the installed version. Theme, Boards, Threads, Medi
 
 Content is centered at a maximum width of 720dp with 16dp gutters. Groups use uppercase 12sp headings, 22dp card corners, a one-dp border and no shadow. Rows use 14dp horizontal and 11dp vertical padding, a 32dp colored icon tile with 10dp corners, 15sp semibold labels and 12.5sp summaries. Dividers start 58dp from the leading edge. Switches use a 51dp by 31dp rounded track with a white thumb and the Orbin accent. Choice menus retain radio selection semantics, with compact segmented controls for suitable short choices.
 
-Settings shares the app's NekoSurf-inspired page/card hierarchy. Light keeps Orbin indigo and Dark/AMOLED use Orbin cyan. The redesign does not change saved brightness preferences, source choices or playback overrides.
+Settings shares the app's NekoSurf-inspired page/card hierarchy. Light keeps Orbin burnt orange and Dark/AMOLED use its lighter orange. The redesign does not change saved brightness preferences, source choices or playback overrides.
 
 The shared system text-size path remains uncapped, including iOS Dynamic Type. Controls adapt at large sizes and in right-to-left layouts. Search still finds labels, values, hints and supplied group names. Long searchable scope choices retain their dedicated page. Orbin-only setting IDs, callbacks, validation, destructive confirmation and storage behavior stay intact.
 
@@ -432,7 +437,7 @@ Light, Dark and AMOLED use the same geometry and type. AMOLED uses black screen 
 | Reload fails with content showing | The content stays and a message at the bottom offers Retry |
 | No thread open, two panes | "Select a thread" in `type.stateBody`, `color.inkMuted`, centered in the thread pane |
 
-Error titles name the cause: "Network error", "Not found", "Server error". State content is centered in the area below the app bar. A filled button, where one is used, has a `color.accent` ground and a `color.onAccent` label.
+Error titles name the cause: "Network error", "Not found", "Server error". State content is centered in the area below the app bar. A filled button, where one is used, has a `color.accent` ground and a `color.onAccent` label. A destructive filled button has a `color.error` ground and a `color.onError` label. Every error message and error state shows the error icon beside `color.error`, so errors never rely on color alone.
 
 ## Edge cases
 

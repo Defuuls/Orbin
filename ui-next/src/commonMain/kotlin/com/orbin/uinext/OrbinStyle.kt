@@ -2,6 +2,7 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,7 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +33,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,14 +53,21 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_downloads_active
 import com.orbin.uinext.resources.reader_library_new_replies
@@ -63,6 +75,7 @@ import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.accentSecondary
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -169,7 +182,7 @@ private val TAB_WIDTH = 76.dp
 private val TAB_LABEL_INSET = 8.dp
 
 @Composable
-private fun tabLabelStyle() =
+internal fun tabLabelStyle() =
     OrbinType.caption1.copy(fontSize = 10.5.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold)
 
 /**
@@ -329,6 +342,8 @@ private fun OrbinNavigationTab(
 ) {
     val colors = reader
     val label = orbinBottomLabel(destination)
+    var tooltip by remember { mutableStateOf(false) }
+    if (!iconOnly) tooltip = false
     val gradient =
         if (selected) {
             listOf(colors.accent.copy(alpha = 0.24f), accentSecondary(next.accentTheme).copy(alpha = 0.20f))
@@ -341,11 +356,13 @@ private fun OrbinNavigationTab(
                 .testTag(OrbinNavigationTags.ENTRY + destination.name)
                 .clip(RoundedCornerShape(22.dp))
                 .background(Brush.linearGradient(gradient))
-                .selectable(
-                    selected = selected,
+                .combinedClickable(
                     role = Role.Tab,
                     onClick = { if (!selected) onSelect(destination) },
+                    // Icon-only tabs show their label on long press; the spoken name never changes.
+                    onLongClick = if (iconOnly) ({ tooltip = true }) else null,
                 ).semantics {
+                    this.selected = selected
                     contentDescription = label
                     if (status != null) stateDescription = status
                 },
@@ -381,6 +398,7 @@ private fun OrbinNavigationTab(
                 }
             }
         }
+        if (tooltip) NavigationTooltip(label, onDismiss = { tooltip = false })
         if (!iconOnly) {
             Spacer(Modifier.height(2.dp))
             Text(
@@ -393,6 +411,58 @@ private fun OrbinNavigationTab(
                 softWrap = false,
             )
         }
+    }
+}
+
+/** An icon-only tab's label, shown above it after a long press and hidden again after a moment. */
+@Composable
+private fun NavigationTooltip(
+    label: String,
+    onDismiss: () -> Unit,
+) {
+    val gap = with(LocalDensity.current) { 8.dp.roundToPx() }
+    LaunchedEffect(label) {
+        delay(TOOLTIP_MILLIS)
+        onDismiss()
+    }
+    Popup(
+        popupPositionProvider = remember(gap) { AboveAnchor(gap) },
+        onDismissRequest = onDismiss,
+    ) {
+        Text(
+            label,
+            modifier =
+                Modifier
+                    .testTag(OrbinNavigationTags.TOOLTIP)
+                    .background(reader.ink, RoundedCornerShape(OrbinRadius.compact))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    // The tab already speaks this label; the tooltip is for sighted users only.
+                    .clearAndSetSemantics {},
+            style = OrbinType.caption1.copy(fontWeight = FontWeight.Bold),
+            color = reader.background,
+            maxLines = 1,
+        )
+    }
+}
+
+private const val TOOLTIP_MILLIS = 1_500L
+
+/** Centers a popup above its anchor, flipping below it when there is no room above. */
+private class AboveAnchor(
+    private val gap: Int,
+) : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize,
+    ): IntOffset {
+        val x =
+            (anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2)
+                .coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0))
+        val above = anchorBounds.top - gap - popupContentSize.height
+        val y = if (above >= 0) above else anchorBounds.bottom + gap
+        return IntOffset(x, y)
     }
 }
 

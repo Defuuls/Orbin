@@ -37,6 +37,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,13 +70,19 @@ enum class ReaderNavigation {
     NONE,
 }
 
-/** An app bar action drawn as an icon. [label] is what a screen reader announces. */
+/**
+ * An app bar action drawn as an icon. [label] is what a screen reader announces; [state], when set,
+ * is read as the control's current value (for example the layout on screen now).
+ */
 @Immutable
 class ReaderAction(
     val icon: ImageVector,
     val label: String,
     val onClick: () -> Unit,
-)
+    val state: String?,
+) {
+    constructor(icon: ImageVector, label: String, onClick: () -> Unit) : this(icon, label, onClick, null)
+}
 
 /** An entry in an app bar's overflow menu. A disabled entry is read out but does nothing. */
 @Immutable
@@ -250,7 +257,10 @@ fun ReaderAppBar(
                     contentDescription = action.label,
                     onClick = action.onClick,
                     tint = colors.onAppBar,
-                    modifier = Modifier.size(ReaderSize.appBarAction),
+                    modifier =
+                        Modifier.size(ReaderSize.appBarAction).semantics {
+                            action.state?.let { stateDescription = it }
+                        },
                 )
             }
             if (menuItems.isNotEmpty()) {

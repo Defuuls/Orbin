@@ -139,8 +139,8 @@ class SettingsChoiceAccessibilityTest {
             Color(0xFF14161F).toArgb() in colors,
         )
         assertTrue(
-            "Selected choices show the indigo highlight on their white settings card",
-            Color(0xFF4338CA).copy(alpha = 0.12f).compositeOver(Color.White).toArgb() in colors,
+            "Selected choices show the orange highlight on their white settings card",
+            Color(0xFFC2410C).copy(alpha = 0.12f).compositeOver(Color.White).toArgb() in colors,
         )
         assertFalse("The removed palette must not color the choice", Color(0xFFFE2C55).toArgb() in colors)
     }

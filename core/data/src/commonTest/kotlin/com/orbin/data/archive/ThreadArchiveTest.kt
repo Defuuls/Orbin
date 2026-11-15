@@ -90,10 +90,10 @@ class ThreadArchiveTest {
 
         assertTrue("--bg: #f4f5f7; --raised: #ffffff;" in light)
         assertTrue("--ink: #14161f; --muted: #696f83;" in light)
-        assertTrue("--accent: #4338ca;" in light)
+        assertTrue("--accent: #c2410c;" in light)
         assertTrue("--bg: #0b0d11; --raised: #141520;" in dark)
         assertTrue("--ink: #e8eaf0; --muted: #8a8fa8;" in dark)
-        assertTrue("--accent: #a5b4fc;" in dark)
+        assertTrue("--accent: #fb923c;" in dark)
         assertTrue("max-width: 720px;" in ARCHIVE_CSS)
         assertTrue("border-radius: 22px;" in ARCHIVE_CSS)
         assertFalse("#0b1021" in ARCHIVE_CSS || "#141b33" in ARCHIVE_CSS)

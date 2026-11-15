@@ -12,7 +12,6 @@ enum class NextAccentTheme {
     PINK,
     ROSE,
     RED,
-    ORANGE,
     AMBER,
     LIME,
     GREEN,

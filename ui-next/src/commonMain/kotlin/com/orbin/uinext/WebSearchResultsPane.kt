@@ -35,7 +35,7 @@ fun WebSearchResultsPane(
                 modifier = Modifier.padding(16.dp),
             )
         } else if (error != null && state is SearchState.Results) {
-            Text(error, style = OrbinType.body, color = reader.error, modifier = Modifier.padding(16.dp))
+            ErrorNote(error, modifier = Modifier.padding(16.dp))
             InlineAction("Retry", onClick = onRetry)
         }
         if (error != null && onOpenBrowser != null) InlineAction("Open in browser", onClick = onOpenBrowser)

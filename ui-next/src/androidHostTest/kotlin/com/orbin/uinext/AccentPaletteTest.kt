@@ -9,7 +9,7 @@ import org.junit.Test
 class AccentPaletteTest {
     @Test
     fun everyStableAccentHasReadableTextAndControlsInEveryAppearance() {
-        assertEquals(16, NextAccentTheme.entries.size)
+        assertEquals(15, NextAccentTheme.entries.size)
         NextAccentTheme.entries.forEach { accent ->
             listOf(false to false, true to false, true to true).forEach { (dark, oled) ->
                 assertReadablePalette(accent, dark, oled)

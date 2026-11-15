@@ -29,6 +29,7 @@ object OrbinNavigationTags {
     /** Each primary tab is tagged with this prefix and its [NextDestination] name, on both platforms. */
     const val ENTRY = "reader-navigation-entry-"
     const val LABEL = "reader-navigation-label"
+    const val TOOLTIP = "reader-navigation-tooltip"
     const val BADGE = "reader-navigation-badge"
 }
 

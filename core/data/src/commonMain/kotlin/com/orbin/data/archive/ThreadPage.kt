@@ -226,20 +226,20 @@ private const val SPOILER_OPEN_TAG =
 
 /** Neko-style reader surfaces with Orbin accents; standalone archives follow browser light/dark mode. */
 internal const val ARCHIVE_CSS = """:root {
-  --bg: #f4f5f7; --raised: #ffffff; --placeholder: #f4f3fd;
+  --bg: #f4f5f7; --raised: #ffffff; --placeholder: #fff4ed;
   --ink: #14161f; --muted: #696f83; --line: rgba(0, 0, 0, 0.06);
-  --accent: #4338ca; --link: #0369a1; --author: #14161f; --subject: #14161f;
-  --green: #2e7d32; --error: #b91c35; --spoiler: #14161f; --on-spoiler: #ffffff;
-  --hero-start: rgba(67, 56, 202, 0.30); --hero-end: rgba(167, 139, 250, 0.18);
+  --accent: #c2410c; --link: #0369a1; --author: #14161f; --subject: #14161f;
+  --green: #2e7d32; --error: #be185d; --spoiler: #14161f; --on-spoiler: #ffffff;
+  --hero-start: rgba(194, 65, 12, 0.24); --hero-end: rgba(244, 114, 182, 0.14);
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0b0d11; --raised: #141520; --placeholder: #102b33;
+  :root { --bg: #0b0d11; --raised: #141520; --placeholder: #2a1a10;
     --ink: #e8eaf0; --muted: #8a8fa8; --line: rgba(255, 255, 255, 0.07);
-    --accent: #a5b4fc; --link: #6dd4ec; --author: #6dd4ec; --subject: #e8eaf0;
-    --green: #34d399; --error: #ff5d6c; --spoiler: #e8eaf0; --on-spoiler: #141520;
-    --hero-start: rgba(165, 180, 252, 0.22); --hero-end: rgba(167, 139, 250, 0.12);
+    --accent: #fb923c; --link: #7dd3fc; --author: #fdba74; --subject: #e8eaf0;
+    --green: #34d399; --error: #f472b6; --spoiler: #e8eaf0; --on-spoiler: #141520;
+    --hero-start: rgba(251, 146, 60, 0.20); --hero-end: rgba(244, 114, 182, 0.10);
     --shadow: none; }
 }
 * { box-sizing: border-box; }
@@ -271,7 +271,7 @@ figcaption { font-size: 0.75rem; color: var(--muted); margin-top: 4px; overflow-
 .missing { color: var(--error); }
 blockquote { margin: 8px 0 0; overflow-wrap: anywhere; }
 .green, .pink { color: var(--green); }
-.quote { color: var(--link); }
+.quote { color: var(--link); text-decoration: underline; }
 .spoiler { display: inline-block; max-width: 100%; vertical-align: baseline;
   background: var(--raised); border-radius: 14px; }
 .spoiler > summary { padding: 6px 10px; border-radius: 14px; cursor: pointer; font-weight: 700;

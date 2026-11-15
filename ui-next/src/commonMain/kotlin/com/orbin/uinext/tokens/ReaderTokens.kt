@@ -49,8 +49,10 @@ data class ReaderColors(
     val subject: Color,
     /** Post reference links and backlinks. */
     val quoteLink: Color,
-    /** Error state title. */
+    /** Error state title, error text and the error icon; always shown with the icon, never color alone. */
     val error: Color,
+    /** Text and icons on an error-filled control. */
+    val onError: Color,
 )
 
 val ReaderLightColors =
@@ -60,18 +62,19 @@ val ReaderLightColors =
         onAppBar = Color(0xFF14161F),
         background = Color(0xFFF4F5F7),
         surfaceVariant = Color(0xFFFFFFFF),
-        selected = Color(0xFFF4F3FD),
+        selected = Color(0xFFFFF4ED),
         ink = Color(0xFF14161F),
         inkSecondary = Color(0xFF696F83),
         inkMuted = Color(0xFF696F83),
         hairline = Color(0x0F000000),
-        accent = Color(0xFF4338CA),
+        accent = Color(0xFFC2410C),
         onAccent = Color(0xFFFFFFFF),
         quote = Color(0xFF2E7D32),
         author = Color(0xFF14161F),
         subject = Color(0xFF14161F),
         quoteLink = Color(0xFF0369A1),
-        error = Color(0xFFB91C35),
+        error = Color(0xFFBE185D),
+        onError = Color(0xFFFFFFFF),
     )
 
 val ReaderDarkColors =
@@ -81,18 +84,19 @@ val ReaderDarkColors =
         onAppBar = Color(0xFFE8EAF0),
         background = Color(0xFF0B0D11),
         surfaceVariant = Color(0xFF141520),
-        selected = Color(0xFF102B33),
+        selected = Color(0xFF2A1A10),
         ink = Color(0xFFE8EAF0),
         inkSecondary = Color(0xFF8A8FA8),
         inkMuted = Color(0xFF8A8FA8),
         hairline = Color(0x12FFFFFF),
-        accent = Color(0xFFA5B4FC),
-        onAccent = Color(0xFF1E1B4B),
+        accent = Color(0xFFFB923C),
+        onAccent = Color(0xFF431407),
         quote = Color(0xFF34D399),
-        author = Color(0xFF6DD4EC),
+        author = Color(0xFFFDBA74),
         subject = Color(0xFFE8EAF0),
-        quoteLink = Color(0xFF6DD4EC),
-        error = Color(0xFFFF5D6C),
+        quoteLink = Color(0xFF7DD3FC),
+        error = Color(0xFFF472B6),
+        onError = Color(0xFF500724),
     )
 
 val ReaderAmoledColors =
@@ -102,18 +106,19 @@ val ReaderAmoledColors =
         onAppBar = Color(0xFFECECEF),
         background = Color(0xFF000000),
         surfaceVariant = Color(0xFF0E0E10),
-        selected = Color(0xFF0E252B),
+        selected = Color(0xFF1F130B),
         ink = Color(0xFFECECEF),
         inkSecondary = Color(0xFF8C8C93),
         inkMuted = Color(0xFF8C8C93),
         hairline = Color(0x14FFFFFF),
-        accent = Color(0xFFA5B4FC),
-        onAccent = Color(0xFF1E1B4B),
+        accent = Color(0xFFFB923C),
+        onAccent = Color(0xFF431407),
         quote = Color(0xFF34D399),
-        author = Color(0xFF6DD4EC),
+        author = Color(0xFFFDBA74),
         subject = Color(0xFFECECEF),
-        quoteLink = Color(0xFF6DD4EC),
-        error = Color(0xFFFF5D6C),
+        quoteLink = Color(0xFF7DD3FC),
+        error = Color(0xFFF472B6),
+        onError = Color(0xFF500724),
     )
 
 /** The colors for a brightness mode; AMOLED applies only when [dark]. */

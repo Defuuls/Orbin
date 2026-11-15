@@ -244,10 +244,9 @@ private fun OnboardingBoardsStep(
                 BoardsList(boards, following, sites.getOrNull(selectedSite).orEmpty(), !isSaving, onFollow, onRetry)
             }
             if (errorMessage != null) {
-                Text(
+                ErrorNote(
                     text = errorMessage,
                     style = OrbinType.meta.withReaderFont(),
-                    color = reader.error,
                     modifier =
                         Modifier
                             .fillMaxWidth()
