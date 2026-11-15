@@ -191,7 +191,7 @@ class SocialFeedInteractionTest {
     }
 
     @Test
-    fun `feed menu opens settings without opening a thread`() {
+    fun `the feed bar opens settings without opening a thread`() {
         var settings = 0
         var opened = 0
         composeRule.setContent {
@@ -204,8 +204,7 @@ class SocialFeedInteractionTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.SETTINGS.name).performClick()
         composeRule.runOnIdle {
             assertEquals(1, settings)
             assertEquals(0, opened)

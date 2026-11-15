@@ -76,6 +76,9 @@ enum class NextDestination {
     SAVED,
     DOWNLOADS,
     SETTINGS,
+
+    /** Watched, Saved and Downloads, grouped behind one primary tab; see [LibrarySection]. */
+    LIBRARY,
 }
 
 /** Space to keep scrolling content clear of [CompactTitleBar]. */
@@ -487,7 +490,6 @@ fun NextScaffold(
     onBack: (() -> Unit)? = null,
     actions: List<ReaderAction> = emptyList(),
     overflow: List<ReaderMenuItem> = emptyList(),
-    drawerDestinations: Set<NextDestination>? = null,
     drawAppBar: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
@@ -507,7 +509,6 @@ fun NextScaffold(
             onBack = onBack,
             actions = actions,
             overflow = overflow,
-            drawerDestinations = drawerDestinations,
             drawAppBar = drawAppBar,
             content = content,
         )
@@ -572,6 +573,7 @@ internal fun WidthSpacer(width: Int) {
 
 /**
  * Empty / loading / error — same large title language, one calm action when there is one.
+ * A primary root keeps its bottom bar, so a failed or loading tab never strands the reader.
  */
 @Composable
 fun MessageScreen(
@@ -585,6 +587,47 @@ fun MessageScreen(
     onDestination: ((NextDestination) -> Unit)? = null,
     // Loading a grid: show the grid's shape instead of an empty page, so the layout does not jump.
     skeleton: Boolean = false,
+) {
+    val primary = destination?.primary
+    val bar =
+        onDestination != null &&
+            primary != null &&
+            primary != NextDestination.LIBRARY &&
+            !LocalOrbinNavigationAtSide.current
+    if (!bar) {
+        MessageScreenBody(title, subtitle, modifier, actionLabel, onAction, where, destination, onDestination, skeleton)
+        return
+    }
+    Column(modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) {
+            MessageScreenBody(
+                title,
+                subtitle,
+                Modifier,
+                actionLabel,
+                onAction,
+                where,
+                destination,
+                onDestination,
+                skeleton,
+            )
+        }
+        OrbinBottomBar(selected = checkNotNull(destination), onSelect = checkNotNull(onDestination))
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+private fun MessageScreenBody(
+    title: String,
+    subtitle: String,
+    modifier: Modifier,
+    actionLabel: String?,
+    onAction: () -> Unit,
+    where: String?,
+    destination: NextDestination?,
+    onDestination: ((NextDestination) -> Unit)?,
+    skeleton: Boolean,
 ) {
     if (destination == NextDestination.FEED) {
         NextTheme {

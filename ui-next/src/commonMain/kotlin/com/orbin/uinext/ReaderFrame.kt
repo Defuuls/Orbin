@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_back
-import com.orbin.uinext.resources.reader_menu
 import com.orbin.uinext.resources.reader_more
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
@@ -63,9 +62,6 @@ val reader: ReaderColors
 
 /** What the leading control of an app bar does. */
 enum class ReaderNavigation {
-    /** Opens the navigation drawer. */
-    MENU,
-
     /** Returns to the previous screen, or closes the thread pane. */
     BACK,
 
@@ -89,6 +85,25 @@ class ReaderMenuItem(
     val icon: ImageVector? = null,
     val onClick: () -> Unit,
 )
+
+/** An app bar draws at most this many actions beside its More button. */
+internal const val APP_BAR_MAX_ACTIONS = 2
+
+/**
+ * The actions an app bar draws itself, in their given order: at most [APP_BAR_MAX_ACTIONS] (or
+ * [budget] when the bar is narrow), always keeping Search when there is one. The rest move into More.
+ */
+internal fun appBarVisibleActions(
+    actions: List<ReaderAction>,
+    budget: Int = APP_BAR_MAX_ACTIONS,
+): List<ReaderAction> {
+    val kept =
+        actions
+            .sortedByDescending { it.icon == ReaderIcons.Search }
+            .take(minOf(budget, APP_BAR_MAX_ACTIONS))
+            .toSet()
+    return actions.filter { it in kept }
+}
 
 object ReaderAppBarTags {
     const val BAR = "reader-app-bar"
@@ -145,10 +160,11 @@ fun ReaderAppBar(
             ((actionSpace - overflowWidth) / ReaderSize.appBarAction).toInt().coerceAtLeast(0)
         val allActionsWidth =
             ReaderSize.appBarAction * actions.size + if (overflow.isEmpty()) ZERO else overflowWidth
-        val visibleActions = if (allActionsWidth <= actionSpace) actions else actions.take(actionBudget)
+        val visibleActions =
+            appBarVisibleActions(actions, if (allActionsWidth <= actionSpace) APP_BAR_MAX_ACTIONS else actionBudget)
         val menuItems =
             overflow +
-                actions.drop(visibleActions.size).map { action ->
+                actions.filterNot { it in visibleActions }.map { action ->
                     ReaderMenuItem(action.label, icon = action.icon, onClick = action.onClick)
                 }
         Row(
@@ -161,16 +177,6 @@ fun ReaderAppBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when (leading) {
-                ReaderNavigation.MENU ->
-                    Box(Modifier.padding(start = 12.dp)) {
-                        NextIconAction(
-                            imageVector = ReaderIcons.Menu,
-                            contentDescription = stringResource(Res.string.reader_menu),
-                            onClick = { onNavigation?.invoke() },
-                            tint = colors.onAppBar,
-                            modifier = Modifier.size(ReaderSize.appBarNavigation),
-                        )
-                    }
                 ReaderNavigation.BACK ->
                     Box(Modifier.padding(start = 12.dp)) {
                         NextIconAction(

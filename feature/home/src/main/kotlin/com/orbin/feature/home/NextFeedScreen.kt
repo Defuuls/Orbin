@@ -65,6 +65,8 @@ fun NextFeedScreen(
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = onOpenWatched,
+    watchedBadge: Int = 0,
     sourceLabels: List<String> = emptyList(),
     selectedSource: Int = 0,
     onSelectSource: (Int) -> Unit = {},
@@ -283,6 +285,8 @@ fun NextFeedScreen(
                 onOpenSearch = onOpenSearch,
                 onOpenSaved = onOpenSaved,
                 onOpenWatched = onOpenWatched,
+                onOpenLibrary = onOpenLibrary,
+                watchedBadge = watchedBadge,
                 onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
                 onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
                 onShareRow = { row ->

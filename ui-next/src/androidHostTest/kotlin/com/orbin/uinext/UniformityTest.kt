@@ -65,6 +65,7 @@ class UniformityTest {
             NextDestination.SAVED,
             NextDestination.DOWNLOADS,
             NextDestination.SETTINGS,
+            NextDestination.LIBRARY,
         )
     }
 

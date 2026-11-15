@@ -4,19 +4,18 @@ import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/** Rule: every navigation surface is derived from the one spec, and it matches what ships today. */
+/** Rule: the bar and rail are derived from the one spec; Library groups Watched, Saved and Downloads. */
 class NavigationSpecTest {
+    private val primary =
+        listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.LIBRARY, NextDestination.SETTINGS)
+
     @Test
-    fun `every destination is defined exactly once`() {
-        assertThat(
-            ReaderNavigationSpec.entries.map { it.destination },
-        ).containsExactlyElementsIn(NextDestination.entries)
+    fun `the spec defines the four primary destinations once`() {
+        assertThat(ReaderNavigationSpec.entries.map { it.destination }).containsExactlyElementsIn(primary).inOrder()
     }
 
     @Test
     fun `bar and rail show the same primary destinations in the same order`() {
-        val primary =
-            listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.SETTINGS)
         assertThat(
             ReaderNavigationSpec.destinations(NavSurface.BAR, NavWindow.COMPACT),
         ).containsExactlyElementsIn(primary).inOrder()
@@ -24,19 +23,18 @@ class NavigationSpecTest {
             ReaderNavigationSpec.destinations(NavSurface.RAIL, NavWindow.EXPANDED),
         ).containsExactlyElementsIn(primary).inOrder()
         assertThat(ReaderNavigationSpec.destinations(NavSurface.BAR, NavWindow.EXPANDED)).isEmpty()
+        assertThat(ReaderNavigationSpec.destinations(NavSurface.RAIL, NavWindow.COMPACT)).isEmpty()
     }
 
     @Test
-    fun `drawer keeps its current order`() {
-        assertThat(ReaderNavigationSpec.destinations(NavSurface.DRAWER, NavWindow.COMPACT))
-            .containsExactly(
-                NextDestination.FEED,
-                NextDestination.WATCHED,
-                NextDestination.BOARDS,
-                NextDestination.SEARCH,
-                NextDestination.SAVED,
-                NextDestination.SETTINGS,
-            ).inOrder()
+    fun `every Library section selects the Library tab`() {
+        LibrarySection.entries.forEach { section ->
+            assertThat(section.destination.primary).isEqualTo(NextDestination.LIBRARY)
+            assertThat(LibrarySection.of(section.destination)).isEqualTo(section)
+        }
+        assertThat(LibrarySection.DEFAULT).isEqualTo(LibrarySection.WATCHED)
+        assertThat(NextDestination.SEARCH.primary).isNull()
+        primary.forEach { assertThat(it.primary).isEqualTo(it) }
     }
 
     @Test

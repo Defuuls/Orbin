@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -21,6 +22,8 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
 import com.orbin.domain.repository.WhatsNewRepository
+import com.orbin.uinext.LibraryNavigation
+import com.orbin.uinext.LocalLibraryNavigation
 import com.orbin.uinext.LockScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextLoading
@@ -81,7 +84,7 @@ fun OrbinApp(
     LaunchedEffect(quickAction, lockState.locked, lockState.obscured, readerReady) {
         if (!lockState.locked && !lockState.obscured && readerReady) {
             quickAction?.let { tab ->
-                if (tab == Route.Downloads) browser.open(tab) else browser.openTab(tab)
+                browser.openQuickAction(tab)
                 QuickActions.opened()
             }
         }
@@ -129,34 +132,49 @@ fun OrbinApp(
                     val route = backStack.last()
                     val sourceReader = sourceReaderRoute(backStack)
                     val primaryDestination = primaryNavigationDestination(sourceReader?.source ?: route)
-                    OrbinAdaptiveNavigation(
-                        enabled = primaryDestination != null,
-                        navigation = {
-                            OrbinSideBar(
-                                selected = checkNotNull(primaryDestination),
-                                onSelect = browser::openPrimaryDestination,
-                                downloadBadge = rememberActiveDownloadBadge(downloads),
-                            )
-                        },
+                    val downloadBadge = rememberActiveDownloadBadge(downloads)
+                    val watchedBadge = rememberWatchedBadge(browser)
+                    CompositionLocalProvider(
+                        LocalLibraryNavigation provides
+                            LibraryNavigation(
+                                onSelect = browser::openLibrary,
+                                onPrimary = browser::openPrimaryDestination,
+                                watchedBadge = watchedBadge,
+                                downloadBadge = downloadBadge,
+                                // Library sits above Feed: the edge swipe returns there, as Android's Back does.
+                                onBack = { browser.back() },
+                            ),
                     ) {
-                        val boardReader = boardReaderRoute(backStack)
-                        if (boardReader != null) {
-                            BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
-                        } else if (sourceReader != null) {
-                            SourceReaderDestination(browser, sourceReader, downloads, pages, stateHolder)
-                        } else {
-                            stateHolder.SaveableStateProvider(route.stateKey) {
-                                Destination(
-                                    browser,
-                                    lock,
-                                    downloads,
-                                    backup,
-                                    formFactor,
-                                    version,
-                                    route,
-                                    pages,
-                                    cloudSync,
+                        OrbinAdaptiveNavigation(
+                            enabled = primaryDestination != null,
+                            navigation = {
+                                OrbinSideBar(
+                                    selected = checkNotNull(primaryDestination),
+                                    onSelect = browser::openPrimaryDestination,
+                                    downloadBadge = downloadBadge,
+                                    watchedBadge = watchedBadge,
                                 )
+                            },
+                        ) {
+                            val boardReader = boardReaderRoute(backStack)
+                            if (boardReader != null) {
+                                BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
+                            } else if (sourceReader != null) {
+                                SourceReaderDestination(browser, sourceReader, downloads, pages, stateHolder)
+                            } else {
+                                stateHolder.SaveableStateProvider(route.stateKey) {
+                                    Destination(
+                                        browser,
+                                        lock,
+                                        downloads,
+                                        backup,
+                                        formFactor,
+                                        version,
+                                        route,
+                                        pages,
+                                        cloudSync,
+                                    )
+                                }
                             }
                         }
                     }
@@ -190,7 +208,7 @@ internal fun primaryNavigationDestination(route: Route): NextDestination? =
         Route.Boards -> NextDestination.BOARDS
         Route.Downloads -> NextDestination.DOWNLOADS
         Route.Settings -> NextDestination.SETTINGS
-        Route.Saved, Route.History -> NextDestination.SAVED
+        Route.Saved -> NextDestination.SAVED
         Route.Watched -> NextDestination.WATCHED
         Route.Search -> NextDestination.SEARCH
         else -> null

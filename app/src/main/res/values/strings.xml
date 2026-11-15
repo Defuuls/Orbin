@@ -54,6 +54,8 @@
     <!-- Launcher shortcuts -->
     <string name="shortcut_feed_short">Feed</string>
     <string name="shortcut_feed_long">Your Feed</string>
+    <string name="shortcut_watched_short">Watched</string>
+    <string name="shortcut_watched_long">Watched Threads</string>
     <string name="shortcut_downloads_short">Downloads</string>
     <string name="shortcut_downloads_long">Saved Media</string>
     <string name="shortcut_boards_short">Boards</string>

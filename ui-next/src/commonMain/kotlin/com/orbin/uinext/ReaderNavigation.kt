@@ -1,75 +1,78 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
-import com.orbin.uinext.resources.reader_drawer
+import com.orbin.uinext.resources.reader_library_new_replies
+import com.orbin.uinext.resources.reader_library_sections
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderAmoledColors
-import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /** Shared hosts suppress obsolete content titles and their own system top inset inside this frame. */
 val LocalReaderFramePresent = staticCompositionLocalOf { false }
 
-/** Catalogs draw their own app bar while the containing frame owns the drawer. */
-val LocalReaderOpenDrawer = staticCompositionLocalOf<(() -> Unit)?> { null }
+/**
+ * How Library pages navigate, provided once by each app's host. [onSelect] opens a section;
+ * [onPrimary] opens a bottom-bar destination; the badges feed the Library tab and Watched section.
+ */
+@Immutable
+class LibraryNavigation(
+    val onSelect: (LibrarySection) -> Unit,
+    val onPrimary: (NextDestination) -> Unit,
+    val watchedBadge: Int = 0,
+    val downloadBadge: Int = 0,
+    /** Back from a Library section where the platform has no system Back (the iOS edge swipe). */
+    val onBack: (() -> Unit)? = null,
+)
 
-object ReaderDrawerTags {
-    const val DRAWER = "reader-navigation-drawer"
-    const val HEADER = "reader-navigation-header"
-    const val ENTRY = "reader-navigation-entry-"
-    const val ITEM_PREFIX = ENTRY
+val LocalLibraryNavigation = staticCompositionLocalOf<LibraryNavigation?> { null }
+
+object LibraryTags {
+    const val SECTIONS = "library-sections"
+    const val SECTION = "library-section-"
 }
 
-/** Root destinations keep their content below a fixed app bar; child routes use Back. */
+/**
+ * Root destinations keep their content below a fixed app bar; child routes use Back.
+ * [onDestination] marks a navigable root; primary navigation itself is the host's bottom bar or rail.
+ */
+@Suppress("UnusedParameter")
 @Composable
 fun ReaderScaffold(
     title: String,
@@ -81,7 +84,6 @@ fun ReaderScaffold(
     overflow: List<ReaderMenuItem> = emptyList(),
     drawAppBar: Boolean = true,
     immersive: Boolean = false,
-    drawerDestinations: Set<NextDestination>? = null,
     onRefresh: (() -> Unit)? = null,
     onSearch: (() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
@@ -92,228 +94,158 @@ fun ReaderScaffold(
     }
     val colors = reader
     val bodyGround = if (immersive) ReaderAmoledColors.background else colors.background
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    val hasDrawer = onBack == null && onDestination != null && destination.isReaderRoot()
-    val openDrawer: () -> Unit = { scope.launch(start = CoroutineStart.UNDISPATCHED) { drawerState.open() } }
-    val closeDrawer: () -> Unit = { scope.launch(start = CoroutineStart.UNDISPATCHED) { drawerState.close() } }
-    val drawerVisible = drawerState.isOpen || drawerState.targetValue == DrawerValue.Open
-    BoxWithConstraints(
-        modifier
-            .readerKeyboardShortcuts(
-                onBack = if (drawerVisible) closeDrawer else onBack,
-                onRefresh = onRefresh ?: actions.firstOrNull { it.icon == ReaderIcons.Refresh }?.onClick,
-                onSearch = onSearch ?: actions.firstOrNull { it.icon == ReaderIcons.Search }?.onClick,
-            ).readerBackSwipe(onBack.takeUnless { drawerVisible })
-            .testTag("reader-frame")
-            .fillMaxSize()
-            .semantics { paneTitle = title },
-    ) {
-        val drawerWidth = minOf(ReaderSize.drawerMax, (maxWidth - ReaderSize.appBar).coerceAtLeast(0.dp))
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            // On iOS a closed drawer never steals the leading-edge back gesture. Material also
-            // gates scrim dismissal on this flag, so enable dismissal once the drawer is opened.
-            gesturesEnabled = hasDrawer && (LocalNextPlatform.current == NextPlatform.ANDROID || drawerVisible),
-            drawerContent = {
-                if (hasDrawer) {
-                    ModalDrawerSheet(
-                        modifier =
-                            Modifier
-                                .testTag(ReaderDrawerTags.DRAWER)
-                                .width(drawerWidth)
-                                .then(if (drawerVisible) Modifier else Modifier.clearAndSetSemantics {}),
-                        drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
-                        drawerContainerColor = colors.background,
-                        drawerContentColor = colors.ink,
-                        windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .background(
-                                    bodyGround,
-                                ).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
-                        ) {
-                            ReaderDrawer(
-                                selected = destination,
-                                destinations = drawerDestinations,
-                                onSelect = { selected ->
-                                    scope.launch {
-                                        drawerState.close()
-                                        onDestination(selected)
-                                    }
-                                },
-                            )
-                        }
-                    }
-                }
-            },
-        ) {
-            Column(
-                Modifier.fillMaxSize().background(
-                    bodyGround,
-                ),
-            ) {
-                if (drawAppBar) {
-                    ReaderAppBar(
-                        title = title,
-                        navigation =
-                            when {
-                                onBack != null -> ReaderNavigation.BACK
-                                hasDrawer -> ReaderNavigation.MENU
-                                else -> ReaderNavigation.NONE
-                            },
-                        onNavigation = onBack ?: openDrawer,
-                        actions = actions,
-                        overflow = overflow,
-                    )
-                }
-                CompositionLocalProvider(
-                    LocalReaderFramePresent provides true,
-                    LocalReaderOpenDrawer provides openDrawer.takeIf { hasDrawer },
-                ) {
-                    Box(Modifier.weight(1f)) { content(PaddingValues(bottom = bottomInset())) }
-                }
-            }
-        }
-        ReaderDrawerBackHandler(enabled = drawerVisible, onBack = closeDrawer)
-    }
-}
-
-/** Drawer entries use one shared ordering and real destination icons on both platforms. */
-@Composable
-fun ReaderDrawer(
-    selected: NextDestination?,
-    onSelect: (NextDestination) -> Unit,
-    modifier: Modifier = Modifier,
-    destinations: Set<NextDestination>? = null,
-) {
-    val drawerTitle = stringResource(Res.string.reader_drawer)
+    val section = LibrarySection.of(destination)
+    val library = LocalLibraryNavigation.current.takeIf { section != null }
+    val shownTitle = if (library != null) readerDestinationTitle(NextDestination.LIBRARY) else title
+    val back = onBack ?: library?.onBack
     Column(
         modifier
+            .readerKeyboardShortcuts(
+                onBack = back,
+                onRefresh = onRefresh ?: actions.firstOrNull { it.icon == ReaderIcons.Refresh }?.onClick,
+                onSearch = onSearch ?: actions.firstOrNull { it.icon == ReaderIcons.Search }?.onClick,
+            ).readerBackSwipe(back)
+            .testTag("reader-frame")
             .fillMaxSize()
-            .background(reader.background)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical))
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = ReaderSpace.gapSmall)
-            .semantics { paneTitle = drawerTitle },
+            .background(bodyGround)
+            .semantics { paneTitle = shownTitle },
     ) {
-        Row(
-            Modifier
-                .testTag(ReaderDrawerTags.HEADER)
-                .padding(horizontal = ReaderSpace.gutter)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(reader.accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f)),
-                    ),
-                ).padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gap),
-        ) {
-            OrbinLogoMark(Modifier.size(38.dp))
-            Text(
-                OrbinStyle.WORDMARK,
-                style =
-                    OrbinType.appBarTitle.withReaderFont().copy(
-                        fontSize = 21.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (-0.6).sp,
-                    ),
-                color = reader.ink,
-                modifier = Modifier.weight(1f),
+        if (drawAppBar) {
+            ReaderAppBar(
+                title = shownTitle,
+                // Library is a root tab: Back (system or edge swipe) still returns to Feed, without an arrow.
+                navigation = if (onBack != null && library == null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+                onNavigation = onBack,
+                actions = actions,
+                overflow = overflow,
             )
         }
-        Box(Modifier.heightIn(min = 14.dp))
-        readerDrawerEntries().filter { destinations == null || it.destination in destinations }.forEach { entry ->
-            val isSelected = entry.destination == selected
-            if (entry.destination == NextDestination.SETTINGS) {
-                Box(Modifier.heightIn(min = 14.dp))
+        if (library != null && section != null) {
+            LibrarySectionTabs(selected = section, onSelect = library.onSelect, watchedBadge = library.watchedBadge)
+        }
+        val libraryBar = library?.takeIf { !LocalOrbinNavigationAtSide.current }
+        CompositionLocalProvider(LocalReaderFramePresent provides true) {
+            Box(Modifier.weight(1f)) {
+                content(
+                    PaddingValues(
+                        bottom =
+                            if (libraryBar !=
+                                null
+                            ) {
+                                0.dp
+                            } else {
+                                bottomInset()
+                            },
+                    ),
+                )
             }
+        }
+        if (libraryBar != null) {
+            OrbinBottomBar(
+                selected = NextDestination.LIBRARY,
+                onSelect = libraryBar.onPrimary,
+                watchedBadge = libraryBar.watchedBadge,
+                downloadBadge = libraryBar.downloadBadge,
+            )
+        }
+    }
+}
+
+/** Watched, Saved and Downloads as segmented tabs under the Library app bar. */
+@Composable
+fun LibrarySectionTabs(
+    selected: LibrarySection,
+    onSelect: (LibrarySection) -> Unit,
+    modifier: Modifier = Modifier,
+    watchedBadge: Int = 0,
+) {
+    val colors = reader
+    val sectionsLabel = stringResource(Res.string.reader_library_sections)
+    val shown =
+        LibrarySection.entries.filter {
+            it != LibrarySection.DOWNLOADS || LocalOrbinSavedMediaTabVisible.current
+        }
+    Row(
+        modifier
+            .testTag(LibraryTags.SECTIONS)
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.gapSmall)
+            .selectableGroup()
+            .semantics { paneTitle = sectionsLabel },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        shown.forEach { section ->
+            val isSelected = section == selected
+            val label = stringResource(section.label)
+            val badge = if (section == LibrarySection.WATCHED) watchedBadge else 0
+            val status =
+                badge.takeIf { it > 0 }?.let {
+                    pluralStringResource(
+                        Res.plurals.reader_library_new_replies,
+                        it,
+                        it,
+                    )
+                }
             Row(
                 Modifier
-                    .testTag(ReaderDrawerTags.ENTRY + entry.destination.name)
-                    .padding(horizontal = 12.dp, vertical = 3.dp)
-                    .fillMaxWidth()
-                    .heightIn(min = 52.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        Brush.linearGradient(
-                            if (isSelected) {
-                                listOf(reader.accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f))
-                            } else {
-                                listOf(reader.surfaceVariant, reader.surfaceVariant)
-                            },
-                        ),
-                    ).selectable(
+                    .testTag(LibraryTags.SECTION + section.name)
+                    .heightIn(min = 40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (isSelected) colors.accent.copy(alpha = 0.16f) else colors.surfaceVariant)
+                    .selectable(
                         selected = isSelected,
                         role = Role.Tab,
-                        onClick = { onSelect(entry.destination) },
-                    ).padding(horizontal = 12.dp, vertical = 10.dp),
+                        onClick = { if (!isSelected) onSelect(section) },
+                    ).semantics {
+                        contentDescription = label
+                        if (status != null) stateDescription = status
+                    }.padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gap),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icon(
-                    if (isSelected) entry.selectedIcon else entry.icon,
+                    section.icon,
                     contentDescription = null,
-                    tint = if (isSelected) reader.accent else reader.ink,
-                    modifier = Modifier.size(21.dp),
+                    tint = if (isSelected) colors.accent else colors.inkMuted,
+                    modifier = Modifier.size(18.dp),
                 )
                 Text(
-                    entry.label,
-                    style =
-                        if (isSelected) {
-                            OrbinType.stateBody.withReaderFont().copy(
-                                fontSize = 15.sp,
-                                lineHeight = 21.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        } else {
-                            OrbinType.stateBody.withReaderFont().copy(fontSize = 15.sp, lineHeight = 21.sp)
-                        },
-                    color = reader.ink,
-                    modifier = Modifier.weight(1f),
+                    label,
+                    style = OrbinType.footnote.withReaderFont().copy(fontWeight = FontWeight.Bold),
+                    color = if (isSelected) colors.ink else colors.inkMuted,
+                    maxLines = 1,
+                    modifier = Modifier.clearAndSetSemantics {},
                 )
-                if (isSelected) {
-                    Icon(
-                        imageVector = ReaderIcons.ChevronRight,
-                        contentDescription = null,
-                        tint = reader.accent,
-                        modifier = Modifier.size(16.dp),
-                    )
+                if (badge > 0) {
+                    Box(
+                        Modifier
+                            .heightIn(min = 18.dp)
+                            .background(colors.accent, CircleShape)
+                            .padding(horizontal = 6.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            if (badge > 99) "99+" else badge.toString(),
+                            style = OrbinType.caption2.copy(fontWeight = FontWeight.ExtraBold),
+                            color = colors.onAccent,
+                            modifier = Modifier.clearAndSetSemantics {},
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-private data class DrawerEntry(
-    val destination: NextDestination,
-    val label: String,
-    val icon: ImageVector,
-    val selectedIcon: ImageVector = icon,
-)
-
-@Composable
-private fun readerDrawerEntries(): List<DrawerEntry> =
-    ReaderNavigationSpec.entries(NavSurface.DRAWER, NavWindow.COMPACT).map {
-        DrawerEntry(it.destination, stringResource(it.drawerLabel), it.icon, it.selectedIcon)
-    }
-
+/** Top-level pages: no Back button. Search is a page opened from the app bar, so it is not one. */
 internal fun NextDestination?.isReaderRoot(): Boolean =
     this == NextDestination.FEED ||
-        this == NextDestination.WATCHED ||
         this == NextDestination.BOARDS ||
-        this == NextDestination.SEARCH ||
-        this == NextDestination.SAVED
+        this == NextDestination.LIBRARY ||
+        LibrarySection.of(this) != null
 
 @Composable
 internal fun readerDestinationTitle(destination: NextDestination): String =
-    readerDrawerEntries()
-        .firstOrNull {
-            it.destination ==
-                destination
-        }?.label
-        .orEmpty()
+    ReaderNavigationSpec.titleOf(destination)?.let { stringResource(it) }.orEmpty()

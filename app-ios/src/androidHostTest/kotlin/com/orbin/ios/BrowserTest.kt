@@ -12,6 +12,8 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.filter.ContentPolicy
 import com.orbin.graph.orbinProviders
+import com.orbin.uinext.LibrarySection
+import com.orbin.uinext.NextDestination
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
@@ -305,6 +307,48 @@ class BrowserTest {
             assertEquals(Route.ThreadPage(WATCHED_KEY), browser.backStack.value.last())
             assertSame(retained, browser.thread.value)
             assertEquals(before, requested.size, "utility switching never mounts a hidden feed or reloads the thread")
+        }
+
+    @Test
+    fun everyLibrarySectionSitsAboveFeedSoBackReturnsThere() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            for (section in LibrarySection.entries) {
+                browser.openTab(Route.Boards)
+                browser.openPrimaryDestination(section.destination)
+                assertEquals(listOf(Route.Feed, section.route()), browser.backStack.value)
+                assertTrue(browser.back())
+                assertEquals(listOf(Route.Feed), browser.backStack.value)
+            }
+        }
+
+    @Test
+    fun theLibraryTabReopensTheLastSectionUsed() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES)
+            browser.openPrimaryDestination(NextDestination.LIBRARY)
+            assertEquals(Route.Watched, browser.backStack.value.last())
+            browser.openLibrary(LibrarySection.DOWNLOADS)
+            browser.openPrimaryDestination(NextDestination.BOARDS)
+            browser.openPrimaryDestination(NextDestination.LIBRARY)
+            assertEquals(listOf(Route.Feed, Route.Downloads), browser.backStack.value)
+        }
+
+    @Test
+    fun watchedLinksShortcutsAndNotificationsLandOnLibraryWatched() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(1)))
+            browser.openLibrary(LibrarySection.SAVED)
+            browser.openQuickAction(Route.Watched)
+            assertEquals(listOf(Route.Feed, Route.Watched), browser.backStack.value)
+
+            browser.openTab(Route.Boards)
+            browser.openWatchedThread(WATCHED_KEY)
+            assertEquals(listOf(Route.Feed, Route.Watched, Route.ThreadPage(WATCHED_KEY)), browser.backStack.value)
+            assertTrue(browser.back())
+            assertEquals(Route.Watched, browser.backStack.value.last())
+            assertTrue(browser.back())
+            assertEquals(listOf(Route.Feed), browser.backStack.value)
         }
 
     @Test

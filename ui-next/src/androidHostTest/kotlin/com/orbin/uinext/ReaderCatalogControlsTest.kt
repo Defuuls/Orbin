@@ -105,7 +105,7 @@ class ReaderCatalogControlsTest {
     }
 
     @Test
-    fun narrowRtlCatalogKeepsTheBoardPickerTargetAndMovesSearchIntoOverflow() {
+    fun narrowRtlCatalogKeepsTheBoardPickerTargetAndSearch() {
         var picks = 0
         var searches = 0
         compose.setContent {
@@ -117,7 +117,7 @@ class ReaderCatalogControlsTest {
                             description = "Technology",
                             itemCount = 0,
                             rowAt = { null },
-                            navigation = ReaderNavigation.MENU,
+                            navigation = ReaderNavigation.BACK,
                             onNavigation = {},
                             onPickBoard = { picks++ },
                             onReload = {},
@@ -133,9 +133,8 @@ class ReaderCatalogControlsTest {
             .assertWidthIsAtLeast(ReaderSize.touchTarget)
             .assertHeightIsAtLeast(ReaderSize.touchTarget)
             .performClick()
-        compose.onNodeWithContentDescription("Search").assertDoesNotExist()
-        compose.onNodeWithContentDescription("More options").performClick()
-        compose.onNodeWithText("Search").performClick()
+        // Search is the one action an app bar always keeps; the others move into More.
+        compose.onNodeWithContentDescription("Search").assertHeightIsAtLeast(ReaderSize.touchTarget).performClick()
         compose.runOnIdle {
             assertThat(picks).isEqualTo(1)
             assertThat(searches).isEqualTo(1)
@@ -144,7 +143,7 @@ class ReaderCatalogControlsTest {
 
     @Test
     fun appBarOmitsNavigationWhenItsCallbackIsAbsent() {
-        compose.setContent { NextTheme { ReaderAppBar("Board", navigation = ReaderNavigation.MENU) } }
+        compose.setContent { NextTheme { ReaderAppBar("Board", navigation = ReaderNavigation.BACK) } }
         compose.onNodeWithContentDescription("Menu").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back").assertDoesNotExist()
     }

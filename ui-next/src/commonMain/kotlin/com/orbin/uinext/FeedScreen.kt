@@ -105,6 +105,7 @@ fun FeedScreen(
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = onOpenWatched ?: onOpenSaved ?: onOpenDownloads,
     onToggleWatch: ((FeedRow) -> Unit)? = null,
     onToggleSaved: ((FeedRow) -> Unit)? = null,
     onShareRow: ((FeedRow) -> Unit)? = null,
@@ -128,6 +129,7 @@ fun FeedScreen(
     onModeChange: ((CatalogMode) -> Unit)? = null,
     wideWindow: Boolean = false,
     downloadBadge: Int = 0,
+    watchedBadge: Int = 0,
     onOpenMedia: ((FeedRow) -> Unit)? = null,
     emptyTitle: String? = null,
     emptyMessage: String? = null,
@@ -146,9 +148,8 @@ fun FeedScreen(
             upcomingCallback(null)
         }
     }
-    val destinations = readerFeedDestinations(onSettings, onOpenBoards, onOpenSearch, onOpenSaved, onOpenWatched)
     val onDestination: ((NextDestination) -> Unit)? =
-        if (destinations.size > 1 || onOpenDownloads != null) {
+        if (onOpenBoards != null || onOpenLibrary != null || onSettings != null) {
             { destination ->
                 when (destination) {
                     NextDestination.FEED -> Unit
@@ -158,6 +159,7 @@ fun FeedScreen(
                     NextDestination.SAVED -> onOpenSaved?.invoke()
                     NextDestination.WATCHED -> onOpenWatched?.invoke()
                     NextDestination.SETTINGS -> onSettings?.invoke()
+                    NextDestination.LIBRARY -> onOpenLibrary?.invoke()
                 }
             }
         } else {
@@ -169,7 +171,7 @@ fun FeedScreen(
         buildList {
             if (onOpenBoards != null) add(NextDestination.BOARDS)
             add(NextDestination.FEED)
-            if (onOpenDownloads != null) add(NextDestination.DOWNLOADS)
+            if (onOpenLibrary != null) add(NextDestination.LIBRARY)
             if (onSettings != null) add(NextDestination.SETTINGS)
         }
     val showBottomBar =
@@ -191,7 +193,6 @@ fun FeedScreen(
         modifier = modifier.fillMaxSize(),
         destination = NextDestination.FEED.takeIf { showRail },
         onDestination = onDestination.takeIf { showRail },
-        drawerDestinations = destinations,
         actions =
             listOfNotNull(
                 onRetry?.let {
@@ -253,27 +254,12 @@ fun FeedScreen(
                     onSelect = checkNotNull(onDestination),
                     destinations = bottomDestinations,
                     downloadBadge = downloadBadge,
+                    watchedBadge = watchedBadge,
                 )
             }
         }
     }
 }
-
-private fun readerFeedDestinations(
-    onSettings: (() -> Unit)?,
-    onOpenBoards: (() -> Unit)?,
-    onOpenSearch: (() -> Unit)?,
-    onOpenSaved: (() -> Unit)?,
-    onOpenWatched: (() -> Unit)?,
-): Set<NextDestination> =
-    buildSet {
-        add(NextDestination.FEED)
-        if (onOpenBoards != null) add(NextDestination.BOARDS)
-        if (onOpenWatched != null) add(NextDestination.WATCHED)
-        if (onOpenSaved != null) add(NextDestination.SAVED)
-        if (onOpenSearch != null) add(NextDestination.SEARCH)
-        if (onSettings != null) add(NextDestination.SETTINGS)
-    }
 
 @Composable
 private fun ReaderFeedGrid(

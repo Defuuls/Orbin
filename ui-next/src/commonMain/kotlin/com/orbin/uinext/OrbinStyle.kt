@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -41,7 +41,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -49,12 +51,14 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_downloads_active
+import com.orbin.uinext.resources.reader_library_new_replies
 import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
@@ -161,12 +165,19 @@ fun OrbinCard(
     )
 }
 
+private val TAB_WIDTH = 76.dp
+private val TAB_LABEL_INSET = 8.dp
+
+@Composable
+private fun tabLabelStyle() =
+    OrbinType.caption1.copy(fontSize = 10.5.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold)
+
 /**
- * Floating rounded navigation, with a soft gradient behind the selected destination.
+ * The phone's only primary navigation: Boards, Feed, Library and Settings from [ReaderNavigationSpec].
  *
- * Catalog is omitted until that destination is wired. Watched, Saved, and Search stay
- * reachable from the drawer opened by the header menu. This is not a posting or composer
- * entry point.
+ * When any label would not fit on one line (large text, narrow window) every tab goes icon-only
+ * together; each keeps its spoken label and shows it as a tooltip on long press. Library carries
+ * the new-replies count of watched threads. This is not a posting or composer entry point.
  */
 @Composable
 fun OrbinBottomBar(
@@ -175,21 +186,12 @@ fun OrbinBottomBar(
     modifier: Modifier = Modifier,
     destinations: List<NextDestination> = ReaderNavigationSpec.destinations(NavSurface.BAR, NavWindow.COMPACT),
     downloadBadge: Int = 0,
+    watchedBadge: Int = 0,
 ) {
-    val shownDestinations =
-        destinations.filterNot {
-            it == NextDestination.DOWNLOADS &&
-                !LocalOrbinSavedMediaTabVisible.current
-        }
-    val activeDownloads =
-        if (downloadBadge > 0) {
-            pluralStringResource(Res.plurals.reader_downloads_active, downloadBadge, downloadBadge)
-        } else {
-            null
-        }
     val colors = reader
     val bottom = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
-    Box(
+    val status = libraryStatus(downloadBadge, watchedBadge)
+    BoxWithConstraints(
         modifier =
             modifier
                 .fillMaxWidth()
@@ -199,8 +201,12 @@ fun OrbinBottomBar(
                 .padding(bottom = if (bottom > 0.dp) 0.dp else 12.dp),
         contentAlignment = Alignment.Center,
     ) {
+        val barWidth = minOf(maxWidth, TAB_WIDTH * destinations.size + 12.dp)
+        val tabWidth = (barWidth - 12.dp) / destinations.size.coerceAtLeast(1)
+        val labels = destinations.map { orbinBottomLabel(it) }
+        val iconOnly = !navigationLabelsFit(labels, tabWidth - TAB_LABEL_INSET)
         Surface(
-            modifier = Modifier.widthIn(max = (shownDestinations.size * 76 + 12).dp).fillMaxWidth(),
+            modifier = Modifier.width(barWidth),
             shape = RoundedCornerShape(28.dp),
             color = colors.surfaceVariant.copy(alpha = 0.82f),
             border = BorderStroke(1.dp, colors.hairline),
@@ -217,14 +223,15 @@ fun OrbinBottomBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                shownDestinations.forEach { destination ->
+                destinations.forEach { destination ->
                     OrbinNavigationTab(
                         destination = destination,
-                        selected = destination == selected,
+                        selected = destination == selected.primary,
                         onSelect = onSelect,
                         modifier = Modifier.weight(1f).heightIn(min = 52.dp),
-                        downloadBadge = downloadBadge,
-                        activeDownloads = activeDownloads,
+                        iconOnly = iconOnly,
+                        badge = if (destination == NextDestination.LIBRARY) watchedBadge else 0,
+                        status = if (destination == NextDestination.LIBRARY) status else null,
                     )
                 }
             }
@@ -232,7 +239,33 @@ fun OrbinBottomBar(
     }
 }
 
-/** The same primary destinations in a floating rail, placed beside content by the host layout. */
+/** True when every label fits on one line in [width] at the current text size. */
+@Composable
+internal fun navigationLabelsFit(
+    labels: List<String>,
+    width: Dp,
+): Boolean {
+    val measurer = rememberTextMeasurer()
+    val style = tabLabelStyle()
+    val density = LocalDensity.current
+    val limit = with(density) { width.roundToPx() }
+    return labels.all { label ->
+        val result = measurer.measure(label, style, maxLines = 1, softWrap = false)
+        result.size.width <= limit
+    }
+}
+
+@Composable
+private fun libraryStatus(
+    downloads: Int,
+    watched: Int,
+): String? =
+    listOfNotNull(
+        watched.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.reader_library_new_replies, it, it) },
+        downloads.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.reader_downloads_active, it, it) },
+    ).takeIf { it.isNotEmpty() }?.joinToString(", ")
+
+/** The same four destinations in a floating rail, placed beside content by the host layout. */
 @Composable
 fun OrbinSideBar(
     selected: NextDestination,
@@ -240,23 +273,13 @@ fun OrbinSideBar(
     modifier: Modifier = Modifier,
     destinations: List<NextDestination> = ReaderNavigationSpec.destinations(NavSurface.RAIL, NavWindow.EXPANDED),
     downloadBadge: Int = 0,
+    watchedBadge: Int = 0,
 ) {
-    val shownDestinations =
-        destinations.filterNot {
-            it == NextDestination.DOWNLOADS &&
-                !LocalOrbinSavedMediaTabVisible.current
-        }
     val colors = reader
     val direction = LocalLayoutDirection.current
     val left = WindowInsets.safeDrawing.asPaddingValues().calculateLeftPadding(direction)
-    val activeDownloads =
-        if (downloadBadge >
-            0
-        ) {
-            pluralStringResource(Res.plurals.reader_downloads_active, downloadBadge, downloadBadge)
-        } else {
-            null
-        }
+    val status = libraryStatus(downloadBadge, watchedBadge)
+    val iconOnly = !navigationLabelsFit(destinations.map { orbinBottomLabel(it) }, TAB_WIDTH - TAB_LABEL_INSET)
     Box(
         modifier =
             modifier
@@ -278,14 +301,15 @@ fun OrbinSideBar(
             shadowElevation = 0.dp,
         ) {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(6.dp).selectableGroup()) {
-                shownDestinations.forEach { destination ->
+                destinations.forEach { destination ->
                     OrbinNavigationTab(
                         destination = destination,
-                        selected = destination == selected,
+                        selected = destination == selected.primary,
                         onSelect = onSelect,
-                        modifier = Modifier.width(76.dp).heightIn(min = 60.dp),
-                        downloadBadge = downloadBadge,
-                        activeDownloads = activeDownloads,
+                        modifier = Modifier.width(TAB_WIDTH).heightIn(min = 60.dp),
+                        iconOnly = iconOnly,
+                        badge = if (destination == NextDestination.LIBRARY) watchedBadge else 0,
+                        status = if (destination == NextDestination.LIBRARY) status else null,
                     )
                 }
             }
@@ -299,8 +323,9 @@ private fun OrbinNavigationTab(
     selected: Boolean,
     onSelect: (NextDestination) -> Unit,
     modifier: Modifier,
-    downloadBadge: Int,
-    activeDownloads: String?,
+    iconOnly: Boolean,
+    badge: Int,
+    status: String?,
 ) {
     val colors = reader
     val label = orbinBottomLabel(destination)
@@ -313,6 +338,7 @@ private fun OrbinNavigationTab(
     Column(
         modifier =
             modifier
+                .testTag(OrbinNavigationTags.ENTRY + destination.name)
                 .clip(RoundedCornerShape(22.dp))
                 .background(Brush.linearGradient(gradient))
                 .selectable(
@@ -321,9 +347,7 @@ private fun OrbinNavigationTab(
                     onClick = { if (!selected) onSelect(destination) },
                 ).semantics {
                     contentDescription = label
-                    if (destination == NextDestination.DOWNLOADS && activeDownloads != null) {
-                        stateDescription = activeDownloads
-                    }
+                    if (status != null) stateDescription = status
                 },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -335,10 +359,11 @@ private fun OrbinNavigationTab(
                 tint = if (selected) colors.accent else colors.inkMuted,
                 modifier = Modifier.size(21.dp),
             )
-            if (destination == NextDestination.DOWNLOADS && downloadBadge > 0) {
-                val badgeLabel = if (downloadBadge > 99) "99+" else downloadBadge.toString()
+            if (badge > 0) {
+                val badgeLabel = if (badge > 99) "99+" else badge.toString()
                 Box(
                     Modifier
+                        .testTag(OrbinNavigationTags.BADGE)
                         .align(Alignment.TopEnd)
                         .offset(x = 8.dp, y = (-4).dp)
                         .heightIn(min = 16.dp)
@@ -356,15 +381,18 @@ private fun OrbinNavigationTab(
                 }
             }
         }
-        Spacer(Modifier.height(2.dp))
-        Text(
-            label,
-            modifier = Modifier.clearAndSetSemantics {},
-            style = OrbinType.caption1.copy(fontSize = 10.5.sp, lineHeight = 14.sp),
-            fontWeight = FontWeight.Bold,
-            color = if (selected) colors.ink else colors.inkMuted,
-            textAlign = TextAlign.Center,
-        )
+        if (!iconOnly) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                label,
+                modifier = Modifier.testTag(OrbinNavigationTags.LABEL).clearAndSetSemantics {},
+                style = tabLabelStyle(),
+                color = if (selected) colors.ink else colors.inkMuted,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
 }
 
