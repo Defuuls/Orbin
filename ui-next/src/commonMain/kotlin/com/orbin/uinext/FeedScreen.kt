@@ -170,7 +170,8 @@ fun FeedScreen(
             if (onOpenDownloads != null) add(NextDestination.DOWNLOADS)
             if (onSettings != null) add(NextDestination.SETTINGS)
         }
-    val showBottomBar = showRail && onDestination != null && bottomDestinations.size > 1
+    val showBottomBar =
+        showRail && onDestination != null && bottomDestinations.size > 1 && !LocalOrbinNavigationAtSide.current
     val downloadsLabel = stringResource(Res.string.next_downloads_tab)
     val rowActions =
         ReaderFeedRowActions(
@@ -300,9 +301,14 @@ private fun ReaderFeedGrid(
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val grid = mode == CatalogMode.GRID
         val gap = ORBIN_CATALOG_GAP
-        // The first-load Card skeleton owns the same gutters as the loaded cards.
-        val outer = if (mode == CatalogMode.CARD && rows.isEmpty() && isLoading) 0.dp else ORBIN_CATALOG_GUTTER
-        val gridSpec = if (mode == CatalogMode.CARD) orbinCatalogCardSpec(maxWidth) else orbinCatalogGridSpec(maxWidth)
+        // First-load skeletons own the same gutters as the loaded cells.
+        val outer = if (rows.isEmpty() && isLoading) 0.dp else GRID_SIDE_INSET
+        val gridSpec =
+            if (mode == CatalogMode.CARD) {
+                orbinCatalogCardSpec(maxWidth, gutter = GRID_SIDE_INSET)
+            } else {
+                orbinCatalogGridSpec(maxWidth, gutter = GRID_SIDE_INSET)
+            }
         val stateHeight = (maxHeight - outer * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
         LazyVerticalGrid(
             columns = GridCells.Fixed(if (grid) gridSpec.columns else 1),
@@ -397,7 +403,7 @@ private fun ReaderFeedEmpty(
     wideWindow: Boolean,
 ) {
     when {
-        isLoading -> ReaderCatalogSkeleton(mode = mode, wideWindow = wideWindow)
+        isLoading -> ReaderCatalogSkeleton(mode = mode, wideWindow = wideWindow, gutter = GRID_SIDE_INSET)
         errorMessage != null -> ReaderErrorState(ReaderFailureCause.UNKNOWN, onRetry = onRetry, message = errorMessage)
         else ->
             Column(Modifier.fillMaxSize()) {

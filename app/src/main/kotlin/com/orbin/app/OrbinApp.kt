@@ -45,6 +45,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -52,8 +54,13 @@ import androidx.navigation.compose.rememberNavController
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
 import com.orbin.app.navigation.navigateToTab
+import com.orbin.app.navigation.openPrimaryDestination
 import com.orbin.core.model.showsTwoPanes
+import com.orbin.feature.home.FeedDownloadBadgeViewModel
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextSnackbarHost
+import com.orbin.uinext.OrbinAdaptiveNavigation
+import com.orbin.uinext.OrbinSideBar
 import com.orbin.uinext.next
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.NextMotion
@@ -76,6 +83,16 @@ fun OrbinApp(
 ) {
     val initialStartDestination = remember { if (startWithOnboarding) Route.Onboarding else Route.NextFeed }
     val currentEntry by navController.currentBackStackEntryAsState()
+    val primaryDestination =
+        currentEntry?.destination?.let { destination ->
+            when {
+                destination.hasRoute(Route.NextFeed::class) -> NextDestination.FEED
+                destination.hasRoute(Route.BoardGallery::class) -> NextDestination.BOARDS
+                destination.hasRoute(Route.Downloads::class) -> NextDestination.DOWNLOADS
+                destination.hasRoute(Route.Settings::class) -> NextDestination.SETTINGS
+                else -> null
+            }
+        }
     val immersive =
         currentEntry?.destination?.let {
             it.hasRoute(Route.Gallery::class) ||
@@ -107,21 +124,32 @@ fun OrbinApp(
                     },
             ) {
                 // Each destination owns its insets via its own top bar / chrome.
-                OnboardingNavigation(
-                    navController = navController,
-                    startWithOnboarding = startWithOnboarding,
-                    pendingRoute = pendingRoute,
-                    onPendingRouteHandled = onPendingRouteHandled,
-                    onOnboardingCompleted = onOnboardingCompleted,
-                ) { acknowledgeCompletion ->
-                    OrbinNavHost(
+                OrbinAdaptiveNavigation(
+                    enabled = primaryDestination != null,
+                    navigation = {
+                        OrbinSideBar(
+                            selected = checkNotNull(primaryDestination),
+                            onSelect = navController::openPrimaryDestination,
+                            downloadBadge = adaptiveDownloadBadge(),
+                        )
+                    },
+                ) {
+                    OnboardingNavigation(
                         navController = navController,
-                        modifier = Modifier.fillMaxSize(),
-                        startDestination = initialStartDestination,
-                        chromeHidesOnScroll = false,
-                        twoPaneBoardDetail = twoPaneBoardDetail,
-                        onOnboardingCompleted = acknowledgeCompletion,
-                    )
+                        startWithOnboarding = startWithOnboarding,
+                        pendingRoute = pendingRoute,
+                        onPendingRouteHandled = onPendingRouteHandled,
+                        onOnboardingCompleted = onOnboardingCompleted,
+                    ) { acknowledgeCompletion ->
+                        OrbinNavHost(
+                            navController = navController,
+                            modifier = Modifier.fillMaxSize(),
+                            startDestination = initialStartDestination,
+                            chromeHidesOnScroll = false,
+                            twoPaneBoardDetail = twoPaneBoardDetail,
+                            onOnboardingCompleted = acknowledgeCompletion,
+                        )
+                    }
                 }
             }
             NextSnackbarHost(
@@ -130,6 +158,14 @@ fun OrbinApp(
             )
         }
     }
+}
+
+/** Collected only while the wide primary navigation is actually composed. */
+@Composable
+private fun adaptiveDownloadBadge(): Int {
+    val model: FeedDownloadBadgeViewModel = hiltViewModel()
+    val count by model.activeCount.collectAsStateWithLifecycle()
+    return count
 }
 
 /** Keeps connection feedback and destination content in the same app frame. */

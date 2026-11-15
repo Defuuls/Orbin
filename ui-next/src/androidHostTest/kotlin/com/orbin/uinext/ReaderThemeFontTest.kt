@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,7 +38,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 
-/** The installed theme and real production text layouts must use the packaged reader family. */
+/** Real text uses Android packaged Roboto or the iOS system family without changing density. */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "en-rUS-w411dp-h891dp-mdpi")
 class ReaderThemeFontTest(
@@ -48,6 +49,101 @@ class ReaderThemeFontTest(
 
     @Test
     fun actualThemeBindsMaterialTextAndPreservesNestedFontScaling() {
+        val observed = ThemeFontObservation()
+        compose.setContent { ThemeFontFixture(observed) }
+        compose.runOnIdle { assertThemeFontBindings(observed) }
+    }
+
+    @Composable
+    private fun ThemeFontFixture(observed: ThemeFontObservation) {
+        val originalScale = LocalDensity.current.fontScale
+        val originalResolver = LocalFontFamilyResolver.current
+        NextTheme(platform = platform, fontScale = 1.3f) {
+            val family = LocalNextFontFamily.current
+            val body = OrbinType.body.fontFamily
+            val material = MaterialTheme.typography.bodyLarge.fontFamily
+            val fontScale = LocalDensity.current.fontScale
+            val resolver = LocalFontFamilyResolver.current
+            SideEffect {
+                observed.installed = family
+                observed.screenText = body
+                observed.materialText = material
+                observed.systemScale = originalScale
+                observed.scaled = fontScale
+                observed.platformResolver = originalResolver
+                observed.themedResolver = resolver
+            }
+            NestedThemeFontFixture(observed)
+        }
+    }
+
+    @Composable
+    private fun NestedThemeFontFixture(observed: ThemeFontObservation) {
+        val otherPlatform = if (platform == NextPlatform.ANDROID) NextPlatform.IOS else NextPlatform.ANDROID
+        NextTheme {
+            val value = LocalDensity.current.fontScale
+            val inherited = LocalNextFontFamily.current
+            SideEffect {
+                observed.inheritedScale = value
+                observed.inheritedFamily = inherited
+            }
+        }
+        NextTheme(darkTheme = true) {
+            val value = LocalDensity.current.fontScale
+            val inherited = LocalNextFontFamily.current
+            SideEffect {
+                observed.brightnessOverrideScale = value
+                observed.brightnessOverrideFamily = inherited
+            }
+        }
+        NextTheme(platform = otherPlatform) {
+            val family = LocalNextFontFamily.current
+            val value = LocalDensity.current.fontScale
+            SideEffect {
+                observed.platformOverrideFamily = family
+                observed.platformOverrideScale = value
+            }
+            NextTheme {
+                val inherited = LocalNextFontFamily.current
+                SideEffect { observed.nestedOverrideFamily = inherited }
+            }
+        }
+        NextTheme(fontScale = 2f) {
+            val value = LocalDensity.current.fontScale
+            SideEffect { observed.explicitScale = value }
+        }
+    }
+
+    private fun assertThemeFontBindings(observed: ThemeFontObservation) {
+        with(observed) {
+            assertNotNull(installed)
+            if (platform == NextPlatform.IOS) {
+                assertEquals("iOS resolves its native system typeface", FontFamily.Default, installed)
+                assertNotEquals(FontFamily.Default, platformOverrideFamily)
+            } else {
+                assertNotEquals(FontFamily.Default, installed)
+                assertEquals(FontFamily.Default, platformOverrideFamily)
+            }
+            assertEquals(installed, inheritedFamily)
+            assertEquals(installed, brightnessOverrideFamily)
+            assertEquals(platformOverrideFamily, nestedOverrideFamily)
+            assertEquals(installed, screenText)
+            assertEquals(installed, materialText)
+            assertSame("The platform font resolver must remain intact", platformResolver, themedResolver)
+            assertEquals(systemScale * 1.3f, scaled, 0.001f)
+            assertEquals(scaled, inheritedScale, 0.001f)
+            assertEquals(scaled, brightnessOverrideScale, 0.001f)
+            assertEquals(
+                "A platform override changes the font without rescaling it",
+                scaled,
+                platformOverrideScale,
+                0.001f,
+            )
+            assertEquals(systemScale * 2f, explicitScale, 0.001f)
+        }
+    }
+
+    private class ThemeFontObservation {
         var installed: FontFamily? = null
         var screenText: FontFamily? = null
         var materialText: FontFamily? = null
@@ -58,49 +154,11 @@ class ReaderThemeFontTest(
         var explicitScale = 0f
         var platformResolver: FontFamily.Resolver? = null
         var themedResolver: FontFamily.Resolver? = null
-        compose.setContent {
-            val originalScale = LocalDensity.current.fontScale
-            val originalResolver = LocalFontFamilyResolver.current
-            NextTheme(platform = platform, fontScale = 1.3f) {
-                val family = LocalNextFontFamily.current
-                val body = OrbinType.body.fontFamily
-                val material = MaterialTheme.typography.bodyLarge.fontFamily
-                val fontScale = LocalDensity.current.fontScale
-                val resolver = LocalFontFamilyResolver.current
-                SideEffect {
-                    installed = family
-                    screenText = body
-                    materialText = material
-                    systemScale = originalScale
-                    scaled = fontScale
-                    platformResolver = originalResolver
-                    themedResolver = resolver
-                }
-                NextTheme {
-                    val value = LocalDensity.current.fontScale
-                    SideEffect { inheritedScale = value }
-                }
-                NextTheme(darkTheme = true) {
-                    val value = LocalDensity.current.fontScale
-                    SideEffect { brightnessOverrideScale = value }
-                }
-                NextTheme(fontScale = 2f) {
-                    val value = LocalDensity.current.fontScale
-                    SideEffect { explicitScale = value }
-                }
-            }
-        }
-        compose.runOnIdle {
-            assertNotNull(installed)
-            assertNotEquals(FontFamily.Default, installed)
-            assertEquals(installed, screenText)
-            assertEquals(installed, materialText)
-            assertSame("The platform font resolver must remain intact", platformResolver, themedResolver)
-            assertEquals(systemScale * 1.3f, scaled, 0.001f)
-            assertEquals(scaled, inheritedScale, 0.001f)
-            assertEquals(scaled, brightnessOverrideScale, 0.001f)
-            assertEquals(systemScale * 2f, explicitScale, 0.001f)
-        }
+        var inheritedFamily: FontFamily? = null
+        var brightnessOverrideFamily: FontFamily? = null
+        var platformOverrideFamily: FontFamily? = null
+        var nestedOverrideFamily: FontFamily? = null
+        var platformOverrideScale = 0f
     }
 
     @Test
@@ -198,7 +256,7 @@ class ReaderThemeFontTest(
             val layout = compose.onNodeWithText(text, useUnmergedTree = true).textLayout()
             assertNotNull(installed)
             assertEquals(
-                "The production $text must bind the bundled family",
+                "The production $text must bind the installed platform family",
                 installed,
                 layout.layoutInput.style.fontFamily,
             )
@@ -206,7 +264,7 @@ class ReaderThemeFontTest(
         compose.runOnIdle { screen = 3 }
         val field = compose.onNodeWithTag("reader-catalog-query", useUnmergedTree = true).textLayout()
         assertEquals(
-            "The actual editable search text must bind the bundled family",
+            "The actual editable search text must bind the installed platform family",
             installed,
             field.layoutInput.style.fontFamily,
         )

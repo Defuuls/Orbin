@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,9 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -23,11 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
@@ -73,9 +80,9 @@ fun NextTextField(
         shape = shape,
         colors =
             OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = next.raised,
-                unfocusedContainerColor = next.raised,
-                disabledContainerColor = next.raised,
+                focusedContainerColor = reader.surfaceVariant,
+                unfocusedContainerColor = reader.surfaceVariant,
+                disabledContainerColor = reader.surfaceVariant,
                 focusedBorderColor = next.accent,
                 unfocusedBorderColor = next.hairline,
                 focusedTextColor = next.ink,
@@ -104,21 +111,22 @@ fun NextToggleRow(
                 .fillMaxWidth()
                 .heightIn(min = MIN_TOUCH_TARGET)
                 .clip(RoundedCornerShape(OrbinRadius.control))
-                .background(next.raised)
+                .background(reader.surfaceVariant)
+                .border(1.dp, reader.hairline, RoundedCornerShape(OrbinRadius.control))
                 .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
+                .semantics { toggleableState = ToggleableState(checked) }
                 .padding(horizontal = NextSpace.rowX, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text = label,
-            style = OrbinType.body,
+            style = OrbinType.body.copy(fontSize = 15.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold),
             color = next.ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        NextToggle(checked = checked, onCheckedChange = onCheckedChange)
+        androidx.compose.foundation.layout
+            .Box(Modifier.clearAndSetSemantics {}) { ReaderSettingsSwitch(checked) }
     }
 }
 
@@ -144,8 +152,13 @@ fun NextSelect(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = label,
-            style = OrbinType.sectionHeader,
+            text = label.uppercase(),
+            style =
+                OrbinType.sectionHeader.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.1.sp,
+                ),
             color = next.muted,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp),
         )
@@ -155,7 +168,8 @@ fun NextSelect(
                     .fillMaxWidth()
                     .heightIn(min = MIN_TOUCH_TARGET)
                     .clip(shape)
-                    .background(next.raised)
+                    .background(reader.surfaceVariant)
+                    .border(1.dp, reader.hairline, shape)
                     .nextClickable(role = Role.Button, onClick = { expanded = !expanded })
                     .padding(horizontal = NextSpace.rowX, vertical = 12.dp)
                     .semantics { contentDescription = label },
@@ -166,8 +180,6 @@ fun NextSelect(
                 text = display.ifEmpty { placeholder },
                 style = OrbinType.body,
                 color = if (display.isEmpty()) next.faint else next.ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             Text(
@@ -182,8 +194,11 @@ fun NextSelect(
                     Modifier
                         .fillMaxWidth()
                         .padding(top = 6.dp)
-                        .clip(RoundedCornerShape(OrbinRadius.compactCard))
-                        .background(next.raised),
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(reader.surfaceVariant)
+                        .border(1.dp, reader.hairline, RoundedCornerShape(22.dp))
+                        .padding(6.dp)
+                        .selectableGroup(),
             ) {
                 options.forEachIndexed { index, option ->
                     NextSelectOptionRow(
@@ -194,7 +209,6 @@ fun NextSelect(
                             expanded = false
                         },
                     )
-                    if (index < options.lastIndex) GroupedDivider()
                 }
             }
         }
@@ -212,26 +226,22 @@ private fun NextSelectOptionRow(
             Modifier
                 .fillMaxWidth()
                 .sizeIn(minHeight = MIN_TOUCH_TARGET)
-                .nextClickable(role = Role.RadioButton, onClick = onClick)
-                .padding(horizontal = NextSpace.rowX, vertical = NextSpace.rowY),
+                .clip(RoundedCornerShape(15.dp))
+                .background(
+                    if (selected) reader.accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent,
+                ).selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+                .padding(horizontal = 10.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            style = OrbinType.body,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            style = OrbinType.body.copy(fontSize = 15.sp, lineHeight = 21.sp),
+            fontWeight = FontWeight.SemiBold,
             color = if (selected) next.accent else next.ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         if (selected) {
-            Text(
-                text = "✓",
-                style = OrbinType.footnote,
-                fontWeight = FontWeight.SemiBold,
-                color = next.accent,
-            )
+            Icon(ReaderIcons.Check, contentDescription = null, tint = next.accent)
         }
     }
 }

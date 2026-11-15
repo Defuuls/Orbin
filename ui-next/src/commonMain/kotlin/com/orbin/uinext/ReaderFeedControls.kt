@@ -139,7 +139,6 @@ internal fun ReaderFeedControls(
             }
         }
         headerContent()
-        ReaderHairline()
     }
     if (sourcePicker) {
         ReaderFeedSourcePicker(
@@ -163,7 +162,7 @@ private fun ReaderFeedSourceChip(
 ) {
     val label = stringResource(Res.string.reader_feed_choose_source)
     val source = labels.getOrNull(selected)?.takeIf(String::isNotBlank) ?: label
-    val chipShape = RoundedCornerShape(OrbinRadius.pill)
+    val chipShape = RoundedCornerShape(16.dp)
     val chipModifier =
         modifier
             .testTag(ReaderFeedTags.SOURCE)
@@ -198,6 +197,12 @@ private fun ReaderFeedSourceChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall),
         ) {
+            Icon(
+                ReaderIcons.Boards,
+                contentDescription = null,
+                tint = reader.accent,
+                modifier = Modifier.size(22.dp),
+            )
             Text(
                 source,
                 style = OrbinType.label.withReaderFont(),
@@ -260,7 +265,8 @@ private fun ReaderFeedSourcePicker(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = reader.background,
+        shape = RoundedCornerShape(OrbinRadius.card),
+        containerColor = reader.surfaceVariant,
         title = {
             Text(
                 stringResource(Res.string.reader_feed_sources),

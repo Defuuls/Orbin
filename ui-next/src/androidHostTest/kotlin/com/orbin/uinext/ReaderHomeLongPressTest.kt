@@ -193,7 +193,8 @@ class ReaderHomeLongPressTest(
             assertEquals(0, media)
             assertEquals(0, threads)
         }
-        thumbnail.performTouchInput { click() }
+        // Grid captions open the thread; this point stays in the unobscured image area.
+        thumbnail.performTouchInput { click(Offset(center.x, 8f)) }
         compose.runOnIdle {
             assertEquals(1, media)
             covered = true
@@ -207,9 +208,9 @@ class ReaderHomeLongPressTest(
             assertEquals(1, media)
             assertEquals(0, threads)
         }
-        thumbnail.performTouchInput { click() }
+        thumbnail.performTouchInput { click(Offset(center.x, 8f)) }
         compose.runOnIdle { assertEquals("A normal first tap must still only reveal the spoiler", 1, media) }
-        thumbnail.performTouchInput { click() }
+        thumbnail.performTouchInput { click(Offset(center.x, 8f)) }
         compose.runOnIdle { assertEquals(2, media) }
     }
 

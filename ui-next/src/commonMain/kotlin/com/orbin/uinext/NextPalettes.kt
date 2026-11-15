@@ -5,7 +5,7 @@ import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
 
-/** The Orbin Coral palette family, selected only by brightness and AMOLED mode. */
+/** The shared rounded-reader palette family, selected by brightness and AMOLED mode. */
 fun canonicalNextPalette(
     dark: Boolean,
     amoled: Boolean,
@@ -18,13 +18,13 @@ fun canonicalNextPalette(
 
 /**
  * Compatibility roles for screens that still read `next`, mapped only from reader color tokens:
- * background, raised and elevated are the same screen/card/dialog ground; ink is ink;
+ * background is the page ground; raised and elevated are the solid card/dialog ground; ink is ink;
  * muted and faint are inkMuted; hairline is hairline; accent and onAccent keep their names;
  * accentSoft and accentContainer are selected, with ink as onAccentContainer;
  * destructive is error, with background as its filled-control foreground. The app bar,
  * placeholder, quote, author and reference roles retain their reader names explicitly.
  *
- * AMOLED grounds are black. Placeholder and selection fills retain their distinct token values.
+ * AMOLED page grounds are black, with lifted near-black cards and the Orbin cyan accent.
  */
 private fun ReaderColors.asNextPalette(
     dark: Boolean,
@@ -32,8 +32,8 @@ private fun ReaderColors.asNextPalette(
 ): NextPalette =
     NextPalette(
         background = background,
-        raised = background,
-        elevated = background,
+        raised = surfaceVariant,
+        elevated = surfaceVariant,
         ink = ink,
         muted = inkMuted,
         faint = inkMuted,

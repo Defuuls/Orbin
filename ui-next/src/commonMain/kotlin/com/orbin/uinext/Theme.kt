@@ -89,7 +89,8 @@ val next: NextPalette
  * Installs the shared reader palette in [LocalNext] and [MaterialTheme].
  *
  * Platform controls adapt to native press feedback while retaining the same semantic colors.
- * The Orbin Coral palette follows the requested brightness and AMOLED mode.
+ * The rounded reader palette follows the requested brightness and AMOLED mode.
+ * Text uses the iOS system face or bundled Android Roboto at the inherited text scale.
  *
  * Nesting: screens wrap themselves in a no-arg [NextTheme] so they render correctly in isolation
  * (tests, previews). If an outer shell already installed the theme, the no-arg call short-circuits
@@ -113,7 +114,8 @@ fun NextTheme(
         return
     }
 
-    val fontFamily = rememberReaderRobotoFontFamily()
+    val resolvedPlatform = platform ?: LocalNextPlatform.current
+    val fontFamily = rememberReaderFontFamily(resolvedPlatform)
     val dark = darkTheme ?: palette?.dark ?: inherited?.dark ?: isSystemInDarkTheme()
     val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale
@@ -129,7 +131,7 @@ fun NextTheme(
     val density = LocalDensity.current
     CompositionLocalProvider(
         LocalNextFontFamily provides fontFamily,
-        LocalNextPlatform provides (platform ?: LocalNextPlatform.current),
+        LocalNextPlatform provides resolvedPlatform,
         LocalNext provides resolvedPalette,
         LocalNextThemed provides true,
         LocalNextFontScale provides scale,

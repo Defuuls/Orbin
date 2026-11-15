@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,8 +28,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -86,23 +83,7 @@ fun PlatformSwitch(
                 onChange(value)
             }
         }
-    if (LocalNextPlatform.current == NextPlatform.IOS) {
-        IosSwitch(checked = checked, onCheckedChange = toggle, modifier = modifier)
-    } else {
-        Switch(
-            checked = checked,
-            onCheckedChange = toggle,
-            modifier = modifier,
-            colors =
-                SwitchDefaults.colors(
-                    checkedThumbColor = next.onAccent,
-                    checkedTrackColor = next.accent,
-                    uncheckedThumbColor = next.muted,
-                    uncheckedTrackColor = next.elevated,
-                    uncheckedBorderColor = next.hairline,
-                ),
-        )
-    }
+    IosSwitch(checked = checked, onCheckedChange = toggle, modifier = modifier)
 }
 
 /**
@@ -115,7 +96,7 @@ private fun IosSwitch(
     modifier: Modifier = Modifier,
 ) {
     val trackOn = next.accent
-    val trackOff = next.elevated
+    val trackOff = reader.inkMuted.copy(alpha = 0.24f)
     val trackColor = animateColorAsState(if (checked) trackOn else trackOff, label = "ios-switch-track")
     val thumbOffset = animateDpAsState(if (checked) 20.dp else 0.dp, label = "ios-switch-thumb")
     val trackShape = RoundedCornerShape(50)
@@ -140,7 +121,6 @@ private fun IosSwitch(
                     .height(IOS_SWITCH_HEIGHT)
                     .clip(trackShape)
                     .background(trackColor.value)
-                    .border(1.dp, if (checked) next.accent else next.hairline, trackShape)
                     .padding(2.dp),
         ) {
             Box(
@@ -148,9 +128,7 @@ private fun IosSwitch(
                     .offset { IntOffset(thumbOffset.value.roundToPx(), 0) }
                     .size(IOS_SWITCH_THUMB)
                     .clip(thumbShape)
-                    .background(
-                        if (checked) reader.onAccent else reader.inkMuted,
-                    ),
+                    .background(Color.White),
             )
         }
     }
@@ -160,7 +138,7 @@ private val IOS_SWITCH_WIDTH = 51.dp
 private val IOS_SWITCH_HEIGHT = 31.dp
 private val IOS_SWITCH_THUMB = 27.dp
 
-/** Compact text tabs, with native underline selection rather than Material segmented chips. */
+/** Rounded sliding segments retain the caller's original indices and accessible tab state. */
 @Composable
 fun PlatformSegments(
     labels: List<String>,
@@ -174,53 +152,52 @@ fun PlatformSegments(
         return
     }
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
-    Row(modifier.fillMaxWidth().selectableGroup()) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(reader.surfaceVariant)
+            .padding(4.dp)
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         labels.forEachIndexed { index, label ->
             val active = index == selected
-            Column(
+            Box(
                 modifier =
-                    Modifier.weight(1f).selectable(
-                        selected = active,
-                        role = Role.Tab,
-                        onClick = {
-                            if (!active) {
-                                haptics.performHapticFeedback(
-                                    androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn,
-                                )
-                            }
-                            onSelect(index)
-                        },
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = MIN_TOUCH_TARGET)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (active) reader.accent else Color.Transparent)
+                        .selectable(
+                            selected = active,
+                            role = Role.Tab,
+                            onClick = {
+                                if (!active) {
+                                    haptics.performHapticFeedback(
+                                        androidx.compose.ui.hapticfeedback.HapticFeedbackType.ToggleOn,
+                                    )
+                                }
+                                onSelect(index)
+                            },
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(
-                            min = MIN_TOUCH_TARGET,
-                        ).padding(horizontal = 8.dp, vertical = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        label,
-                        style = OrbinType.body,
-                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (active) next.ink else next.muted,
-                    )
-                }
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(
-                            if (active) 1.5.dp else 0.5.dp,
-                        ).background(if (active) next.ink else next.hairline),
+                Text(
+                    label,
+                    style = OrbinType.body.copy(fontSize = 13.sp, lineHeight = 18.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = if (active) reader.onAccent else reader.ink,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
                 )
             }
         }
     }
 }
 
-/** A compact gray TikTok-style field inside a full-height editable touch target. */
+/** A rounded search field inside a full-height editable touch target. */
 @Composable
 fun SchematicSearch(
     value: String,
@@ -228,7 +205,7 @@ fun SchematicSearch(
     placeholder: String,
     modifier: Modifier = Modifier,
     onSearch: (() -> Unit)? = null,
-    shape: Shape = RoundedCornerShape(4.dp),
+    shape: Shape = RoundedCornerShape(14.dp),
     containerColor: Color? = null,
 ) {
     val fill = containerColor ?: reader.surfaceVariant
@@ -266,11 +243,12 @@ fun SchematicSearch(
                             .fillMaxWidth()
                             .clip(shape)
                             .background(fill)
+                            .border(1.dp, reader.hairline, shape)
                             .padding(
-                                start = 10.dp,
-                                end = if (value.isEmpty()) 10.dp else 48.dp,
-                                top = 8.dp,
-                                bottom = 8.dp,
+                                start = 14.dp,
+                                end = if (value.isEmpty()) 14.dp else 48.dp,
+                                top = 12.dp,
+                                bottom = 12.dp,
                             ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -349,7 +327,7 @@ private fun PlatformProviderMenu(
                     .heightIn(min = MIN_TOUCH_TARGET)
                     .clip(menuShape)
                     .background(reader.surfaceVariant)
-                    .border(2.dp, next.muted, menuShape)
+                    .border(1.dp, reader.hairline, menuShape)
                     .nextClickable(role = Role.Button, onClick = { open = true })
                     .padding(horizontal = 12.dp)
                     .semantics { contentDescription = selectedLabel },
@@ -374,7 +352,9 @@ private fun PlatformProviderMenu(
         DropdownMenu(
             expanded = open,
             onDismissRequest = { open = false },
-            containerColor = reader.background,
+            shape = RoundedCornerShape(22.dp),
+            containerColor = reader.surfaceVariant,
+            border = androidx.compose.foundation.BorderStroke(1.dp, reader.hairline),
         ) {
             labels.forEachIndexed { index, label ->
                 DropdownMenuItem(

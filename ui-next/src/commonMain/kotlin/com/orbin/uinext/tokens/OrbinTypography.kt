@@ -27,13 +27,13 @@ private fun readerType(
 /** Pure compact reader metrics, exposed through OrbinType and resolved by withReaderFont. */
 private object OrbinReaderStyles {
     /** App bar title. */
-    val appBarTitle: TextStyle = readerType(20, 28, 500)
+    val appBarTitle: TextStyle = readerType(21, 24, 800)
 
     /** Board line under a thread title. */
-    val appBarSubtitle: TextStyle = readerType(14, 20, 400)
+    val appBarSubtitle: TextStyle = readerType(13, 17, 400)
 
     /** Catalog row title. */
-    val rowTitle: TextStyle = readerType(16, 22, 700)
+    val rowTitle: TextStyle = readerType(15, 21, 700)
 
     /** Post number, date, file details, backlinks. */
     val meta: TextStyle = readerType(12, 16, 400)
@@ -50,9 +50,9 @@ private object OrbinReaderStyles {
     /** Post author name. */
     val postAuthor: TextStyle = readerType(12, 16, 700)
 
-    /** Clover's default post size; natural Roboto metrics supply its line spacing. */
+    /** Comfortable post text; natural Roboto metrics supply its line spacing. */
     val postBody: TextStyle =
-        TextStyle(fontFamily = FontFamily.Default, fontSize = 14.sp, fontWeight = FontWeight.Normal)
+        TextStyle(fontFamily = FontFamily.Default, fontSize = 15.sp, fontWeight = FontWeight.Normal)
 
     /** The sw600dp post size from Clover's tablet resource configuration. */
     val postBodyWide: TextStyle =
@@ -60,22 +60,22 @@ private object OrbinReaderStyles {
 
     /** Post number, time and attachment metadata are four sp smaller than the body. */
     val postDetails: TextStyle =
-        TextStyle(fontFamily = FontFamily.Default, fontSize = 10.sp, fontWeight = FontWeight.Normal)
+        TextStyle(fontFamily = FontFamily.Default, fontSize = 11.sp, fontWeight = FontWeight.Normal)
 
     val postDetailsWide: TextStyle =
         TextStyle(fontFamily = FontFamily.Default, fontSize = 12.sp, fontWeight = FontWeight.Normal)
 
     /** Reply count in the pill. */
-    val pill: TextStyle = readerType(14, 20, 500)
+    val pill: TextStyle = readerType(12, 16, 700)
 
     /** Empty and error state title. */
-    val stateTitle: TextStyle = readerType(24, 32, 400)
+    val stateTitle: TextStyle = readerType(20, 26, 800)
 
     /** State helper text and the empty detail pane message. */
-    val stateBody: TextStyle = readerType(16, 24, 400)
+    val stateBody: TextStyle = readerType(14, 20, 400)
 
     /** Text buttons. */
-    val label: TextStyle = readerType(14, 20, 500)
+    val label: TextStyle = readerType(14, 20, 700)
 }
 
 /** Chrome metrics; the public getters resolve the composition font without applying another scale. */

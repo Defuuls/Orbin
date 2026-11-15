@@ -25,7 +25,7 @@ class ReaderAlbumPresentationTest {
     val compose = createComposeRule()
 
     @Test
-    fun allMediaUsesCoralCardGuttersSquarePreviewsAndQualifiedSourceLabels() {
+    fun allMediaUsesCompactNekoGuttersSquarePreviewsAndQualifiedSourceLabels() {
         val cells =
             listOf(
                 MediaCell("fourchan/g/7/file", "fourchan /g/", details = "JPG 640x480 2 KB"),
@@ -39,8 +39,8 @@ class ReaderAlbumPresentationTest {
         }
         val first = compose.onNodeWithTag(ReaderAlbumTags.cell(cells[0].id)).getUnclippedBoundsInRoot()
         val second = compose.onNodeWithTag(ReaderAlbumTags.cell(cells[1].id)).getUnclippedBoundsInRoot()
-        assertEquals(12f, first.left.value, 0.5f)
-        assertEquals(12f, (second.left - first.right).value, 0.5f)
+        assertEquals(8f, first.left.value, 0.5f)
+        assertEquals(4f, (second.left - first.right).value, 0.5f)
         val preview = compose.onNodeWithTag(ReaderAlbumTags.thumbnail(cells[0].id), true).getUnclippedBoundsInRoot()
         assertEquals((preview.right - preview.left).value, (preview.bottom - preview.top).value, 0.5f)
         val details = compose.onNodeWithTag(ReaderAlbumTags.details(cells[0].id), true).getUnclippedBoundsInRoot()

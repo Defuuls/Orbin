@@ -9,6 +9,9 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
@@ -27,6 +30,7 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -59,15 +63,15 @@ class ReaderMediaChromeTest {
             }
         }
         val bar = compose.onNodeWithTag(ReaderMediaToolbarTags.CONTENT).fetchSemanticsNode().boundsInRoot
-        assertEquals(390f, bar.width, 0.1f)
-        assertEquals(56f, bar.height, 0.1f)
+        assertEquals("The content keeps twelve dp outer insets", 366f, bar.width, 0.1f)
+        assertEquals(62f, bar.height, 0.1f)
         val back = compose.onNodeWithContentDescription("Close").fetchSemanticsNode().boundsInRoot
         val mute = compose.onNodeWithContentDescription("Unmute").fetchSemanticsNode().boundsInRoot
         val save = compose.onNodeWithContentDescription("Save").fetchSemanticsNode().boundsInRoot
         val more = compose.onNodeWithContentDescription("More").fetchSemanticsNode().boundsInRoot
-        assertEquals(56f, back.width, 0.1f)
-        assertEquals(50f, mute.width, 0.1f)
-        assertEquals(50f, save.width, 0.1f)
+        assertEquals(48f, back.width, 0.1f)
+        assertEquals(48f, mute.width, 0.1f)
+        assertEquals(48f, save.width, 0.1f)
         assertEquals(48f, more.width, 0.1f)
         assertTrue(back.right < mute.left)
         assertEquals(mute.right, save.left, 0.1f)
@@ -81,7 +85,8 @@ class ReaderMediaChromeTest {
             0.1f,
         )
         val pixels = compose.onNodeWithTag(ReaderMediaToolbarTags.BAR).captureToImage().toPixelMap()
-        assertEquals(120f / 255, pixels[0, 0].red, 0.01f)
+        assertEquals("The header starts with a seventy percent black shade", 0.3f, pixels[0, 0].red, 0.01f)
+        assertTrue("The header fades into the media", pixels[0, pixels.height - 1].red > 0.98f)
         listOf("Close", "Unmute", "Save", "More").forEach {
             compose.onNodeWithContentDescription(it).performClick()
         }
@@ -90,8 +95,9 @@ class ReaderMediaChromeTest {
 
     @Test
     fun mediaTitleHonorsLargeDeviceTypeWithoutOverlappingItsSubtitle() {
+        var scale by mutableFloatStateOf(1f)
         compose.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(1f, fontScale = 2f)) {
+            CompositionLocalProvider(LocalDensity provides Density(1f, fontScale = scale)) {
                 NextTheme {
                     Box(Modifier.width(390.dp)) {
                         ReaderMediaToolbar("selected.mp4", "2/7", "Close", {}) {
@@ -101,14 +107,30 @@ class ReaderMediaChromeTest {
                 }
             }
         }
+        val normalTitle =
+            compose
+                .onNodeWithText("selected.mp4")
+                .fetchSemanticsNode()
+                .boundsInRoot.height
+        val normalPosition =
+            compose
+                .onNodeWithText("2/7")
+                .fetchSemanticsNode()
+                .boundsInRoot.height
+        val normalBaseline = mediaTextLayout("selected.mp4").firstBaseline
+        compose.runOnIdle { scale = 2f }
         val title = compose.onNodeWithText("selected.mp4").fetchSemanticsNode().boundsInRoot
         val position = compose.onNodeWithText("2/7").fetchSemanticsNode().boundsInRoot
         val bar = compose.onNodeWithTag(ReaderMediaToolbarTags.CONTENT).fetchSemanticsNode().boundsInRoot
-        assertTrue(title.height >= 40f)
-        assertTrue(position.height >= 28f)
+        val layout = mediaTextLayout("selected.mp4")
+        assertEquals(16.sp, layout.layoutInput.style.fontSize)
+        assertEquals(2f, layout.layoutInput.density.fontScale, 0.001f)
+        assertTrue("The filename grows with device text size", title.height > normalTitle)
+        assertTrue("The subtitle grows with device text size", position.height > normalPosition)
+        assertTrue("The actual filename glyph layout grows", layout.firstBaseline > normalBaseline)
         assertTrue(position.top >= title.bottom)
         assertTrue(bar.bottom >= position.bottom)
-        assertTrue(bar.height > 56f)
+        assertTrue(bar.height > 62f)
     }
 
     @Test
@@ -134,10 +156,10 @@ class ReaderMediaChromeTest {
         val actionRow = compose.onNodeWithTag(ReaderMediaToolbarTags.ACTIONS).fetchSemanticsNode().boundsInRoot
         val title = compose.onNodeWithText("selected.mp4").fetchSemanticsNode().boundsInRoot
         val counter = compose.onNodeWithText("2/7").fetchSemanticsNode().boundsInRoot
-        assertEquals(248f, bar.width, 0.1f)
+        assertEquals(224f, bar.width, 0.1f)
         assertTrue(title.top >= actionRow.bottom)
-        assertTrue(title.width >= 216f)
-        assertTrue(title.height >= 40f)
+        assertTrue(title.width >= 200f)
+        assertTrue(title.height > 0f)
         assertTrue(counter.top >= title.bottom)
         assertTrue(counter.bottom <= bar.bottom)
         val titleLayouts = mutableListOf<TextLayoutResult>()
@@ -148,6 +170,20 @@ class ReaderMediaChromeTest {
         compose.onNodeWithText("2/7").performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
             assertTrue(it(counterLayouts))
         }
+        assertEquals(
+            16.sp,
+            titleLayouts
+                .single()
+                .layoutInput.style.fontSize,
+        )
+        assertEquals(
+            2f,
+            titleLayouts
+                .single()
+                .layoutInput.density.fontScale,
+            0.001f,
+        )
+        assertTrue("The filename is not clipped vertically", !titleLayouts.single().didOverflowHeight)
         assertTrue(titleLayouts.single().getLineEnd(0, visibleEnd = true) > 3)
         assertTrue(!counterLayouts.single().isLineEllipsized(0))
         listOf("Close", "Unmute", "Save", "More").forEach { label ->
@@ -162,7 +198,7 @@ class ReaderMediaChromeTest {
     }
 
     @Test
-    fun transportKeepsSingleClipBehaviorAndExactNormalSizes() {
+    fun transportKeepsSingleClipBehaviorAndAccessibleTargetsInsideTheRoundedPanel() {
         val seeks = mutableListOf<Double>()
         var plays = 0
         compose.setContent {
@@ -170,30 +206,33 @@ class ReaderMediaChromeTest {
                 ReaderMediaControls(false, 20.0, 60.0, { plays++ }, { seeks += it }, Modifier.width(390.dp))
             }
         }
-        val restart = compose.onNodeWithContentDescription("Restart")
-        val rewind = compose.onNodeWithContentDescription("Rewind 5 seconds")
         val play = compose.onNodeWithContentDescription("Play")
-        val forward = compose.onNodeWithContentDescription("Forward 15 seconds")
-        val next = compose.onNodeWithContentDescription("Next")
-        val bounds = listOf(restart, rewind, play, forward, next).map { it.fetchSemanticsNode().boundsInRoot }
-        bounds.forEach {
-            assertEquals(71f, it.width, 0.1f)
-            assertEquals(52f, it.height, 0.1f)
+        val actions = compose.onNodeWithContentDescription("Playback actions")
+        val playBounds = play.fetchSemanticsNode().boundsInRoot
+        val actionsBounds = actions.fetchSemanticsNode().boundsInRoot
+        val timeline = compose.onNodeWithTag(ReaderMediaControlsTags.TIME_BAR).fetchSemanticsNode().boundsInRoot
+        listOf(playBounds, actionsBounds).forEach {
+            assertEquals(48f, it.width, 0.1f)
+            assertEquals(48f, it.height, 0.1f)
         }
-        bounds.zipWithNext().forEach { (left, right) -> assertEquals(left.right, right.left, 0.1f) }
-        assertEquals(
-            48f,
-            compose
-                .onNodeWithTag(ReaderMediaControlsTags.TIME_BAR)
-                .fetchSemanticsNode()
-                .boundsInRoot.height,
-            0.1f,
-        )
-        restart.performClick()
-        rewind.performClick()
+        assertEquals(48f, timeline.height, 0.1f)
+        assertTrue("The timeline stays between the two pill actions", playBounds.right <= timeline.left)
+        assertTrue(timeline.right <= actionsBounds.left)
+        listOf("Restart", "Rewind 5 seconds", "Forward 15 seconds", "Next").forEach { label ->
+            compose.onNodeWithContentDescription(label).assertDoesNotExist()
+        }
+
+        actions.performClick()
+        compose.onNodeWithContentDescription("Next").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Restart").performClick()
+        compose.onNodeWithContentDescription("Restart").assertDoesNotExist()
+        actions.performClick()
+        compose.onNodeWithContentDescription("Rewind 5 seconds").performClick()
+        compose.onNodeWithContentDescription("Rewind 5 seconds").assertDoesNotExist()
         play.performClick()
-        forward.performClick()
-        next.assertIsNotEnabled()
+        actions.performClick()
+        compose.onNodeWithContentDescription("Forward 15 seconds").performClick()
+        compose.onNodeWithContentDescription("Forward 15 seconds").assertDoesNotExist()
         compose.onNodeWithTag(ReaderMediaControlsTags.TIME_BAR).performSemanticsAction(SemanticsActions.SetProgress) {
             it(0.5f)
         }
@@ -204,7 +243,8 @@ class ReaderMediaChromeTest {
     }
 
     @Test
-    fun narrowControllerKeepsEveryTransportTargetInsideTheWindow() {
+    @Config(qualifiers = "w248dp-h844dp-mdpi")
+    fun narrowControllerKeepsThePillAndItsTransportMenuTargetsInsideTheWindow() {
         compose.setContent {
             NextTheme {
                 Column(Modifier.width(248.dp)) {
@@ -213,12 +253,34 @@ class ReaderMediaChromeTest {
             }
         }
         val panel = compose.onNodeWithTag(ReaderMediaControlsTags.PANEL).fetchSemanticsNode().boundsInRoot
-        listOf("Restart", "Rewind 5 seconds", "Pause", "Forward 5 seconds", "Next").forEach { label ->
+        listOf("Pause", "Playback actions").forEach { label ->
             val bounds = compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot
-            assertTrue(bounds.width >= 48f)
+            assertTrue(bounds.width >= 48f && bounds.height >= 48f)
             assertTrue(bounds.left >= panel.left)
             assertTrue(bounds.right <= panel.right + 0.1f)
         }
+        compose.onNodeWithContentDescription("Playback actions").performClick()
+        val items = listOf("Restart", "Rewind 5 seconds", "Forward 5 seconds", "Next")
+        val bounds =
+            items.map { label ->
+                compose.onNodeWithContentDescription(label).fetchSemanticsNode().boundsInRoot.also {
+                    assertTrue("Each menu action keeps a full-size target", it.width >= 48f && it.height >= 48f)
+                    assertTrue(
+                        "The popup keeps every action inside the narrow window",
+                        it.left >= 0f && it.right <= 248.1f,
+                    )
+                }
+            }
+        bounds.zipWithNext().forEach { (first, second) ->
+            assertTrue("Neighboring popup actions must remain independent", first.bottom <= second.top)
+        }
+        compose.onNodeWithContentDescription("Next").assertIsNotEnabled()
+    }
+
+    private fun mediaTextLayout(label: String): TextLayoutResult {
+        val layouts = mutableListOf<TextLayoutResult>()
+        compose.onNodeWithText(label).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        return layouts.single()
     }
 
     @Test
@@ -229,6 +291,7 @@ class ReaderMediaChromeTest {
                 ReaderMediaControls(false, 0.0, 6.0, {}, { seeks += it }, Modifier.width(390.dp))
             }
         }
+        compose.onNodeWithContentDescription("Playback actions").performClick()
         compose.onNodeWithContentDescription("Forward 5 seconds").performClick()
         assertEquals(listOf(5.0), seeks)
     }

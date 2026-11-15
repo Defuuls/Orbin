@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -33,14 +34,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_drawer
 import com.orbin.uinext.resources.reader_nav_boards
@@ -112,9 +117,8 @@ fun ReaderScaffold(
                                 .testTag(ReaderDrawerTags.DRAWER)
                                 .width(drawerWidth)
                                 .then(if (drawerVisible) Modifier else Modifier.clearAndSetSemantics {}),
-                        drawerShape = RectangleShape,
-                        // Match Clover's darker primary color behind the consumed status inset.
-                        drawerContainerColor = colors.statusBar,
+                        drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
+                        drawerContainerColor = colors.background,
                         drawerContentColor = colors.ink,
                         windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top),
                     ) {
@@ -192,31 +196,56 @@ fun ReaderDrawer(
         Row(
             Modifier
                 .testTag(ReaderDrawerTags.HEADER)
+                .padding(horizontal = ReaderSpace.gutter)
                 .fillMaxWidth()
-                .padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.gapSmall),
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(reader.accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f)),
+                    ),
+                ).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gap),
         ) {
-            OrbinLogoMark(Modifier.size(32.dp))
-            Text("Orbin", style = OrbinType.appBarTitle.withReaderFont(), color = reader.ink)
+            OrbinLogoMark(Modifier.size(38.dp))
+            Text(
+                OrbinStyle.WORDMARK,
+                style =
+                    OrbinType.appBarTitle.withReaderFont().copy(
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.6).sp,
+                    ),
+                color = reader.ink,
+                modifier = Modifier.weight(1f),
+            )
         }
-        ReaderHairline(Modifier.padding(vertical = ReaderSpace.gapSmall))
+        Box(Modifier.heightIn(min = 14.dp))
         readerDrawerEntries().filter { destinations == null || it.destination in destinations }.forEach { entry ->
             val isSelected = entry.destination == selected
             if (entry.destination == NextDestination.SETTINGS) {
-                ReaderHairline(Modifier.padding(vertical = ReaderSpace.gapSmall))
+                Box(Modifier.heightIn(min = 14.dp))
             }
             Row(
                 Modifier
                     .testTag(ReaderDrawerTags.ENTRY + entry.destination.name)
+                    .padding(horizontal = 12.dp, vertical = 3.dp)
                     .fillMaxWidth()
-                    .heightIn(min = ReaderSize.touchTarget)
-                    .background(if (isSelected) reader.selected else reader.background)
-                    .selectable(
+                    .heightIn(min = 52.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.linearGradient(
+                            if (isSelected) {
+                                listOf(reader.accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f))
+                            } else {
+                                listOf(reader.surfaceVariant, reader.surfaceVariant)
+                            },
+                        ),
+                    ).selectable(
                         selected = isSelected,
                         role = Role.Tab,
                         onClick = { onSelect(entry.destination) },
-                    ).padding(horizontal = ReaderSpace.gutter, vertical = ReaderSpace.line),
+                    ).padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(ReaderSpace.gap),
             ) {
@@ -224,19 +253,21 @@ fun ReaderDrawer(
                     if (isSelected) entry.selectedIcon else entry.icon,
                     contentDescription = null,
                     tint = if (isSelected) reader.accent else reader.ink,
-                    modifier = Modifier.size(ReaderSize.icon),
+                    modifier = Modifier.size(21.dp),
                 )
                 Text(
                     entry.label,
                     style =
                         if (isSelected) {
                             OrbinType.stateBody.withReaderFont().copy(
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                lineHeight = 21.sp,
+                                fontWeight = FontWeight.Bold,
                             )
                         } else {
-                            OrbinType.stateBody.withReaderFont()
+                            OrbinType.stateBody.withReaderFont().copy(fontSize = 15.sp, lineHeight = 21.sp)
                         },
-                    color = if (isSelected) reader.accent else reader.ink,
+                    color = reader.ink,
                     modifier = Modifier.weight(1f),
                 )
                 if (isSelected) {

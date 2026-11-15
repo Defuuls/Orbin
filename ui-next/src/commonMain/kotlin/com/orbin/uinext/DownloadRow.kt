@@ -27,7 +27,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 
@@ -54,12 +53,12 @@ fun DownloadRow(
     retryDescription: String = retryLabel,
     onRetry: (() -> Unit)? = null,
 ) {
-    val iconShape = RoundedCornerShape(OrbinRadius.thumbnail)
+    val iconShape = RoundedCornerShape(16.dp)
     val boundedProgress = progress?.takeIf { it.isFinite() }?.coerceIn(0f, 1f)
-    val stackRetry = LocalDensity.current.fontScale >= 1.6f
+    val stackRetry = LocalDensity.current.fontScale >= 1.3f
     OrbinCard(modifier = modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -70,7 +69,7 @@ fun DownloadRow(
                     Modifier
                         .size(48.dp)
                         .clip(iconShape)
-                        .background(next.accentContainer)
+                        .background(reader.accent.copy(alpha = 0.16f))
                         .padding(12.dp),
             )
             WidthSpacer(12)
@@ -113,6 +112,8 @@ private fun DownloadRetry(
             Modifier
                 .heightIn(min = ReaderSize.touchTarget)
                 .widthIn(min = ReaderSize.touchTarget)
+                .clip(RoundedCornerShape(16.dp))
+                .background(reader.accent.copy(alpha = 0.12f))
                 .nextClickable(role = Role.Button, onClick = onClick)
                 .semantics { contentDescription = description }
                 .padding(horizontal = 12.dp),

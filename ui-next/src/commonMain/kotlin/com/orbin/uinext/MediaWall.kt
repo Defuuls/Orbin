@@ -157,7 +157,7 @@ fun MediaWallScreen(
                                         Modifier
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(OrbinRadius.card))
-                                            .background(if (next.dark) reader.surfaceVariant else reader.background)
+                                            .background(reader.surfaceVariant)
                                             .padding(horizontal = 16.dp, vertical = 12.dp),
                                 ) {
                                     if (showSizeControl) {
@@ -228,7 +228,7 @@ fun MediaWallScreen(
                 itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
                     val description =
                         stringResource(Res.string.next_media_cell_description, cell.board)
-                    OrbinCard(elevated = false) {
+                    OrbinCard(elevated = false, shape = RoundedCornerShape(8.dp)) {
                         ReaderAlbumCell(
                             cell = cell,
                             coral = true,
@@ -287,5 +287,5 @@ private const val MEDIA_CELL_MIN_DP = MEDIA_SIZE_MIN_DP
 private const val MEDIA_CELL_MAX_DP = MEDIA_SIZE_MAX_DP
 private const val MEDIA_CELL_STEPS = MEDIA_SIZE_STEPS
 
-internal val MEDIA_WALL_GUTTER = 12.dp
-internal val MEDIA_WALL_GAP = 12.dp
+internal val MEDIA_WALL_GUTTER = 8.dp
+internal val MEDIA_WALL_GAP = 4.dp

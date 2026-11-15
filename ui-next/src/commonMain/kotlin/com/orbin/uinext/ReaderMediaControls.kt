@@ -6,6 +6,7 @@
  */
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,20 +14,27 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
@@ -52,6 +62,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.reader_media_transport_actions
+import org.jetbrains.compose.resources.stringResource
 
 object ReaderMediaControlsTags {
     const val PANEL = "reader-media-controls"
@@ -59,8 +72,9 @@ object ReaderMediaControlsTags {
     const val TIME_BAR = "reader-media-controls-time-bar"
 }
 
-/** Clover 3.0.2's default ExoPlayer 2.9.0 controller geometry, shared by both native players. */
+/** Rounded NekoSurf-style media controls, retaining Orbin transport and seek actions. */
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun ReaderMediaControls(
     playing: Boolean,
     positionSeconds: Double,
@@ -89,63 +103,98 @@ fun ReaderMediaControls(
         } else {
             fastForwardLabel
         }
-    // Background may draw behind the navigation bar; the transport and time bar stay in the
-    // safe drawing area so they are not covered on edge-to-edge displays.
+    // Only the static shade and pill are composited; video never pays for a per-frame blur.
     Column(
         modifier
             .fillMaxWidth()
-            .background(Color(0xCC000000))
+            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f))))
             .windowInsetsPadding(
                 WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-            ).testTag(ReaderMediaControlsTags.PANEL),
+            ).padding(start = 12.dp, end = 12.dp, top = 44.dp, bottom = 12.dp),
     ) {
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            val transportWidth = minOf(71.dp, maxWidth / 5)
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color(0xD11C1C1E),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+            modifier = Modifier.fillMaxWidth().testTag(ReaderMediaControlsTags.PANEL),
+        ) {
             Row(
-                Modifier.fillMaxWidth().padding(top = 4.dp).testTag(ReaderMediaControlsTags.BUTTONS),
-                horizontalArrangement = Arrangement.Center,
+                Modifier.fillMaxWidth().padding(8.dp).testTag(ReaderMediaControlsTags.BUTTONS),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                MediaTransportButton(
-                    MediaTransportIcons.Previous,
-                    restartLabel,
-                    transportWidth,
-                    seekable,
-                ) { onSeek(0.0) }
-                MediaTransportButton(MediaTransportIcons.Rewind, rewindLabel, transportWidth, seekable) {
-                    onSeek((position - REWIND_SECONDS).coerceAtLeast(0.0))
-                }
                 MediaTransportButton(
                     if (playing || loading) MediaTransportIcons.Pause else MediaTransportIcons.Play,
                     if (playing || loading) pauseLabel else playLabel,
-                    transportWidth,
+                    48.dp,
+                    accent = Color(0xFF00D4FF),
                 ) { onPlayPause() }
-                MediaTransportButton(
-                    MediaTransportIcons.FastForward,
-                    resolvedFastForwardLabel,
-                    transportWidth,
-                    seekable,
-                ) {
-                    onSeek((position + forwardStep).coerceAtMost(duration))
+                Column(Modifier.weight(1f)) {
+                    MediaTimeBar(
+                        fraction = if (seekable) (position / duration).toFloat() else 0f,
+                        bufferedFraction = bufferedFraction,
+                        enabled = seekable,
+                        onSeek = { onSeek(it * duration) },
+                        onScrubbingChange = onScrubbingChange,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        MediaTime(position)
+                        MediaTime(duration)
+                    }
                 }
-                MediaTransportButton(MediaTransportIcons.Next, nextLabel, transportWidth, enabled = false) {}
+                var actionsVisible by remember { mutableStateOf(false) }
+                Box {
+                    MediaTransportButton(
+                        ReaderIcons.More,
+                        stringResource(Res.string.reader_media_transport_actions),
+                        48.dp,
+                    ) {
+                        actionsVisible = true
+                    }
+                    DropdownMenu(
+                        expanded = actionsVisible,
+                        onDismissRequest = { actionsVisible = false },
+                        shape = RoundedCornerShape(22.dp),
+                        containerColor = Color(0xFF1C1C1E),
+                    ) {
+                        MediaTransportMenuItem(restartLabel, seekable) {
+                            actionsVisible = false
+                            onSeek(0.0)
+                        }
+                        MediaTransportMenuItem(rewindLabel, seekable) {
+                            actionsVisible = false
+                            onSeek((position - REWIND_SECONDS).coerceAtLeast(0.0))
+                        }
+                        MediaTransportMenuItem(resolvedFastForwardLabel, seekable) {
+                            actionsVisible = false
+                            onSeek((position + forwardStep).coerceAtMost(duration))
+                        }
+                        // Orbin has no single-clip Next action. Keep the existing disabled state.
+                        MediaTransportMenuItem(nextLabel, enabled = false) {}
+                    }
+                }
             }
         }
-        Row(
-            Modifier.fillMaxWidth().padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MediaTime(position)
-            MediaTimeBar(
-                fraction = if (seekable) (position / duration).toFloat() else 0f,
-                bufferedFraction = bufferedFraction,
-                enabled = seekable,
-                onSeek = { onSeek(it * duration) },
-                onScrubbingChange = onScrubbingChange,
-                modifier = Modifier.weight(1f),
-            )
-            MediaTime(duration)
-        }
     }
+}
+
+@Composable
+private fun MediaTransportMenuItem(
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(label, color = Color.White.copy(alpha = if (enabled) 1f else 0.3f)) },
+        enabled = enabled,
+        onClick = onClick,
+        modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = label },
+    )
 }
 
 @Composable
@@ -154,13 +203,24 @@ private fun MediaTransportButton(
     label: String,
     width: Dp,
     enabled: Boolean = true,
+    accent: Color? = null,
     onClick: () -> Unit,
 ) {
     Box(
-        Modifier.width(width).height(52.dp).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        Modifier.width(width).heightIn(min = 48.dp).clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, label, tint = Color.White.copy(alpha = if (enabled) 1f else 0.3f), modifier = Modifier.size(32.dp))
+        Box(
+            Modifier.size(40.dp).then(if (accent != null) Modifier.background(accent, CircleShape) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                icon,
+                label,
+                tint = (if (accent != null) Color.Black else Color.White).copy(alpha = if (enabled) 1f else 0.3f),
+                modifier = Modifier.size(if (accent != null) 20.dp else 22.dp),
+            )
+        }
     }
 }
 
@@ -172,8 +232,8 @@ private fun MediaTime(seconds: Double) {
     val remainder = (whole % 60).toString().padStart(2, '0')
     Text(
         if (hours > 0) "$hours:${minutes.toString().padStart(2, '0')}:$remainder" else "$minutes:$remainder",
-        color = Color(0xFFBEBEBE),
-        fontSize = 14.sp,
+        color = Color.White.copy(alpha = 0.8f),
+        fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(horizontal = 4.dp),
     )
@@ -188,6 +248,7 @@ private fun MediaTimeBar(
     onScrubbingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accent = Color(0xFF00D4FF)
     var dragging by remember { mutableStateOf(false) }
     val seek by rememberUpdatedState(onSeek)
     val scrubbing by rememberUpdatedState(onScrubbingChange)
@@ -246,7 +307,7 @@ private fun MediaTimeBar(
             Offset(inset + width * bufferedFraction.coerceIn(fraction, 1f), y),
             4.dp.toPx(),
         )
-        drawLine(Color.White, start, Offset(inset + width * fraction.coerceIn(0f, 1f), y), 4.dp.toPx())
+        drawLine(accent, start, Offset(inset + width * fraction.coerceIn(0f, 1f), y), 4.dp.toPx())
         if (enabled) drawCircle(Color.White, (if (dragging) 8.dp else 6.dp).toPx(), Offset(inset + width * fraction, y))
     }
 }

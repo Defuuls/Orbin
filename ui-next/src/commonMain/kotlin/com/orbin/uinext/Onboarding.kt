@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_onboarding_adult_board
 import com.orbin.uinext.resources.next_onboarding_catalog
@@ -52,7 +53,6 @@ import com.orbin.uinext.resources.next_onboarding_start
 import com.orbin.uinext.resources.next_onboarding_subtitle
 import com.orbin.uinext.resources.next_onboarding_title
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -207,7 +207,12 @@ private fun OnboardingBoardsStep(
             }
             Text(
                 text = stringResource(Res.string.next_onboarding_title),
-                style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                style =
+                    OrbinType.stateTitle.withReaderFont().copy(
+                        fontSize = 20.sp,
+                        lineHeight = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
                 color = reader.ink,
                 modifier = Modifier.semantics { heading() },
             )
@@ -236,19 +241,15 @@ private fun OnboardingBoardsStep(
             )
         }
         ReaderHairline()
-        Row(
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .background(reader.background)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
                     .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (onBack != null) {
-                OrbinTextButton(label = "Back", enabled = !isSaving, onClick = onBack)
-            }
             Text(
                 text =
                     when {
@@ -263,13 +264,24 @@ private fun OnboardingBoardsStep(
                     },
                 style = OrbinType.meta.withReaderFont(),
                 color = reader.inkMuted,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             )
-            OrbinFilledButton(
-                label = stringResource(Res.string.next_onboarding_start),
-                enabled = canStart && totalFollowing > 0 && !isSaving,
-                onClick = { if (canStart && totalFollowing > 0 && !isSaving) onStart() },
-            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (onBack != null) {
+                    OrbinTextButton(
+                        label = "Back",
+                        enabled = !isSaving,
+                        onClick = onBack,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                OrbinFilledButton(
+                    label = stringResource(Res.string.next_onboarding_start),
+                    enabled = canStart && totalFollowing > 0 && !isSaving,
+                    onClick = { if (canStart && totalFollowing > 0 && !isSaving) onStart() },
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -285,12 +297,12 @@ private fun SiteSelector(
         modifier = Modifier.fillMaxWidth().padding(horizontal = NextSpace.gutter, vertical = 4.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(6.dp).selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth().padding(4.dp).selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             sites.forEachIndexed { index, name ->
                 val isSelected = index == selected
-                val shape = RoundedCornerShape(OrbinRadius.pill)
+                val shape = RoundedCornerShape(14.dp)
                 Box(
                     modifier =
                         Modifier
@@ -310,7 +322,9 @@ private fun SiteSelector(
                         text = name,
                         style =
                             OrbinType.label.withReaderFont().copy(
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
+                                fontWeight = FontWeight.Bold,
                             ),
                         color =
                             when {
@@ -318,8 +332,6 @@ private fun SiteSelector(
                                 isSelected -> reader.onAccent
                                 else -> reader.ink
                             },
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -389,7 +401,7 @@ private fun BoardRow(
                         enabled = enabled,
                         role = Role.Switch,
                         onValueChange = { onFollow(board.id, it) },
-                    ).padding(horizontal = 12.dp, vertical = 12.dp),
+                    ).padding(horizontal = 14.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -423,7 +435,7 @@ private fun BoardRow(
                 )
             }
             Box(Modifier.clearAndSetSemantics {}) {
-                NextToggle(checked = isFollowed, onCheckedChange = null)
+                ReaderSettingsSwitch(isFollowed)
             }
         }
     }

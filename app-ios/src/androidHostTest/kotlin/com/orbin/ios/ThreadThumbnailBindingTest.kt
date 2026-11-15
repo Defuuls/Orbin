@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -30,6 +31,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.reader.preparePresentation
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderAlbumTags
+import com.orbin.uinext.ThreadTags
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -106,8 +108,17 @@ class ThreadThumbnailBindingTest {
             }
         }
         composeRule.waitUntil { requests.map { it.url }.toSet() == previews }
-        assertEquals(setOf(Size(144, 144)), requests.map { it.size }.toSet())
+        val postPreview =
+            composeRule
+                .onAllNodesWithTag(ThreadTags.THUMBNAIL, useUnmergedTree = true)[0]
+                .getUnclippedBoundsInRoot()
+        // The 360dp pane leaves 14dp on each side; its 332dp preview is 249dp tall,
+        // within both the 75%-of-viewport and 400dp decode bounds. This device is 2x.
+        assertEquals(332f, (postPreview.right - postPreview.left).value, 0.5f)
+        assertEquals(249f, (postPreview.bottom - postPreview.top).value, 0.5f)
+        assertEquals(setOf(Size(664, 498)), requests.map { it.size }.toSet())
         assertEquals(setOf(Precision.EXACT), requests.map { it.precision }.toSet())
+        assertFalse(requests.any { request -> presentation.attachments.any { it.sourceUrl == request.url } })
 
         requests.clear()
         composeRule.onNodeWithContentDescription("Files").performClick()

@@ -1,6 +1,9 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.IndicationNodeFactory
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,11 +11,13 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -77,7 +82,7 @@ private class NextHighlightNode(
 }
 
 /**
- * Clickable with platform press feedback: [NextHighlightIndication] on iOS, coral accent ripple on Android.
+ * Clickable with the same soft list-row press feedback on both platforms.
  */
 @Composable
 fun Modifier.nextClickable(
@@ -89,15 +94,9 @@ fun Modifier.nextClickable(
     onClick: () -> Unit,
 ): Modifier {
     val interaction = remember { MutableInteractionSource() }
-    val indication =
-        if (LocalNextPlatform.current == NextPlatform.IOS) {
-            NextHighlightIndication
-        } else {
-            androidx.compose.material3.ripple(color = next.accent)
-        }
     return combinedClickable(
         interactionSource = interaction,
-        indication = indication,
+        indication = NextHighlightIndication,
         enabled = enabled,
         onClickLabel = onClickLabel,
         role = role,
@@ -122,14 +121,45 @@ fun NextIconAction(
         modifier =
             modifier
                 .sizeIn(minWidth = MIN_TOUCH_TARGET, minHeight = MIN_TOUCH_TARGET)
+                .clip(RoundedCornerShape(18.dp))
                 .nextClickable(role = Role.Button, onClickLabel = contentDescription, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            imageVector = imageVector,
-            modifier = Modifier.size(24.dp),
-            contentDescription = contentDescription,
-            tint = tint,
-        )
+        val back = imageVector == ReaderIcons.Back
+        val fill =
+            if (back) {
+                next.accent.copy(alpha = 0.14f)
+            } else {
+                Color.White.copy(alpha = if (next.dark) 0.08f else 0.55f)
+            }
+        val shape = RoundedCornerShape(14.dp)
+        Box(
+            Modifier
+                .size(40.dp)
+                .background(fill, shape)
+                .then(
+                    if (back) {
+                        Modifier
+                    } else {
+                        Modifier.border(
+                            BorderStroke(
+                                1.dp,
+                                (if (next.dark) Color.White else Color.Black).copy(
+                                    alpha = if (next.dark) 0.12f else 0.08f,
+                                ),
+                            ),
+                            shape,
+                        )
+                    },
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = imageVector,
+                modifier = Modifier.size(if (back) 18.dp else 19.dp),
+                contentDescription = contentDescription,
+                tint = if (back) reader.accent else tint,
+            )
+        }
     }
 }

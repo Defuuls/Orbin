@@ -15,7 +15,11 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -107,7 +111,14 @@ class SocialThreadTest {
 
     @Test
     fun `collapsing an anonymous post removes its body without losing its identity`() {
-        val post = Post(number = "No. 42", time = "3m", body = "A small project", subject = "Opening subject")
+        val post =
+            Post(
+                number = "No. 42",
+                time = "3m",
+                body = "A small project",
+                subject = "Opening subject",
+                author = "Anonymous",
+            )
         composeRule.setContent {
             var collapsed by remember { mutableStateOf(emptySet<String>()) }
             NextTheme {
@@ -120,11 +131,14 @@ class SocialThreadTest {
                 )
             }
         }
-        composeRule.onNodeWithText("Anonymous").assertDoesNotExist()
+        val targetPost = hasTestTag(ThreadTags.POST) and hasAnyDescendant(hasText(post.number))
+        val anonymous = composeRule.onNode(hasText("Anonymous") and hasAnyAncestor(targetPost), useUnmergedTree = true)
+        anonymous.assertIsDisplayed()
         composeRule.onNodeWithText("Opening subject", useUnmergedTree = true).assertIsDisplayed()
         composeRule.onNodeWithText("No. 42").performClick()
         composeRule.onNodeWithText("A small project").assertDoesNotExist()
         composeRule.onNodeWithText("No. 42").assertExists()
+        anonymous.assertIsDisplayed()
         composeRule.onNodeWithText("3m").assertExists()
         composeRule.onNodeWithText("Opening subject", useUnmergedTree = true).assertIsDisplayed()
         composeRule.onNodeWithText("No. 42").performClick()

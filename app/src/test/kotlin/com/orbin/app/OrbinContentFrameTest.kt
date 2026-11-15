@@ -134,7 +134,11 @@ class OrbinContentFrameTest {
         applySystemBars(52.dp)
         val originalMenu = menu.getUnclippedBoundsInRoot()
         val originalBar = bar.getUnclippedBoundsInRoot()
-        assertThat(originalMenu.top.value).isWithin(0.5f).of(52f)
+        // The Neko-style toolbar centers its 48dp action in 62dp chrome. System insets
+        // shift that existing action offset; they must not replace it or be applied twice.
+        assertThat((originalMenu.top - zeroInsetMenu.top).value).isWithin(0.5f).of(52f)
+        assertThat(originalBar.top.value).isWithin(0.5f).of(zeroInsetBar.top.value)
+        assertThat((originalBar.bottom - zeroInsetBar.bottom).value).isWithin(0.5f).of(52f)
 
         composeRule.runOnIdle { online = false }
 

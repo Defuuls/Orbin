@@ -1,11 +1,11 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.orbin.uinext.resources.Res
@@ -45,7 +46,6 @@ import com.orbin.uinext.resources.next_confirm_cancel
 import com.orbin.uinext.resources.next_confirm_delete
 import com.orbin.uinext.tokens.NextMaterials
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
@@ -72,22 +72,29 @@ fun OrbinDialog(
             DialogProperties(
                 dismissOnBackPress = dismissOnBackPress,
                 dismissOnClickOutside = dismissOnClickOutside,
-                usePlatformDefaultWidth = true,
+                usePlatformDefaultWidth = false,
             ),
     ) {
         // A platform dialog installs its own density. Keep the already resolved text scale,
         // including the iOS Dynamic Type correction, without multiplying it a second time.
         CompositionLocalProvider(LocalDensity provides contentDensity) {
-            OrbinCard(modifier = modifier.fillMaxWidth()) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp, vertical = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    content = content,
-                )
+            Box(Modifier.fillMaxWidth().padding(horizontal = 28.dp), contentAlignment = Alignment.Center) {
+                OrbinCard(
+                    modifier = modifier.widthIn(max = 340.dp).fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    containerColor = reader.surfaceVariant,
+                    border = BorderStroke(1.dp, reader.accent.copy(alpha = 0.18f)),
+                ) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                                .padding(start = 20.dp, top = 22.dp, end = 20.dp, bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        content = content,
+                    )
+                }
             }
         }
     }
@@ -101,7 +108,13 @@ fun OrbinDialogTitle(
 ) {
     Text(
         text = text,
-        style = OrbinType.appBarTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+        style =
+            OrbinType.appBarTitle.withReaderFont().copy(
+                fontSize = 20.sp,
+                lineHeight = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.4).sp,
+            ),
         color = reader.ink,
         modifier = modifier.semantics { heading() },
     )
@@ -115,7 +128,7 @@ fun OrbinDialogMessage(
 ) {
     Text(
         text = text,
-        style = OrbinType.readerBody.withReaderFont(),
+        style = OrbinType.readerBody.withReaderFont().copy(fontSize = 14.5.sp, lineHeight = 20.3.sp),
         color = reader.inkMuted,
         modifier = modifier,
     )
@@ -135,17 +148,17 @@ fun OrbinFilledButton(
 ) {
     val fill =
         when {
-            !enabled -> reader.surfaceVariant
-            destructive -> reader.error
+            !enabled -> reader.inkMuted.copy(alpha = 0.14f)
+            destructive -> reader.error.copy(alpha = 0.16f)
             else -> reader.accent
         }
     val ink =
         when {
             !enabled -> reader.inkMuted
-            destructive -> next.onDestructive
+            destructive -> reader.error
             else -> reader.onAccent
         }
-    val shape = RoundedCornerShape(OrbinRadius.pill)
+    val shape = RoundedCornerShape(16.dp)
     Box(
         modifier =
             modifier
@@ -159,7 +172,12 @@ fun OrbinFilledButton(
     ) {
         Text(
             text = label,
-            style = OrbinType.label.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+            style =
+                OrbinType.label.withReaderFont().copy(
+                    fontSize = 15.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
             color = ink,
             textAlign = TextAlign.Center,
         )
@@ -182,15 +200,21 @@ fun OrbinTextButton(
             modifier
                 .widthIn(min = MIN_TOUCH_TARGET)
                 .heightIn(min = MIN_TOUCH_TARGET)
-                .clip(RoundedCornerShape(OrbinRadius.pill))
+                .clip(RoundedCornerShape(16.dp))
+                .background(reader.inkMuted.copy(alpha = if (enabled) 0.14f else 0.08f))
                 .nextClickable(enabled = enabled, role = Role.Button, onClick = onClick)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
-            style = OrbinType.label.withReaderFont().copy(fontWeight = FontWeight.Medium),
-            color = if (enabled) reader.accent else reader.inkMuted,
+            style =
+                OrbinType.label.withReaderFont().copy(
+                    fontSize = 15.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
+            color = if (enabled) reader.ink else reader.inkMuted,
             textAlign = TextAlign.Center,
         )
     }
@@ -213,17 +237,16 @@ fun OrbinConfirmDialog(
     OrbinDialog(onDismissRequest = onDismiss) {
         OrbinDialogTitle(title)
         OrbinDialogMessage(message)
-        FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OrbinTextButton(label = dismissLabel, onClick = onDismiss)
-            OrbinFilledButton(
-                label = confirmLabel,
-                onClick = onConfirm,
-                destructive = destructive,
-            )
+        if (LocalDensity.current.fontScale >= 1.3f) {
+            Column(Modifier.fillMaxWidth().padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OrbinFilledButton(confirmLabel, onConfirm, Modifier.fillMaxWidth(), destructive = destructive)
+                OrbinTextButton(dismissLabel, onDismiss, Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OrbinTextButton(dismissLabel, onDismiss, Modifier.weight(1f))
+                OrbinFilledButton(confirmLabel, onConfirm, Modifier.weight(1f), destructive = destructive)
+            }
         }
     }
 }
@@ -245,14 +268,14 @@ fun OrbinActionSheet(
     val contentDensity = LocalDensity.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val ios = LocalNextPlatform.current == NextPlatform.IOS
-    val shape = RoundedCornerShape(topStart = OrbinRadius.panel, topEnd = OrbinRadius.panel)
-    val fill = if (next.dark) reader.surfaceVariant else reader.background
+    val shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val fill = reader.surfaceVariant
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = fill,
         contentColor = reader.ink,
-        tonalElevation = if (next.dark) OrbinElevation.card else 0.dp,
+        tonalElevation = 0.dp,
         shape = shape,
         scrimColor = Color.Black.copy(alpha = NextMaterials.SCRIM),
         dragHandle = {
@@ -300,27 +323,42 @@ fun OrbinActionSheet(
                                                 action.onClick()
                                                 onDismiss()
                                             },
-                                        ).padding(horizontal = 12.dp, vertical = 10.dp),
+                                        ).padding(horizontal = 14.dp, vertical = 11.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
+                                if (action.icon != null) {
+                                    SettingsIconTile(
+                                        action.icon,
+                                        if (action.destructive) nextDestructiveRed else reader.accent,
+                                    )
+                                }
                                 Text(
                                     text = action.label,
-                                    style = OrbinType.readerBody.withReaderFont().copy(fontWeight = FontWeight.Medium),
+                                    style =
+                                        OrbinType.readerBody.withReaderFont().copy(
+                                            fontSize = 15.sp,
+                                            lineHeight = 21.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                        ),
                                     color = actionColor,
                                     modifier = Modifier.weight(1f),
                                 )
-                                if (action.icon != null) {
-                                    androidx.compose.material3.Icon(
-                                        imageVector = action.icon,
-                                        contentDescription = null,
-                                        tint = if (action.destructive) nextDestructiveRed else reader.inkSecondary,
-                                        modifier = Modifier.padding(start = 4.dp).width(18.dp).height(18.dp),
-                                    )
-                                }
                             }
                             if (index < actions.lastIndex) {
-                                ReaderHairline()
+                                ReaderHairline(
+                                    Modifier.padding(
+                                        start =
+                                            if (action.icon !=
+                                                null
+                                            ) {
+                                                58.dp
+                                            } else {
+                                                14.dp
+                                            },
+                                        end = 14.dp,
+                                    ),
+                                )
                             }
                         }
                     }

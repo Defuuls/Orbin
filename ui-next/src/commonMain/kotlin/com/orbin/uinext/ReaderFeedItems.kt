@@ -127,7 +127,7 @@ internal fun ReaderFeedItem(
                     showDivider = false,
                     onLongClick = openOptions,
                     onLongClickLabel = optionsLabel,
-                    containerColor = if (next.dark) reader.surfaceVariant else reader.background,
+                    containerColor = reader.surfaceVariant,
                 )
             }
             ReaderFeedMenu(row, menu, expanded, onDismiss = { expanded = false })
@@ -220,7 +220,7 @@ private fun ReaderFeedMenu(
         expanded = expanded && items.isNotEmpty(),
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(OrbinRadius.card),
-        containerColor = if (next.dark) reader.surfaceVariant else reader.background,
+        containerColor = reader.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(ReaderSize.hairline, reader.hairline),
     ) {
         items.forEach { item ->

@@ -1,60 +1,69 @@
 # Settings Guide
 
-Open Settings from the gear in the Feed header. Changes take effect immediately.
-Use **Search settings** to find a label, a choice, an explanation or a section.
-Words can match different parts of the same row: “appearance dark” finds Theme.
-Clear the search to return to the complete list.
+Open Settings from primary navigation or the Feed menu. The single scrolling
+page follows NekoSurf's grouped layout with Orbin's identity and accent colors.
+Changes take effect immediately. Search settings finds labels, values, choices,
+explanations and section names; clear the search to return to the complete page.
 
-Choices expand below their row. Current values wrap below labels so they remain
-readable at large system text sizes. Toggle rows have one accessible action that
-announces their current state.
+Text follows Android's system font setting or iOS Dynamic Type. Labels and values
+wrap at larger sizes. Toggles announce their checked state and choices announce
+selection. Long playback scope lists have their own searchable picker; Back
+returns to Settings before leaving the screen.
 
-## Appearance
+## Theme and boards
 
 | Setting | What it does |
 | --- | --- |
 | Theme | Follows the system, or uses Light or Dark. |
-| Color theme | Selects Orbin (green), Blue, Red, White, Black, Purple, Orange or Teal independently of brightness. |
-| True black | Uses pure black backgrounds in dark mode. |
-| Feed columns | Shown on foldables and tablets: 1–3 columns when unfolded, or 1–4 on a tablet. Phones and narrow windows use one column. |
-| Catalog columns | Tablets can choose 2–8 columns. Smaller windows adapt to the available width. |
+| AMOLED black | Uses pure black backgrounds in dark mode. |
+| Catalog view | Selects List, Grid or Card for Home and board catalogs. |
+| Enabled sites / Followed boards | Opens the board directory to browse sources and manage real board follows. |
 
-Text size follows Android's system font setting or iOS Dynamic Type.
+Platform-specific controls appear when supplied by that platform. A new setting
+remains reachable even when it has not yet been assigned to a named group.
 
-## Privacy and safety
+## Threads and media
+
+| Setting | What it does |
+| --- | --- |
+| Open comments from chat button | Off opens videos from the thread; on opens comments. Applies to all sites. |
+| Scope | Selects app defaults, a site or a board for playback preferences. |
+| Use app defaults / Use site settings | Inherits playback behavior from the parent scope. |
+| Autoplay / Start muted / Loop videos / Preload next clip | Controls playback in the selected scope. |
+| Reset playback settings | Removes a scope override and restores inheritance when an override exists. |
+
+## Hidden content and privacy
 
 | Setting | What it does |
 | --- | --- |
 | Hide NSFW boards | Hides NSFW boards from browsing surfaces. |
-| Cover violent media | Uses text and filenames to cover potentially violent media. It cannot identify unlabeled content from pixels. |
-| App lock | Requires device authentication before showing content. Importing a backup does not change the existing lock policy. |
-| Encrypted DNS | Looks up site names over DNS-over-HTTPS through Cloudflare (the default), Google, OpenDNS or NextDNS, on Android and iOS. |
-| Strict encrypted DNS | Stops loading when encrypted DNS is unavailable, instead of falling back to the network's resolver, on Android and iOS. On Android the row warns when fallback is active; iOS cannot observe that signal. |
+| Cover violent media | Uses text and filenames to cover potentially violent media; it cannot identify unlabeled content from pixels. |
+| App lock | Requires device authentication before showing content. Importing a backup does not change the lock policy. |
+| Screen privacy shield | Hides the app preview in the app switcher. |
+| Encrypted DNS | Chooses Cloudflare, Google, OpenDNS or NextDNS on Android and iOS. |
+| Strict encrypted DNS | Stops loading when encrypted DNS is unavailable. Android warns when fallback is active; iOS cannot observe that signal. |
 
-## Data and storage
+## History, storage and backup
 
-| Action | What it does |
+| Setting or action | What it does |
 | --- | --- |
-| Clear local activity | Clears browsing history, download records and cached images; Android also clears recent searches. Tap again within four seconds to confirm. Android reports completion only after clearing finishes. This does not delete saved files from system storage. |
-| Clear image cache | Clears cached images, which can download again when needed. Android shows the current cache size. |
-| Export data | Exports portable settings and followed boards/bookmarks. Android also includes saved searches. |
-| Import data | Restores a compatible backup into this installation. iOS treats restoration as completed setup. Invalid entries are skipped; Android's summary counts accepted saved searches. |
+| Save search history / Save browsing history | Controls whether recent searches and visited threads are recorded locally. |
+| View browsing history / Downloads | Opens the existing history or downloads destination. |
+| Clear local activity | Clears browsing history, download records and cached images; Android also clears recent searches. Tap again within four seconds to confirm. Saved files in system storage remain. |
+| Clear image cache | Clears cached images, which can download again. Android displays the cache size. |
+| Video cache size / Clear video cache | Android controls the encrypted video cache and displays its current usage. |
+| Export data / Import data | Transfers compatible portable settings, followed boards and bookmarks; Android also includes saved searches. |
 
-Exported backups are plain JSON files. Keep them in a trusted location. They do
-not inherit the encryption of the app's live settings and database.
+Exported backups are plain JSON files and do not inherit the encryption of the
+live database. Invalid entries are skipped. iOS treats restoration as completed
+setup; Android's summary counts accepted saved searches.
 
-## Updates and project information
+## About
 
-Android's **Updates** section contains **Tell me about new releases** and
-**Check for updates**. iOS updates come through the App Store or TestFlight;
-its **About** section links to the privacy policy and project repository and
-shows version information when available.
-
-## Other destinations
-
-Downloads opens from Media. Thread search opens from Boards. Settings search
-only filters preferences and actions; it does not search browsing history,
-passwords or text drafts.
+The Orbin identity card shows the installed version. Android offers automatic
+release checks and Check for updates. iOS updates through the App Store or
+TestFlight. Privacy policy, project and help actions remain available where
+supplied by the platform.
 
 ## Developer note
 

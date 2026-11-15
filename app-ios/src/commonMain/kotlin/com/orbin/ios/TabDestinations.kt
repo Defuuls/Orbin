@@ -40,6 +40,7 @@ import com.orbin.ios.resources.ios_primary_loading
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
+import com.orbin.uinext.LocalOrbinNavigationAtSide
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextScaffold
@@ -297,7 +298,12 @@ internal fun DownloadsDestination(
     val records by downloads.records.collectAsState()
     DownloadsScreen(
         records = records,
-        bottomBar = { PrimaryNavigation(browser, downloads, NextDestination.DOWNLOADS) },
+        bottomBar =
+            if (LocalOrbinNavigationAtSide.current) {
+                null
+            } else {
+                { PrimaryNavigation(browser, downloads, NextDestination.DOWNLOADS) }
+            },
         onRetry = downloads::retry,
         onClear = downloads::clear,
         onBack = { if (!browser.back()) browser.openTab(Route.Feed) },
@@ -352,7 +358,13 @@ internal fun SettingsDestination(
     }
     var imageCacheCleared by remember { mutableStateOf(false) }
     SettingsScreen(
-        bottomBar = { PrimaryNavigation(browser, downloads, NextDestination.SETTINGS) },
+        subtitle = version.name,
+        bottomBar =
+            if (LocalOrbinNavigationAtSide.current) {
+                null
+            } else {
+                { PrimaryNavigation(browser, downloads, NextDestination.SETTINGS) }
+            },
         groups =
             remember(
                 settings,

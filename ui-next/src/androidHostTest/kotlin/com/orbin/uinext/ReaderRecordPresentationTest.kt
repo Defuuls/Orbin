@@ -19,7 +19,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.annotation.Config
 
-/** Actual Search/Saved/Watched/history routes share accessible Coral cards and retain their data. */
+/** Actual Search/Saved/Watched/history routes share accessible rounded cards and retain their data. */
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-mdpi")
 class ReaderRecordPresentationTest(
@@ -90,9 +90,11 @@ class ReaderRecordPresentationTest(
         val row = compose.onNodeWithTag(rowTag).getUnclippedBoundsInRoot()
         val title = compose.onNodeWithText(record.title, useUnmergedTree = true).getUnclippedBoundsInRoot()
         val source = compose.onNodeWithText(record.source, useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(12f, (title.left - row.left).value, 0.5f)
-        assertEquals(title.left.value, source.left.value, 0.5f)
-        assertEquals(16.sp, layout(record.title).layoutInput.style.fontSize)
+        assertEquals(14f, (title.left - row.left).value, 0.5f)
+        assertEquals("The source pill leaves room around its text", title.left.value + 9f, source.left.value, 0.5f)
+        assertTrue("The qualified source stays below the subject", source.top >= title.bottom)
+        assertTrue("The complete source stays inside its card", source.right <= row.right)
+        assertEquals(15.sp, layout(record.title).layoutInput.style.fontSize)
         assertEquals(FontWeight.Bold, layout(record.title).layoutInput.style.fontWeight)
         assertEquals(12.sp, layout(record.source).layoutInput.style.fontSize)
         assertEquals(if (wide) 16.sp else 15.sp, layout(record.detail).layoutInput.style.fontSize)

@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -95,38 +97,41 @@ private fun ReaderCollection(
     saved: Boolean,
 ) {
     // Stable record identities retain the current reading anchor when another item is inserted.
-    LazyColumn(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(reader.background)
-                .testTag(if (saved) ReaderSavedTags.LIST else ReaderCollectionTags.LIST),
-        contentPadding =
-            PaddingValues(
-                start = ReaderSpace.gutter,
-                end = ReaderSpace.gutter,
-                top = COLLECTION_GAP,
-                bottom = COLLECTION_GAP + padding.calculateBottomPadding(),
-            ),
-        verticalArrangement = Arrangement.spacedBy(COLLECTION_GAP),
-    ) {
-        if (rows.isEmpty()) {
-            item(key = "reader-collection-empty") {
-                ReaderEmptyState(
-                    title = title,
-                    message = stringResource(Res.string.collection_empty),
-                    modifier = Modifier.fillParentMaxSize(),
-                )
-            }
-        } else {
-            items(rows, key = { it.id }, contentType = { "stored-thread" }) { row ->
-                StoredThreadRow(row, onOpen, wideWindow, saved)
+    Box(Modifier.fillMaxSize().background(reader.background), contentAlignment = Alignment.TopCenter) {
+        LazyColumn(
+            modifier =
+                Modifier
+                    .widthIn(max = 720.dp)
+                    .fillMaxSize()
+                    .background(reader.background)
+                    .testTag(if (saved) ReaderSavedTags.LIST else ReaderCollectionTags.LIST),
+            contentPadding =
+                PaddingValues(
+                    start = ReaderSpace.gutter,
+                    end = ReaderSpace.gutter,
+                    top = COLLECTION_GAP,
+                    bottom = COLLECTION_GAP + padding.calculateBottomPadding(),
+                ),
+            verticalArrangement = Arrangement.spacedBy(COLLECTION_GAP),
+        ) {
+            if (rows.isEmpty()) {
+                item(key = "reader-collection-empty") {
+                    ReaderEmptyState(
+                        title = title,
+                        message = stringResource(Res.string.collection_empty),
+                        modifier = Modifier.fillParentMaxSize(),
+                    )
+                }
+            } else {
+                items(rows, key = { it.id }, contentType = { "stored-thread" }) { row ->
+                    StoredThreadRow(row, onOpen, wideWindow, saved)
+                }
             }
         }
     }
 }
 
-private val COLLECTION_GAP = 8.dp
+private val COLLECTION_GAP = 10.dp
 
 @Composable
 private fun StoredThreadRow(

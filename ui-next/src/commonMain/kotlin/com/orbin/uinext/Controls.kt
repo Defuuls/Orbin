@@ -12,6 +12,7 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,6 +56,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_refresh
 import com.orbin.uinext.resources.next_snackbar_dismiss
@@ -362,40 +364,51 @@ fun NextSnackbarHost(
 
 @Composable
 private fun NextSnackbarToast(data: NextSnackbarData) {
+    val stacked = LocalDensity.current.fontScale >= 1.3f
+    val message: @Composable (Modifier) -> Unit = { modifier ->
+        Text(
+            text = data.message,
+            style = OrbinType.readerBody.withReaderFont().copy(fontSize = 14.5.sp, lineHeight = 20.3.sp),
+            color = reader.ink,
+            modifier = modifier.clearAndSetSemantics {},
+        )
+    }
+    val actions: @Composable () -> Unit = {
+        if (data.actionLabel != null) OrbinTextButton(label = data.actionLabel, onClick = data::performAction)
+        if (data.withDismissAction) {
+            OrbinTextButton(
+                label = stringResource(Res.string.next_snackbar_dismiss),
+                onClick = data::dismiss,
+            )
+        }
+    }
     OrbinCard(
         modifier = Modifier.widthIn(max = 480.dp),
         shape = RoundedCornerShape(OrbinRadius.card),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .heightIn(min = MIN_TOUCH_TARGET)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .semantics {
-                        contentDescription = data.message
-                        liveRegion = LiveRegionMode.Polite
-                    },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = data.message,
-                style = OrbinType.readerBody.withReaderFont(),
-                color = reader.ink,
-                // The row owns the live announcement; UIKit must not repeat the child text.
-                modifier = Modifier.weight(1f, fill = false).clearAndSetSemantics {},
-            )
-            if (data.actionLabel != null) {
-                OrbinTextButton(
-                    label = data.actionLabel,
-                    onClick = data::performAction,
-                )
+        val body =
+            Modifier.heightIn(min = MIN_TOUCH_TARGET).padding(horizontal = 14.dp, vertical = 11.dp).semantics {
+                contentDescription = data.message
+                liveRegion = LiveRegionMode.Polite
             }
-            if (data.withDismissAction) {
-                OrbinTextButton(
-                    label = stringResource(Res.string.next_snackbar_dismiss),
-                    onClick = data::dismiss,
-                )
+        if (stacked) {
+            Column(body, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                message(Modifier.fillMaxWidth())
+                if (data.actionLabel != null || data.withDismissAction) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    ) { actions() }
+                }
+            }
+        } else {
+            Row(
+                body,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                message(Modifier.weight(1f, fill = false))
+                actions()
             }
         }
     }

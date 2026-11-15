@@ -84,6 +84,22 @@ class ThreadArchiveTest {
     }
 
     @Test
+    fun archiveStylesFollowReaderSurfacesAndRoundedCards() {
+        val light = ARCHIVE_CSS.substringBefore("@media")
+        val dark = ARCHIVE_CSS.substringAfter("@media (prefers-color-scheme: dark)").substringBefore("* {")
+
+        assertTrue("--bg: #f4f5f7; --raised: #ffffff;" in light)
+        assertTrue("--ink: #14161f; --muted: #696f83;" in light)
+        assertTrue("--accent: #4338ca;" in light)
+        assertTrue("--bg: #0b0d11; --raised: #141520;" in dark)
+        assertTrue("--ink: #e8eaf0; --muted: #8a8fa8;" in dark)
+        assertTrue("--accent: #00d4ff;" in dark)
+        assertTrue("max-width: 720px;" in ARCHIVE_CSS)
+        assertTrue("border-radius: 22px;" in ARCHIVE_CSS)
+        assertFalse("#0b1021" in ARCHIVE_CSS || "#141b33" in ARCHIVE_CSS)
+    }
+
+    @Test
     fun spoilersStartClosedAndKeepStyledTextAndQuoteLinksInsideTheirDisclosure() {
         val spoiler =
             PostNode.Styled(

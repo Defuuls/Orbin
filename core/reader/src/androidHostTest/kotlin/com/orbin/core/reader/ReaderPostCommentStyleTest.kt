@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
@@ -21,14 +22,17 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.tokens.LocalNextFontFamily
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -43,7 +47,7 @@ class ReaderPostCommentStyleTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun preparedRichBodiesUseCloverPhoneAndWidePostTypographyAndReaderInk() {
+    fun preparedRichBodiesUsePhoneAndWideTypographyAndPlatformReaderFont() {
         val key = ThreadKey(ProviderId("site"), BoardId("g"), ThreadId(1))
         val thread =
             Thread(
@@ -59,54 +63,51 @@ class ReaderPostCommentStyleTest {
             )
         val presentation = runBlocking { thread.preparePresentation() }
         var wide by mutableStateOf(false)
+        var platform by mutableStateOf(NextPlatform.ANDROID)
+        var fontScale by mutableStateOf(1f)
+        lateinit var installedFamily: FontFamily
         composeRule.setContent {
-            NextTheme(darkTheme = false) {
-                ThreadScreen(
-                    subject = "Thread",
-                    board = "/g/",
-                    posts = presentation.rowModels,
-                    wideWindow = wide,
-                    body = { ReaderPostComment(presentation.rows.single()) },
-                )
+            NextTheme(darkTheme = false, platform = platform, fontScale = fontScale) {
+                NextTheme {
+                    installedFamily = LocalNextFontFamily.current
+                    ThreadScreen(
+                        subject = "Thread",
+                        board = "/g/",
+                        posts = presentation.rowModels,
+                        wideWindow = wide,
+                        body = { ReaderPostComment(presentation.rows.single()) },
+                    )
+                }
             }
         }
 
-        val layouts = mutableListOf<TextLayoutResult>()
-        composeRule
-            .onNodeWithText("Plain body", substring = true, useUnmergedTree = true)
-            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
-        val style = layouts.single().layoutInput.style
-        assertEquals(14.sp, style.fontSize)
-        assertEquals(TextUnit.Unspecified, style.lineHeight)
-        assertEquals(ReaderLightColors.ink, style.color)
-        val text = layouts.single().layoutInput.text
-        val linkStyle =
-            text
-                .getLinkAnnotations(0, text.length)
-                .single()
-                .item.styles
-                ?.style
-        assertEquals(ReaderLightColors.quoteLink, linkStyle?.color)
-        assertEquals(TextDecoration.Underline, linkStyle?.textDecoration)
+        NextPlatform.entries.forEach { intendedPlatform ->
+            composeRule.runOnIdle {
+                platform = intendedPlatform
+                wide = false
+                fontScale = 1f
+            }
+            composeRule.waitForIdle()
+            val phone = layoutForText("Plain body", substring = true)
+            val baselineScale = phone.layoutInput.density.fontScale
+            assertPhoneTypographyAndLinks(phone, layoutForText("No. 1"), installedFamily, intendedPlatform)
 
-        composeRule.runOnIdle { wide = true }
-        composeRule.waitForIdle()
-        val wideLayouts = mutableListOf<TextLayoutResult>()
-        composeRule
-            .onNodeWithText("Plain body", substring = true, useUnmergedTree = true)
-            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(wideLayouts) }
-        assertEquals(
-            16.sp,
-            wideLayouts
-                .single()
-                .layoutInput.style.fontSize,
-        )
-        assertEquals(
-            TextUnit.Unspecified,
-            wideLayouts
-                .single()
-                .layoutInput.style.lineHeight,
-        )
+            composeRule.runOnIdle { wide = true }
+            composeRule.waitForIdle()
+            val wideLayout = layoutForText("Plain body", substring = true)
+            assertEquals(16.sp, wideLayout.layoutInput.style.fontSize)
+            assertEquals(TextUnit.Unspecified, wideLayout.layoutInput.style.lineHeight)
+            assertEquals(installedFamily, wideLayout.layoutInput.style.fontFamily)
+            assertEquals(12.sp, layoutForText("No. 1").layoutInput.style.fontSize)
+
+            composeRule.runOnIdle { fontScale = 1.5f }
+            composeRule.waitForIdle()
+            val scaled = layoutForText("Plain body", substring = true)
+            assertEquals(baselineScale * 1.5f, scaled.layoutInput.density.fontScale, 0.001f)
+            assertEquals(16.sp, scaled.layoutInput.style.fontSize)
+            assertEquals(TextUnit.Unspecified, scaled.layoutInput.style.lineHeight)
+            assertEquals(installedFamily, scaled.layoutInput.style.fontFamily)
+        }
     }
 
     @Test
@@ -161,5 +162,48 @@ class ReaderPostCommentStyleTest {
                 },
             )
         }
+    }
+
+    private fun assertPhoneTypographyAndLinks(
+        phone: TextLayoutResult,
+        metadata: TextLayoutResult,
+        installedFamily: FontFamily,
+        platform: NextPlatform,
+    ) {
+        val style = phone.layoutInput.style
+        assertEquals(15.sp, style.fontSize)
+        assertEquals(TextUnit.Unspecified, style.lineHeight)
+        assertEquals(ReaderLightColors.ink, style.color)
+        assertEquals(installedFamily, style.fontFamily)
+        if (platform == NextPlatform.IOS) {
+            assertEquals(FontFamily.Default, installedFamily)
+        } else {
+            assertNotEquals(FontFamily.Default, installedFamily)
+        }
+        val metadataStyle = metadata.layoutInput.style
+        assertEquals(11.sp, metadataStyle.fontSize)
+        assertEquals(installedFamily, metadataStyle.fontFamily)
+        assertEquals(ReaderLightColors.inkMuted, metadataStyle.color)
+
+        val text = phone.layoutInput.text
+        val linkStyle =
+            text
+                .getLinkAnnotations(0, text.length)
+                .single()
+                .item.styles
+                ?.style
+        assertEquals(ReaderLightColors.quoteLink, linkStyle?.color)
+        assertEquals(TextDecoration.Underline, linkStyle?.textDecoration)
+    }
+
+    private fun layoutForText(
+        text: String,
+        substring: Boolean = false,
+    ): TextLayoutResult {
+        val layouts = mutableListOf<TextLayoutResult>()
+        composeRule
+            .onNodeWithText(text, substring = substring, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        return layouts.single()
     }
 }

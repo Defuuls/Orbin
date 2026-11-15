@@ -15,13 +15,13 @@ import kotlin.math.pow
  */
 class UniformityTest {
     @Test
-    fun `corner radius tokens maintain consistent social interface geometry`() {
-        assertThat(OrbinRadius.compact).isEqualTo(2.dp)
-        assertThat(OrbinRadius.control).isEqualTo(10.dp)
+    fun `corner radius tokens maintain consistent rounded interface geometry`() {
+        assertThat(OrbinRadius.compact).isEqualTo(8.dp)
+        assertThat(OrbinRadius.control).isEqualTo(14.dp)
         assertThat(OrbinRadius.small).isEqualTo(4.dp)
-        assertThat(OrbinRadius.compactCard).isEqualTo(6.dp)
-        assertThat(OrbinRadius.sheet).isEqualTo(16.dp)
-        assertThat(OrbinRadius.pill).isEqualTo(20.dp)
+        assertThat(OrbinRadius.compactCard).isEqualTo(12.dp)
+        assertThat(OrbinRadius.sheet).isEqualTo(28.dp)
+        assertThat(OrbinRadius.pill).isEqualTo(999.dp)
     }
 
     @Test

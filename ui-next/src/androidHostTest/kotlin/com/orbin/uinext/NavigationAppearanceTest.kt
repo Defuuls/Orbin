@@ -71,7 +71,7 @@ class NavigationAppearanceTest {
     }
 
     @Test
-    fun `toolbar retains Clover navigation action and overflow hit geometry`() {
+    fun `toolbar keeps accessible targets around the rounded icon controls`() {
         composeRule.setContent {
             NextTheme(darkTheme = false) {
                 ReaderAppBar(
@@ -87,22 +87,22 @@ class NavigationAppearanceTest {
                 )
             }
         }
-        composeRule.onNodeWithContentDescription("Back").assertWidthIsEqualTo(56.dp).assertHeightIsEqualTo(56.dp)
-        composeRule.onNodeWithContentDescription("Reload").assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(56.dp)
-        composeRule.onNodeWithContentDescription("Search").assertWidthIsEqualTo(50.dp).assertHeightIsEqualTo(56.dp)
+        listOf("Back", "Reload", "Search").forEach { action ->
+            composeRule.onNodeWithContentDescription(action).assertWidthIsEqualTo(48.dp).assertHeightIsEqualTo(48.dp)
+        }
         composeRule
             .onNodeWithContentDescription(
                 "More options",
             ).assertWidthIsEqualTo(ReaderSize.touchTarget)
             .assertTouchWidthIsEqualTo(ReaderSize.touchTarget)
-            .assertHeightIsEqualTo(56.dp)
+            .assertHeightIsEqualTo(48.dp)
         assertThat(
             composeRule
                 .onNodeWithTag(ReaderAppBarTags.TITLE)
                 .getUnclippedBoundsInRoot()
                 .left.value,
         ).isWithin(0.5f)
-            .of(72f)
+            .of(68f)
     }
 
     @Test
@@ -113,14 +113,14 @@ class NavigationAppearanceTest {
     }
 
     @Test
-    fun `a phone drawer leaves the Clover 56dp strip when that is narrower than the cap`() {
+    fun `a phone drawer leaves a 62dp app bar strip when that is narrower than the cap`() {
         installNavigation(immersive = false, width = 390.dp)
         composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(334.dp)
+        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(328.dp)
     }
 
     @Test
-    fun `drawer content starts with Clover eight dp vertical padding`() {
+    fun `drawer content starts with eight dp vertical padding`() {
         composeRule.setContent { NextTheme { ReaderDrawer(NextDestination.FEED, {}) } }
         val header =
             composeRule

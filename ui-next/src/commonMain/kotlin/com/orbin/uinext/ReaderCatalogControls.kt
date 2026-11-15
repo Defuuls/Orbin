@@ -60,7 +60,7 @@ fun ReaderCatalogSearch(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val searchShape = RoundedCornerShape(OrbinRadius.small)
+    val searchShape = RoundedCornerShape(16.dp)
     Row(
         modifier
             .testTag(
@@ -133,7 +133,7 @@ fun ReaderBoardPicker(
         modifier = modifier.testTag("reader-board-picker"),
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(OrbinRadius.card),
-        containerColor = if (next.dark) reader.surfaceVariant else reader.background,
+        containerColor = reader.surfaceVariant,
         titleContentColor = reader.ink,
         textContentColor = reader.ink,
         title = { Text(stringResource(Res.string.reader_pick_board), style = OrbinType.appBarTitle.withReaderFont()) },

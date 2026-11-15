@@ -88,7 +88,7 @@ class ReaderDrawerSelectionTest {
 
     /** Replaces narrowViewportKeepsAllFiveIndependent48dpTargets. */
     @Test
-    fun narrowViewportKeepsIndependentFullWidthDrawerTargets() {
+    fun narrowViewportKeepsIndependentInsetDrawerTargets() {
         var calls = 0
         composeRule.setContent {
             var selected by remember { mutableStateOf(NextDestination.FEED) }
@@ -112,8 +112,8 @@ class ReaderDrawerSelectionTest {
         assertIndependentTargets()
         val first = composeRule.onNode(isTab and hasText("Home")).getUnclippedBoundsInRoot()
         val last = composeRule.onNode(isTab and hasText("Saved")).getUnclippedBoundsInRoot()
-        assertEquals(0f, first.left.value, 0.5f)
-        assertEquals(248f, last.right.value, 0.5f)
+        assertEquals(12f, first.left.value, 0.5f)
+        assertEquals(236f, last.right.value, 0.5f)
         composeRule
             .onAllNodes(hasText("Watched"), useUnmergedTree = true)
             .assertCountEquals(1)

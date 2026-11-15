@@ -1,10 +1,12 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -43,7 +45,15 @@ internal fun ReaderRecordRow(
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(source, style = detailStyle, color = reader.accent)
+            Text(
+                source,
+                style = detailStyle.copy(fontWeight = FontWeight.SemiBold),
+                color = reader.accent,
+                modifier =
+                    Modifier
+                        .background(reader.accent.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 9.dp, vertical = 4.dp),
+            )
             if (metadata.isNotBlank()) Text(metadata, style = detailStyle, color = reader.inkMuted)
             if (detail.isNotBlank()) {
                 Text(detail, style = bodyStyle, color = reader.ink, maxLines = 4, overflow = TextOverflow.Ellipsis)
@@ -53,14 +63,18 @@ internal fun ReaderRecordRow(
                     unread,
                     style = detailStyle.copy(fontWeight = FontWeight.SemiBold),
                     color = reader.accent,
+                    modifier =
+                        Modifier
+                            .background(reader.accent.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 9.dp, vertical = 4.dp),
                 )
             }
         }
     }
 }
 
-private val RECORD_INSET = 12.dp
-private val RECORD_GAP = 6.dp
+private val RECORD_INSET = 14.dp
+private val RECORD_GAP = 8.dp
 
 /** Tablet records retain the larger reading size when the shortest window side is at least 600dp. */
 @Composable

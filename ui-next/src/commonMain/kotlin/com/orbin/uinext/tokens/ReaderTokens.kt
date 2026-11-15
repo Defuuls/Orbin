@@ -22,9 +22,9 @@ data class ReaderColors(
     val statusBar: Color,
     /** App bar title and icons. */
     val onAppBar: Color,
-    /** Screen, row, post, and card ground. */
+    /** Page ground under grouped cards and content. */
     val background: Color,
-    /** Secondary screen ground, thumbnail placeholder and skeleton bars. */
+    /** Solid grouped-card ground, thumbnail placeholder and skeleton bars. */
     val surfaceVariant: Color,
     /** Open thread's row in the two-pane catalog. */
     val selected: Color,
@@ -54,65 +54,65 @@ data class ReaderColors(
 
 val ReaderLightColors =
     ReaderColors(
-        appBar = Color(0xFFFFFFFF),
-        statusBar = Color(0xFFFFFFFF),
-        onAppBar = Color(0xFF1A1A1A),
-        background = Color(0xFFFFFFFF),
-        surfaceVariant = Color(0xFFF5F7FB),
-        selected = Color(0xFFEEF4FF),
-        ink = Color(0xDE000000),
-        inkSecondary = Color(0x89000000),
-        inkMuted = Color(0xFF5A6378),
-        hairline = Color(0x1E000000),
+        appBar = Color(0xFFF4F5F7),
+        statusBar = Color(0xFFF4F5F7),
+        onAppBar = Color(0xFF14161F),
+        background = Color(0xFFF4F5F7),
+        surfaceVariant = Color(0xFFFFFFFF),
+        selected = Color(0xFFF4F3FD),
+        ink = Color(0xFF14161F),
+        inkSecondary = Color(0xFF696F83),
+        inkMuted = Color(0xFF696F83),
+        hairline = Color(0x0F000000),
         accent = Color(0xFF4338CA),
         onAccent = Color(0xFFFFFFFF),
         quote = Color(0xFF2E7D32),
-        author = Color(0xFF1A1A1A),
-        subject = Color(0xFF1A1A1A),
+        author = Color(0xFF14161F),
+        subject = Color(0xFF14161F),
         quoteLink = Color(0xFF0369A1),
-        error = Color(0xFFB3261E),
+        error = Color(0xFFB91C35),
     )
 
 val ReaderDarkColors =
     ReaderColors(
-        appBar = Color(0xFF0B1021),
-        statusBar = Color(0xFF000000),
-        onAppBar = Color(0xFFFFFFFF),
-        background = Color(0xFF0B1021),
-        surfaceVariant = Color(0xFF141B33),
-        selected = Color(0xFF1A2547),
-        ink = Color(0xFFFFFFFF),
-        inkSecondary = Color(0xB2FFFFFF),
-        inkMuted = Color(0xFF9FB0CE),
-        hairline = Color(0x1EFFFFFF),
+        appBar = Color(0xFF0B0D11),
+        statusBar = Color(0xFF0B0D11),
+        onAppBar = Color(0xFFE8EAF0),
+        background = Color(0xFF0B0D11),
+        surfaceVariant = Color(0xFF141520),
+        selected = Color(0xFF102B33),
+        ink = Color(0xFFE8EAF0),
+        inkSecondary = Color(0xFF8A8FA8),
+        inkMuted = Color(0xFF8A8FA8),
+        hairline = Color(0x12FFFFFF),
         accent = Color(0xFF00D4FF),
         onAccent = Color(0xFF06131F),
         quote = Color(0xFF34D399),
-        author = Color(0xFF8BE9FD),
-        subject = Color(0xFF8BE9FD),
-        quoteLink = Color(0xFF38BDF8),
-        error = Color(0xFFF2B8B5),
+        author = Color(0xFF6DD4EC),
+        subject = Color(0xFFE8EAF0),
+        quoteLink = Color(0xFF6DD4EC),
+        error = Color(0xFFFF5D6C),
     )
 
 val ReaderAmoledColors =
     ReaderColors(
         appBar = Color(0xFF000000),
         statusBar = Color(0xFF000000),
-        onAppBar = Color(0xFFFFFFFF),
+        onAppBar = Color(0xFFECECEF),
         background = Color(0xFF000000),
-        surfaceVariant = Color(0xFF161616),
-        selected = Color(0xFF242424),
-        ink = Color(0xFFFFFFFF),
-        inkSecondary = Color(0xB2FFFFFF),
-        inkMuted = Color(0xFFB8B8B8),
-        hairline = Color(0x1EFFFFFF),
-        accent = Color(0xFFFFFFFF),
-        onAccent = Color(0xFF000000),
-        quote = Color(0xFFD4D4D4),
-        author = Color(0xFFE5E5E5),
-        subject = Color(0xFFFFFFFF),
-        quoteLink = Color(0xFFD4D4D4),
-        error = Color(0xFFF2B8B5),
+        surfaceVariant = Color(0xFF0E0E10),
+        selected = Color(0xFF0E252B),
+        ink = Color(0xFFECECEF),
+        inkSecondary = Color(0xFF8C8C93),
+        inkMuted = Color(0xFF8C8C93),
+        hairline = Color(0x14FFFFFF),
+        accent = Color(0xFF00D4FF),
+        onAccent = Color(0xFF06131F),
+        quote = Color(0xFF34D399),
+        author = Color(0xFF6DD4EC),
+        subject = Color(0xFFECECEF),
+        quoteLink = Color(0xFF6DD4EC),
+        error = Color(0xFFFF5D6C),
     )
 
 /** The colors for a brightness mode; AMOLED applies only when [dark]. */
@@ -167,22 +167,22 @@ object ReaderSpace {
 
 object ReaderSize {
     /** App bar height. */
-    val appBar: Dp = 56.dp
+    val appBar: Dp = 62.dp
 
     /** Clover toolbar leading navigation control width. */
-    val appBarNavigation: Dp = 56.dp
+    val appBarNavigation: Dp = 48.dp
 
     /** Clover toolbar regular action width. */
-    val appBarAction: Dp = 50.dp
+    val appBarAction: Dp = 48.dp
 
     /** Clover toolbar overflow control width. */
-    val appBarOverflow: Dp = 44.dp
+    val appBarOverflow: Dp = 48.dp
 
     /** Minimum size of anything that can be tapped. */
     val touchTarget: Dp = 48.dp
 
     /** App bar icon. */
-    val icon: Dp = 24.dp
+    val icon: Dp = 19.dp
 
     /** Cell thumbnail width and height in a window that is not wide. */
     val thumbnail: Dp = 72.dp
@@ -224,7 +224,7 @@ object ReaderSize {
     val progress: Dp = 4.dp
 
     /** Maximum post text width in a wide pane. */
-    val readingMax: Dp = 640.dp
+    val readingMax: Dp = 720.dp
 
     /** Maximum navigation drawer width. */
     val drawerMax: Dp = 336.dp

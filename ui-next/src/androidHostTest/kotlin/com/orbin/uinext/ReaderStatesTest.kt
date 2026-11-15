@@ -153,7 +153,7 @@ class ReaderStatesTest {
     }
 
     @Test
-    fun `wide thread skeleton reserves wide geometry and can share the host progress bar`() {
+    fun `thread skeleton reserves header comment and full width media below one shared progress bar`() {
         composeRule.setContent {
             NextTheme {
                 Column(Modifier.fillMaxSize()) {
@@ -165,11 +165,28 @@ class ReaderStatesTest {
 
         composeRule.onNodeWithContentDescription("Loading thread").assertIsDisplayed()
         composeRule.onAllNodesWithTag(ReaderStateTags.PROGRESS).assertCountEquals(1)
-        composeRule
-            .onAllNodesWithTag(ReaderStateTags.SKELETON_THUMBNAIL, useUnmergedTree = true)
-            .onFirst()
-            .assertWidthIsEqualTo(ReaderSize.thumbnailWide)
-            .assertHeightIsEqualTo(ReaderSize.thumbnailWide)
+        val header =
+            composeRule
+                .onAllNodesWithTag("reader-skeleton-post-header", useUnmergedTree = true)
+                .onFirst()
+                .getUnclippedBoundsInRoot()
+        val comment =
+            composeRule
+                .onAllNodesWithTag("reader-skeleton-post-body", useUnmergedTree = true)
+                .onFirst()
+                .getUnclippedBoundsInRoot()
+        val preview =
+            composeRule
+                .onAllNodesWithTag(ReaderStateTags.SKELETON_THUMBNAIL, useUnmergedTree = true)
+                .onFirst()
+                .getUnclippedBoundsInRoot()
+        assertEquals(14f, preview.left.value, 0.5f)
+        assertEquals(332f, (preview.right - preview.left).value, 0.5f)
+        assertEquals(249f, (preview.bottom - preview.top).value, 0.5f)
+        assertTrue("Loading follows the same header, comment and attachment order", header.bottom <= comment.top)
+        assertTrue(comment.bottom <= preview.top)
+        assertEquals(header.left.value, comment.left.value, 0.5f)
+        assertEquals(comment.left.value, preview.left.value, 0.5f)
     }
 
     @Test

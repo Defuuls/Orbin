@@ -439,14 +439,18 @@ class TokenTest(unittest.TestCase):
     def test_line_heights_and_weights_are_sane(self) -> None:
         for name, (size, line, weight) in self.types.items():
             if name == "type.postDetails":
-                self.assertEqual(size, 10, "Clover's verified phone post details use 10sp")
+                self.assertEqual(size, 11, "Current phone post details grow with the 15sp body")
             else:
                 self.assertGreaterEqual(size, 12, f"{name} is smaller than 12sp")
             if line is None:
                 self.assertIn(name, {"type.postBody", "type.postBodyWide", "type.postDetails", "type.postDetailsWide"})
             else:
-                self.assertGreaterEqual(line / size, 1.2, f"{name} line height is too tight")
-            self.assertIn(weight, (400, 500, 700), name)
+                # NekoSurf's compact heading uses a tighter 1.1 rhythm; multiline body
+                # roles keep their existing minimum rather than inheriting that exception.
+                minimum = 1.1 if name == "type.appBarTitle" else 1.2
+                self.assertGreaterEqual(line / size, minimum, f"{name} line height is too tight")
+            self.assertIn(weight, (400, 500, 700, 800), name)
+        self.assertEqual(self.types["type.appBarTitle"], (21, 24, 800))
 
     def test_touch_targets(self) -> None:
         m = self.m
@@ -460,8 +464,9 @@ class TokenTest(unittest.TestCase):
         self.assertGreaterEqual(m["size.cellMin"], m["size.touchTarget"])
         self.assertGreaterEqual(m["size.appBarAction"], m["size.touchTarget"])
         self.assertGreaterEqual(m["size.appBarNavigation"], m["size.touchTarget"])
-        # Clover's overflow is narrower, while retaining the full 56dp control height.
-        self.assertEqual(m["size.appBarOverflow"], 44)
+        # All current header actions keep a full target around compact visual glyphs.
+        self.assertEqual(m["size.appBarOverflow"], 48)
+        self.assertGreaterEqual(m["size.appBarOverflow"], m["size.touchTarget"])
         self.assertGreaterEqual(m["size.appBarOverflow"], m["size.icon"])
 
 
@@ -486,14 +491,14 @@ class LayoutTest(unittest.TestCase):
         )
         self.assertLessEqual(text_height, self.m["size.thumbnail"])
 
-    def test_compact_post_metrics_match_the_verified_phone_and_tablet_defaults(self) -> None:
-        for suffix, expected_size in (("", 14), ("Wide", 16)):
+    def test_post_metrics_use_the_current_readable_phone_and_tablet_sizes(self) -> None:
+        for suffix, expected_size, expected_inset in (("", 15, 8), ("Wide", 16, 10)):
             body = self.types[f"type.postBody{suffix}"]
             details = self.types[f"type.postDetails{suffix}"]
             inset = self.m[f"space.postInset{suffix}"]
             self.assertEqual(body, (expected_size, None, 400))
             self.assertEqual(details, (expected_size - 4, None, 400))
-            self.assertEqual(inset, expected_size - 6)
+            self.assertEqual(inset, expected_inset, "The typography update retains measured text insets")
         self.assertEqual(self.m["size.thumbnail"], 72)
         self.assertEqual(self.m["size.thumbnailWide"], 100)
         self.assertEqual(self.m["size.hairline"], 1)
@@ -548,14 +553,24 @@ class LayoutTest(unittest.TestCase):
             width = min(window - m["size.appBar"], m["size.drawerMax"])
             self.assertGreater(width, 0)
             self.assertLessEqual(width, window - m["size.appBar"])
-        self.assertEqual(min(360 - m["size.appBar"], m["size.drawerMax"]), 304)
+        self.assertEqual(min(360 - m["size.appBar"], m["size.drawerMax"]), 298)
         self.assertEqual(min(411 - m["size.appBar"], m["size.drawerMax"]), 336)
 
-    def test_toolbar_uses_the_verified_control_widths(self) -> None:
+    def test_toolbar_uses_the_current_neko_height_and_accessible_control_widths(self) -> None:
         self.assertEqual(
             tuple(self.m[f"size.{name}"] for name in ("appBar", "appBarNavigation", "appBarAction", "appBarOverflow")),
-            (56, 56, 50, 44),
+            (62, 48, 48, 48),
         )
+        self.assertEqual(self.m["size.icon"], 19)
+        self.assertEqual(self.m["size.readingMax"], 720)
+
+    def test_current_rounded_card_and_control_roles_are_distinct(self) -> None:
+        self.assertEqual(
+            {name: self.m[f"radius.{name}"] for name in ("compact", "control", "card", "sheet", "panel", "pill")},
+            {"compact": 8, "control": 14, "card": 22, "sheet": 28, "panel": 28, "pill": 999},
+        )
+        self.assertGreater(self.m["radius.card"], self.m["radius.thumbnail"])
+        self.assertGreaterEqual(self.m["radius.sheet"], self.m["radius.card"])
 
     GRID_HEADERS = ["Viewport width", "Viewport height", "Columns", "Image height", "Card width"]
 
@@ -596,7 +611,6 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(m["ratio.gridImageHeight"], 1 / 2)
         self.assertEqual(m["space.gridOuter"], 2)
         self.assertEqual(m["space.gridGap"], 4)
-        self.assertEqual(m["radius.compact"], 2)
         self.assertEqual(m["size.cardElevation"], 2)
         for row in self.spec.one(self.GRID_HEADERS):
             height, columns, image, card = number(row[1]), int(row[2]), number(row[3]), number(row[4])
