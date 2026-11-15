@@ -1,4 +1,4 @@
-package com.orbin.uinext.components
+package com.orbin.uinext.screens
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +25,12 @@ import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.CatalogRow
 import com.orbin.uinext.OrbinCard
 import com.orbin.uinext.ReaderFeedTags
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.ReaderIcons
+import com.orbin.uinext.components.ReaderMenuItem
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.sourceAndBoard
+import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_feed_more
 import com.orbin.uinext.resources.reader_feed_open_board

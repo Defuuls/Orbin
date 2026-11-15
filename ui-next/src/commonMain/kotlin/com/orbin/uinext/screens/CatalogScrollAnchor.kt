@@ -1,4 +1,4 @@
-package com.orbin.uinext.components
+package com.orbin.uinext.screens
 
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable

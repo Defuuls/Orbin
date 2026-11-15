@@ -1,6 +1,6 @@
 package com.orbin.uinext
 
-import com.orbin.uinext.components.filterSettings
+import com.orbin.uinext.screens.filterSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

@@ -42,8 +42,8 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.ReaderAppBarTags
-import com.orbin.uinext.components.filterSettings
-import com.orbin.uinext.components.settingsSections
+import com.orbin.uinext.screens.filterSettings
+import com.orbin.uinext.screens.settingsSections
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

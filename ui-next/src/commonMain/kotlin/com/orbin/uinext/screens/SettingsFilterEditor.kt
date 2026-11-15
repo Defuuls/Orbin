@@ -29,9 +29,6 @@ import com.orbin.uinext.components.InlineAction
 import com.orbin.uinext.components.NextIconAction
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderSettingsSwitch
-import com.orbin.uinext.components.SettingsSegments
-import com.orbin.uinext.components.preferenceSummaryStyle
-import com.orbin.uinext.components.preferenceTitleStyle
 import com.orbin.uinext.components.readerTextEntry
 import com.orbin.uinext.components.settingsStyle
 

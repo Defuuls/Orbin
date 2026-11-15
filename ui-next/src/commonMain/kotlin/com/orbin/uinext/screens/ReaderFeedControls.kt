@@ -1,4 +1,4 @@
-package com.orbin.uinext.components
+package com.orbin.uinext.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,6 +40,11 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.ReaderFeedTags
+import com.orbin.uinext.components.NextIconAction
+import com.orbin.uinext.components.ReaderIcons
+import com.orbin.uinext.components.nextClickable
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_feed_choose_source
 import com.orbin.uinext.resources.reader_feed_done

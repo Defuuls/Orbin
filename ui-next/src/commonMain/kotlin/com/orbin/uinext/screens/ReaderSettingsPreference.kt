@@ -1,4 +1,4 @@
-package com.orbin.uinext.components
+package com.orbin.uinext.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -46,6 +46,8 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
+import com.orbin.uinext.components.settingsStyle
+import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_no_matches
 import com.orbin.uinext.tokens.OrbinElevation

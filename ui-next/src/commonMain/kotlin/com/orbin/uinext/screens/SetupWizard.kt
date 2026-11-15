@@ -49,7 +49,6 @@ import com.orbin.uinext.components.OrbinLogoMark
 import com.orbin.uinext.components.OrbinTextButton
 import com.orbin.uinext.components.ReaderHairline
 import com.orbin.uinext.components.ReaderIcons
-import com.orbin.uinext.components.ReaderSettingsChoiceMark
 import com.orbin.uinext.components.ReaderSettingsSwitch
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.withReaderFont

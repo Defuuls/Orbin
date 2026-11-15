@@ -80,7 +80,6 @@ import com.orbin.uinext.components.GridScrim
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
 import com.orbin.uinext.components.OrbinPill
 import com.orbin.uinext.components.PillVariant
-import com.orbin.uinext.components.PreserveCatalogScrollAnchor
 import com.orbin.uinext.components.PreviewLine
 import com.orbin.uinext.components.READER_TRAILING_BELOW_FONT_SCALE
 import com.orbin.uinext.components.ReaderAction
@@ -125,6 +124,7 @@ import com.orbin.uinext.resources.reader_unread
 import com.orbin.uinext.resources.reader_view_card
 import com.orbin.uinext.resources.reader_view_grid
 import com.orbin.uinext.resources.reader_view_list
+import com.orbin.uinext.screens.PreserveCatalogScrollAnchor
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderColors

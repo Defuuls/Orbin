@@ -1,4 +1,4 @@
-package com.orbin.uinext.components
+package com.orbin.uinext.screens
 
 import com.orbin.uinext.SettingItem
 

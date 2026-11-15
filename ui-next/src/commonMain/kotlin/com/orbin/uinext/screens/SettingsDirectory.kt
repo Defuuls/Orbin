@@ -1,4 +1,4 @@
-package com.orbin.uinext.components
+package com.orbin.uinext.screens
 
 import androidx.compose.runtime.Composable
 import com.orbin.uinext.SettingItem
