@@ -81,15 +81,17 @@ class TrueBlackThemeTest {
         if (palette.amoled) {
             listOf(
                 material.background,
-                material.surface,
-                material.surfaceBright,
                 material.surfaceDim,
                 material.surfaceContainerLowest,
+            ).forEach { ground -> assertEquals(Color.Black, ground) }
+            listOf(
+                material.surface,
+                material.surfaceBright,
                 material.surfaceContainerLow,
                 material.surfaceContainer,
                 material.surfaceContainerHigh,
                 material.surfaceContainerHighest,
-            ).forEach { ground -> assertEquals(Color.Black, ground) }
+            ).forEach { ground -> assertEquals(Color(0xFF0E0E10), ground) }
         }
     }
 
@@ -101,10 +103,12 @@ class TrueBlackThemeTest {
     ) {
         assertEquals("$key palette", canonicalNextPalette(dark, amoled), palette)
         if (dark && amoled) {
-            listOf(palette.background, palette.raised, palette.elevated, palette.appBar).forEach { ground ->
+            listOf(palette.background, palette.appBar).forEach { ground ->
                 assertEquals("$key ground", Color.Black, ground)
             }
-            assertNotEquals("$key placeholder fill", Color.Black, palette.surfaceVariant)
+            listOf(palette.raised, palette.elevated, palette.surfaceVariant).forEach { ground ->
+                assertEquals("$key lifted card ground", Color(0xFF0E0E10), ground)
+            }
             assertNotEquals("$key selection fill", Color.Black, palette.accentContainer)
         } else {
             assertFalse(palette.amoled)
@@ -120,9 +124,44 @@ class TrueBlackThemeTest {
                     NextTheme {
                         assertEquals(canonicalNextPalette(true, true), next)
                         assertEquals(Color.Black, next.background)
-                        assertEquals(Color.Black, next.raised)
-                        assertEquals(Color.Black, next.elevated)
+                        assertEquals(Color(0xFF0E0E10), next.raised)
+                        assertEquals(Color(0xFF0E0E10), next.elevated)
+                        assertEquals(Color.Black, next.appBar)
                         assertEquals(MaterialTheme.colorScheme.background, next.background)
+                        assertMaterialPalette(next, MaterialTheme.colorScheme)
+                    }
+                }
+            }
+        }
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun `an explicit brightness override resolves every role instead of retaining the supplied palette`() {
+        composeRule.setContent {
+            NextPlatform.entries.forEach { platform ->
+                NextTheme(
+                    palette = canonicalNextPalette(true, true),
+                    darkTheme = false,
+                    platform = platform,
+                ) {
+                    NextTheme {
+                        assertEquals(canonicalNextPalette(false, false), next)
+                        assertFalse(next.amoled)
+                        assertNotEquals(Color.Black, next.background)
+                        assertMaterialPalette(next, MaterialTheme.colorScheme)
+                    }
+                }
+                NextTheme(
+                    palette = canonicalNextPalette(false, false),
+                    darkTheme = true,
+                    amoled = true,
+                    platform = platform,
+                ) {
+                    NextTheme {
+                        assertEquals(canonicalNextPalette(true, true), next)
+                        assertEquals(Color.Black, next.background)
+                        assertMaterialPalette(next, MaterialTheme.colorScheme)
                     }
                 }
             }

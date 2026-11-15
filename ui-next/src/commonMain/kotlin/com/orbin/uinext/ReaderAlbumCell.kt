@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -41,7 +44,7 @@ object ReaderAlbumTags {
     fun details(id: String): String = "reader-album-details:$id"
 }
 
-/** The shared square-corner album cell; covered files never compose their thumbnail before reveal. */
+/** Rounded album tiles keep covered files out of composition until they are revealed. */
 @Composable
 internal fun ReaderAlbumCell(
     cell: MediaCell,
@@ -59,6 +62,7 @@ internal fun ReaderAlbumCell(
     val revealLabel = stringResource(Res.string.reader_reveal_spoiler)
     val openLabel = stringResource(Res.string.next_open_file)
     val actionsLabel = stringResource(Res.string.next_media_actions)
+    val shape = RoundedCornerShape(14.dp)
     val clickable =
         if (covered || onOpen != null || onLongPress != null) {
             Modifier.nextClickable(
@@ -77,7 +81,9 @@ internal fun ReaderAlbumCell(
         modifier
             .fillMaxWidth()
             .testTag(cellTag)
-            .background(if (coral && !next.dark) reader.background else reader.surfaceVariant)
+            .clip(shape)
+            .background(reader.surfaceVariant)
+            .border(ReaderSize.hairline, reader.hairline, shape)
             .then(clickable),
     ) {
         Box(

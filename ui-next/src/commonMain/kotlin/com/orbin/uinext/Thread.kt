@@ -58,7 +58,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed
@@ -145,15 +148,15 @@ object ThreadTags {
 }
 
 /**
- * A fixed app bar over Clover's compact post geometry, retaining Orbin's reader controls.
+ * A fixed app bar over stacked post headers, comments, and inline media.
  *
  * The list always starts with one header item (the [subtitle] line, or nothing), so the post at
  * index n of [posts] is list item n + 1. Hosts that save and restore the reading position rely
  * on that.
  *
- * [wideWindow] is whether the window, not this pane, is wide: it selects the larger thumbnail.
- * [media] draws a post's thumbnail inside the square this screen sizes and clips; it should fill
- * the modifier it is given and crop.
+ * [wideWindow] is whether the window, not this pane, is wide: it selects the larger reader text.
+ * [media] fills the bounded media slot below the comment. Hosts keep ownership of fetching,
+ * decoding, playback, and opening the viewer.
  */
 @Composable
 fun ThreadScreen(
@@ -252,7 +255,7 @@ fun ThreadScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(if (cardMode && !next.dark) colors.surfaceVariant else colors.background)
+                .background(colors.background)
                 .semantics { paneTitle = subject },
     ) {
         ReaderAppBar(
@@ -306,6 +309,8 @@ fun ThreadScreen(
                 val fileColumns = catalogGridColumns(maxWidth)
                 val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
                 val cardImageHeight = orbinCatalogCardSpec(maxWidth).imageHeight
+                val postImageWidth = (maxWidth - 28.dp).coerceAtLeast(1.dp)
+                val viewportHeight = maxHeight
                 LazyColumn(
                     state = if (showingPosts) state else filesState,
                     modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
@@ -359,6 +364,11 @@ fun ThreadScreen(
                                     collapsed = post.id in collapsed,
                                     wideWindow = wideWindow,
                                     cardImageHeight = if (cardMode) cardImageHeight else null,
+                                    inlineImageHeight =
+                                        readerPostMediaHeight(
+                                            postImageWidth - ReaderSpace.gap * post.depth.coerceIn(0, MAX_REPLY_DEPTH),
+                                            viewportHeight,
+                                        ),
                                     onToggleCollapse = onToggleCollapse,
                                     onClick = onPostClick,
                                     onReference = openReference,
@@ -635,6 +645,7 @@ private fun PostCell(
     collapsed: Boolean,
     wideWindow: Boolean,
     cardImageHeight: Dp?,
+    inlineImageHeight: Dp,
     onToggleCollapse: ((Post) -> Unit)?,
     onClick: ((Post) -> Unit)?,
     onReference: ((String) -> Unit)?,
@@ -644,7 +655,6 @@ private fun PostCell(
     val colors = reader
     val indent = ReaderSpace.gap * post.depth.coerceIn(0, MAX_REPLY_DEPTH)
     val showThumbnail = post.hasMedia && !collapsed
-    val inset = readerPostInset(wideWindow)
     val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.postBody.withReaderFont()
     val detailStyle =
         if (wideWindow) {
@@ -678,11 +688,11 @@ private fun PostCell(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
-                    if (showThumbnail) {
-                        PostThumbnail(post, media, Modifier.fillMaxWidth().height(cardImageHeight))
-                    }
                     if (!collapsed) {
                         PostBody(post, body)
+                        if (showThumbnail) {
+                            PostThumbnail(post, media, Modifier.fillMaxWidth().height(cardImageHeight))
+                        }
                         PostReplies(post, onReference)
                     }
                 }
@@ -696,48 +706,56 @@ private fun PostCell(
                     .then(clickModifier)
                     .semantics(mergeDescendants = true) {},
             ) {
-                ReaderPostLayout(
-                    modifier =
-                        if (post.depth > 0) {
-                            Modifier.drawBehind {
-                                val barX = indent.toPx() - 2.dp.toPx()
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .drawBehind {
+                            if (post.depth > 0) {
+                                val leading = (indent + 8.dp).toPx()
+                                val barX = if (layoutDirection == LayoutDirection.Ltr) leading else size.width - leading
                                 drawLine(
                                     color = colors.quoteLink.copy(alpha = 0.55f),
-                                    start = Offset(barX.coerceAtLeast(0f), 0f),
-                                    end = Offset(barX.coerceAtLeast(0f), size.height),
+                                    start = Offset(barX, 11.dp.toPx()),
+                                    end = Offset(barX, (size.height - 12.dp.toPx()).coerceAtLeast(11.dp.toPx())),
                                     strokeWidth = 2.dp.toPx(),
                                 )
                             }
-                        } else {
-                            Modifier
-                        },
-                    wideWindow = wideWindow,
-                    indent = indent,
-                    thumbnail =
+                        }.padding(start = 14.dp + indent, end = 14.dp, top = 11.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                    if (!collapsed) {
+                        PostBody(post, body)
                         if (showThumbnail) {
-                            { thumbnailModifier -> PostThumbnail(post, media, thumbnailModifier) }
-                        } else {
-                            null
-                        },
-                ) { contentModifier ->
-                    Column(contentModifier) {
-                        Box(Modifier.padding(start = inset, end = inset, top = inset)) {
-                            PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                            PostThumbnail(post, media, Modifier.fillMaxWidth().height(inlineImageHeight))
                         }
-                        if (!collapsed) {
-                            Box(Modifier.padding(start = inset, end = inset, top = inset)) {
-                                PostBody(post, body)
-                            }
-                            PostReplies(post, onReference, Modifier.padding(start = inset, end = inset, top = inset))
-                        }
-                        Box(Modifier.height(inset))
+                        PostReplies(post, onReference)
                     }
                 }
-                ReaderHairline(Modifier.padding(start = indent + inset, end = inset))
+                ReaderHairline(Modifier.padding(start = 14.dp + indent, end = 14.dp))
             }
         }
     }
 }
+
+/** Inline previews stay finite even when a host offers an unbounded or very tall pane. */
+internal fun readerPostMediaHeight(
+    width: Dp,
+    viewportHeight: Dp,
+): Dp {
+    val boundedWidth = if (width.isFinite && width > 0.dp) width else 360.dp
+    val viewportLimit =
+        if (viewportHeight.isFinite && viewportHeight > 0.dp) {
+            viewportHeight * INLINE_MEDIA_HEIGHT_FRACTION
+        } else {
+            INLINE_MEDIA_MAX_HEIGHT_DP.dp
+        }
+    return minOf(boundedWidth * INLINE_MEDIA_HEIGHT_FRACTION, viewportLimit, INLINE_MEDIA_MAX_HEIGHT_DP.dp)
+        .coerceAtLeast(1.dp)
+}
+
+private const val INLINE_MEDIA_HEIGHT_FRACTION = 0.75f
+private const val INLINE_MEDIA_MAX_HEIGHT_DP = 400
 
 @Composable
 private fun PostThumbnail(
@@ -751,7 +769,7 @@ private fun PostThumbnail(
     Box(
         modifier
             .testTag(ThreadTags.THUMBNAIL)
-            .clip(RoundedCornerShape(OrbinRadius.compact))
+            .clip(RoundedCornerShape(12.dp))
             .background(colors.surfaceVariant),
     ) {
         if (covered) {
@@ -806,19 +824,12 @@ private fun PostHeader(
                     },
                 ),
     ) {
-        if (post.subject.isNotBlank()) {
-            Text(
-                post.subject,
-                style = LocalReaderPostBodyStyle.current.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.subject,
-            )
-        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.line), verticalArrangement = Arrangement.Top) {
-            if (post.author.isNotBlank() && post.author != "Anonymous") {
+            if (post.author.isNotBlank()) {
                 Text(
                     text = post.author,
-                    style = LocalReaderPostBodyStyle.current.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.author,
+                    style = detailStyle.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                    color = colors.ink,
                 )
             }
             Text(text = post.number, style = detailStyle, color = colors.inkMuted)
@@ -830,8 +841,20 @@ private fun PostHeader(
                     text = stringResource(Res.string.reader_thread_op),
                     style = detailStyle.copy(fontWeight = FontWeight.SemiBold),
                     color = colors.accent,
+                    modifier =
+                        Modifier
+                            .background(colors.accent.copy(alpha = 0.14f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
+        }
+        if (post.subject.isNotBlank()) {
+            Text(
+                post.subject,
+                style = LocalReaderPostBodyStyle.current.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                color = colors.subject,
+                modifier = Modifier.padding(top = 6.dp),
+            )
         }
         if (post.fileLabel.isNotBlank()) {
             Text(

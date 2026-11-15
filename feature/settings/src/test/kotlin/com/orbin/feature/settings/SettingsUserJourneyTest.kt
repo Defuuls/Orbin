@@ -8,7 +8,10 @@ import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -19,7 +22,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
@@ -77,13 +79,11 @@ class SettingsUserJourneyTest {
     }
 
     @Test
-    fun playbackPageCanEnableCommentsWithoutChangingPlaybackOverrides() {
+    fun threadCommentsCanBeEnabledFromTheRootWithoutChangingPlaybackOverrides() {
         launch()
         val playback = settings.current.playbackPreferences
 
-        composeRule.onNodeWithText("Playback").performClick()
-        composeRule
-            .onNodeWithText("Open comments from chat button")
+        row("Open comments from chat button")
             .assertIsOff()
             .performClick()
             .assertIsOn()
@@ -91,35 +91,32 @@ class SettingsUserJourneyTest {
             assertThat(settings.current.openThreadComments).isTrue()
             assertThat(settings.current.playbackPreferences).isEqualTo(playback)
         }
-        composeRule
-            .onNodeWithText("Open comments from chat button")
+        row("Open comments from chat button")
             .performClick()
             .assertIsOff()
         composeRule.runOnIdle { assertThat(settings.current.openThreadComments).isFalse() }
     }
 
     @Test
-    fun playbackChoicesWriteOnlyAfterSelectingAndOnlyForTheChosenScope() {
+    fun inlinePlaybackChoicesWriteOnlyForTheChosenScope() {
         launch()
         choose("Scope", "Test Provider")
         val site = PlaybackScope("fourchan")
         val defaults = settings.current.playbackPreferences.defaults
         for (label in listOf("Autoplay", "Preload next clip")) {
             val before = settings.current.playbackPreferences
-            row(label).performClick()
-            composeRule.waitForIdle()
+            row(label).assertExists()
             assertThat(settings.current.playbackPreferences).isEqualTo(before)
-            composeRule.onNode(isOption("Off")).performClick()
+            composeRule.onNode(inlineOption(label, "Off")).performClick().assertIsSelected()
             composeRule.waitForIdle()
             val effective = settings.current.playbackPreferences.forScope(site)
             assertThat(if (label == "Autoplay") effective.autoplay else effective.preloadNextClip).isFalse()
             assertThat(settings.current.playbackPreferences.defaults).isEqualTo(defaults)
 
             val disabled = settings.current.playbackPreferences
-            row(label).performClick()
-            composeRule.waitForIdle()
+            row(label).assertExists()
             assertThat(settings.current.playbackPreferences).isEqualTo(disabled)
-            composeRule.onNode(isOption("On")).performClick()
+            composeRule.onNode(inlineOption(label, "On")).performClick().assertIsSelected()
             composeRule.waitForIdle()
             val enabled = settings.current.playbackPreferences.forScope(site)
             assertThat(if (label == "Autoplay") enabled.autoplay else enabled.preloadNextClip).isTrue()
@@ -139,6 +136,33 @@ class SettingsUserJourneyTest {
     }
 
     @Test
+    fun searchAndDismissingChoicesLeavePersistedSettingsUntouched() {
+        launch()
+        val before = settings.current
+
+        row("Theme").performClick()
+        composeRule.onNodeWithTag("reader-settings-choice-popup").assertExists()
+        assertThat(settings.current).isEqualTo(before)
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNodeWithTag("reader-settings-choice-popup").assertDoesNotExist()
+        assertThat(settings.current).isEqualTo(before)
+
+        row("Scope").performClick()
+        composeRule.onNodeWithTag("reader-app-bar-title").assertTextEquals("Scope")
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
+        composeRule.onNodeWithTag("reader-app-bar-title").assertTextEquals("Settings")
+        assertThat(settings.current).isEqualTo(before)
+
+        composeRule.onNodeWithContentDescription("Search settings").performClick()
+        composeRule.onNode(hasSetTextAction()).performTextInput("App lock")
+        row("App lock").assertExists()
+        composeRule.onNodeWithContentDescription("Back").performClick()
+        composeRule.onNode(hasSetTextAction()).assertDoesNotExist()
+        assertThat(settings.current).isEqualTo(before)
+    }
+
+    @Test
     fun catalogViewCanBePickedWithoutChangingTheBrightnessPreference() {
         launch()
         choose("Catalog view", "Grid")
@@ -154,7 +178,7 @@ class SettingsUserJourneyTest {
 
     /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */
     @Test
-    fun settingsKeepsExistingControlsSearchable() {
+    fun settingsKeepsExistingControlsReachableOnTheContinuousRoot() {
         launch()
 
         listOf(
@@ -254,12 +278,21 @@ class SettingsUserJourneyTest {
         assertThat(settings.current.read()).isEqualTo(before)
     }
 
-    /** Opens a choice row, taps an option, and checks the row now shows it and has closed. */
+    /** Selects an inline option or opens its picker and checks the persisted row value. */
     private fun choose(
         label: String,
         option: String,
     ) {
-        row(label).performClick()
+        val preference = row(label)
+        if (composeRule.onAllNodes(inlineOption(label, option)).fetchSemanticsNodes().isNotEmpty()) {
+            composeRule
+                .onNode(inlineOption(label, option))
+                .performScrollTo()
+                .performClick()
+                .assertIsSelected()
+            return
+        }
+        preference.performClick()
         composeRule.waitForIdle()
         if (composeRule.onAllNodes(hasTestTag("reader-settings-choice-popup")).fetchSemanticsNodes().isNotEmpty()) {
             composeRule.onNode(isOption(option)).performScrollTo()
@@ -273,16 +306,22 @@ class SettingsUserJourneyTest {
         row(label).assertTextContains(option)
     }
 
-    /** A row, scrolled into composition first: the list is lazy. */
+    /** Rows are reached by scrolling the same root list, without a category or search detour. */
     private fun row(label: String): SemanticsNodeInteraction {
-        if (composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isEmpty()) {
-            composeRule.onNodeWithContentDescription("Search settings").performClick()
-        }
-        composeRule.onNode(hasSetTextAction()).performTextClearance()
-        composeRule.onNode(hasSetTextAction()).performTextInput(label)
-        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(label))
-        return composeRule.onNode(hasText(label) and hasClickAction() and !hasSetTextAction())
+        val matcher = settingRow(label)
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(matcher)
+        return composeRule.onNode(matcher)
     }
+
+    private fun settingRow(label: String) =
+        SemanticsMatcher("is the settings row '$label'") { node ->
+            node.config.getOrElse(SemanticsProperties.TestTag) { "" }.startsWith("reader-setting-row-")
+        } and (hasText(label) or hasAnyDescendant(hasText(label)))
+
+    private fun inlineOption(
+        label: String,
+        option: String,
+    ) = isOption(option) and hasAnyAncestor(settingRow(label))
 
     /** A plain selectable option, distinct from the preference row underneath the floating menu. */
     private fun isOption(option: String) =

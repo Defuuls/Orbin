@@ -50,8 +50,13 @@ class ReaderCardModeTest(
             compose
                 .onNodeWithTag(if (isHome) gridTag else ReaderStateTags.CATALOG_SKELETON)
                 .getUnclippedBoundsInRoot()
-        assertEquals("loading uses one 16dp outer gutter", pane.left.value + 16f, pending.left.value, 0.5f)
-        assertEquals(pane.right.value - 16f, pending.right.value, 0.5f)
+        assertEquals(
+            "loading uses the entry point's outer gutter",
+            pane.left.value + gutter.value,
+            pending.left.value,
+            0.5f,
+        )
+        assertEquals(pane.right.value - gutter.value, pending.right.value, 0.5f)
 
         compose.runOnIdle { loading = false }
 
@@ -64,10 +69,13 @@ class ReaderCardModeTest(
     @Test
     fun cardSizingUsesASafeFallbackForUnmeasuredOrGutterOnlyWidths() {
         val fallback = CatalogGridSpec(columns = 1, imageHeight = 114.dp)
-        listOf((-1).dp, 0.dp, 16.dp, 32.dp, Dp.Infinity, Dp.Unspecified).forEach { width ->
-            assertEquals("unsafe pane width $width", fallback, orbinCatalogCardSpec(width))
+        listOf((-1).dp, 0.dp, gutter, gutter * 2, Dp.Infinity, Dp.Unspecified).forEach { width ->
+            assertEquals("unsafe pane width $width", fallback, orbinCatalogCardSpec(width, gutter = gutter))
         }
-        assertEquals(CatalogGridSpec(columns = 1, imageHeight = 0.75.dp), orbinCatalogCardSpec(33.dp))
+        assertEquals(
+            CatalogGridSpec(columns = 1, imageHeight = 0.75.dp),
+            orbinCatalogCardSpec(gutter * 2 + 1.dp, gutter = gutter),
+        )
     }
 
     @Test
@@ -83,12 +91,12 @@ class ReaderCardModeTest(
         val first = card(0).getUnclippedBoundsInRoot()
         val second = card(1).getUnclippedBoundsInRoot()
         val image = thumbnail(0).getUnclippedBoundsInRoot()
-        val width = (pane.right - pane.left).value - 32f
-        assertEquals("16dp outer gutter", pane.left.value + 16f, first.left.value, 0.5f)
-        assertEquals("one card fills the available pane", pane.right.value - 16f, first.right.value, 0.5f)
+        val width = (pane.right - pane.left).value - gutter.value * 2
+        assertEquals("the entry point's outer gutter", pane.left.value + gutter.value, first.left.value, 0.5f)
+        assertEquals("one card fills the available pane", pane.right.value - gutter.value, first.right.value, 0.5f)
         assertEquals(first.left.value, second.left.value, 0.5f)
         assertEquals(first.right.value, second.right.value, 0.5f)
-        assertEquals("8dp between consecutive cards", first.bottom.value + 8f, second.top.value, 0.5f)
+        assertEquals("10dp between consecutive cards", first.bottom.value + 10f, second.top.value, 0.5f)
         assertEquals("full-size card image height", width * 0.75f, (image.bottom - image.top).value, 0.5f)
         assertEquals("12dp image inset", first.left.value + 12f, image.left.value, 0.5f)
         assertEquals(first.right.value - 12f, image.right.value, 0.5f)
@@ -174,6 +182,7 @@ class ReaderCardModeTest(
     }
 
     private val isHome get() = surface == "Home"
+    private val gutter get() = if (isHome) 16.dp else 10.dp
     private val gridTag get() = if (isHome) ReaderFeedTags.GRID else CatalogTags.GRID
 
     private fun card(index: Int) =

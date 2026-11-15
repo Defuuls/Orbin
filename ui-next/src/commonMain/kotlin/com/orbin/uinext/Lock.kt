@@ -2,11 +2,14 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,45 +43,50 @@ fun LockScreen(
     modifier: Modifier = Modifier,
 ) {
     val failed = !message.isNullOrBlank()
-    Column(
+    Box(
         modifier =
             modifier
                 .fillMaxSize()
                 .background(reader.background)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(20.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        OrbinLogo(size = 72.dp, contentDescription = null)
-        Text(
-            text = stringResource(Res.string.next_lock_title),
-            style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-            color = reader.ink,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 20.dp).semantics { heading() },
-        )
-        Text(
-            text = message ?: stringResource(Res.string.next_lock_hint),
-            modifier = Modifier.padding(top = 8.dp),
-            color = if (failed) reader.error else reader.inkMuted,
-            style = OrbinType.stateBody.withReaderFont(),
-            textAlign = TextAlign.Center,
-        )
-        if (!unlocking) {
-            OrbinFilledButton(
-                label = stringResource(Res.string.next_lock_unlock),
-                onClick = onUnlock,
-                modifier = Modifier.padding(top = 24.dp),
-            )
-        } else {
-            Text(
-                stringResource(Res.string.next_lock_unlocking),
-                style = OrbinType.readerBody.withReaderFont(),
-                color = reader.inkMuted,
-                modifier = Modifier.padding(top = 24.dp),
-            )
+        OrbinCard(Modifier.widthIn(max = 480.dp).fillMaxWidth()) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                OrbinLogo(size = 64.dp, contentDescription = null)
+                Text(
+                    text = stringResource(Res.string.next_lock_title),
+                    style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.ExtraBold),
+                    color = reader.ink,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(
+                    text = message ?: stringResource(Res.string.next_lock_hint),
+                    color = if (failed) reader.error else reader.inkMuted,
+                    style = OrbinType.stateBody.withReaderFont(),
+                    textAlign = TextAlign.Center,
+                )
+                if (!unlocking) {
+                    OrbinFilledButton(
+                        label = stringResource(Res.string.next_lock_unlock),
+                        onClick = onUnlock,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    )
+                } else {
+                    Text(
+                        stringResource(Res.string.next_lock_unlocking),
+                        style = OrbinType.readerBody.withReaderFont(),
+                        color = reader.inkMuted,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
         }
     }
 }

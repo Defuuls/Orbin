@@ -1,6 +1,7 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,12 +36,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_search_idle_hint
 import com.orbin.uinext.resources.next_search_no_matches
@@ -50,12 +54,11 @@ import com.orbin.uinext.resources.orbin_search_no_matches_hint
 import com.orbin.uinext.resources.reader_search_all
 import com.orbin.uinext.resources.reader_search_submit
 import com.orbin.uinext.resources.reader_settings_back
-import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSpace
 import org.jetbrains.compose.resources.stringResource
 
-/** Coral search over actual source-qualified catalog results, with one retained source filter. */
+/** Neko-style search over real source-qualified results, with one retained source filter. */
 @Composable
 internal fun ReaderSearchScreen(
     query: String,
@@ -92,6 +95,7 @@ internal fun ReaderSearchScreen(
                         },
                     ),
                 ),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         SearchNavigationBar(query, onQueryChange, onSearch, onBack)
         if (state is SearchState.Results && sources.isNotEmpty()) {
@@ -119,7 +123,9 @@ private fun SearchNavigationBar(
         keyboard?.hide()
         onSearch()
     }
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = ReaderSpace.gutter, vertical = 4.dp)) {
+    BoxWithConstraints(
+        Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(horizontal = ReaderSpace.gutter, vertical = 4.dp),
+    ) {
         val stackAction = maxWidth < 360.dp && LocalDensity.current.fontScale >= 1.6f
         Column {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -137,7 +143,7 @@ private fun SearchNavigationBar(
                     placeholder = stringResource(Res.string.next_search_query_label),
                     onSearch = submit,
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(OrbinRadius.search),
+                    shape = RoundedCornerShape(12.dp),
                 )
                 if (!stackAction) SearchSubmit(submit)
             }
@@ -154,13 +160,20 @@ private fun SearchSubmit(onSearch: () -> Unit) {
         Modifier
             .heightIn(min = MIN_TOUCH_TARGET)
             .widthIn(min = 64.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(reader.accent.copy(alpha = 0.12f))
             .nextClickable(role = Role.Button, onClick = onSearch)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             stringResource(Res.string.reader_search_submit),
-            style = OrbinType.body.copy(fontWeight = FontWeight.SemiBold),
+            style =
+                OrbinType.body.withReaderFont().copy(
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                ),
             color = reader.accent,
         )
     }
@@ -174,6 +187,7 @@ private fun SearchSourceTabs(
 ) {
     Row(
         Modifier
+            .widthIn(max = 720.dp)
             .fillMaxWidth()
             .padding(horizontal = ReaderSpace.gutter, vertical = 4.dp)
             .horizontalScroll(rememberScrollState())
@@ -186,16 +200,29 @@ private fun SearchSourceTabs(
             Box(
                 Modifier
                     .heightIn(min = MIN_TOUCH_TARGET)
-                    .clip(RoundedCornerShape(OrbinRadius.pill))
-                    .background(if (active) next.accentContainer else reader.surfaceVariant)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        Brush.linearGradient(
+                            if (active) {
+                                listOf(reader.accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f))
+                            } else {
+                                listOf(reader.surfaceVariant, reader.surfaceVariant)
+                            },
+                        ),
+                    ).border(1.dp, reader.hairline, RoundedCornerShape(14.dp))
                     .selectable(selected = active, role = Role.Tab, onClick = { onSelect(source) })
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label,
-                    style = OrbinType.body.copy(fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal),
-                    color = if (active) reader.accent else next.muted,
+                    style =
+                        OrbinType.body.withReaderFont().copy(
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                        ),
+                    color = if (active) reader.ink else reader.inkSecondary,
                 )
             }
         }
@@ -226,7 +253,13 @@ private fun SearchResults(
                 Box(Modifier.fillMaxSize()) {
                     val wideWindow = readerRecordUsesWideText()
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().testTag(ReaderSearchTags.LIST),
+                        modifier =
+                            Modifier
+                                .widthIn(
+                                    max = 720.dp,
+                                ).fillMaxSize()
+                                .align(Alignment.TopCenter)
+                                .testTag(ReaderSearchTags.LIST),
                         contentPadding =
                             PaddingValues(
                                 start = ReaderSpace.gutter,

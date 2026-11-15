@@ -69,9 +69,10 @@ class ReaderMediaInsetsTest {
         // The video may draw edge-to-edge behind the bars; only the controls must clear them.
         assertThat(video.top.value).isWithin(0.5f).of(root.top.value)
         assertThat(video.bottom.value).isWithin(0.5f).of(root.bottom.value)
-        assertThat(timeBar.bottom.value).isWithin(0.5f).of(safeBottom)
+        assertThat(panel.bottom.value).isWithin(0.5f).of(safeBottom - 12f)
         assertThat(buttons.bottom.value).isAtMost(safeBottom + 0.5f)
-        assertThat(timeBar.top.value).isAtLeast(buttons.bottom.value)
+        assertThat(timeBar.top.value).isAtLeast(buttons.top.value)
+        assertThat(timeBar.bottom.value).isAtMost(buttons.bottom.value + 0.5f)
         assertThat(timeBar.left.value).isAtLeast(safeLeft - 0.5f)
         assertThat(timeBar.right.value).isAtMost(safeRight + 0.5f)
         assertThat(buttons.left.value).isAtLeast(safeLeft - 0.5f)

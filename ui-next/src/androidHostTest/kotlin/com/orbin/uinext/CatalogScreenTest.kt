@@ -166,21 +166,21 @@ class CatalogScreenTest {
     }
 
     @Test
-    fun `a list row keeps the full 72dp thumbnail without an outer inset`() {
+    fun `a list row keeps the full 72dp thumbnail inside its card gutter`() {
         composeRule.setContent { NextTheme { Catalog(thumbnail = true) } }
 
         val thumbnail = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).onFirst()
         thumbnail.assertHeightIsAtLeast(72.dp)
-        assertEquals(0f, thumbnail.getUnclippedBoundsInRoot().left.value, 0.5f)
+        assertEquals(10f, thumbnail.getUnclippedBoundsInRoot().left.value, 0.5f)
     }
 
     @Test
-    fun `a wide window uses the full 100dp thumbnail without an outer inset`() {
+    fun `a wide window uses the full 100dp thumbnail inside its card gutter`() {
         composeRule.setContent { NextTheme { Catalog(thumbnail = true, wideWindow = true) } }
 
         val thumbnail = composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).onFirst()
         thumbnail.assertHeightIsAtLeast(100.dp)
-        assertEquals(0f, thumbnail.getUnclippedBoundsInRoot().left.value, 0.5f)
+        assertEquals(10f, thumbnail.getUnclippedBoundsInRoot().left.value, 0.5f)
     }
 
     @Test
@@ -302,7 +302,7 @@ class CatalogScreenTest {
     }
 
     @Test
-    fun `grid mode shows two compact cards with inset images on a phone`() {
+    fun `grid mode shows two image-first cards with counts over the image on a phone`() {
         composeRule.setContent { NextTheme { Catalog(mode = CatalogMode.GRID, thumbnail = true) } }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
@@ -313,7 +313,7 @@ class CatalogScreenTest {
         val image =
             composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, useUnmergedTree = true)[0].getUnclippedBoundsInRoot()
         assertEquals("two columns on a phone", 2, expected.columns)
-        assertEquals("the outer gutter is 16dp", ORBIN_CATALOG_GUTTER.value, first.left.value, 0.5f)
+        assertEquals("the outer gutter is 10dp", ORBIN_CATALOG_GUTTER.value, first.left.value, 0.5f)
         assertEquals("two cards share the first line", first.top.value, second.top.value, 0.5f)
         val cardWidth = (grid.right - grid.left - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP).value / 2f
         assertEquals("cards share the pane equally", cardWidth, (first.right - first.left).value, 0.5f)
@@ -323,21 +323,24 @@ class CatalogScreenTest {
             (image.bottom - image.top).value,
             0.5f,
         )
-        assertEquals("the image is inset 12dp", first.left.value + 12f, image.left.value, 0.5f)
-        assertTrue("counts sit below the image", first.bottom > image.bottom)
+        assertEquals("the image fills its rounded card", first.left.value, image.left.value, 0.5f)
+        assertEquals(first.right.value, image.right.value, 0.5f)
+        assertEquals(first.bottom.value, image.bottom.value, 0.5f)
+        val replies = composeRule.onNodeWithText("23 replies", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("Counts stay within the image overlay", replies.top >= image.top && replies.bottom <= image.bottom)
         composeRule.onNodeWithText("23 replies", useUnmergedTree = true).assertExists()
         composeRule.onNodeWithText("4 files", useUnmergedTree = true).assertExists()
     }
 
     @Test
-    fun `a short pane still shows two Coral catalog columns`() {
+    fun `a short pane still shows two compact catalog columns`() {
         composeRule.setContent {
             NextTheme { Box(Modifier.size(360.dp, 356.dp)) { Catalog(mode = CatalogMode.GRID, thumbnail = true) } }
         }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
         val expected = orbinCatalogGridSpec(grid.right - grid.left)
-        assertEquals("360dp holds two Coral cards across", 2, expected.columns)
+        assertEquals("360dp holds two rounded cards across", 2, expected.columns)
         val cards = composeRule.onAllNodesWithTag(CatalogTags.CARD)
         val first = cards[0].getUnclippedBoundsInRoot()
         val second = cards[1].getUnclippedBoundsInRoot()
@@ -434,7 +437,7 @@ class CatalogScreenTest {
         composeRule.setContent { NextTheme { Catalog(rows = rows, thumbnail = true) } }
         val imageText = composeRule.onNodeWithText("Image row", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val text = composeRule.onNodeWithText("Text row", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(8f, text.left.value, 0.5f)
+        assertEquals(18f, text.left.value, 0.5f)
         assertEquals(ReaderSize.thumbnail.value, (imageText.left - text.left).value, 0.5f)
         composeRule.onAllNodesWithTag(CatalogTags.THUMBNAIL, true).assertCountEquals(1)
     }
@@ -454,7 +457,7 @@ class CatalogScreenTest {
                     "23 replies, 4 files",
                     useUnmergedTree = true,
                 ).getUnclippedBoundsInRoot()
-        assertEquals(360f, image.right.value, 0.5f)
+        assertEquals(350f, image.right.value, 0.5f)
         assertEquals(title.right.value, counts.right.value, 0.5f)
         composeRule
             .onNodeWithTag(CatalogTags.ROW)

@@ -33,7 +33,7 @@ private const val BACKUP_FILE_NAME = "orbin-backup.json"
 private const val BYTES_PER_MB = 1024L * 1024L
 
 /**
- * A settings directory backed by the same persisted controls on every subpage.
+ * A grouped settings page backed by the existing persisted controls.
  * System actions such as backup import/export stay in the platform layer.
  */
 @Composable
@@ -147,6 +147,7 @@ fun NextSettingsScreen(
 
     NextTheme {
         SettingsScreen(
+            subtitle = appVersionName(context),
             bottomBar = bottomBar,
             groups = model.groups + ("Playback" to playbackRows(settings, playbackScopes, playbackScope)),
             onBack = onBack,

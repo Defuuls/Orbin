@@ -22,6 +22,7 @@ import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
 import com.orbin.domain.repository.WhatsNewRepository
 import com.orbin.uinext.LockScreen
+import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextLoading
 import com.orbin.uinext.NextPlatform
 import com.orbin.uinext.NextTheme
@@ -29,6 +30,8 @@ import com.orbin.uinext.OnboardingBoard
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
 import com.orbin.uinext.OnboardingSetupConfig
+import com.orbin.uinext.OrbinAdaptiveNavigation
+import com.orbin.uinext.OrbinSideBar
 import com.orbin.uinext.SetupThemeOption
 import com.orbin.uinext.UpdateThemeConfig
 import com.orbin.uinext.WhatsNewOnUpdate
@@ -103,21 +106,33 @@ fun OrbinApp(
                     OnboardingDestination(browser)
                 } else if (!lockState.locked) {
                     val route = backStack.last()
-                    val boardReader = boardReaderRoute(backStack)
-                    if (boardReader != null) {
-                        BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
-                    } else {
-                        stateHolder.SaveableStateProvider(route.stateKey) {
-                            Destination(
-                                browser,
-                                lock,
-                                downloads,
-                                backup,
-                                formFactor,
-                                version,
-                                route,
-                                pages,
+                    val primaryDestination = primaryNavigationDestination(route)
+                    OrbinAdaptiveNavigation(
+                        enabled = primaryDestination != null,
+                        navigation = {
+                            OrbinSideBar(
+                                selected = checkNotNull(primaryDestination),
+                                onSelect = browser::openPrimaryDestination,
+                                downloadBadge = rememberActiveDownloadBadge(downloads),
                             )
+                        },
+                    ) {
+                        val boardReader = boardReaderRoute(backStack)
+                        if (boardReader != null) {
+                            BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
+                        } else {
+                            stateHolder.SaveableStateProvider(route.stateKey) {
+                                Destination(
+                                    browser,
+                                    lock,
+                                    downloads,
+                                    backup,
+                                    formFactor,
+                                    version,
+                                    route,
+                                    pages,
+                                )
+                            }
                         }
                     }
                 }
@@ -142,6 +157,16 @@ fun OrbinApp(
         }
     }
 }
+
+/** Detail routes, including full-screen media, do not reserve primary navigation space. */
+internal fun primaryNavigationDestination(route: Route): NextDestination? =
+    when (route) {
+        Route.Feed -> NextDestination.FEED
+        Route.Boards -> NextDestination.BOARDS
+        Route.Downloads -> NextDestination.DOWNLOADS
+        Route.Settings -> NextDestination.SETTINGS
+        else -> null
+    }
 
 /** First run: Android's board picker, over the active site's boards. */
 @Composable

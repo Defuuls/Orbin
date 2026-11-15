@@ -50,7 +50,12 @@ class FeedCoralChromeTest {
         assertEquals(pane.right.value - 16f, cardFirst.right.value, 0.5f)
         assertEquals(cardFirst.left.value, cardSecond.left.value, 0.5f)
         assertEquals(cardFirst.right.value, cardSecond.right.value, 0.5f)
-        assertEquals("Card mode stacks full-width cards", cardFirst.bottom.value + 8f, cardSecond.top.value, 0.5f)
+        assertEquals(
+            "Card mode stacks full-width cards with a 10dp gap",
+            cardFirst.bottom.value + 10f,
+            cardSecond.top.value,
+            0.5f,
+        )
 
         compose.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("Grid view").performClick()
         compose.runOnIdle { assertEquals(CatalogMode.GRID, mode) }

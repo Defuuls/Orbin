@@ -20,13 +20,13 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -46,7 +46,7 @@ object ReaderMediaToolbarTags {
 
 /**
  * Compact media chrome with safe insets, an explicit Close action and persistent download.
- * Normal text fits 56dp; larger device text grows the title and its toolbar together.
+ * NekoSurf's gradient overlay and rounded action island, with scalable Orbin controls.
  */
 @Composable
 fun ReaderMediaToolbar(
@@ -91,7 +91,7 @@ fun ReaderMediaToolbar(
                         Spacer(Modifier.weight(1f))
                         actions()
                     }
-                    ReaderMediaTitle(filename, position, Modifier.fillMaxWidth().padding(end = 16.dp))
+                    ReaderMediaTitle(filename, position, Modifier.fillMaxWidth().padding(end = 12.dp))
                 }
             } else {
                 Row(
@@ -100,7 +100,11 @@ fun ReaderMediaToolbar(
                 ) {
                     ReaderMediaClose(closeLabel, onClose)
                     ReaderMediaTitle(filename, position, Modifier.weight(1f))
-                    actions()
+                    Row(
+                        Modifier.background(Color(0xD11C1C1E), RoundedCornerShape(16.dp)),
+                        verticalAlignment = Alignment.CenterVertically,
+                        content = actions,
+                    )
                 }
             }
         }
@@ -116,14 +120,14 @@ private fun ReaderMediaToolbarFrame(
         modifier
             .testTag(ReaderMediaToolbarTags.BAR)
             .fillMaxWidth()
-            .background(MEDIA_TOOLBAR_BACKGROUND)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
+            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 28.dp),
     ) {
         content()
     }
 }
 
-private val MEDIA_TOOLBAR_BACKGROUND = Color(0x87000000)
 private val MEDIA_TOOLBAR_STACKED_WIDTH = 360.dp
 
 /** A persistent, explicit exit for the full-screen viewer. */
@@ -133,10 +137,15 @@ fun ReaderMediaClose(
     onClick: () -> Unit,
 ) {
     Box(
-        Modifier.size(56.dp).clickable(role = Role.Button, onClick = onClick),
+        Modifier.size(48.dp).clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.Close, label, tint = Color.White, modifier = Modifier.size(24.dp))
+        Box(
+            Modifier.size(40.dp).background(Color(0xD11C1C1E), RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(ReaderIcons.Back, label, tint = Color.White, modifier = Modifier.size(18.dp))
+        }
     }
 }
 
@@ -148,30 +157,40 @@ fun ReaderMediaTitle(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier.heightIn(min = 56.dp).padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+        modifier.heightIn(min = 48.dp).padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
             filename,
             modifier = Modifier.fillMaxWidth(),
             color = Color.White,
-            style = OrbinType.appBarTitle.withReaderFont().copy(fontSize = 20.sp, lineHeight = 24.sp),
-            fontWeight = FontWeight.Medium,
+            style =
+                OrbinType.appBarTitle.withReaderFont().copy(
+                    fontSize = 16.sp,
+                    lineHeight = 22.sp,
+                    letterSpacing = (-0.3).sp,
+                ),
+            fontWeight = FontWeight.ExtraBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             position,
             modifier = Modifier.fillMaxWidth(),
-            color = Color.White,
-            style = OrbinType.appBarSubtitle.withReaderFont().copy(fontSize = 14.sp, lineHeight = 20.sp),
+            color = Color.White.copy(alpha = 0.65f),
+            style =
+                OrbinType.appBarSubtitle.withReaderFont().copy(
+                    fontSize = 12.5.sp,
+                    lineHeight = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-/** Viewer actions keep at least 48dp targets; ordinary actions remain 50dp wide. */
+/** Viewer actions retain 48dp targets inside the compact action island. */
 @Composable
 fun ReaderMediaAction(
     imageVector: ImageVector,
@@ -183,17 +202,17 @@ fun ReaderMediaAction(
 ) {
     Box(
         modifier
-            .width(if (overflow) maxOf(44.dp, ReaderSize.touchTarget) else 50.dp)
-            .heightIn(min = 56.dp)
+            .width(ReaderSize.touchTarget)
+            .heightIn(min = 48.dp)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .then(if (overflow) Modifier.padding(start = 8.dp, end = 16.dp) else Modifier),
+            .then(if (overflow) Modifier.padding(horizontal = 4.dp) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector,
+            if (overflow) ReaderIcons.More else imageVector,
             label,
             tint = Color.White.copy(alpha = if (enabled) 1f else 0.3f),
-            modifier = Modifier.requiredSize(24.dp),
+            modifier = Modifier.requiredSize(20.dp),
         )
     }
 }

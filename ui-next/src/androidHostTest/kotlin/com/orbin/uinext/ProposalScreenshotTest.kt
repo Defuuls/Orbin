@@ -272,7 +272,7 @@ class ProposalScreenshotTest {
         }
 
     /**
-     * A dedicated choice page keeps options in a readable single-selection list.
+     * Short choices open an anchored menu over the same grouped settings root.
      */
     @Test
     fun settingsEditing() =

@@ -6,6 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [209-Aegirine] - 2026-11-14
+
+### Changed
+- Applied NekoSurf-inspired surfaces, rounded controls, image-led catalogs and navigation across Android and iOS while retaining Orbin branding and existing browsing, saved-thread and media actions.
+- Replaced the settings directory with one grouped page containing an Orbin identity card, inline choices and all existing settings, search and platform actions.
+- Placed default thread media below comments with bounded full-width previews, and updated the media viewer with gradient overlays and rounded playback controls.
+- Used the native iOS system font while retaining Android Roboto and uncapped system text sizing on both platforms.
+
+### Added
+- Added a left navigation rail on primary pages at window widths of 840dp and above, preserving phone bottom navigation and screen state across resizing.
+
+### Testing
+- Added grouped-settings, playback-action, text-sizing, RTL, adaptive-navigation and layout regressions; refreshed shared visual references for the new design.
+
+
 ## [208-Adamite] - 2026-11-14
 
 ### Added
@@ -3165,7 +3180,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v208-Adamite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v209-Aegirine...HEAD
+[209-Aegirine]: https://github.com/Defuuls/Orbin/compare/v208-Adamite...v209-Aegirine
 [208-Adamite]: https://github.com/Defuuls/Orbin/compare/v207-Actinolite...v208-Adamite
 [207-Actinolite]: https://github.com/Defuuls/Orbin/compare/v206-Sea-Beet...v207-Actinolite
 [206-Sea-Beet]: https://github.com/Defuuls/Orbin/compare/v205-Nopales...v206-Sea-Beet

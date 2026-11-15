@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_back
 import com.orbin.uinext.resources.reader_menu
@@ -125,7 +126,14 @@ fun ReaderAppBar(
                 ),
     ) {
         val titleStart = if (leading == ReaderNavigation.NONE) ZERO else TITLE_AFTER_NAVIGATION
-        val navigationWidth = if (leading == ReaderNavigation.NONE) ReaderSpace.gutter else ReaderSize.appBarNavigation
+        val navigationWidth =
+            if (leading ==
+                ReaderNavigation.NONE
+            ) {
+                ReaderSpace.gutter
+            } else {
+                12.dp + ReaderSize.appBarNavigation
+            }
         val overflowWidth = maxOf(ReaderSize.appBarOverflow, ReaderSize.touchTarget)
         val actionSpace = (maxWidth - navigationWidth - titleStart - ReaderSize.touchTarget).coerceAtLeast(ZERO)
         val actionBudget =
@@ -140,35 +148,62 @@ fun ReaderAppBar(
                 }
         Row(
             modifier =
-                Modifier.fillMaxWidth().heightIn(min = ReaderSize.appBar).background(colors.appBar),
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = ReaderSize.appBar)
+                    .background(colors.appBar)
+                    .padding(top = 7.dp, bottom = 7.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when (leading) {
                 ReaderNavigation.MENU ->
-                    NextIconAction(
-                        imageVector = ReaderIcons.Menu,
-                        contentDescription = stringResource(Res.string.reader_menu),
-                        onClick = { onNavigation?.invoke() },
-                        tint = colors.onAppBar,
-                        modifier = Modifier.size(ReaderSize.appBarNavigation, ReaderSize.appBar),
-                    )
+                    Box(Modifier.padding(start = 12.dp)) {
+                        NextIconAction(
+                            imageVector = ReaderIcons.Menu,
+                            contentDescription = stringResource(Res.string.reader_menu),
+                            onClick = { onNavigation?.invoke() },
+                            tint = colors.onAppBar,
+                            modifier = Modifier.size(ReaderSize.appBarNavigation),
+                        )
+                    }
                 ReaderNavigation.BACK ->
-                    NextIconAction(
-                        imageVector = ReaderIcons.Back,
-                        contentDescription = stringResource(Res.string.reader_back),
-                        onClick = { onNavigation?.invoke() },
-                        tint = colors.onAppBar,
-                        modifier = Modifier.size(ReaderSize.appBarNavigation, ReaderSize.appBar),
-                    )
+                    Box(Modifier.padding(start = 12.dp)) {
+                        NextIconAction(
+                            imageVector = ReaderIcons.Back,
+                            contentDescription = stringResource(Res.string.reader_back),
+                            onClick = { onNavigation?.invoke() },
+                            tint = colors.accent,
+                            modifier = Modifier.size(ReaderSize.appBarNavigation),
+                        )
+                    }
                 ReaderNavigation.NONE -> Spacer(Modifier.width(ReaderSpace.gutter))
             }
             // With no leading control the spacer above already brings the title to the gutter.
-            Column(modifier = Modifier.weight(1f).padding(start = titleStart)) {
-                val titleRow: @Composable () -> Unit = {
+            val titleAction =
+                when {
+                    onTitleClick != null ->
+                        Modifier
+                            .testTag(ReaderAppBarTags.BOARD_PICKER)
+                            .widthIn(min = ReaderSize.touchTarget)
+                            .heightIn(min = ReaderSize.touchTarget)
+                            .nextClickable(role = Role.Button, onClickLabel = titleClickLabel, onClick = onTitleClick)
+                    onTitleTap != null ->
+                        Modifier
+                            .widthIn(min = ReaderSize.touchTarget)
+                            .heightIn(min = ReaderSize.touchTarget)
+                            .semantics { titleTapLabel?.let { contentDescription = it } }
+                            .nextClickable(role = Role.Button, onClickLabel = titleTapLabel, onClick = onTitleTap)
+                    else -> Modifier
+                }
+            Box(
+                modifier = Modifier.weight(1f).padding(start = titleStart).then(titleAction),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = title,
-                            style = OrbinType.appBarTitle.withReaderFont(),
+                            style = OrbinType.appBarTitle.withReaderFont().copy(letterSpacing = (-0.6).sp),
                             color = colors.onAppBar,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -187,46 +222,15 @@ fun ReaderAppBar(
                             )
                         }
                     }
-                }
-                if (onTitleClick != null) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .testTag(ReaderAppBarTags.BOARD_PICKER)
-                                .widthIn(min = ReaderSize.touchTarget)
-                                .heightIn(min = ReaderSize.appBar)
-                                .nextClickable(
-                                    role = Role.Button,
-                                    onClickLabel = titleClickLabel,
-                                    onClick = onTitleClick,
-                                ),
-                        contentAlignment = Alignment.CenterStart,
-                    ) { titleRow() }
-                } else if (onTitleTap != null) {
-                    Box(
-                        modifier =
-                            Modifier
-                                .widthIn(min = ReaderSize.touchTarget)
-                                .heightIn(min = ReaderSize.appBar)
-                                .semantics { titleTapLabel?.let { contentDescription = it } }
-                                .nextClickable(
-                                    role = Role.Button,
-                                    onClickLabel = titleTapLabel,
-                                    onClick = onTitleTap,
-                                ),
-                        contentAlignment = Alignment.CenterStart,
-                    ) { titleRow() }
-                } else {
-                    titleRow()
-                }
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = OrbinType.appBarSubtitle.withReaderFont(),
-                        color = colors.onAppBar,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = OrbinType.appBarSubtitle.withReaderFont(),
+                            color = colors.inkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
             visibleActions.forEach { action ->
@@ -235,7 +239,7 @@ fun ReaderAppBar(
                     contentDescription = action.label,
                     onClick = action.onClick,
                     tint = colors.onAppBar,
-                    modifier = Modifier.size(ReaderSize.appBarAction, ReaderSize.appBar),
+                    modifier = Modifier.size(ReaderSize.appBarAction),
                 )
             }
             if (menuItems.isNotEmpty()) {
@@ -250,13 +254,13 @@ fun ReaderAppBar(
                             Modifier
                                 .testTag(
                                     ReaderAppBarTags.OVERFLOW,
-                                ).size(overflowWidth, ReaderSize.appBar),
+                                ).size(overflowWidth, ReaderSize.touchTarget),
                     )
                     DropdownMenu(
                         expanded = open,
                         onDismissRequest = { open = false },
                         shape = RoundedCornerShape(OrbinRadius.card),
-                        containerColor = if (next.dark) colors.surfaceVariant else colors.background,
+                        containerColor = colors.surfaceVariant,
                         border = BorderStroke(ReaderSize.hairline, colors.hairline),
                     ) {
                         menuItems.forEach { item ->
@@ -299,6 +303,6 @@ internal fun ReaderHairline(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().heightIn(min = ReaderSize.hairline).background(reader.hairline))
 }
 
-// The title starts this far after the leading control, which puts it 72dp from the bar's edge.
-private val TITLE_AFTER_NAVIGATION = ReaderSpace.gutter
+// A 48dp action at x=12 contains the 40dp visual; this gap brings the title to x=68.
+private val TITLE_AFTER_NAVIGATION = 8.dp
 private val ZERO = 0.dp

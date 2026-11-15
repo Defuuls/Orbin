@@ -8,6 +8,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -51,15 +53,23 @@ class SettingsInteractionAccessibilityTest {
                 )
             }
         }
+        composeRule.onAllNodes(isSwitch).assertCountEquals(1)
+        composeRule
+            .onNodeWithText("App lock")
+            .assertHeightIsAtLeast(48.dp)
+            .assertIsOff()
+            .performClick()
+            .assertIsOn()
+        assertEquals(1, calls)
         composeRule.onNodeWithContentDescription("Search settings").performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput("lock")
         composeRule.onAllNodes(isSwitch).assertCountEquals(1)
         composeRule
             .onNodeWithText("App lock")
-            .assertIsOff()
-            .performClick()
             .assertIsOn()
-        assertEquals(1, calls)
+            .performClick()
+            .assertIsOff()
+        assertEquals(2, calls)
     }
 
     @Test

@@ -20,11 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,9 +43,12 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isFinite
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_error_network
 import com.orbin.uinext.resources.reader_error_network_helper
@@ -116,6 +121,7 @@ fun ReaderCatalogSkeleton(
     mode: CatalogMode = CatalogMode.LIST,
     wideWindow: Boolean = false,
     showProgress: Boolean = true,
+    gutter: Dp = ORBIN_CATALOG_GUTTER,
 ) {
     ReaderSkeleton(
         label = stringResource(Res.string.reader_loading_catalog),
@@ -124,24 +130,84 @@ fun ReaderCatalogSkeleton(
         mode = mode,
         wideWindow = wideWindow,
         showProgress = showProgress,
+        gutter = gutter,
     )
 }
 
-/** First-load post cells reserve the thumbnail and text space before any attachment is decoded. */
+/** Flat first-load posts reserve their header, comment and bounded attachment before decoding. */
 @Composable
 fun ReaderThreadSkeleton(
     modifier: Modifier = Modifier,
     wideWindow: Boolean = false,
     showProgress: Boolean = true,
 ) {
-    ReaderSkeleton(
-        label = stringResource(Res.string.reader_loading_thread),
-        tag = ReaderStateTags.THREAD_SKELETON,
-        modifier = modifier,
-        wideWindow = wideWindow,
-        showProgress = showProgress,
-        thread = true,
-    )
+    val colors = reader
+    val label = stringResource(Res.string.reader_loading_thread)
+    val bodyStyle =
+        OrbinType.readerBody.withReaderFont().let { style ->
+            if (wideWindow) style.copy(fontSize = 16.sp, lineHeight = 24.sp) else style
+        }
+    Column(
+        Modifier
+            .testTag(ReaderStateTags.THREAD_SKELETON)
+            .then(modifier)
+            .fillMaxSize()
+            .background(colors.background),
+    ) {
+        if (showProgress) ReaderRefreshProgress()
+        BoxWithConstraints(
+            Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                .clearAndSetSemantics { contentDescription = label },
+        ) {
+            val previewHeight = readerPostMediaHeight((maxWidth - 28.dp).coerceAtLeast(1.dp), maxHeight)
+            val rowCount =
+                if (maxHeight.isFinite && maxHeight > 0.dp) {
+                    ceil(maxHeight.value / (previewHeight + 96.dp).value).toInt().coerceAtLeast(1)
+                } else {
+                    1
+                }
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = false,
+                contentPadding = PaddingValues(bottom = bottomInset()),
+            ) {
+                items(rowCount) {
+                    Column(Modifier.fillMaxWidth().testTag(ReaderStateTags.SKELETON_CELL)) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 11.dp, bottom = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            SkeletonLine(
+                                OrbinType.postAuthor.withReaderFont().copy(fontSize = 13.sp, lineHeight = 17.sp),
+                                Modifier.fillMaxWidth(0.55f).testTag("reader-skeleton-post-header"),
+                            )
+                            SkeletonLine(
+                                bodyStyle,
+                                Modifier.fillMaxWidth().testTag("reader-skeleton-post-body"),
+                                lines = 2,
+                            )
+                            SkeletonBlock(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(previewHeight)
+                                    .testTag(ReaderStateTags.SKELETON_THUMBNAIL)
+                                    .clip(RoundedCornerShape(12.dp)),
+                            )
+                        }
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp)
+                                .height(ReaderSize.hairline)
+                                .background(colors.hairline),
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -153,6 +219,7 @@ private fun ReaderSkeleton(
     showProgress: Boolean,
     mode: CatalogMode = CatalogMode.LIST,
     thread: Boolean = false,
+    gutter: Dp = ORBIN_CATALOG_GUTTER,
 ) {
     val colors = reader
     Column(
@@ -169,8 +236,8 @@ private fun ReaderSkeleton(
             val cards = mode != CatalogMode.LIST
             val gridSpec =
                 when (mode) {
-                    CatalogMode.GRID -> orbinCatalogGridSpec(maxWidth)
-                    CatalogMode.CARD -> orbinCatalogCardSpec(maxWidth)
+                    CatalogMode.GRID -> orbinCatalogGridSpec(maxWidth, gutter = gutter)
+                    CatalogMode.CARD -> orbinCatalogCardSpec(maxWidth, gutter = gutter)
                     CatalogMode.LIST -> catalogGridSpec(maxWidth, maxHeight)
                 }
             val columns = if (cards) gridSpec.columns else 1
@@ -185,7 +252,7 @@ private fun ReaderSkeleton(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
                 userScrollEnabled = false,
-                contentPadding = if (cards) PaddingValues(ORBIN_CATALOG_GUTTER) else PaddingValues(),
+                contentPadding = if (cards) PaddingValues(gutter) else PaddingValues(),
                 horizontalArrangement = if (cards) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Start,
                 verticalArrangement = if (cards) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
             ) {
@@ -336,17 +403,36 @@ private fun ReaderCenteredState(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(ReaderSpace.gapSmall),
         ) {
+            Box(
+                Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background((if (error) colors.error else colors.accent).copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    if (error) ReaderIcons.Refresh else ReaderIcons.Search,
+                    contentDescription = null,
+                    tint = if (error) colors.error else colors.accent,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
             Text(
                 title,
                 color = if (error) colors.error else colors.ink,
-                style = OrbinType.stateTitle.withReaderFont(),
+                style =
+                    OrbinType.stateTitle.withReaderFont().copy(
+                        fontSize = 20.sp,
+                        lineHeight = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ReaderStateTags.TITLE).semantics { heading() },
             )
             Text(
                 message,
                 color = colors.inkMuted,
-                style = OrbinType.stateBody.withReaderFont(),
+                style = OrbinType.stateBody.withReaderFont().copy(fontSize = 14.5.sp, lineHeight = 20.3.sp),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ReaderStateTags.MESSAGE),
             )

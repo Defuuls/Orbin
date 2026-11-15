@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
@@ -69,11 +70,16 @@ data class OnboardingSetupConfig(
     val onCoverViolentMediaChange: (Boolean) -> Unit,
 )
 
-private val SplashGround = Color(0xFF0B1021)
-private val SplashSurface = Color(0xFF141B33)
-private val SplashBorder = Color(0xFF1E294A)
-private val SplashMuted = Color(0xFF9FB0CE)
-private val SplashCyan = Color(0xFF00D4FF)
+private val SplashGround: Color
+    @Composable get() = reader.background
+private val SplashSurface: Color
+    @Composable get() = reader.surfaceVariant
+private val SplashBorder: Color
+    @Composable get() = reader.hairline
+private val SplashMuted: Color
+    @Composable get() = reader.inkMuted
+private val SplashCyan: Color
+    @Composable get() = reader.accent
 
 @Composable
 internal fun WelcomeSplashStep(
@@ -98,12 +104,17 @@ internal fun WelcomeSplashStep(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            OrbinLogoMark(modifier = Modifier.size(96.dp))
+            OrbinLogoMark(modifier = Modifier.size(80.dp))
             Spacer(Modifier.height(20.dp))
             Text(
                 text = OrbinStyle.WORDMARK,
-                style = OrbinType.largeTitle.withReaderFont().copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
+                style =
+                    OrbinType.largeTitle.withReaderFont().copy(
+                        fontSize = 24.sp,
+                        lineHeight = 30.sp,
+                        fontWeight = FontWeight.Black,
+                    ),
+                color = reader.ink,
                 modifier = Modifier.semantics { heading() },
             )
             Spacer(Modifier.height(8.dp))
@@ -180,7 +191,12 @@ private fun SplashHighlightRow(
             imageVector = icon,
             contentDescription = null,
             tint = SplashCyan,
-            modifier = Modifier.size(20.dp),
+            modifier =
+                Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(SplashCyan.copy(alpha = 0.16f))
+                    .padding(8.dp),
         )
         Column(
             modifier = Modifier.weight(1f),
@@ -189,7 +205,7 @@ private fun SplashHighlightRow(
             Text(
                 text = title,
                 style = OrbinType.rowTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
+                color = reader.ink,
             )
             Text(
                 text = subtitle,
@@ -214,29 +230,29 @@ internal fun AppearanceSetupStep(
                 "System default",
                 "Matches your device light or dark mode",
                 SetupThemeOption.SYSTEM,
-                Color(0xFF4338CA),
-                SplashGround,
+                reader.background,
+                reader.accent,
             ),
             ThemeChoice(
                 "Light",
-                "Crisp white ground with Electric Indigo accent",
+                "Soft light surfaces with an indigo accent",
                 SetupThemeOption.LIGHT,
                 Color.White,
                 Color(0xFF4338CA),
             ),
             ThemeChoice(
-                "Dark — Midnight Electric",
-                "Midnight navy ground with Electric Cyan accent",
+                "Dark",
+                "Quiet dark surfaces with a cyan accent",
                 SetupThemeOption.DARK,
-                SplashGround,
-                SplashCyan,
+                Color(0xFF0B0D11),
+                Color(0xFF00D4FF),
             ),
             ThemeChoice(
                 "AMOLED — True Black",
-                "Pure black & white for OLED displays",
+                "Pure black surfaces with a cyan accent",
                 SetupThemeOption.AMOLED,
                 Color.Black,
-                Color.White,
+                Color(0xFF00D4FF),
             ),
         )
     Column(
@@ -322,9 +338,9 @@ private fun ThemeOptionCard(
                 modifier =
                     Modifier
                         .size(width = 48.dp, height = 38.dp)
-                        .clip(RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .background(option.swatchBg)
-                        .border(1.dp, reader.hairline, RoundedCornerShape(6.dp)),
+                        .border(1.dp, reader.hairline, RoundedCornerShape(14.dp)),
             ) {
                 Box(
                     modifier =
@@ -482,7 +498,7 @@ private fun SetupToggleCard(
                 )
             }
             Box(Modifier.clearAndSetSemantics {}) {
-                NextToggle(checked = checked, onCheckedChange = null)
+                ReaderSettingsSwitch(checked)
             }
         }
     }
@@ -556,10 +572,10 @@ private fun SetupBottomBar(
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
                     .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            OrbinTextButton(label = backLabel, onClick = onBack)
-            OrbinFilledButton(label = nextLabel, onClick = onNext)
+            OrbinTextButton(label = backLabel, onClick = onBack, modifier = Modifier.weight(1f))
+            OrbinFilledButton(label = nextLabel, onClick = onNext, modifier = Modifier.weight(1f))
         }
     }
 }

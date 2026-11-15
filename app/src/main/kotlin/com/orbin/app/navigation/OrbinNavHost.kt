@@ -34,6 +34,7 @@ import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
+import com.orbin.uinext.LocalOrbinNavigationAtSide
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextScaffold
 import com.orbin.uinext.OrbinBottomBar
@@ -272,17 +273,23 @@ fun OrbinNavHost(
         composable<Route.Downloads> {
             DownloadsScreen(
                 onBack = { navController.navigateUp() },
-                bottomBar = {
-                    PrimaryBottomBar(NextDestination.DOWNLOADS, navController::openPrimaryDestination)
-                },
+                bottomBar =
+                    if (LocalOrbinNavigationAtSide.current) {
+                        null
+                    } else {
+                        { PrimaryBottomBar(NextDestination.DOWNLOADS, navController::openPrimaryDestination) }
+                    },
             )
         }
 
         composable<Route.Settings> {
             NextSettingsScreen(
-                bottomBar = {
-                    PrimaryBottomBar(NextDestination.SETTINGS, navController::openPrimaryDestination)
-                },
+                bottomBar =
+                    if (LocalOrbinNavigationAtSide.current) {
+                        null
+                    } else {
+                        { PrimaryBottomBar(NextDestination.SETTINGS, navController::openPrimaryDestination) }
+                    },
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 onBack = { navController.navigateUp() },
                 onNavigate = { destination ->

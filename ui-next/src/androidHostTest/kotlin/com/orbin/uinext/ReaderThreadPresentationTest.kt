@@ -2,17 +2,25 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals
@@ -23,7 +31,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Clover post and album geometry, media slots, responsive text and visible metadata. */
+/** Post and album geometry, media slots, responsive text and visible metadata. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
 class ReaderThreadPresentationTest {
@@ -31,7 +39,7 @@ class ReaderThreadPresentationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `a post's thumbnail is the specified square and holds the platform's media`() {
+    fun `a post places its platform media in a bounded full width preview below the comment`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -42,18 +50,19 @@ class ReaderThreadPresentationTest {
                 )
             }
         }
-        composeRule
-            .onNodeWithTag(ThreadTags.THUMBNAIL, useUnmergedTree = true)
-            .assertWidthIsEqualTo(ReaderSize.thumbnail)
-            .assertHeightIsEqualTo(ReaderSize.thumbnail)
-        composeRule
-            .onNodeWithTag("platform-media", useUnmergedTree = true)
-            .assertWidthIsEqualTo(ReaderSize.thumbnail)
-            .assertHeightIsEqualTo(ReaderSize.thumbnail)
+        val preview = composeRule.onNodeWithTag(ThreadTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
+        val platform = composeRule.onNodeWithTag("platform-media", true).getUnclippedBoundsInRoot()
+        val comment = composeRule.onNodeWithText("A portrait", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertEquals(14f, preview.left.value, 0.5f)
+        assertEquals(383f, (preview.right - preview.left).value, 0.5f)
+        assertEquals((preview.right - preview.left).value * 0.75f, (preview.bottom - preview.top).value, 0.5f)
+        assertEquals(preview, platform)
+        assertTrue("Comments are read before their inline attachment", comment.bottom <= preview.top)
     }
 
     @Test
-    fun `a wide window uses the larger thumbnail`() {
+    @Config(qualifiers = "w960dp-h800dp-xhdpi")
+    fun `a wide window keeps a full width preview below the four hundred dp height limit`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -66,8 +75,8 @@ class ReaderThreadPresentationTest {
         }
         composeRule
             .onNodeWithTag(ThreadTags.THUMBNAIL, useUnmergedTree = true)
-            .assertWidthIsEqualTo(ReaderSize.thumbnailWide)
-            .assertHeightIsEqualTo(ReaderSize.thumbnailWide)
+            .assertWidthIsEqualTo(932.dp)
+            .assertHeightIsEqualTo(400.dp)
     }
 
     @Test
@@ -124,7 +133,7 @@ class ReaderThreadPresentationTest {
     }
 
     @Test
-    fun `post text uses Clover inset without media and after the leading thumbnail with it`() {
+    fun `post headers comments and inline attachments share the same reading inset`() {
         composeRule.setContent {
             NextTheme {
                 ThreadScreen(
@@ -142,43 +151,45 @@ class ReaderThreadPresentationTest {
         val body = composeRule.onNodeWithText("A new project", useUnmergedTree = true).getUnclippedBoundsInRoot()
         val withMedia = composeRule.onNodeWithText("Original post", useUnmergedTree = true).getUnclippedBoundsInRoot()
         assertEquals(author.left.value, body.left.value, 0.5f)
-        assertEquals(ReaderSpace.postInset.value, body.left.value, 0.5f)
-        assertEquals(
-            (ReaderSize.thumbnail + ReaderSpace.postInset).value,
-            withMedia.left.value,
-            0.5f,
-        )
+        assertEquals(14f, body.left.value, 0.5f)
+        assertEquals(body.left.value, withMedia.left.value, 0.5f)
         val thumbnail = composeRule.onNodeWithTag(ThreadTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
-        assertEquals(0f, thumbnail.left.value, 0.5f)
+        assertEquals(withMedia.left.value, thumbnail.left.value, 0.5f)
+        assertTrue(withMedia.bottom <= thumbnail.top)
     }
 
     @Test
-    fun `a reply is indented one gap per level and no further than three levels`() {
+    fun `replies indent by at most three gaps from their reading edge in both directions`() {
+        var direction by mutableStateOf(LayoutDirection.Ltr)
         composeRule.setContent {
-            NextTheme {
-                ThreadScreen(
-                    subject = "A thread",
-                    board = "/g/",
-                    posts =
-                        listOf(
-                            Post(number = "No. 1", time = "2m", body = "Level zero"),
-                            Post(number = "No. 2", time = "2m", body = "Level one", depth = 1),
-                            Post(number = "No. 3", time = "2m", body = "Level three", depth = 3),
-                            Post(number = "No. 4", time = "2m", body = "Level nine", depth = 9),
-                        ),
-                )
+            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                NextTheme {
+                    ThreadScreen(
+                        subject = "A thread",
+                        board = "/g/",
+                        posts =
+                            listOf(
+                                Post(number = "No. 1", time = "2m", body = "Level zero"),
+                                Post(number = "No. 2", time = "2m", body = "Level one", depth = 1),
+                                Post(number = "No. 3", time = "2m", body = "Level three", depth = 3),
+                                Post(number = "No. 4", time = "2m", body = "Level nine", depth = 9),
+                            ),
+                    )
+                }
             }
         }
-        val left = { text: String ->
-            composeRule
-                .onNodeWithText(text, useUnmergedTree = true)
-                .getUnclippedBoundsInRoot()
-                .left.value
+        for (layoutDirection in listOf(LayoutDirection.Ltr, LayoutDirection.Rtl)) {
+            composeRule.runOnIdle { direction = layoutDirection }
+
+            fun inset(text: String): Float {
+                val bounds = composeRule.onNodeWithText(text, useUnmergedTree = true).getUnclippedBoundsInRoot()
+                return if (layoutDirection == LayoutDirection.Ltr) bounds.left.value else 411f - bounds.right.value
+            }
+            assertEquals(14f, inset("Level zero"), 0.5f)
+            assertEquals(14f + ReaderSpace.gap.value, inset("Level one"), 0.5f)
+            assertEquals(14f + ReaderSpace.gap.value * 3, inset("Level three"), 0.5f)
+            assertEquals(inset("Level three"), inset("Level nine"), 0.5f)
         }
-        assertEquals(ReaderSpace.postInset.value, left("Level zero"), 0.5f)
-        assertEquals((ReaderSpace.postInset + ReaderSpace.gap).value, left("Level one"), 0.5f)
-        assertEquals((ReaderSpace.postInset + ReaderSpace.gap * 3).value, left("Level three"), 0.5f)
-        assertEquals(left("Level three"), left("Level nine"), 0.5f)
     }
 
     @Test
@@ -197,12 +208,13 @@ class ReaderThreadPresentationTest {
                 )
             }
         }
+        composeRule.onNodeWithTag(ThreadTags.LIST).performScrollToNode(hasTestTag(ThreadTags.STATUS))
         composeRule.onNodeWithTag(ThreadTags.STATUS).assertHeightIsEqualTo(ReaderSize.threadStatus)
         composeRule.onNodeWithText("2 replies · 3 files").assertExists()
     }
 
     @Test
-    fun `at font two a post puts the square thumbnail above its body`() {
+    fun `at font two a post keeps the full width preview below its readable comment`() {
         composeRule.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
@@ -217,10 +229,10 @@ class ReaderThreadPresentationTest {
         }
         val thumbnail = composeRule.onNodeWithTag(ThreadTags.THUMBNAIL, true).getUnclippedBoundsInRoot()
         val body = composeRule.onNodeWithText("Large text", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        assertEquals(ReaderSize.thumbnail.value, (thumbnail.right - thumbnail.left).value, 0.5f)
-        assertEquals((thumbnail.right - thumbnail.left).value, (thumbnail.bottom - thumbnail.top).value, 0.5f)
-        assertTrue(body.top > thumbnail.bottom)
-        assertEquals(ReaderSpace.postInset.value, body.left.value, 0.5f)
+        assertEquals(383f, (thumbnail.right - thumbnail.left).value, 0.5f)
+        assertEquals((thumbnail.right - thumbnail.left).value * 0.75f, (thumbnail.bottom - thumbnail.top).value, 0.5f)
+        assertTrue("Large text stays above the media rather than sharing its width", body.bottom <= thumbnail.top)
+        assertEquals(14f, body.left.value, 0.5f)
     }
 
     private companion object {

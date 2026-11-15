@@ -91,9 +91,10 @@ class ReaderCardScrollAnchorTest(
         val after = anchor(rows, targetMode).assertIsDisplayed().getUnclippedBoundsInRoot()
         val afterViewport = grid().getUnclippedBoundsInRoot()
         val topOffset = (after.top - afterViewport.top).value
+        val gutter = if (surface == Surface.HOME) 16.dp else ORBIN_CATALOG_GUTTER
         assertTrue(
             "The same thread must lead the new layout, with only its content gutter before it: $topOffset",
-            topOffset >= -1f && topOffset <= ORBIN_CATALOG_GUTTER.value + 1f,
+            topOffset >= -1f && topOffset <= gutter.value + 1f,
         )
         if (surface == Surface.BOARD) {
             compose.runOnIdle {
@@ -186,7 +187,7 @@ class ReaderCardRestoredScrollAnchorTest {
         val topOffset = (after.top - afterViewport.top).value
         assertTrue(
             "Restoring the hidden source must retain its thread and reset the obsolete Card offset: $topOffset",
-            topOffset >= -1f && topOffset <= ORBIN_CATALOG_GUTTER.value + 1f,
+            topOffset >= -1f && topOffset <= 17f,
         )
     }
 

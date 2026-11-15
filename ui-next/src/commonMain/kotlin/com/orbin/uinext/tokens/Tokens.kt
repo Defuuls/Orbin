@@ -32,45 +32,43 @@ object NextSpace {
     val sheetPad: Dp = 24.dp
 }
 
-/** Canonical corner roles for Coral chrome and the retained compact reader geometry. */
+/** Shared soft corners, from compact media to NekoSurf-style grouped cards and floating chrome. */
 @Immutable
 object OrbinRadius {
     /** Compact reader thumbnails. */
-    val compact: Dp = 2.dp
+    val compact: Dp = 8.dp
 
     /** Skeleton bars and small helper corners. */
     val small: Dp = 4.dp
 
     /** Compact grouped controls. */
-    val compactCard: Dp = 6.dp
+    val compactCard: Dp = 12.dp
 
     /** Form and inline controls. */
-    val control: Dp = 10.dp
+    val control: Dp = 14.dp
 
-    /** Coral thumbnail tiles. */
-    val thumbnail: Dp = 12.dp
+    /** Rounded media thumbnail tiles. */
+    val thumbnail: Dp = 14.dp
 
-    /** Coral content cards. */
-    val card: Dp = 16.dp
+    /** Grouped content cards. */
+    val card: Dp = 22.dp
 
     /** Dialog and sheet surfaces. */
-    val sheet: Dp = 16.dp
+    val sheet: Dp = 28.dp
 
     /** Larger feature panels. */
-    val panel: Dp = 20.dp
+    val panel: Dp = 28.dp
 
     /** Action and counter pills. */
-    val pill: Dp = 20.dp
+    val pill: Dp = 999.dp
 
     /** Pill search and filter fields. */
     val search: Dp = 24.dp
 }
 
 /**
- * Soft ambient elevation for Coral cards and bars on a light page ground.
- *
- * Dark and AMOLED themes prefer a tonal lift ([OrbinCard] uses [OrbinElevation.card] as
- * tonal elevation and drops the drop-shadow) so cards do not pick up a harsh halo.
+ * Soft ambient elevation on light page grounds. Dark cards use their own lifted solid fill,
+ * without a shadow or a tonal overlay that would change the palette.
  */
 @Immutable
 object OrbinElevation {
@@ -80,12 +78,12 @@ object OrbinElevation {
     /** Floating action or "tap to top" control. */
     val floating: Dp = 6.dp
 
-    /** App bar and bottom navigation. */
-    val bar: Dp = 4.dp
+    /** Flat app bar and floating bottom navigation. */
+    val bar: Dp = 0.dp
 }
 
 /**
- * Solid matte anodized surface fills — no translucency, no frosted glass, no blur.
+ * Quiet surface fills and light press feedback. Floating chrome may use a translucent fill.
  */
 @Immutable
 object NextMaterials {

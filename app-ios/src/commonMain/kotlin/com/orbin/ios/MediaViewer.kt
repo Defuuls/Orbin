@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -73,6 +74,7 @@ import com.orbin.ios.resources.ios_media_unmute
 import com.orbin.uinext.ReaderMediaAction
 import com.orbin.uinext.ReaderMediaSpeedOptions
 import com.orbin.uinext.ReaderMediaToolbar
+import com.orbin.uinext.reader
 import com.orbin.uinext.readerMediaSwipeToClose
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.exp
@@ -239,7 +241,12 @@ internal fun MediaViewer(
                     onClick = { moreMenu = true },
                     overflow = true,
                 )
-                DropdownMenu(expanded = moreMenu, onDismissRequest = { moreMenu = false }) {
+                DropdownMenu(
+                    expanded = moreMenu,
+                    onDismissRequest = { moreMenu = false },
+                    shape = RoundedCornerShape(22.dp),
+                    containerColor = reader.surfaceVariant,
+                ) {
                     val external = safeExternalLink(current.sourceUrl)
                     if (external != null) {
                         DropdownMenuItem(

@@ -35,7 +35,7 @@ class CatalogLargeTextTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun `normal catalog cards use two Coral columns with complete counts`() {
+    fun `normal catalog cards use two image-first columns with complete counts`() {
         composeRule.setContent { Grid(fontScale = 1f) }
 
         val grid = composeRule.onNodeWithTag(CatalogTags.GRID).getUnclippedBoundsInRoot()
@@ -54,7 +54,9 @@ class CatalogLargeTextTest {
                     expected.columns
             assertEquals(cardWidth.value, (card.right - card.left).value, 0.5f)
             assertEquals(expected.imageHeight.value, (image.bottom - image.top).value, 0.5f)
-            assertTrue("counts sit below the image", card.bottom > image.bottom)
+            val count = composeRule.onNodeWithText(label, useUnmergedTree = true).getUnclippedBoundsInRoot()
+            assertTrue("Complete counts stay inside the image overlay", count.top >= image.top)
+            assertTrue(count.bottom <= image.bottom)
         }
     }
 
@@ -88,7 +90,7 @@ class CatalogLargeTextTest {
     }
 
     @Test
-    fun `font two wraps complete reply and unread counts inside a short pane's Coral cards`() {
+    fun `font two wraps complete reply and unread counts inside a short pane's rounded cards`() {
         composeRule.setContent {
             Box(Modifier.size(360.dp, 250.dp)) { Grid(fontScale = 2f, longTitles = true, longCounts = true) }
         }

@@ -1,28 +1,28 @@
-# Orbin 208 - Adamite
+# Orbin 209 - Aegirine
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 208
-codename = "Adamite"
-version_code = 226
+number = 209
+codename = "Aegirine"
+version_code = 227
 
-highlight = "Loopback video streaming with encrypted caching, full-width feed cards, smooth video scrolling, and Android 15 (minSdk 35)."
+highlight = "NekoSurf-inspired design across Android and iOS, with grouped settings, native iOS typography and adaptive tablet navigation."
 
 summary = [
-  "bump Orbin to 208-Adamite / versionCode 226",
-  "add local loopback video streaming and encrypted video cache",
-  "adopt full-width feed cards and smooth inline video scrolling",
-  "raise Android minSdk to 35 (Android 15)",
+  "bump Orbin to 209-Aegirine / versionCode 227",
+  "apply NekoSurf layouts across Orbin while preserving its identity and features",
+  "add adaptive side navigation and retain full system text sizing",
 ]
 
 [changelog]
-Added = [
-  "Added local HTTP loopback video streaming and an encrypted video cache with configurable cache size in Settings.",
-]
 Changed = [
-  "Updated the Home feed to use full-width cards with refreshed catalog, thread, and navigation styling.",
-  "Raised Android minSdk to 35 (Android 15) and removed obsolete pre-API 35 compatibility checks.",
+  "Applied NekoSurf-inspired surfaces, rounded controls, image-led catalogs and navigation across Android and iOS while retaining Orbin branding and existing browsing, saved-thread and media actions.",
+  "Replaced the settings directory with one grouped page containing an Orbin identity card, inline choices and all existing settings, search and platform actions.",
+  "Placed default thread media below comments with bounded full-width previews, and updated the media viewer with gradient overlays and rounded playback controls.",
+  "Used the native iOS system font while retaining Android Roboto and uncapped system text sizing on both platforms.",
 ]
-Fixed = [
-  "Improved inline video playback and scrolling smoothness across feeds and threads.",
-  "Restored standard splash screen startup behavior and updated Android and iOS smoke tests.",
+Added = [
+  "Added a left navigation rail on primary pages at window widths of 840dp and above, preserving phone bottom navigation and screen state across resizing.",
+]
+Testing = [
+  "Added grouped-settings, playback-action, text-sizing, RTL, adaptive-navigation and layout regressions; refreshed shared visual references for the new design.",
 ]

@@ -60,7 +60,7 @@ class ReaderControlPaletteTest(
             }
 
     @Test
-    fun checkedSettingsTogglePaintsTheReaderAccent() {
+    fun checkedSettingsTogglePaintsTheScopedSettingsAccent() {
         compose.setContent {
             NextTheme(darkTheme = mode != "light", amoled = mode == "amoled") {
                 SettingsScreen(
@@ -72,19 +72,16 @@ class ReaderControlPaletteTest(
         compose.onNodeWithContentDescription("Search settings").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("lock")
         val painted = compose.onNodeWithText("App lock").assertIsOn().paintedColors()
-        assertTrue("$mode switch track must use reader accent", colors.accent.toArgb() in painted)
-        // Coral preference cards are tonally raised in dark modes; the track blends over that card.
-        val cardGround = if (mode == "light") colors.background else colors.surfaceVariant
-        assertTrue("$mode settings card must use its reader surface", cardGround.toArgb() in painted)
-        val track =
-            colors.accent
-                .copy(alpha = 0.3f)
-                .compositeOver(cardGround)
-                .toArgb()
-        assertTrue(
-            "$mode compact switch track must use a 30 percent reader accent",
-            painted.any { closeColor(it, track) },
-        )
+        val settingsAccent = if (mode == "light") Color(0xFF4338CA) else Color(0xFF00D4FF)
+        val settingsCard =
+            when (mode) {
+                "dark" -> Color(0xFF141520)
+                "amoled" -> Color(0xFF0E0E10)
+                else -> Color.White
+            }
+        assertTrue("$mode switch track uses the solid settings accent", settingsAccent.toArgb() in painted)
+        assertTrue("$mode settings rows use their grouped-card surface", settingsCard.toArgb() in painted)
+        assertTrue("$mode switch keeps its white thumb readable", Color.White.toArgb() in painted)
         assertFalse("A settings control must not retain the former palette", Color(0xFFFE2C55).toArgb() in painted)
     }
 
@@ -98,7 +95,17 @@ class ReaderControlPaletteTest(
             }
         }
         val painted = compose.onRoot().paintedColors()
-        assertTrue("$mode unchecked thumb must stay visible on its track", colors.inkMuted.toArgb() in painted)
+        val offTrack = colors.inkMuted.copy(alpha = 0.24f).compositeOver(colors.background)
+        assertTrue("$mode unchecked Cupertino switch keeps its white thumb", Color.White.toArgb() in painted)
+        val expectedTrack = offTrack.toArgb()
+        assertTrue(
+            "$mode unchecked track stays visibly distinct below its white thumb",
+            painted.any { actual ->
+                listOf(0, 8, 16).all { shift ->
+                    kotlin.math.abs((actual shr shift and 255) - (expectedTrack shr shift and 255)) <= 1
+                }
+            },
+        )
     }
 
     @Test
@@ -139,14 +146,6 @@ class ReaderControlPaletteTest(
         assertTrue("$mode search ground must use surfaceVariant", colors.surfaceVariant.toArgb() in painted)
         assertFalse("Search must not retain the former cursor color", Color(0xFFFE2C55).toArgb() in painted)
     }
-
-    private fun closeColor(
-        actual: Int,
-        expected: Int,
-    ): Boolean =
-        listOf(0, 8, 16).all { shift ->
-            kotlin.math.abs((actual shr shift and 255) - (expected shr shift and 255)) <= 1
-        }
 
     private fun SemanticsNodeInteraction.paintedColors(): Set<Int> {
         val pixels = captureToImage().toPixelMap()

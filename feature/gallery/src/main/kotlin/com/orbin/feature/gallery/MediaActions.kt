@@ -23,11 +23,10 @@ import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.uinext.ReaderMediaSpeedOptions
-import com.orbin.uinext.next
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.ReaderSize
 
-/** The viewer's ordinary overflow menu retains Orbin's file actions in Clover's popup form. */
+/** The viewer's Neko-style overflow menu retains Orbin's real file actions. */
 @Composable
 internal fun MediaActionsMenu(
     attachment: MediaAttachment,
@@ -57,8 +56,8 @@ internal fun MediaActionsMenu(
             DropdownMenu(
                 expanded = true,
                 onDismissRequest = onDismiss,
-                shape = RoundedCornerShape(2.dp),
-                containerColor = if (next.dark) reader.surfaceVariant else reader.background,
+                shape = RoundedCornerShape(22.dp),
+                containerColor = reader.surfaceVariant,
                 shadowElevation = 8.dp,
             ) {
                 onSaveRemaining?.let { downloadRest ->

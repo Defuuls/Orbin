@@ -2,7 +2,9 @@
 
 This is the normative design for Orbin's Home, board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
-The Orbin Coral design specifies the current chrome, rounded cards, pill search, four-destination primary navigation and card-stack identity. Clover 3.0.2 remains the historical reference for compact post metrics, typography and reader interactions. Coral is an intentional adaptation with Orbin's subscriptions, sources, saved/watch tools and media playback. The reference diagrams and compact-grid arithmetic below record that provenance; they are not screenshots of the current Coral card layouts. [Source record](#source-record) identifies the exact APK and retained evidence.
+The current visual reference is [NekoSurf](https://github.com/NekoSurf/NekoSurf/tree/6e8593d3e94b6d1e0077b7c48777ac795f8a537a): quiet page surfaces, rounded cards, compact headers and controls, and a continuous grouped Settings page. Orbin retains its name, Midnight Electric mark, indigo/cyan accents and functional destinations. The adaptation covers the whole app, including Home, Boards, catalogs, threads, stored collections, Search, Downloads, media and setup. It does not replace Orbin's subscriptions, source identities, saved/watch tools or playback behavior.
+
+Clover 3.0.2 and Orbin Coral are historical design stages. The compact reader metrics and reference diagrams below retain that provenance; the drawings are measurements of the earlier structure, not screenshots of the current app. [Source record](#source-record) separates the current NekoSurf source reference from the supplied APK and earlier evidence.
 
 A visual companion, [schematic.html](schematic.html), shows the same diagrams and tokens on one page. If the page and this document ever differ, this document is correct.
 
@@ -14,7 +16,7 @@ Covered here:
 - the board catalog in List, Grid and Card modes;
 - the thread reader;
 - the two-pane layout that shows both;
-- Boards, Search, Downloads, stored-thread collections, Settings and its sub-pages;
+- Boards, Search, Downloads, stored-thread collections, Settings and its scope picker;
 - first-run setup, app lock, safe mode, dialogs, release notes and archive pages;
 - the media wall and explicit media viewer;
 - loading, empty, error and retained-content refresh states;
@@ -22,11 +24,11 @@ Covered here:
 
 Orbin is read-only. This design has no compose button, no reply box and no per-post reply control, and none may be added under it.
 
-Home and board catalogs share the device-wide List/Grid/Card preference. A missing preference defaults to Grid; existing List and Grid choices are retained. Card mode shows one full-width Coral card per row, with 16dp pane-edge gutters, 8dp between cards, 12dp content insets and a preview height of three quarters of the card width. It remains one column in a tablet catalog pane. The Home layout control cycles Grid → List → Card → Grid; overflow menus and Appearance settings offer direct selection. The preference survives relaunches and backup restoration. Coral cards, search controls and supporting screens use the same palette while thread posts retain the compact reader metrics. Saved, Watched and History show real stored records rather than synthesized profiles. [Other screens](#other-screens) describes the remaining surfaces and the dedicated playback experience.
+Home and board catalogs share the device-wide List/Grid/Card preference. A missing preference defaults to Grid; existing List and Grid choices are retained. Card mode shows one full-width rounded card per row, with 16dp pane-edge gutters, 8dp between cards, 12dp content insets and a preview height of three quarters of the card width. It remains one column in a tablet catalog pane. The Home layout control cycles Grid → List → Card → Grid; overflow menus and the Boards group in Settings offer direct selection. The preference survives relaunches and backup restoration. Cards, search controls and supporting screens use the NekoSurf-inspired surfaces while preserving Orbin's reader data and interactions. Saved, Watched and History show real stored records. [Other screens](#other-screens) describes the remaining surfaces and the dedicated playback experience.
 
 ## Tokens
 
-The shared token implementation records the values below. Clover's verified compact geometry and typography remain reference metrics; Coral cards, chrome and contrast-safe action/link colors are intentional adaptations. Layout uses dp and type uses sp. Eight-digit colors in these tables use Android ARGB order (#AARRGGBB); SVG/CSS equivalents convert the byte order while preserving alpha. Bundled fonts and the existing single Dynamic Type scaling path remain shared by both platforms.
+The shared token implementation records the values below. Current surfaces and chrome follow the NekoSurf reference with Orbin's contrast-safe action colors; retained compact reader metrics are identified separately. Layout uses dp and type uses sp. Eight-digit colors in these tables use Android ARGB order (#AARRGGBB); SVG/CSS equivalents convert the byte order while preserving alpha. Typography metrics and the existing single system text-size scaling path remain shared by both platforms; the rendering font follows the platform policy below.
 
 ### Color
 
@@ -34,25 +36,25 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 
 | Token | Light | Dark | AMOLED | Use |
 | --- | --- | --- | --- | --- |
-| `color.appBar` | `#FFFFFF` | `#0B1021` | `#000000` | App bar ground |
-| `color.statusBar` | `#FFFFFF` | `#000000` | `#000000` | Status bar ground |
-| `color.onAppBar` | `#1A1A1A` | `#FFFFFF` | `#FFFFFF` | App bar labels and icons |
-| `color.background` | `#FFFFFF` | `#0B1021` | `#000000` | Screen, row, post and card ground |
-| `color.surfaceVariant` | `#F5F7FB` | `#141B33` | `#161616` | Secondary ground, placeholders and skeletons |
-| `color.selected` | `#EEF4FF` | `#1A2547` | `#242424` | Open row in two panes |
-| `color.ink` | `#DE000000` | `#FFFFFF` | `#FFFFFF` | Primary body text |
-| `color.inkSecondary` | `#89000000` | `#B2FFFFFF` | `#B2FFFFFF` | Generic secondary UI text |
-| `color.inkMuted` | `#5A6378` | `#9FB0CE` | `#B8B8B8` | Post numbers, dates and attachment details |
-| `color.hairline` | `#1E000000` | `#1EFFFFFF` | `#1EFFFFFF` | Decorative row and post dividers |
-| `color.accent` | `#4338CA` | `#00D4FF` | `#FFFFFF` | Orbin progress and actions |
-| `color.onAccent` | `#FFFFFF` | `#06131F` | `#000000` | Text on an accent-filled control |
-| `color.quote` | `#2E7D32` | `#34D399` | `#D4D4D4` | Quoted lines |
-| `color.author` | `#1A1A1A` | `#8BE9FD` | `#E5E5E5` | Post author name |
-| `color.subject` | `#1A1A1A` | `#8BE9FD` | `#FFFFFF` | Post and catalog subjects |
-| `color.quoteLink` | `#0369A1` | `#38BDF8` | `#D4D4D4` | Post references and backlinks |
-| `color.error` | `#B3261E` | `#F2B8B5` | `#F2B8B5` | Error titles |
+| `color.appBar` | `#F4F5F7` | `#0B0D11` | `#000000` | App bar ground |
+| `color.statusBar` | `#F4F5F7` | `#0B0D11` | `#000000` | Status bar ground |
+| `color.onAppBar` | `#14161F` | `#E8EAF0` | `#ECECEF` | App bar labels and icons |
+| `color.background` | `#F4F5F7` | `#0B0D11` | `#000000` | Page ground behind cards and content |
+| `color.surfaceVariant` | `#FFFFFF` | `#141520` | `#0E0E10` | Card surfaces, placeholders and skeletons |
+| `color.selected` | `#F4F3FD` | `#102B33` | `#0E252B` | Open row in two panes |
+| `color.ink` | `#14161F` | `#E8EAF0` | `#ECECEF` | Primary body text |
+| `color.inkSecondary` | `#696F83` | `#8A8FA8` | `#8C8C93` | Generic secondary UI text |
+| `color.inkMuted` | `#696F83` | `#8A8FA8` | `#8C8C93` | Post numbers, dates and attachment details |
+| `color.hairline` | `#0F000000` | `#12FFFFFF` | `#14FFFFFF` | Decorative row and post dividers |
+| `color.accent` | `#4338CA` | `#00D4FF` | `#00D4FF` | Orbin progress and actions |
+| `color.onAccent` | `#FFFFFF` | `#06131F` | `#06131F` | Text on an accent-filled control |
+| `color.quote` | `#2E7D32` | `#34D399` | `#34D399` | Quoted lines |
+| `color.author` | `#14161F` | `#6DD4EC` | `#6DD4EC` | Post author name |
+| `color.subject` | `#14161F` | `#E8EAF0` | `#ECECEF` | Post and catalog subjects |
+| `color.quoteLink` | `#0369A1` | `#6DD4EC` | `#6DD4EC` | Post references and backlinks |
+| `color.error` | `#B91C35` | `#FF5D6C` | `#FF5D6C` | Error titles |
 
-The light toolbar is white with dark ink so the Midnight Electric indigo/cyan logo and accent can carry the brand. color.statusBar matches color.appBar in Light, and is black in Dark and AMOLED. Dark uses a #0B1021 midnight-navy toolbar and Midnight Electric cyan accents; AMOLED uses pure black and white monochrome (`#000000` / `#FFFFFF` with neutral `#161616` / `#242424` surfaces). Generic color.inkSecondary is distinct from color.inkMuted post metadata. Selected rows use a light indigo wash #EEF4FF in Light, #1A2547 in Dark, and neutral #242424 in AMOLED. Subjects and author names use dark ink in Light, light cyan #8BE9FD in Dark, and crisp white/silver in AMOLED. Post references use the electric cyan/sky accent in Light and Dark, and silver #D4D4D4 in AMOLED. Quoted (greentext) lines keep a contrast-safe green in Light and Dark and neutral silver in AMOLED. The supplied Clover fresh-install Yotsuba palette is recorded under Source record; it is not Orbin's selected palette.
+The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin indigo `#4338CA`; Dark and AMOLED keep cyan `#00D4FF`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
 
 ### Contrast
 
@@ -81,30 +83,32 @@ The following pairs are checked after compositing alpha over the stated ground. 
 
 ### Type
 
-The shared `OrbinType` API contains both chrome styles and the compact reader roles below. Chrome `OrbinType.body` retains 16sp/23sp; `OrbinType.readerBody` retains the separate 15sp/22sp helper. Pure reader metrics are resolved to the same bundled font at the rendering boundary, with no additional system text-size factor.
+The shared `OrbinType` API contains both chrome styles and the compact reader roles below. Chrome `OrbinType.body` retains 16sp/23sp; `OrbinType.readerBody` retains the separate 15sp/22sp helper. Pure reader metrics are resolved to the selected platform font at the rendering boundary, with no additional system text-size factor.
 
 App bars use type.appBarTitle and, when present, type.appBarSubtitle for the board/source line. Optional thread summaries use type.meta with space.gapSmall above and below the summary.
 
-Both platforms use bundled Roboto for the reader and shared default-family text. The exact open-source Medium, Medium Italic and Condensed Regular faces from the reference are retained; Regular/Bold/Italic variants are pinned to the actual API31 reference-runtime system Roboto because Clover delegates those faces to Android's system sans. See the packaged font provenance and Apache 2.0 notice in ui-next/src/commonMain/composeResources/files/licenses/. Natural line height means the font's metrics, with no invented fixed sp line height. Platform TextView/Compose baseline differences remain subject to native screenshot verification. The SVG diagrams embed diagram-only glyph subsets with the same original outlines and metrics; the application font assets remain complete and unmodified.
+iOS uses its native system typeface, following NekoSurf's iOS presentation; Android retains Orbin's bundled Roboto. Shared metrics and the single system text-size path remain the same. Current compact chrome uses a 21sp extra-bold heading; phone post text is 15sp with 11sp metadata, and wide-window posts remain 16sp with 12sp metadata.
+
+The historical Roboto Medium, Medium Italic and Condensed Regular faces remain available, including the explicit condensed reader choice. Regular/Bold/Italic assets retain their API31 reference-runtime provenance. See the packaged font record and Apache 2.0 notice in ui-next/src/commonMain/composeResources/files/licenses/. Natural line height means the selected font's metrics, with no invented fixed sp post line height. Native iOS font layout and baseline differences require native screenshot verification. Document diagrams use bundled Roboto subsets for reproducible renders and preserve historical geometry; they do not render iOS's current system font. The application font assets remain complete and unmodified.
 
 | Token | Size | Line height | Weight | Use |
 | --- | --- | --- | --- | --- |
-| `type.appBarTitle` | 20sp | 28sp | 500 | App bar title. |
-| `type.appBarSubtitle` | 14sp | 20sp | 400 | Board line under a thread title. |
-| `type.rowTitle` | 16sp | 22sp | 700 | Saved-record title; compatibility helper |
+| `type.appBarTitle` | 21sp | 24sp | 800 | App bar title. |
+| `type.appBarSubtitle` | 13sp | 17sp | 400 | Board line under a thread title. |
+| `type.rowTitle` | 15sp | 21sp | 700 | Saved-record title; compatibility helper |
 | `type.meta` | 12sp | 16sp | 400 | Shared helper and saved-record metadata |
 | `type.preview` | 14sp | 20sp | 400 | Compatibility preview helper |
 | `type.readerBody` | 15sp | 22sp | 400 | Compact body helper; posts use postBody |
 | `type.cardTitle` | 14sp | 20sp | 700 | Loading skeleton helper; cards use postBody |
 | `type.postAuthor` | 12sp | 16sp | 700 | Compatibility author helper |
-| `type.postBody` | 14sp | natural | 400 | Clover's default post size; natural Roboto metrics supply its line spacing. |
-| `type.postBodyWide` | 16sp | natural | 400 | The sw600dp post size from Clover's tablet resource configuration. |
-| `type.postDetails` | 10sp | natural | 400 | Post number, time and attachment metadata are four sp smaller than the body. |
+| `type.postBody` | 15sp | natural | 400 | Current comfortable phone post size; natural font line height. |
+| `type.postBodyWide` | 16sp | natural | 400 | Wide-window post body. |
+| `type.postDetails` | 11sp | natural | 400 | Compact phone post number, time and attachment metadata. |
 | `type.postDetailsWide` | 12sp | natural | 400 | Wide-window post metadata |
-| `type.pill` | 14sp | 20sp | 500 | Compatibility control helper; catalog counters are plain text |
-| `type.stateTitle` | 24sp | 32sp | 400 | Empty and error state title. |
-| `type.stateBody` | 16sp | 24sp | 400 | State helper text and the empty detail pane message. |
-| `type.label` | 14sp | 20sp | 500 | Text buttons. |
+| `type.pill` | 12sp | 16sp | 700 | Compatibility control helper; catalog counters are plain text |
+| `type.stateTitle` | 20sp | 26sp | 800 | Empty and error state title. |
+| `type.stateBody` | 14sp | 20sp | 400 | State helper text and the empty detail pane message. |
+| `type.label` | 14sp | 20sp | 700 | Text buttons. |
 
 ### Spacing
 
@@ -113,7 +117,7 @@ Both platforms use bundled Roboto for the reader and shared default-family text.
 | `space.gutter` | 16dp | Left and right screen edge inset. |
 | `space.rowPadY` | 12dp | Legacy shared-cell and skeleton vertical padding |
 | `space.postPadY` | 12dp | Legacy shared-cell vertical padding |
-| `space.postInset` | 8dp | Clover post text inset: the configured text size minus six dp. |
+| `space.postInset` | 8dp | Retained phone post text inset. |
 | `space.postInsetWide` | 10dp | Post text inset in wide windows |
 | `space.albumPadding` | 1dp | Clover's album container padding and individual cell margin. |
 | `space.albumCellMargin` | 1dp | Individual album cell margin |
@@ -128,12 +132,12 @@ Both platforms use bundled Roboto for the reader and shared default-family text.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `size.appBar` | 56dp | App bar height. |
-| `size.appBarNavigation` | 56dp | Clover toolbar leading navigation control width. |
-| `size.appBarAction` | 50dp | Clover toolbar regular action width. |
-| `size.appBarOverflow` | 44dp | Clover toolbar overflow control width. |
+| `size.appBar` | 62dp | Minimum app bar content height; grows for accessibility. |
+| `size.appBarNavigation` | 48dp | Accessible leading navigation control width. |
+| `size.appBarAction` | 48dp | Accessible regular toolbar action width. |
+| `size.appBarOverflow` | 48dp | Accessible toolbar overflow control width. |
 | `size.touchTarget` | 48dp | Minimum size of anything that can be tapped. |
-| `size.icon` | 24dp | App bar icon. |
+| `size.icon` | 19dp | Compact app bar glyph within a 48dp control. |
 | `size.thumbnail` | 72dp | Cell thumbnail width and height in a window that is not wide. |
 | `size.thumbnailWide` | 100dp | Cell thumbnail width and height in a wide window. |
 | `size.cellMin` | 96dp | Legacy shared-cell and loading minimum |
@@ -147,7 +151,7 @@ Both platforms use bundled Roboto for the reader and shared default-family text.
 | `size.pillMinWidth` | 48dp | Compatibility control and skeleton width |
 | `size.hairline` | 1dp | Row and post divider thickness. |
 | `size.progress` | 4dp | Refresh progress bar height. |
-| `size.readingMax` | 640dp | Maximum post text width in a wide pane. |
+| `size.readingMax` | 720dp | Maximum constrained reading or settings content width. |
 | `size.drawerMax` | 336dp | Maximum navigation drawer width. |
 | `size.wideMin` | 600dp | Both window sides must reach this to count as wide. |
 | `size.twoPaneMinWidth` | 800dp | Wide windows at least this wide show two panes. |
@@ -158,18 +162,18 @@ Both platforms use bundled Roboto for the reader and shared default-family text.
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `radius.compact` | 2dp | Retained compact reader thumbnail corners. |
+| `radius.compact` | 8dp | Rounded compact reader thumbnails. |
 | `radius.small` | 4dp | Skeleton bars and small helper corners. |
-| `radius.compactCard` | 6dp | Compact grouped controls. |
-| `radius.control` | 10dp | Form and inline controls. |
-| `radius.thumbnail` | 12dp | Coral thumbnail tiles. |
-| `radius.card` | 16dp | Coral content cards. |
-| `radius.sheet` | 16dp | Dialog and sheet surfaces. |
-| `radius.panel` | 20dp | Larger feature panels. |
-| `radius.pill` | 20dp | Action and counter pills. |
+| `radius.compactCard` | 12dp | Compact grouped controls. |
+| `radius.control` | 14dp | Form and inline controls. |
+| `radius.thumbnail` | 14dp | Rounded media thumbnail tiles. |
+| `radius.card` | 22dp | NekoSurf-inspired content and grouped preference cards. |
+| `radius.sheet` | 28dp | Dialog and sheet surfaces. |
+| `radius.panel` | 28dp | Larger feature panels. |
+| `radius.pill` | 999dp | Action and counter pills. |
 | `radius.search` | 24dp | Pill search and filter fields. |
 
-Coral cards use radius.card over color.background; larger feature panels use radius.panel. Thumbnail tiles use radius.thumbnail, while retained compact reader crops use radius.compact. Search fields use radius.search, form controls use radius.control, and compact grouped controls use radius.compactCard. Dialogs and bottom sheets use radius.sheet; action and counter pills use radius.pill. Skeleton bars and small helper shapes use radius.small. These semantic roles share one `OrbinRadius` namespace without changing the retained compact geometry.
+Current cards use radius.card over color.surfaceVariant, separated from the color.background page; larger feature panels use radius.panel. Thumbnail tiles use radius.thumbnail, while retained compact reader crops use radius.compact. Search fields use radius.search, form controls use radius.control, and compact grouped controls use radius.compactCard. Dialogs and bottom sheets use radius.sheet; action and counter pills use radius.pill. Skeleton bars and small helper shapes use radius.small. These semantic roles share one `OrbinRadius` namespace.
 
 ### Ratios
 
@@ -177,16 +181,16 @@ Coral cards use radius.card over color.background; larger feature panels use rad
 | --- | --- | --- |
 | `ratio.gridImageHeight` | 0.5 | A grid card's image height as a fraction of the grid viewport's height: two lines per screen. |
 
-Compact helpers remain available through the canonical namespace: type.rowTitle, type.meta, type.preview, type.readerBody, type.cardTitle, type.postAuthor and type.pill; space.rowPadY and space.postPadY; size.cellMin, size.cellMinWide, size.pillHeight and size.pillMinWidth; radius.compact and radius.small. Their values preserve compact reading geometry while Coral cards use radius.card and pills use radius.pill. Generic controls and loading fallbacks may still use the compact roles. The general space.gutter (16dp) aligns drawer/control edges; space.line (4dp) separates inline helper content.
+Compact helpers remain available through the canonical namespace: type.rowTitle, type.meta, type.preview, type.readerBody, type.cardTitle, type.postAuthor and type.pill; space.rowPadY and space.postPadY; size.cellMin, size.cellMinWide, size.pillHeight and size.pillMinWidth; radius.compact and radius.small. Their values preserve compact reading geometry while current cards use radius.card and pills use radius.pill. Generic controls and loading fallbacks may still use the compact roles. The general space.gutter (16dp) aligns drawer/control edges; space.line (4dp) separates inline helper content.
 
 
 ## Shared cell
 
-Thread posts and the compact List-mode content retain ReaderPostLayout's leading thumbnail and inset text column. The following measurements describe that compact reader structure. Current Coral grids use the separate card rule under [Phone catalog](#phone-catalog), and Home may wrap the compact list content in a Coral card. Cross-site metadata, unread state, subscriptions and read-only actions retain their real behavior.
+Thread posts and compact List-mode content retain ReaderPostLayout's leading thumbnail and inset text column inside the current rounded presentation. The following measurements describe that retained reader structure. Current grids use the separate card rule under [Phone catalog](#phone-catalog), and Home can wrap compact list content in a card. Cross-site metadata, unread state, subscriptions and read-only actions retain their real behavior.
 
 ![Shared cell: catalog row and post](diagrams/cell-anatomy.svg)
 
-- The optional thumbnail starts at the leading edge with no outer gutter. It is size.thumbnail (72dp), or size.thumbnailWide (100dp) in a wide window, with radius.compact (2dp) corners. Provider thumbnail crop preferences remain functional.
+- The optional thumbnail starts at the leading edge with no outer gutter. It is size.thumbnail (72dp), or size.thumbnailWide (100dp) in a wide window, with radius.compact (8dp) corners. Provider thumbnail crop preferences remain functional.
 - Text begins space.postInset (8dp) after the thumbnail, or at that inset from the edge when there is no image. Wide windows use space.postInsetWide (10dp).
 - Text uses the same inset above, below and between major blocks. A cell grows to fit the larger of its thumbnail and text; the old size.cellMin rule does not govern real posts/catalog rows.
 - The closing size.hairline divider in color.hairline is inset by the text inset at each screen edge, plus any reply indent.
@@ -194,7 +198,7 @@ Thread posts and the compact List-mode content retain ReaderPostLayout's leading
 
 ### Catalog row
 
-The subject uses type.postBody (14sp), or type.postBodyWide (16sp), regular weight, in color.subject; catalog list titles use at most two lines. Source/thread/date metadata uses type.postDetails (10sp) or type.postDetailsWide (12sp), color.inkMuted. The opening excerpt uses the body style, up to two lines; quotes use color.quote and normal text color.ink.
+The subject uses type.postBody (15sp), or type.postBodyWide (16sp), regular weight, in color.subject; catalog list titles use at most two lines. Source/thread/date metadata uses type.postDetails (11sp) or type.postDetailsWide (12sp), color.inkMuted. The opening excerpt uses the body style, up to two lines; quotes use color.quote and normal text color.ink.
 
 Reply and file totals are plain text below the excerpt, using the body style in color.inkMuted, such as “23 replies, 4 files”. There is no trailing badge and no reserved badge column. Watched unread counts remain a separate color.accent label. The row opens its thread; optional media and context actions retain their callbacks and accessible labels.
 
@@ -204,7 +208,7 @@ The subject appears first in color.subject using the natural body style. The com
 
 The comment uses type.postBody/type.postBodyWide. References use color.quoteLink and quoted lines use color.quote; remaining text uses color.ink. Referencing post numbers follow the body as underlined links. Each block is separated by the 8/10dp text inset. The type.postDetails/type.postDetailsWide styles carry numbers, dates and attachment metadata. The compatibility size.readingMax helper remains available to constrained callers; compact posts use the available pane width.
 
-A thread ends with size.threadStatus (88dp minimum), space.postInset (8dp) padding, and real reply/file/update metadata. Its centered label uses type.postBody at Medium 500 in color.inkMuted, matching the verified 14sp footer.
+A thread ends with size.threadStatus (88dp minimum), space.postInset (8dp) padding, and real reply/file/update metadata. Its centered label uses type.postBody at Medium 500 in color.inkMuted, using the current body metric.
 
 ### Reading state in the catalog
 
@@ -226,17 +230,17 @@ A thread ends with size.threadStatus (88dp minimum), space.postInset (8dp) paddi
 
 ### Files view
 
-The thread toolbar's Files action opens Clover-style album cells. The album container uses space.albumPadding (1dp); each cell uses space.albumCellMargin (1dp), yielding a 2dp outside inset and 2dp between cells. Images have square corners. Cell height is its width plus size.albumDetails (32dp), which reserves the filename/size strip.
+The thread toolbar's Files action opens the attachment grid. The retained compact album helper uses space.albumPadding (1dp), space.albumCellMargin (1dp) and a size.albumDetails (32dp) metadata strip. These helper measurements record the compact source geometry; the current attachment-card wrapper supplies its rounded surface.
 
-The compact Files album retains its own column arithmetic rather than the catalog's grid rule. Files opens the viewer at the selected attachment. The media wall uses the Coral album-card variant; both variants retain real attachment identities. The thread's Download action offers Videos only by default or Everything, while archive saving remains a separate read-only action.
+The compact Files album retains its own column arithmetic rather than the catalog's grid rule. Files opens the viewer at the selected attachment. The media wall uses the rounded album-card variant; both variants retain real attachment identities. The thread's Download action offers Videos only by default or Everything, while archive saving remains a separate read-only action.
 
 ## Phone catalog
 
-### Current Coral grid
+### Current grid
 
 The current catalog and Home grids use `orbinCatalogGridSpec`, with 16dp outside gutters, 8dp gaps and a 152dp minimum card width. Ordinary phone widths produce two columns, very narrow panes can use one, and wide panes add columns. The image height is three quarters of its column width. This rule is independent of viewport height; it does not use the historical half-viewport calculation below.
 
-Cards use the shared rounded Coral surface, a compact author/thread identity, a two-line subject, an inset thumbnail and actual reply/file counts. The selected thread has an accent border. Text grows with the system font size, thumbnail requests remain bounded, and muted/spoiler behavior remains functional. Catalog sort controls map to the existing Catalog, Bump order and Reply count values.
+Cards use the shared rounded surface, a compact author/thread identity, a two-line subject, an inset thumbnail and actual reply/file counts. The selected thread has an accent border. Text grows with the system font size, thumbnail requests remain bounded, and muted/spoiler behavior remains functional. Catalog sort controls map to the existing Catalog, Bump order and Reply count values.
 
 ### Card mode
 
@@ -246,7 +250,7 @@ Cards use the shared rounded Coral surface, a compact author/thread identity, a 
 
 ![Phone catalog, list mode](diagrams/phone-catalog-list.svg)
 
-The compact List-mode reference retains the following horizontal budget in a 360dp window:
+The historical compact List-mode reference retains the following horizontal budget in a 360dp window:
 
 | Part | Token | Width |
 | --- | --- | --- |
@@ -261,7 +265,7 @@ There is one 288dp content column after the image, including both text insets; n
 
 ![Phone catalog, grid mode](diagrams/phone-catalog-grid.svg)
 
-The following helper, diagram and arithmetic are retained as measured compact-reader provenance. They describe `catalogGridSpec`, not the current Coral grid or its default column count.
+The following helper, diagram and arithmetic are retained as measured compact-reader provenance. They describe `catalogGridSpec`, rather than the current grid or its default column count.
 
 - The grid viewport is the pane below the fixed app bar. Image height = max(viewport height × ratio.gridImageHeight, size.gridCardMin): half the viewport, so two lines of images fit on screen, with a 120dp floor for short split-screen windows.
 - Columns are max(1, floor(viewport width / image height)). A portrait phone or tablet shows one full-width column; a landscape or wide window shows as many columns as keep each image at least as wide as it is tall (for example 4 on a 740 × 360dp phone, 3 on a 1200 × 800dp tablet).
@@ -269,7 +273,7 @@ The following helper, diagram and arithmetic are retained as measured compact-re
 - Card width = (pane width − 2 × gridOuter − (columns − 1) × gridGap) / columns.
 - The image spans the card's width at that height and is cropped to fill it. A still image is drawn from its original file, decoded to the card's size over the provider thumbnail, because a thumbnail (about 250px) is too small to fill a card sharply; GIFs and videos keep the thumbnail. The text area sits below the image and is at least size.gridCardText (76dp) tall.
 - The text area uses space.cardPad (8dp). Subject text uses the regular 14/16sp body style with at most three lines, followed by the opening excerpt and any real source metadata. Plain counters at the foot read, for example, “23R 4I”. Accessibility announces complete reply/file counts and unread metadata.
-- Historical cards use radius.compact (2dp) and size.cardElevation (2dp), with no stroked outline. Text grows below the image at large font scales; the image height does not change.
+- Historical cards used 2dp corners and size.cardElevation (2dp), with no stroked outline. Text grows below the image at large font scales; the image height does not change.
 
 | Viewport width | Viewport height | Columns | Image height | Card width |
 | --- | --- | --- | --- | --- |
@@ -279,9 +283,9 @@ The following helper, diagram and arithmetic are retained as measured compact-re
 | 1200dp | 744dp | 3 | 372dp | 396dp |
 | 360dp | 200dp | 3 | 120dp | 116dp |
 
-The viewport is the window less the status bar and size.appBar, so a 360 × 640dp phone has a 560dp viewport. The first two rows are portrait phones, the third a landscape phone, the fourth a landscape tablet, and the last a short split-screen window held at the size.gridCardMin floor.
+These historical viewport examples used a 24dp status bar and a 56dp toolbar, so a 360 × 640dp phone had a 560dp viewport. Current size.appBar is 62dp before system insets. The first two rows are portrait phones, the third a landscape phone, the fourth a landscape tablet, and the last a short split-screen window held at the size.gridCardMin floor.
 
-The List/Grid choice is remembered per device and shared by Home and board catalogs. Grid is the default only when no saved choice exists.
+The List/Grid/Card choice is remembered per device and shared by Home and board catalogs. Grid is the default only when no saved choice exists.
 
 ## Two panes
 
@@ -314,7 +318,7 @@ The width conditions and the pane-width calculation live in `core/model/FeedLayo
 
 ## Navigation
 
-Reader app bars retain size.appBar (56dp) height, size.icon (24dp) icons, size.appBarNavigation (56dp) leading navigation and size.appBarAction (50dp) normal actions. Clover's reference size.appBarOverflow is 44dp; the current Coral control reserves and renders at least size.touchTarget (48dp). Native headings and their stable identifiers remain part of the navigation contract: Home is titled Home, Boards exposes one Orbin wordmark heading, and secondary destinations retain their own titles.
+Reader app bars use size.appBar (62dp) minimum content height with system insets, size.icon (19dp) glyphs and size.touchTarget (48dp) controls. size.appBarNavigation, size.appBarAction and size.appBarOverflow are all 48dp. Rounded accent-wash buttons and 21sp/800 headings follow the NekoSurf reference; the bar grows for larger text rather than fixing its scale. Native headings and stable identifiers remain part of the navigation contract: Home is titled Home, Boards exposes one Orbin wordmark heading, and secondary destinations retain their own titles.
 
 | Control | Where | Action in Orbin |
 | --- | --- | --- |
@@ -322,7 +326,7 @@ Reader app bars retain size.appBar (56dp) height, size.icon (24dp) icons, size.a
 | Menu | Reader root app bars and the Boards wordmark header | Opens the retained navigation drawer |
 | Drawer entries | Drawer | Home, Watched, Boards, Search and Saved, with Settings separated below |
 | Source chip | Home below the fixed app bar | Chooses the real source scope without covering content |
-| Inline view toggle | Home beside the source chip | Changes the persisted device-wide List/Grid preference |
+| Inline view toggle | Home beside the source chip | Changes the persisted device-wide List/Grid/Card preference |
 | Board title with arrow | Catalog app bar | Opens the source-grouped board picker |
 | Reload and Search | Home/catalog app bar where wired | Refreshes retained content or filters/opens the real search scope |
 | Catalog sort controls | Catalog chrome | Chooses Catalog, Bump order or Reply count |
@@ -338,6 +342,8 @@ Reader app bars retain size.appBar (56dp) height, size.icon (24dp) icons, size.a
 
 The four-destination primary bar complements the drawer. It has no synthetic creation destination. Home keeps its bar outside the list, and loading/empty/error states retain navigation. Badge updates depend on active queue membership, not every downloaded byte.
 
+The bar is a centered floating card with 28dp corners, 16dp outer gutters, 6dp inner padding and a 64dp minimum content height. Its maximum width is the destination count times 76dp plus 12dp; safe-area padding remains outside it. Selected tabs use an indigo/cyan-to-violet wash, 21dp icons and bold 10.5sp/14sp labels. Labels keep system scaling and the bar grows when they wrap. A wide-screen rail uses the same destination state and selection style.
+
 The drawer retains its measured maximum width, selected-state announcement and source-qualified routes. Menu opens it on both platforms; Android also supports the existing leading-edge gesture. The closed iOS drawer does not capture the system Back edge. Selecting an entry closes the drawer before changing destination.
 
 Settings and Downloads retain hierarchical Back while exposing primary navigation on their main pages. Switching between those two replaces the secondary page instead of growing duplicate stack entries; Back returns to the reader beneath them. Choice pages and details keep their own Back behavior. History remains reachable through the existing tools/settings routes.
@@ -346,36 +352,36 @@ Orbin remains read-only: saving, watching, sharing, downloading and following bo
 
 ## Other screens
 
-All current surfaces use the Coral palette and shared fonts. Rounded cards are white in Light and use the raised neutral surface in Dark/AMOLED; pill search, provider chips and filled/text actions share the same language. Each screen retains its real data, identifiers and callbacks.
+Reader and supporting screens use the NekoSurf-inspired page and card surfaces with shared typography metrics, compact headers and rounded controls. Light, Dark and AMOLED keep Orbin's contrast-safe indigo/cyan identity. Settings follows the same visual system with its grouped controls described below. Each screen retains its real data, identifiers and callbacks.
 
 ### Home / Feed
 
-Home uses the catalog's compact List content or responsive Coral Grid cards. Grid is the unset default; an existing List choice survives. A fresh installation, update and cold launch reach this layout after required board setup.
+Home uses compact List content, responsive Grid cards or full-width Card view. Grid is the unset default; an existing layout choice survives. A fresh installation, update and cold launch reach this layout after required board setup.
 
 - The fixed app bar remains titled Home. A compact source chip and an inline view toggle sit below it. Home has no Following/For You selector, full-screen pager or floating action rail.
 - Only explicitly subscribed boards contribute to Home. Favorites do not imply subscriptions. Provider and board identities remain qualified, including when different sites share a board path or thread number.
 - Thumbnails remain static and bounded; scrolling does not create inline players. An explicit preview opens the selected attachment in the media viewer, while the text area opens its thread. Spoilers reveal before opening media.
 - Long-press a row/card/preview for the wired Watch, Save, Share, board and thread-video/comment actions. Home has no per-item three-dot box. The comment/video preference still controls that separate action.
-- Each source retains its reading anchor. Switching List/Grid, returning from a viewer, refreshing and updating attachment data preserve stable identities and existing content where possible.
+- Each source retains its reading anchor. Switching List/Grid/Card, returning from a viewer, refreshing and updating attachment data preserve stable identities and existing content where possible.
 - The primary bar remains outside the collection and shows the real download badge. Loading, empty and failure states retain source controls and navigation; refresh failure keeps existing rows and offers Retry.
 
 ### Boards and stored-thread collections
 
 Boards uses the card-stack wordmark, pill search, compact provider choice, local board icons and explicit follow controls. Board opening and following are separate targets. The following state comes from the provider-qualified subscription store.
 
-Saved, Watched and History show keyed Coral cards for actual stored records: readable title, source, thread number, time and available unread metadata. Their lists remain lazy and preserve reading anchors. Rows open the complete stored identity; there are no synthesized profiles, social statistics or decorative media records.
+Saved, Watched and History show keyed rounded cards for actual stored records: readable title, source, thread number, time and available unread metadata. Their lists remain lazy and preserve reading anchors. Rows open the complete stored identity.
 
 ### Search
 
-Global Search describes its existing scope accurately: catalogs of followed boards across sites. Pill query entry, a separate submit action and source filters remain usable with large text. A selected source survives loading when it remains in the returned sources. Idle, loading, no-match and failure states use the shared Coral presentation, and Retry submits the real current query.
+Global Search describes its existing scope accurately: catalogs of followed boards across sites. Rounded query entry, a separate submit action and source filters remain usable with large text. A selected source survives loading when it remains in the returned sources. Idle, loading, no-match and failure states use the shared presentation, and Retry submits the real current query.
 
 ### Downloads
 
-Downloads uses lazy, stably keyed Coral file cards with real filenames, status and progress. Retry is a separate accessible action and stacks below long names at large text sizes. Clearing history still requires confirmation; the empty state and save-location guidance remain available. Primary navigation and the badge use the same live queue as the download actions.
+Downloads uses lazy, stably keyed file cards with real filenames, status and progress. Retry is a separate accessible action and stacks below long names at large text sizes. Clearing history still requires confirmation; the empty state and save-location guidance remain available. Primary navigation and the badge use the same live queue as the download actions.
 
 ### Media wall and viewer
 
-The media wall uses Coral album cards while retaining the existing source/board/media filtering and scan states. A selected file carries its provider, thread, attachment ID and thumbnail hint into the viewer; a missing or ambiguous selection is reported rather than silently opening the first file.
+The media wall uses rounded album cards while retaining the existing source/board/media filtering and scan states. A selected file carries its provider, thread, attachment ID and thumbnail hint into the viewer; a missing or ambiguous selection is reported rather than silently opening the first file.
 
 The full-screen viewer keeps its dark media surface and real player ownership. Its persistent Download action and visible Close control remain reachable independently of overflow. Double-tap saves the current media; image pinch/pan and ordinary vertical paging remain available. A deliberate horizontal swipe closes the viewer outside reserved system edges, toolbar and transport regions.
 
@@ -383,13 +389,13 @@ Video/audio speed offers 1x, 1.25x and 2x. Changing speed preserves pause state 
 
 ### Foundation and archives
 
-Mandatory first run requires a persisted eligible follow and an explicit Start action. Provider radio choices expose selection, saving disables controls, and failure remains on setup with a useful message. App lock, safe mode, downgrade notices, release notes, update/local-data dialogs, confirmations, action sheets and snackbars share Coral chrome without changing their stored decisions or destructive confirmations.
+Mandatory first run requires a persisted eligible follow and an explicit Start action. Provider radio choices expose selection, saving disables controls, and failure remains on setup with a useful message. App lock, safe mode, downgrade notices, release notes, update/local-data dialogs, confirmations, action sheets and snackbars share the current rounded chrome without changing their stored decisions or destructive confirmations.
 
 Archive pages use the same light/dark color roles, including distinct links, authors, quotations and errors. They remain plain HTML/CSS with escaped content and preserved file/quote links. Spoilers are initially closed native disclosures: colored descendants stay hidden, keyboard and pointer activation reveal them, and nested disclosures remain independent. No script is required.
 
 ## Settings
 
-Appearance retains its persisted behavior inside Coral preference cards and sub-pages:
+Settings is one continuous page, following NekoSurf's grouped layout while retaining Orbin's name, icon, indigo/cyan accents and persisted behavior:
 
 | Setting | Choices | Default |
 | --- | --- | --- |
@@ -397,7 +403,13 @@ Appearance retains its persisted behavior inside Coral preference cards and sub-
 | AMOLED black | On, Off | Off |
 | Catalog view | List, Grid, Card | Grid when unset; preserve a saved choice |
 
-Settings uses the shared title/Back contract, searchable categories, Coral cards and pill search, trailing values/switches and anchored choices. Long searchable scope choices retain their dedicated page. Orbin-only setting IDs, callbacks, validation and storage behavior stay intact.
+An Orbin identity card shows the installed version. Theme, Boards, Threads, Media, Hidden content, Privacy, History, Storage, Backup and About appear in that order when populated; unknown platform controls remain in More settings. Source, followed-board, history, download and help shortcuts retain their real destinations. Ordinary scrolling keeps primary navigation visible. Search and long scope choices retain local Back before leaving Settings.
+
+Content is centered at a maximum width of 720dp with 16dp gutters. Groups use uppercase 12sp headings, 22dp card corners, a one-dp border and no shadow. Rows use 14dp horizontal and 11dp vertical padding, a 32dp colored icon tile with 10dp corners, 15sp semibold labels and 12.5sp summaries. Dividers start 58dp from the leading edge. Switches use a 51dp by 31dp rounded track with a white thumb and the Orbin accent. Choice menus retain radio selection semantics, with compact segmented controls for suitable short choices.
+
+Settings shares the app's NekoSurf-inspired page/card hierarchy. Light keeps Orbin indigo and Dark/AMOLED use Orbin cyan. The redesign does not change saved brightness preferences, source choices or playback overrides.
+
+The shared system text-size path remains uncapped, including iOS Dynamic Type. Controls adapt at large sizes and in right-to-left layouts. Search still finds labels, values, hints and supplied group names. Long searchable scope choices retain their dedicated page. Orbin-only setting IDs, callbacks, validation, destructive confirmation and storage behavior stay intact.
 
 A stored legacy color-theme key is migrated away without changing brightness or AMOLED. A backup containing an unsupported legacy color theme remains refused as a whole, with no partial application. The settings, backup and migration tests cover these separate contracts.
 
@@ -405,7 +417,7 @@ A stored legacy color-theme key is migrated away without changing brightness or 
 
 ![Themes](diagrams/themes.svg)
 
-Light, Dark and AMOLED use the same geometry and type. AMOLED uses black screen and app-bar grounds, while raised Coral cards, sheets and dialogs retain the neutral `color.surfaceVariant` fill so their hierarchy remains visible. Compact post backgrounds, placeholders and selection use their documented semantic roles rather than a separate screen-specific palette.
+Light, Dark and AMOLED use the same geometry and type. AMOLED uses black screen and app-bar grounds, while cards, sheets and dialogs retain the `color.surfaceVariant` fill so their hierarchy remains visible. Compact post backgrounds, placeholders and selection use their documented semantic roles.
 
 ## States
 
@@ -424,8 +436,8 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ## Edge cases
 
-- **Long titles.** Catalog list titles and Coral card subjects use two lines, then an ellipsis. Supporting text and control areas grow at larger scales.
-- **No image.** Compact rows omit the thumbnail. Coral cards do not invent an attachment or an active media action.
+- **Long titles.** Catalog list titles and card subjects use two lines, then an ellipsis. Supporting text and control areas grow at larger scales.
+- **No image.** Compact rows omit the thumbnail. Cards do not invent an attachment or an active media action.
 - **Spoiler image.** The thumbnail shows a `color.surfaceVariant` cover with the word "Spoiler" until the reader taps it. A tap reveals the image and does not open the viewer.
 - **Several files in one post.** The thumbnail shows the first file with a count badge; the viewer pages through them.
 - **Large text.** Plain totals stay in the text column at every font scale. At 2.0 the thumbnail moves above it. Card text areas expand rather than clipping complete counts.
@@ -437,7 +449,7 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 ## Accessibility
 
 - General controls preserve size.touchTarget (48dp). Wordmarks and snackbar messages expose one accessible announcement; decorative duplicate text and glyphs are excluded. System text size is applied once on iOS.
-- Coral raises the source-verified 44dp toolbar overflow width to a 48 × 56dp target; normal toolbar actions use 50 × 56dp and navigation 56 × 56dp.
+- Header glyphs sit inside at least 48dp controls. The 62dp header can grow with Dynamic Type; compact visual button fills do not shrink the accessible target.
 - A catalog row is one screen-reader item: title, total replies, files, optional unread count, then date/source metadata. Plain counters are not repeated as a second announcement.
 - A post announces author, number, date, then the body. References are separate links.
 - Selection in two panes is announced as selected and does not rely on `color.selected` alone.
@@ -458,43 +470,47 @@ Error titles name the cause: "Network error", "Not found", "Server error". State
 
 ### Visual reference
 
-**Clover 3.0.2** is the retained source reference for compact reader metrics and interactions; the current rounded-card/chrome adaptation is Orbin Coral. Its actual installed Settings root, Appearance page, choice popup and navigation drawer were captured on an accelerated API 31 emulator in [the reference inspection](https://github.com/Defuuls/Orbin/actions/runs/43237685017). The downloaded APK was verified against the supplied file's SHA-256 before installation; package inspection confirmed `org.floens.chan`, `v3.0.2`, code `30002`.
+**NekoSurf** is the current visual reference, pinned to commit [6e8593d3e94b6d1e0077b7c48777ac795f8a537a](https://github.com/NekoSurf/NekoSurf/tree/6e8593d3e94b6d1e0077b7c48777ac795f8a537a). Its [settings widgets](https://github.com/NekoSurf/NekoSurf/blob/6e8593d3e94b6d1e0077b7c48777ac795f8a537a/lib/settings/settings_widgets.dart), [settings page](https://github.com/NekoSurf/NekoSurf/blob/6e8593d3e94b6d1e0077b7c48777ac795f8a537a/lib/settings/settings.dart), [header](https://github.com/NekoSurf/NekoSurf/blob/6e8593d3e94b6d1e0077b7c48777ac795f8a537a/lib/ui/dash_header.dart) and [color roles](https://github.com/NekoSurf/NekoSurf/blob/6e8593d3e94b6d1e0077b7c48777ac795f8a537a/lib/ui/colors.dart) establish the layout and surface reference. Orbin's shared Compose implementation retains its own brand, four destinations, data model, providers, options and platform actions. Source inspection establishes reference facts; it does not establish a visual match on a running iPhone.
 
-The observed fresh-install theme is **Yotsuba**, with a red toolbar and peach preference surfaces. Orbin deliberately uses its coral brand accent with Light, Dark and AMOLED surfaces. The reference tables preserve the observed metrics and interaction provenance. Current Coral cards, primary navigation and supporting screens are described above; Orbin-specific settings and read-only features retain their real IDs, callbacks and persisted values.
+### Historical Clover and Coral references
+
+**Clover 3.0.2** remains the historical source for compact reader metrics and interactions. Its installed Settings root, Appearance page, choice popup and navigation drawer were captured on an accelerated API 31 emulator in [the reference inspection](https://github.com/Defuuls/Orbin/actions/runs/43237685017). The downloaded APK was verified against the supplied file's SHA-256 before installation; package inspection confirmed `org.floens.chan`, `v3.0.2`, code `30002`.
+
+The observed fresh-install theme was **Yotsuba**, with a red toolbar and peach preference surfaces. Orbin's later Coral stage introduced rounded cards and supporting screens. Both are historical references; current app surfaces and accents are defined above. Orbin-specific settings and read-only features retain their real IDs, callbacks and persisted values.
 
 The application is implemented independently. Standard open-source Roboto font resources retain their license and provenance. Clover's name, logo and application code are not shipped as Orbin assets.
 
-### Values taken from the app
+### Historical values taken from Clover
 
 | Item | App value | This design |
 | --- | --- | --- |
-| App bar height | 56dp | `size.appBar` |
+| App bar height | 56dp | Current size.appBar is 62dp |
 | Thumbnail, default | 72dp | `size.thumbnail` |
 | Thumbnail, larger-screen variant | 100dp | `size.thumbnailWide` |
 | Grid card width | 120dp | Viewport width / columns; see the grid rule (Orbin sizes cards from the viewport, not Clover's fixed width) |
-| Grid card corner / elevation / margin, API 21+ | 2dp each | radius.compact, size.cardElevation, space.gridOuter |
+| Grid card corner / elevation / margin, API 21+ | 2dp each | Current radius.compact is 8dp; size.cardElevation and space.gridOuter retain historical helper values |
 | Grid image height | 13/16 of card width | Half the grid viewport, `ratio.gridImageHeight`, at least `size.gridCardMin` |
-| Post body, phone / wide | 14sp / 16sp | type.postBody / type.postBodyWide |
-| Post details, phone / wide | 10sp / 12sp | type.postDetails / type.postDetailsWide |
+| Post body, phone / wide | 14sp / 16sp | Current type.postBody / type.postBodyWide are 15sp / 16sp |
+| Post details, phone / wide | 10sp / 12sp | Current type.postDetails / type.postDetailsWide are 11sp / 12sp |
 | Post text inset, phone / wide | 8dp / 10dp | space.postInset / space.postInsetWide |
 | Drawer maximum width | 336dp | size.drawerMax |
 | Divider | 1dp | `size.hairline` |
 | Thread footer | 88dp | `size.threadStatus` |
-| Error title | 24sp | `type.stateTitle` |
-| Empty pane message | 16sp | `type.stateBody` |
-| Primary color, fresh Yotsuba | #F44336, status #D32F2F | Orbin Coral toolbar #FFFFFF with dark ink, accent #C73E4E |
-| Teal accent | `#009688` | Darkened to `color.accent` so text buttons reach 4.5:1 |
+| Error title | 24sp | Current type.stateTitle is 20sp |
+| Empty pane message | 16sp | Current type.stateBody is 14sp |
+| Primary color, fresh Yotsuba | #F44336, status #D32F2F | Current Orbin grounds and brand accents are defined in the color table |
+| Teal accent | `#009688` | Current `color.accent` keeps Orbin's contrast-safe identity |
 | Post layout | Thumbnail left of text | Same |
 
 The supplied reference APK is `org.floens.chan`, version `v3.0.2` (version code `30002`), SHA-256 `3dfc46508958c53b2eedeb48be22304c4c5d1debf9b19172b09eaa1709441300`.
 
-Its dark theme colors are readable in the style resources. `Chan.Theme.Dark` defines `backcolor` as `#232323` and `backcolor_secondary` as `#303030`. `Chan.Theme.Black` inherits Dark and overrides those values with `#000000` and `#212121`. Orbin keeps comparable dark and AMOLED grounds (#1C1C1E, #000000) and documents its coral toolbar, selection, action, link and subject colors in the color table.
+Its dark theme colors are readable in the style resources. `Chan.Theme.Dark` defines `backcolor` as `#232323` and `backcolor_secondary` as `#303030`. `Chan.Theme.Black` inherits Dark and overrides those values with `#000000` and `#212121`. These values describe Clover; the color table defines Orbin's current toolbar, selection, action, link and subject colors.
 
 Pane widths were not established from the APK resources. The pane rules follow Orbin's existing code.
 
 ### Retained Orbin features
 
-Multi-site source selection, explicit board subscriptions and first-run setup, board icons, source-qualified saved/watch records, unread markers, accessible large-text expansion, two-pane arithmetic and dedicated video playback are Orbin features. They retain their real behavior in the current Coral adaptation, with compact-post metrics derived from the verified reference. They are not represented as features observed in the reference APK.
+Multi-site source selection, explicit board subscriptions and first-run setup, board icons, source-qualified saved/watch records, unread markers, accessible large-text expansion, two-pane arithmetic and dedicated video playback are Orbin features. They retain their real behavior in the current NekoSurf-inspired presentation, with compact-post metrics derived from the historical reference. They are not represented as features observed in either reference app.
 
 ## Verification
 

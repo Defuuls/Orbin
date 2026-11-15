@@ -6,7 +6,9 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -138,7 +141,7 @@ class InterfaceSemanticsTest {
     }
 
     @Test
-    fun `settings keeps uncategorized controls reachable from its directory`() {
+    fun `settings keeps uncategorized controls reachable by scrolling its grouped root`() {
         composeRule.setContent {
             NextTheme {
                 SettingsScreen(
@@ -155,7 +158,8 @@ class InterfaceSemanticsTest {
         composeRule.onNodeWithText("Library").assertDoesNotExist()
         composeRule.onNodeWithText("All media").assertDoesNotExist()
         composeRule.onNodeWithText("Commands").assertDoesNotExist()
-        composeRule.onNodeWithText("More settings").performClick()
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasTestTag("reader-setting-row-cache"))
+        composeRule.onNodeWithTag("reader-setting-row-cache").assertIsDisplayed().assertHasClickAction()
         composeRule.onNodeWithText("Image cache usage").assertExists()
     }
 

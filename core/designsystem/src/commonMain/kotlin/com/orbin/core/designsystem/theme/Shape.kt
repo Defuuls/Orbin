@@ -5,13 +5,13 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 /**
- * Classic reader corners; Orbin branding is provided by its palette and identity assets.
+ * Rounded shared surfaces, from small media tiles to floating dialogs and sheets.
  */
 val OrbinShapes =
     Shapes(
-        extraSmall = RoundedCornerShape(2.dp),
-        small = RoundedCornerShape(2.dp),
-        medium = RoundedCornerShape(2.dp),
-        large = RoundedCornerShape(2.dp),
-        extraLarge = RoundedCornerShape(2.dp),
+        extraSmall = RoundedCornerShape(8.dp),
+        small = RoundedCornerShape(12.dp),
+        medium = RoundedCornerShape(16.dp),
+        large = RoundedCornerShape(22.dp),
+        extraLarge = RoundedCornerShape(28.dp),
     )

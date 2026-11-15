@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.ReaderAmoledColors
+import com.orbin.uinext.tokens.ReaderDarkColors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -55,7 +57,7 @@ class ThemeNestingTest {
         assertTrue(paletteUnder { it() }.dark)
     }
 
-    /** AMOLED blackens the ground; plain dark keeps its dark Coral ground and surfaces. */
+    /** AMOLED blackens the page and retains its own readable text, cyan accent and lifted cards. */
     @Test
     fun `amoled reaches a nested screen and blackens the ground`() {
         lateinit var amoled: NextPalette
@@ -70,8 +72,11 @@ class ThemeNestingTest {
         assertFalse(plain.amoled)
         assertEquals(Color.Black, amoled.background)
         assertNotEquals(Color.Black, plain.background)
-        assertEquals(plain.ink, amoled.ink)
-        assertEquals(Color.White, amoled.accent)
+        assertEquals(ReaderDarkColors.ink, plain.ink)
+        assertEquals(ReaderAmoledColors.ink, amoled.ink)
+        assertEquals(ReaderAmoledColors.accent, amoled.accent)
+        assertEquals(Color(0xFF0E0E10), amoled.raised)
+        assertEquals(amoled.surfaceVariant, amoled.elevated)
         assertNotEquals(plain.raised, amoled.raised)
     }
 

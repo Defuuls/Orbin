@@ -1,8 +1,10 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,15 +21,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -46,7 +47,6 @@ import androidx.compose.ui.window.PopupProperties
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_settings_no_matches
 import com.orbin.uinext.tokens.OrbinElevation
-import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import org.jetbrains.compose.resources.stringResource
@@ -54,24 +54,24 @@ import org.jetbrains.compose.resources.stringResource
 internal val preferenceTitleStyle: TextStyle
     @Composable get() =
         OrbinType.stateBody.withReaderFont().copy(
-            fontSize = 16.sp,
-            lineHeight = 22.sp,
-            fontWeight = FontWeight.Normal,
+            fontSize = 15.sp,
+            lineHeight = 21.sp,
+            fontWeight = FontWeight.SemiBold,
         )
 
 internal val preferenceSummaryStyle: TextStyle
     @Composable get() =
         OrbinType.preview.withReaderFont().copy(
-            fontSize = 14.sp,
-            lineHeight = 19.sp,
+            fontSize = 12.5.sp,
+            lineHeight = 17.sp,
             fontWeight = FontWeight.Normal,
         )
 
-/** Preference text follows the native neutral theme, separately from post text colors. */
+/** Settings surfaces and text stay independent from post-reading colors. */
 internal val preferencePrimaryColor: Color
-    @Composable get() = if (next.dark) Color.White else Color(0xDE000000)
+    @Composable get() = settingsStyle.text
 
-/** Coral preference choices share their row's origin and keep one labeled radio action. */
+/** Anchored choices retain one labeled radio action and the app's resolved text density. */
 @Composable
 internal fun ReaderSettingAnchor(
     item: SettingItem,
@@ -84,12 +84,12 @@ internal fun ReaderSettingAnchor(
         content()
         return
     }
-    var anchorSize by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
-    val offset = with(density) { 5.dp.roundToPx() }
+    val colors = settingsStyle
+    val offset = with(density) { 8.dp.roundToPx() }
     val position = remember(offset) { PreferencePopupPosition(offset) }
-    val menuWidth = with(density) { anchorSize.width.toDp().coerceIn(224.dp, 448.dp) }
-    Box(Modifier.fillMaxWidth().onSizeChanged { anchorSize = it }) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val menuWidth = maxWidth.coerceAtMost(250.dp)
         content()
         if (expanded) {
             Popup(
@@ -101,10 +101,10 @@ internal fun ReaderSettingAnchor(
                 // app/system text scale, including the iOS Dynamic Type correction, exactly once.
                 CompositionLocalProvider(LocalDensity provides density) {
                     Surface(
-                        shape = RoundedCornerShape(OrbinRadius.card),
-                        color = if (next.dark) reader.surfaceVariant else reader.background,
+                        shape = RoundedCornerShape(22.dp),
+                        color = colors.card,
                         shadowElevation = OrbinElevation.floating,
-                        border = androidx.compose.foundation.BorderStroke(ReaderSize.hairline, reader.hairline),
+                        border = androidx.compose.foundation.BorderStroke(ReaderSize.hairline, colors.border),
                     ) {
                         Column(
                             Modifier
@@ -112,6 +112,7 @@ internal fun ReaderSettingAnchor(
                                 .width(menuWidth)
                                 .heightIn(max = ReaderSize.readingMax)
                                 .verticalScroll(rememberScrollState())
+                                .padding(6.dp)
                                 .selectableGroup(),
                         ) {
                             if (item.options.isEmpty()) {
@@ -128,13 +129,16 @@ internal fun ReaderSettingAnchor(
                                     Modifier
                                         .fillMaxWidth()
                                         .heightIn(min = 48.dp)
-                                        .selectable(
+                                        .background(
+                                            if (isSelected) colors.accent.copy(alpha = 0.12f) else Color.Transparent,
+                                            RoundedCornerShape(15.dp),
+                                        ).selectable(
                                             selected = isSelected,
                                             role = Role.RadioButton,
                                             onClick = { onSelect(index) },
-                                        ).padding(horizontal = 16.dp),
+                                        ).padding(horizontal = 10.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 ) {
                                     Text(
                                         label,
@@ -156,18 +160,72 @@ internal fun ReaderSettingAnchor(
 /** The selectable row owns state and interaction; this mark is decorative for accessibility. */
 @Composable
 internal fun ReaderSettingsChoiceMark(selected: Boolean) {
-    val colors = reader
+    val colors = settingsStyle
     Canvas(Modifier.size(20.dp).clearAndSetSemantics {}) {
-        drawCircle(
-            color = if (selected) colors.accent else colors.inkSecondary,
-            radius = 9.dp.toPx(),
-            style = Stroke(2.dp.toPx()),
-        )
-        if (selected) drawCircle(color = colors.accent, radius = 4.dp.toPx())
+        if (selected) {
+            val tick =
+                Path().apply {
+                    moveTo(4.dp.toPx(), 10.dp.toPx())
+                    lineTo(8.dp.toPx(), 14.dp.toPx())
+                    lineTo(16.dp.toPx(), 5.dp.toPx())
+                }
+            drawPath(
+                tick,
+                color = colors.accent,
+                style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
     }
 }
 
-/** Five pixels in the 160dpi reference are five dp; clamp only to keep the complete menu on screen. */
+/** Compact choices stay in place; each segment owns its complete accessible radio action. */
+@Composable
+internal fun SettingsSegments(
+    item: SettingItem,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = settingsStyle
+    Row(
+        modifier =
+            modifier
+                .background(colors.background, RoundedCornerShape(12.dp))
+                .padding(3.dp)
+                .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        item.options.forEachIndexed { index, label ->
+            val selected = index == item.selected
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .background(
+                            if (selected) colors.accent else Color.Transparent,
+                            RoundedCornerShape(9.dp),
+                        ).selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) })
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style =
+                        preferenceTitleStyle.copy(
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        ),
+                    color = if (selected) colors.onAccent else colors.text,
+                )
+            }
+        }
+    }
+}
+
+/** Align menus to their row and prefer opening below, with an eight-dp gap. */
 internal class PreferencePopupPosition(
     private val offset: Int,
 ) : PopupPositionProvider {
@@ -177,16 +235,25 @@ internal class PreferencePopupPosition(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize,
     ): IntOffset {
+        val margin = (offset * POPUP_EDGE_GAP_RATIO).toInt()
         val x =
             if (layoutDirection == LayoutDirection.Rtl) {
-                anchorBounds.right - popupContentSize.width - offset
+                anchorBounds.right - popupContentSize.width
             } else {
-                anchorBounds.left + offset
+                anchorBounds.left
             }
-        val y = anchorBounds.top + offset
+        val below = anchorBounds.bottom + offset
+        val above = anchorBounds.top - popupContentSize.height - offset
+        val roomBelow = windowSize.height - below - margin
+        val roomAbove = anchorBounds.top - margin - offset
+        val y = if (popupContentSize.height > roomBelow && roomAbove > roomBelow) above else below
+        val maxX = (windowSize.width - popupContentSize.width - margin).coerceAtLeast(0)
+        val maxY = (windowSize.height - popupContentSize.height - margin).coerceAtLeast(0)
         return IntOffset(
-            x.coerceIn(0, (windowSize.width - popupContentSize.width).coerceAtLeast(0)),
-            y.coerceIn(0, (windowSize.height - popupContentSize.height).coerceAtLeast(0)),
+            x.coerceIn(margin.coerceAtMost(maxX), maxX),
+            y.coerceIn(margin.coerceAtMost(maxY), maxY),
         )
     }
 }
+
+private const val POPUP_EDGE_GAP_RATIO = 1.5f

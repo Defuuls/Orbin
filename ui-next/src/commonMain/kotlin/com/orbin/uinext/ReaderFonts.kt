@@ -17,6 +17,11 @@ import com.orbin.uinext.resources.reader_roboto_regular
 import com.orbin.uinext.tokens.LocalNextFontFamily
 import org.jetbrains.compose.resources.Font
 
+/** Use the platform's native iOS face; Android retains the bundled Roboto family. */
+@Composable
+internal fun rememberReaderFontFamily(platform: NextPlatform): FontFamily =
+    if (platform == NextPlatform.IOS) FontFamily.Default else rememberReaderRobotoFontFamily()
+
 /** Local, Apache-licensed Roboto faces; their exact sources and hashes ship with the font notices. */
 @Composable
 internal fun rememberReaderRobotoFontFamily(): FontFamily {
@@ -40,7 +45,7 @@ internal fun rememberReaderCondensedFontFamily(): FontFamily {
 
 /**
  * Applies the composition's reader font at the rendering boundary. Reader token metrics remain
- * pure, reusable TextStyle constants; inside NextTheme they use bundled Roboto on both platforms.
+ * pure, reusable TextStyle constants; NextTheme supplies the iOS system face or Android Roboto.
  * Explicit other families and every requested size, weight, style and synthesis setting remain.
  */
 @Composable

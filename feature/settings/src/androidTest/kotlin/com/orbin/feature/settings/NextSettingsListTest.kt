@@ -9,11 +9,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
@@ -29,7 +27,7 @@ import org.junit.runner.RunWith
  * Editing a setting from the list, on a device.
  *
  * Only the behaviour that needs one: a row has to reach the repository. Which rows are *present* —
- * the update check gated on the in-app updater, the three headings and nothing else — is a property
+ * the update check gated on the in-app updater and the available preferences — is a property
  * of the registry, so it is asserted in `SettingsIndexTest` where a row being off-screen cannot be
  * mistaken for a row being absent.
  *
@@ -51,8 +49,6 @@ class NextSettingsListTest {
     fun togglingARowWritesItThrough() {
         setContent()
 
-        composeTestRule.onNodeWithContentDescription("Search settings").performClick()
-        composeTestRule.onNode(hasSetTextAction()).performTextInput("Hide NSFW boards")
         scrollTo("Hide NSFW boards").performClick()
         composeTestRule.waitForIdle()
 

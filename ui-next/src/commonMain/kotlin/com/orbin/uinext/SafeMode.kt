@@ -2,12 +2,14 @@ package com.orbin.uinext
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -55,42 +57,48 @@ fun SafeModeScreen(
 ) {
     var showResetConfirmation by remember { mutableStateOf(false) }
 
-    Column(
+    Box(
         modifier =
             modifier
                 .fillMaxSize()
                 .background(reader.background)
                 .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.Start,
+                .padding(20.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        OrbinLogo(size = 48.dp, contentDescription = null)
-        Text(
-            text.title,
-            style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-            color = reader.ink,
-            modifier = Modifier.semantics { heading() },
-        )
-        Text(text.explanation, style = OrbinType.stateBody.withReaderFont(), color = reader.inkMuted)
-        Text(text.saveFirst, style = OrbinType.stateBody.withReaderFont(), color = reader.inkMuted)
+        OrbinCard(Modifier.widthIn(max = 520.dp).fillMaxWidth()) {
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                OrbinLogo(size = 48.dp, contentDescription = null)
+                Text(
+                    text.title,
+                    style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.ExtraBold),
+                    color = reader.ink,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(text.explanation, style = OrbinType.stateBody.withReaderFont(), color = reader.inkMuted)
+                Text(text.saveFirst, style = OrbinType.stateBody.withReaderFont(), color = reader.inkMuted)
 
-        OrbinFilledButton(
-            label = text.saveCrashDetails,
-            onClick = onExportDiagnostics,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OrbinTextButton(
-            label = text.reset,
-            onClick = { showResetConfirmation = true },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OrbinTextButton(
-            label = text.tryNormally,
-            onClick = onContinueAnyway,
-            modifier = Modifier.fillMaxWidth(),
-        )
+                OrbinFilledButton(
+                    label = text.saveCrashDetails,
+                    onClick = onExportDiagnostics,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OrbinTextButton(
+                    label = text.reset,
+                    onClick = { showResetConfirmation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OrbinTextButton(
+                    label = text.tryNormally,
+                    onClick = onContinueAnyway,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
     }
 
     if (showResetConfirmation) {

@@ -224,39 +224,48 @@ private const val TITLE_LENGTH = 80
 private const val SPOILER_OPEN_TAG =
     "<details class=\"spoiler\"><summary>Spoiler</summary><span class=\"spoiler-content\">"
 
-/** Midnight Electric reader roles, with light ink flattened onto the white card to keep it opaque. */
+/** Neko-style reader surfaces with Orbin accents; standalone archives follow browser light/dark mode. */
 internal const val ARCHIVE_CSS = """:root {
-  --bg: #ffffff; --raised: #ffffff; --placeholder: #f5f7fb;
-  --ink: #1a1a1a; --muted: #5a6378; --line: #e2e6f0;
-  --accent: #4338ca; --link: #4338ca; --author: #1a1a1a; --subject: #1a1a1a;
-  --green: #2e7d32; --error: #b3261e; --spoiler: #2b2b2b;
+  --bg: #f4f5f7; --raised: #ffffff; --placeholder: #f4f3fd;
+  --ink: #14161f; --muted: #696f83; --line: rgba(0, 0, 0, 0.06);
+  --accent: #4338ca; --link: #0369a1; --author: #14161f; --subject: #14161f;
+  --green: #2e7d32; --error: #b91c35; --spoiler: #14161f; --on-spoiler: #ffffff;
+  --hero-start: rgba(67, 56, 202, 0.30); --hero-end: rgba(167, 139, 250, 0.18);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #0b1021; --raised: #141b33; --placeholder: #10162e;
-    --ink: #ffffff; --muted: #9fb0ce; --line: #1e294a;
-    --accent: #00d4ff; --link: #67e8f9; --author: #67e8f9; --subject: #ffffff;
-    --green: #81c784; --error: #f2b8b5; }
+  :root { --bg: #0b0d11; --raised: #141520; --placeholder: #102b33;
+    --ink: #e8eaf0; --muted: #8a8fa8; --line: rgba(255, 255, 255, 0.07);
+    --accent: #00d4ff; --link: #6dd4ec; --author: #6dd4ec; --subject: #e8eaf0;
+    --green: #34d399; --error: #ff5d6c; --spoiler: #e8eaf0; --on-spoiler: #141520;
+    --hero-start: rgba(0, 212, 255, 0.22); --hero-end: rgba(167, 139, 250, 0.12);
+    --shadow: none; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
-  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-header, main, footer { max-width: 820px; margin: 0 auto; padding: 16px; }
-h1 { font-size: 1.4rem; margin: 4px 0; overflow-wrap: anywhere; }
-.board, .meta, footer { color: var(--muted); font-size: 0.85rem; margin: 0; }
+  font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+header, main, footer { max-width: 720px; margin: 0 auto; padding: 16px; }
+header { width: calc(100% - 32px); max-width: 688px; margin-top: 16px; border-radius: 24px;
+  border: 1px solid var(--line); background: linear-gradient(135deg, var(--hero-start), var(--hero-end)); }
+h1 { font-size: 1.333em; font-weight: 800; letter-spacing: -0.4px; margin: 4px 0; overflow-wrap: anywhere; }
+.board, .meta, footer { color: var(--muted); font-size: 0.8125rem; margin: 0; }
+header .meta { color: var(--ink); }
+.board { color: var(--accent); font-weight: 800; letter-spacing: 0.4px; }
 a { color: var(--link); }
-.post { background: var(--raised); border: 1px solid var(--line); border-radius: 12px;
-  padding: 12px 14px; margin: 0 0 10px; scroll-margin-top: 12px; }
+.post { background: var(--raised); border: 1px solid var(--line); border-radius: 22px;
+  padding: 14px; margin: 0 0 10px; scroll-margin-top: 12px; box-shadow: var(--shadow); }
 .post:target { outline: 2px solid var(--accent); }
 .op { border-color: var(--accent); }
-.head { font-size: 0.85rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
-.subject { color: var(--subject); font-weight: 600; }
-.name { color: var(--author); font-weight: 600; }
+.head { font-size: 0.8125rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.head > * { min-width: 0; overflow-wrap: anywhere; }
+.subject { color: var(--subject); font-weight: 700; }
+.name { color: var(--author); font-weight: 700; }
 .no { color: var(--muted); text-decoration: none; }
 .files { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 4px; }
 figure { margin: 0; max-width: 100%; }
 img, video { display: block; max-width: min(100%, 360px); max-height: 360px;
-  border-radius: 8px; background: var(--placeholder); }
+  border-radius: 14px; background: var(--placeholder); }
 audio { max-width: 100%; }
 figcaption { font-size: 0.75rem; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
 .missing { color: var(--error); }
@@ -264,9 +273,9 @@ blockquote { margin: 8px 0 0; overflow-wrap: anywhere; }
 .green, .pink { color: var(--green); }
 .quote { color: var(--link); }
 .spoiler { display: inline-block; max-width: 100%; vertical-align: baseline;
-  background: var(--raised); border-radius: 4px; }
-.spoiler > summary { padding: 4px 8px; border-radius: 4px; cursor: pointer;
-  background: var(--spoiler); color: #ffffff; }
+  background: var(--raised); border-radius: 14px; }
+.spoiler > summary { padding: 6px 10px; border-radius: 14px; cursor: pointer; font-weight: 700;
+  background: var(--spoiler); color: var(--on-spoiler); }
 .spoiler > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .spoiler-content { display: block; padding: 4px 8px; }
 code { font-family: ui-monospace, Menlo, monospace; font-size: 0.9em; }

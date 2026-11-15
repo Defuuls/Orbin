@@ -3,12 +3,14 @@ package com.orbin.uinext
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -44,7 +46,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -206,9 +211,8 @@ fun BoardScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(
-                    if (mode != CatalogMode.LIST && !next.dark) colors.surfaceVariant else colors.background,
-                ).semantics { paneTitle = board },
+                .background(colors.background)
+                .semantics { paneTitle = board },
     ) {
         ReaderAppBar(
             title = heading,
@@ -257,8 +261,8 @@ fun BoardScreen(
                     CatalogMode.LIST -> catalogGridSpec(maxWidth, maxHeight)
                 }
             val columns = if (cards) gridSpec.columns else 1
-            val gap = if (cards) ORBIN_CATALOG_GAP else NO_GAP
-            val outer = if (cards) ORBIN_CATALOG_GUTTER else NO_GAP
+            val gap = ORBIN_CATALOG_GAP
+            val outer = ORBIN_CATALOG_GUTTER
             val cellMin = if (wideWindow) ReaderSize.cellMinWide else ReaderSize.cellMin
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
@@ -306,13 +310,17 @@ fun BoardScreen(
                                 compactGrid = mode == CatalogMode.GRID,
                             )
                         else ->
-                            CatalogRow(
-                                row = row,
-                                selected = row.id == selectedRowId,
-                                wideWindow = wideWindow,
-                                onOpen = onOpenRow,
-                                thumbnail = thumbnail,
-                            )
+                            OrbinCard(modifier = Modifier.fillMaxWidth(), elevated = false) {
+                                CatalogRow(
+                                    row = row,
+                                    selected = row.id == selectedRowId,
+                                    wideWindow = wideWindow,
+                                    onOpen = onOpenRow,
+                                    thumbnail = thumbnail,
+                                    showDivider = false,
+                                    containerColor = colors.surfaceVariant,
+                                )
+                            }
                     }
                 }
             }
@@ -357,29 +365,35 @@ fun catalogGridSpec(
  * Image height follows the column width so cards stay compact, unlike [catalogGridSpec]
  * which sizes images to half the viewport and yields a single phone column.
  */
-fun orbinCatalogGridSpec(width: Dp): CatalogGridSpec {
-    val fallback = ORBIN_CATALOG_MIN_CARD * 2 + ORBIN_CATALOG_GUTTER * 2 + ORBIN_CATALOG_GAP
+fun orbinCatalogGridSpec(
+    width: Dp,
+    gutter: Dp = ORBIN_CATALOG_GUTTER,
+): CatalogGridSpec {
+    val fallback = ORBIN_CATALOG_MIN_CARD * 2 + gutter * 2 + ORBIN_CATALOG_GAP
     val usable = if (width.isFinite && width > 0.dp) width else fallback
     val columns =
         maxOf(
             1,
             (
-                (usable - ORBIN_CATALOG_GUTTER * 2 + ORBIN_CATALOG_GAP) /
+                (usable - gutter * 2 + ORBIN_CATALOG_GAP) /
                     (ORBIN_CATALOG_MIN_CARD + ORBIN_CATALOG_GAP)
             ).toInt(),
         )
-    val colWidth = (usable - ORBIN_CATALOG_GUTTER * 2 - ORBIN_CATALOG_GAP * (columns - 1)) / columns
-    return CatalogGridSpec(columns, colWidth * ORBIN_CATALOG_IMAGE_RATIO)
+    val colWidth = (usable - gutter * 2 - ORBIN_CATALOG_GAP * (columns - 1)) / columns
+    return CatalogGridSpec(columns, colWidth * ORBIN_CATALOG_GRID_IMAGE_RATIO)
 }
 
 /**
- * One full-width catalog card, inside the catalog gutters, with the same image ratio as Grid.
+ * One full-width catalog card, inside the catalog gutters, with a landscape image.
  * Unmeasured, unbounded, or gutter-only widths fall back to a usable minimum card width.
  */
-fun orbinCatalogCardSpec(width: Dp): CatalogGridSpec {
-    val fallback = ORBIN_CATALOG_MIN_CARD + ORBIN_CATALOG_GUTTER * 2
-    val usable = if (width.isFinite && width > ORBIN_CATALOG_GUTTER * 2) width else fallback
-    val cardWidth = usable - ORBIN_CATALOG_GUTTER * 2
+fun orbinCatalogCardSpec(
+    width: Dp,
+    gutter: Dp = ORBIN_CATALOG_GUTTER,
+): CatalogGridSpec {
+    val fallback = ORBIN_CATALOG_MIN_CARD + gutter * 2
+    val usable = if (width.isFinite && width > gutter * 2) width else fallback
+    val cardWidth = usable - gutter * 2
     return CatalogGridSpec(columns = 1, imageHeight = cardWidth * ORBIN_CATALOG_IMAGE_RATIO)
 }
 
@@ -677,7 +691,8 @@ private fun CatalogCounts(
     }
 }
 
-/** A thread as a grid card: identity, subject, an inset thumbnail, then reply and file counts. */
+/** Compact image tiles and full social cards share the same identities, actions, and spoiler state. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun CatalogCard(
     row: FeedRow,
@@ -752,8 +767,124 @@ internal fun CatalogCard(
                 BorderStroke(ReaderSize.hairline, colors.hairline)
             },
         elevated = false,
-        shape = RoundedCornerShape(NEKO_CARD_RADIUS_DP.dp),
+        shape = RoundedCornerShape(if (compactGrid) 22.dp else NEKO_CARD_RADIUS_DP.dp),
     ) {
+        if (compactGrid && LocalDensity.current.fontScale < READER_TRAILING_BELOW_FONT_SCALE) {
+            Box(Modifier.fillMaxWidth().height(imageHeight)) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(colors.surfaceVariant)
+                        .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
+                        .clearAndSetSemantics {}
+                        .then(
+                            catalogThumbnailAction(
+                                covered,
+                                row,
+                                onOpenThumbnail,
+                                thumbnailClickLabel,
+                                onLongClick,
+                                onLongClickLabel,
+                            ),
+                        ),
+                ) {
+                    if (covered) {
+                        ReaderSpoilerCover(
+                            onReveal = reveal,
+                            modifier = Modifier.fillMaxSize(),
+                            onLongClick = onLongClick,
+                            onLongClickLabel = onLongClickLabel,
+                        )
+                    } else if (showThumbnail) {
+                        thumbnail.invoke(row, Modifier.fillMaxSize())
+                    }
+                }
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            0f to Color.Black.copy(alpha = 0.08f),
+                            0.4f to Color.Black.copy(alpha = 0.02f),
+                            1f to Color.Black.copy(alpha = 0.78f),
+                        ),
+                    ),
+                )
+                FlowRow(
+                    Modifier.align(Alignment.TopStart).padding(10.dp).padding(end = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (row.threadNumber.isNotBlank()) {
+                        NekoTintedPill(
+                            stringResource(Res.string.reader_post_number, row.threadNumber),
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.White,
+                        )
+                    }
+                    if (metadata != null && row.board.isNotBlank()) {
+                        NekoTintedPill("/${row.board}/", colors.accent.copy(alpha = 0.8f), Color.White)
+                    }
+                }
+                if (row.watched || row.bookmarked) {
+                    Icon(
+                        ReaderIcons.SavedFilled,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(18.dp),
+                    )
+                }
+                Column(
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .fillMaxWidth()
+                        .pointerInput(row.id, onOpen, onLongClick) {
+                            detectTapGestures(
+                                onTap = { onOpen(row) },
+                                onLongPress = onLongClick?.let { action -> { _: Offset -> action() } },
+                            )
+                        }.padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (title.isNotBlank()) {
+                        Text(
+                            title,
+                            style = OrbinType.body.withReaderFont().copy(fontWeight = FontWeight.Bold),
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    FlowRow(
+                        Modifier.testTag(CatalogTags.COUNTS),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        NekoCountPill(
+                            ReaderIcons.Chat,
+                            pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.White,
+                        )
+                        NekoCountPill(
+                            ReaderIcons.Album,
+                            pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.White,
+                        )
+                        if (row.unread > 0) {
+                            NekoTintedPill(
+                                pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
+                                colors.accent,
+                                colors.onAccent,
+                            )
+                        }
+                        if (row.mediaLabel.isNotBlank() && !covered) {
+                            NekoTintedPill(row.mediaLabel, Color.Black.copy(alpha = 0.4f), Color.White)
+                        }
+                    }
+                }
+            }
+            return@OrbinCard
+        }
         Column(
             Modifier
                 .fillMaxWidth()
@@ -1018,6 +1149,7 @@ private fun NekoCountPill(
     Row(
         modifier =
             Modifier
+                .width(IntrinsicSize.Max)
                 .clip(pillShape)
                 .background(containerColor)
                 .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -1032,6 +1164,7 @@ private fun NekoCountPill(
         )
         Text(
             text = count,
+            modifier = Modifier.weight(1f),
             style = OrbinType.meta.withReaderFont(),
             color = contentColor,
         )
@@ -1055,6 +1188,7 @@ private fun NekoTintedPill(
     ) {
         Text(
             text = text,
+            modifier = Modifier.width(IntrinsicSize.Max),
             style = OrbinType.caption2.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
             color = contentColor,
         )
@@ -1152,11 +1286,11 @@ internal fun previewText(
 
 private const val COUNT_ABBREVIATION_FROM = 1000
 private const val TENTHS = 10
-private val NO_GAP = 0.dp
-internal val ORBIN_CATALOG_GUTTER = 16.dp
-internal val ORBIN_CATALOG_GAP = 8.dp
+internal val ORBIN_CATALOG_GUTTER = 10.dp
+internal val ORBIN_CATALOG_GAP = 10.dp
 internal val ORBIN_CATALOG_MIN_CARD = 152.dp
 private const val ORBIN_CATALOG_IMAGE_RATIO = 0.75f
+private const val ORBIN_CATALOG_GRID_IMAGE_RATIO = 1.1f
 
 /** "/g/ - Technology" when both path and title are present. */
 internal fun catalogHeading(
@@ -1181,10 +1315,13 @@ private fun CatalogSortTabRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(reader.appBar)
                 .testTag(CatalogTags.SORT_TABS)
                 .selectableGroup()
-                .padding(horizontal = ORBIN_CATALOG_GUTTER)
+                .padding(horizontal = ORBIN_CATALOG_GUTTER, vertical = 6.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(reader.surfaceVariant)
+                .border(ReaderSize.hairline, reader.hairline, RoundedCornerShape(16.dp))
+                .padding(4.dp)
                 .heightIn(min = MIN_TOUCH_TARGET)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -1197,6 +1334,8 @@ private fun CatalogSortTabRow(
                     Modifier
                         .weight(1f)
                         .heightIn(min = MIN_TOUCH_TARGET)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (selected) reader.accent.copy(alpha = 0.14f) else Color.Transparent)
                         .selectable(
                             selected = selected,
                             role = Role.Tab,
@@ -1208,17 +1347,10 @@ private fun CatalogSortTabRow(
                 Text(
                     tab.label,
                     style = if (largeText) OrbinType.caption1 else OrbinType.bodyMedium,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                     color = if (selected) reader.accent else next.muted,
                     maxLines = if (largeText) 2 else 1,
                     overflow = TextOverflow.Ellipsis,
-                )
-                Box(
-                    Modifier
-                        .padding(top = 4.dp)
-                        .height(2.dp)
-                        .fillMaxWidth(0.55f)
-                        .background(if (selected) reader.accent else reader.background.copy(alpha = 0f)),
                 )
             }
         }

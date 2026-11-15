@@ -1,161 +1,140 @@
 # User Guide
 
-This guide describes the current Orbin interface and day-to-day behavior. For historical changes,
-use [[Release History|Release-History]] or the repository CHANGELOG rather than relying on old UI
-instructions.
+Orbin uses a NekoSurf-inspired interface across Android and iOS, with Orbin's name,
+mark, brand accents and existing features. For earlier interfaces and shipped
+versions, use [[Release History|Release-History]] or the repository CHANGELOG.
+
+Orbin is a **read-only browser**. It browses, watches, saves, downloads, searches,
+filters and exports; it does not post, reply or create threads.
 
 ## Getting started
 
-On first launch, Orbin asks one thing: which boards to follow. Pick a few and start browsing; you
-can follow more at any time from the Boards tab. Everything else has a sensible default, and the
-handful of real choices live in Settings (the gear in the Feed header).
+A fresh installation opens setup. Choose appearance and privacy preferences, then
+follow at least one eligible board and select Start browsing. The board follow
+must finish saving before setup can complete. Follow more boards later from
+Boards. An update can show the release setup and migration screen; existing
+settings and follows remain the source of truth.
 
-Orbin is a **read-only browser**. It can browse, watch, save, download, search, filter, and export,
-but it does not post, reply, or create threads.
+The primary bar opens Boards, Home, Downloads and Settings. The retained menu
+also opens Watched, Search and Saved. Back returns through the current reader
+hierarchy; Settings search and scope pickers close before leaving Settings.
 
-## Feed
+## Home
 
-The Feed combines threads from subscribed boards and orders them by activity. Read state, filtering,
-provider errors, and refresh behavior are handled consistently with board catalogs.
+Home combines threads from explicitly followed boards across the selected source.
+A favorite does not create a follow. Sources remain separate when they use the
+same board name or thread number.
 
-### One card per thread
+Choose List, Grid or Card with the layout control. Grid is the default when no
+layout has been saved. Card shows one full-width card per row, with a larger
+preview; the saved preference is shared with board catalogs and survives a
+relaunch. Wide windows adapt their columns, and Card remains one column within
+its pane.
 
-On a phone the feed is a single column of full-width cards. Each shows the thread's image or
-video thumbnail at full width, whole down to a 9:16 portrait (taller media is letterboxed), and
-under it the board, subject, up to eight lines of the opening post, and the reply and file counts.
-Foldables and tablets are detected automatically. A foldable's front screen shows one column;
-unfolded, it shows the number chosen in **Settings → Feed columns when unfolded** (1–3, starting at
-2). A tablet shows the number chosen in **Settings → Feed columns** (1–4, starting at 2). A window
-shorter or narrower than 600dp shows one column: split screen, or a front screen turned sideways
-(a Galaxy Z Fold8's or Fold8 Ultra's cover in landscape stays one column). Board catalogs keep their compact grid,
-except on a tablet, where **Settings → Catalog columns** sets it (2–8, starting at 4).
+Pull to refresh. Existing content stays visible during refresh and when a refresh
+fails; Retry repeats the real request. Read threads are de-emphasized, and source
+changes retain their reading position.
 
-Everything you have saved is one tap away in the **Downloads** tab, between Feed and Boards.
+Tap thread text to open the thread. Tap an attachment preview to open that media;
+a spoiler reveals before it opens. Long-press a card or preview for its available
+Watch, Save, Share, board and thread-video/comment actions. The chat action opens
+thread videos by default; Settings can make it open comments instead.
 
-### Feed behavior
-
-- Pull down to refresh immediately.
-- Already-read threads are visually de-emphasized without becoming illegible.
-- Hidden tags remove matching content; muted content remains visible but quieter.
-- The thread-per-board limit controls how much each subscription contributes.
-- Nothing plays in the feed: GIFs and videos show a still thumbnail until you open the thread.
-- Search is one field over the catalogs of the boards you follow.
-- Network/offline state is surfaced explicitly.
+Home previews remain bounded still thumbnails. Opening an attachment transfers
+playback to the media viewer.
 
 ## Boards and catalogs
 
-Board catalogs use the same grid-first presentation and readability rules as the subscribed feed.
-Sorting and paging remain available. Each card shows the OP media uncropped, at its own aspect
-ratio, so a board can be browsed by its media without switching layouts.
+Boards has source selection, search, local board icons and explicit follow
+controls. Opening a board and following it are separate actions. Catalogs keep
+List, Grid and Card layouts, sort choices and paging. Catalog search filters the
+loaded catalog; global Search covers followed boards.
 
-On screens at least 800dp wide and 600dp tall, opening a thread from a catalog can keep the catalog
-visible in a two-pane layout: an unfolded Galaxy Z Fold8 held landscape, an unfolded Fold8 Ultra
-either way up, or a tablet. Moving across the width threshold preserves the open thread rather than resetting
-your place.
+When both window sides reach 600dp and its width reaches 800dp, a catalog can
+remain beside the open thread. Resizing preserves the thread and reading state.
 
 ## Thread reader
 
-Orbin parses post markup into native UI rather than showing raw HTML.
+Orbin turns post markup into native UI, including greentext, formatting, quote
+links, backlinks, cross-board references and tap-to-reveal spoilers. Posts retain
+their source and post identity. Reply nesting, collapse, unread navigation,
+refresh and reading-position restoration remain available.
 
-Supported reading behavior includes:
+Posts, Files and Card are views of the same thread. Files shows attachments as a
+grid; Card gives attachments a larger card presentation. Watch and Save operate
+on the actual thread. The download action offers Videos only or Everything.
 
-- greentext and common inline formatting,
-- quote links, quote previews, backlinks, and cross-board references,
-- tap-to-reveal spoilers,
-- inline images/video and multi-attachment carousels,
-- collapsible posts and thread statistics,
-- pull-to-refresh for new replies,
-- persistent reading history and scroll-position restore,
-- watched-thread notifications with quiet hours.
+On a long Posts thread, the scroll thumb moves through the real thread and has
+an accessible progress action. Short threads and Files use ordinary scrolling.
 
-### Files view
+## Saved, watched and history
 
-Files shows the thread's attachments as a media grid. It is useful for quickly scanning or opening
-media without walking the reply tree.
+Saved and Watched open the stored thread records with their source, board,
+thread number and available unread metadata. History records visited threads
+when enabled. These collections keep their own reading anchors and open the
+complete stored identity.
 
-### Save links as text
+## Media and downloads
 
-Open a thread's **Files** view and tap **Save links as text** to export the thread's external links. Orbin:
+Opening an attachment launches the viewer at that attachment. Image zoom,
+play/pause, mute, seeking, playback speed and file paging retain the selected
+media's identity. Playback offers 1x, 1.25x and 2x. Autoplay, initial mute, looping
+and next-clip preloading follow the app, site or board scope selected in Settings.
 
-- gathers the links found in thread posts,
-- removes duplicates,
-- writes one URL per line to a plain-text file,
-- saves the file in `Downloads/Orbin`.
+The viewer keeps Close and Download available. Double-tap saves the current
+media; a deliberate horizontal swipe closes the viewer. Image pinch/pan and
+vertical file paging remain available. Return to the reader without losing the
+originating position. Download rest of thread queues the other attachments from
+that thread and keeps the queue's deduplication behavior.
 
-The export is plaintext and may contain sensitive URLs,
-so treat it like any other unencrypted note or text file.
+Downloads shows real filenames, status, progress and Retry for failed items.
+Clearing download history requires confirmation and does not delete files saved
+to system storage. The primary bar's badge counts the active queue.
 
-### Downloads
+A board's Media wall scans attachments with the existing source, board and media
+filters. Deep scan can walk threads to find reply attachments; it takes more
+network work than a catalog scan.
 
-Long-press any image or video to save it, or use **Download all** above a thread's Files grid.
-Files go to `Downloads/Orbin`, in a folder per board and thread, and the **Downloads** tab lists
-them, with their progress and a retry for any that failed. **Saved ›** on a board's media wall opens
-the same list.
+## Search and settings
 
-## Gallery and media
+Global Search covers catalogs of followed boards and keeps its selected source
+while a request loads. Recent searches can be stored locally. Clear local
+activity in Settings removes recorded local activity after confirmation.
 
-Opening an attachment launches the media viewer with image zoom, video playback, swipe navigation,
-and background preloading. Returning from the viewer keeps the originating grid synchronized with
-the media you were actually viewing.
-
-Videos are deliberately plain: play/pause, the progress bar and mute. Clips up to 30 seconds loop
-like GIFs; longer ones play once and pick up where you left off if you come back. Turn the phone
-sideways for fullscreen. In the feed, the card you are looking at plays its video silently in place,
-or animates its GIF.
-
-In a video, tap once to show or hide the controls. Double tap the right half to skip forward 5
-seconds or the left half to skip back 5 seconds; keep double tapping to skip further. Drag the
-progress bar to scrub; the time you are dragging to shows above it.
-
-Pinch an image to zoom, or double tap the spot you want to look at. Long-press any image or video,
-in the viewer or on a board's media wall, to save it, share its link or copy its link. Swipe up and
-down to move between files, and keep pulling past the first or last one to close the viewer.
-
-A board's catalog has a **Media wall** action that shows every file on that board as one wall.
-
-### Deep scan
-
-Catalogs mostly expose opening-post media. **Deep scan** optionally walks threads to discover reply
-attachments too. It is intentionally slower and more network-intensive, so use it when completeness
-matters more than speed.
-
-## Search and filtering
-
-Search opens from **Search threads ›** under the Boards title. It is one field over the catalogs of
-the boards you follow, and it skips NSFW boards when Settings hides them.
-
-Recent searches are stored on this device; **Clear local activity** in Settings deletes them.
+Settings is one scrolling page: Orbin identity, Theme, Boards, Threads, Media,
+Hidden content, Privacy, History, Storage, Backup and About. Groups appear when
+the platform supplies controls. Search settings finds labels, values, choices,
+section names and explanations. Changes save immediately. See
+[[Settings Guide|Settings-Guide]] for the individual options and platform actions.
 
 ## Providers
 
-Orbin ships Vichan and LynxChan engine providers (`:provider:vichan` and `:provider:lynxchan`).
-Archived/removed providers (such as FoolFuuka / 4plebs) are not active providers in the app.
+Orbin ships Vichan and LynxChan engine providers (`:provider:vichan` and
+`:provider:lynxchan`). Archived providers such as FoolFuuka / 4plebs are not active
+providers. Provider-specific JSON and URL differences are normalized before data
+reaches the reader. A provider failure remains an error with a useful reason,
+rather than becoming an apparently empty catalog.
 
-Provider-specific JSON and URL quirks are normalized before data reaches the rest of the app. For
-example, LynxChan handling tolerates absolute/relative media paths, missing paths, inactive boards,
-and catalog timestamp variations.
+## Accessibility and themes
 
-If a provider fails, Orbin attempts to surface a meaningful failure category rather than presenting
-an empty catalog as valid data.
+Light, Dark and AMOLED share the same layout and functions. AMOLED keeps black
+page grounds with distinguishable card surfaces. iOS uses its native typeface.
+Android's system font setting and iOS Dynamic Type apply through one scaling path; large text can wrap or stack
+controls. Right-to-left layouts mirror leading content. Controls retain labeled
+screen-reader actions, checked/selected state and large touch targets.
 
-## Accessibility and small screens
-
-The interface is tested at normal, large, and maximum text scales. Grid cards are deliberately wider
-than older versions allowed, which trades a little density for significantly better subject and
-metadata readability on small phones.
-
-Orbin also provides screen-reader semantics for major state and controls, large touch targets, and
-contrast-aware themes.
+The design's source, tests and screenshot evidence are recorded separately in
+[Implementation and verification](https://github.com/Defuuls/Orbin/blob/main/docs/design-system/IMPLEMENTATION.md); a design
+reference alone does not establish a passing device test.
 
 ## Privacy at a glance
 
-- **Android.** The local database is encrypted with SQLCipher, and preferences with an encrypted DataStore protected by Android Keystore material.
-- **iOS.** The local database is SQLite in Application Support, protected by iOS Data Protection. Settings are a DataStore file in the same directory and are not separately encrypted. Crash reports use complete Data Protection.
-- Optional app lock: Android uses strong biometrics or the device credential; iOS uses Face ID, Touch ID or the passcode, gated by a Keychain item that requires user presence.
-- Application networking is HTTPS-only on both platforms.
-- DNS uses DNS-over-HTTPS (Cloudflare, Google, OpenDNS or NextDNS). If lookup fails and Strict encrypted DNS is off, the system DNS may be used. Android reports that fallback; iOS does not.
+- **Android.** The local database uses SQLCipher. Preferences use an encrypted DataStore protected by Android Keystore material.
+- **iOS.** The local database is SQLite in Application Support under iOS Data Protection. Settings are a DataStore file in the same directory and are not separately encrypted. Crash reports use complete Data Protection.
+- Optional app lock uses Android strong biometrics or the device credential, or iOS Face ID, Touch ID or the passcode with a Keychain item requiring user presence.
+- Remote application networking uses HTTPS. Android's video-streaming bridge uses a local loopback HTTP endpoint for the native player.
+- DNS uses DNS-over-HTTPS through Cloudflare, Google, OpenDNS or NextDNS. With Strict encrypted DNS off, a lookup can fall back to system DNS. Android reports that fallback; iOS cannot observe it.
 - Android cloud backup and device transfer of private Orbin state are disabled. iOS excludes Application Support from iCloud backup.
 - Explicit backup exports and saved-link text files are **not encrypted**.
 
-See [[Settings Guide|Settings-Guide]] for configuration details and [[Troubleshooting]] for common
-questions.
+See [[Troubleshooting]] for common problems.

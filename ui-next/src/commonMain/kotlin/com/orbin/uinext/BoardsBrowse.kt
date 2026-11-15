@@ -1,13 +1,11 @@
 package com.orbin.uinext
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,9 +20,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -47,7 +47,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -60,8 +59,6 @@ import com.orbin.uinext.resources.next_boards_search
 import com.orbin.uinext.resources.next_boards_thread_count
 import com.orbin.uinext.resources.next_status_retry
 import com.orbin.uinext.resources.reader_board_follow
-import com.orbin.uinext.resources.reader_board_follow_label
-import com.orbin.uinext.resources.reader_board_following
 import com.orbin.uinext.resources.reader_board_open
 import com.orbin.uinext.resources.reader_board_unfollow
 import com.orbin.uinext.resources.reader_boards_title
@@ -69,7 +66,6 @@ import com.orbin.uinext.resources.reader_feed_all_boards
 import com.orbin.uinext.resources.reader_followed_boards
 import com.orbin.uinext.resources.reader_menu
 import com.orbin.uinext.tokens.NextSpace
-import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -173,7 +169,7 @@ fun BoardsScreen(
         }
     val boardsTitle = stringResource(Res.string.reader_boards_title)
     val allBoardsLabel = stringResource(Res.string.reader_feed_all_boards)
-    val showChrome = showRail && hasTabs
+    val showChrome = showRail && hasTabs && !LocalOrbinNavigationAtSide.current
     NextScaffold(
         where = boardsTitle,
         modifier = modifier.fillMaxSize(),
@@ -208,21 +204,18 @@ fun BoardsScreen(
                             WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
                         ),
                     ),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                BoardsHomeHeader(showMenu = openDrawer != null, onMenu = { openDrawer?.invoke() })
+                BoardsHomeHeader(
+                    subtitle = subtitle ?: boardsTitle,
+                    showMenu = openDrawer != null,
+                    onMenu = { openDrawer?.invoke() },
+                )
                 BoardsSearchRow(
                     query = query,
                     onQueryChange = { query = it },
                     headerContent = headerContent,
                 )
-                if (!subtitle.isNullOrBlank()) {
-                    Text(
-                        subtitle,
-                        style = OrbinType.footnote,
-                        color = next.muted,
-                        modifier = Modifier.padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
-                    )
-                }
                 if (onRandom != null) {
                     InlineAction(
                         stringResource(Res.string.next_boards_random),
@@ -240,8 +233,10 @@ fun BoardsScreen(
                     state = listState,
                     modifier =
                         Modifier
+                            .widthIn(max = 720.dp)
                             .fillMaxSize()
-                            .background(if (next.dark) reader.background else reader.surfaceVariant)
+                            .align(Alignment.TopCenter)
+                            .background(reader.background)
                             .windowInsetsPadding(
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
                             ),
@@ -330,6 +325,7 @@ fun BoardsScreen(
 
 @Composable
 private fun BoardsHomeHeader(
+    subtitle: String,
     showMenu: Boolean,
     onMenu: () -> Unit,
 ) {
@@ -337,11 +333,35 @@ private fun BoardsHomeHeader(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp)
-            .heightIn(min = MIN_TOUCH_TARGET),
+            .heightIn(min = 46.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        OrbinWordmark(modifier = Modifier.testTag(BoardsTags.HEADER))
-        Spacer(Modifier.weight(1f))
+        OrbinLogo(size = 38.dp, contentDescription = null)
+        Column(
+            Modifier.weight(1f).padding(start = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+        ) {
+            Text(
+                OrbinStyle.WORDMARK,
+                style =
+                    OrbinType.appBarTitle.withReaderFont().copy(
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.6).sp,
+                    ),
+                color = reader.ink,
+                modifier =
+                    Modifier.testTag(BoardsTags.HEADER).clearAndSetSemantics {
+                        contentDescription = OrbinStyle.WORDMARK
+                        heading()
+                    },
+            )
+            Text(
+                subtitle,
+                style = OrbinType.footnote.withReaderFont().copy(fontSize = 12.5.sp, lineHeight = 17.sp),
+                color = reader.inkSecondary,
+            )
+        }
         if (showMenu) {
             NextIconAction(
                 imageVector = ReaderIcons.Menu,
@@ -359,21 +379,21 @@ private fun BoardsSearchRow(
     onQueryChange: (String) -> Unit,
     headerContent: @Composable () -> Unit,
 ) {
-    Row(
+    Column(
         Modifier
+            .widthIn(max = 720.dp)
             .fillMaxWidth()
-            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        headerContent()
         SchematicSearch(
             value = query,
             onValueChange = onQueryChange,
             placeholder = stringResource(Res.string.next_boards_search),
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(OrbinRadius.search),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
         )
-        headerContent()
     }
 }
 
@@ -384,12 +404,14 @@ private fun LazyListScope.boardRows(
     onFollowBoard: ((BoardTile, Boolean) -> Unit)?,
     showSite: Boolean,
 ) {
-    items(boards, key = { "$keyPrefix:${it.id}" }) { board ->
+    itemsIndexed(boards, key = { _, board -> "$keyPrefix:${board.id}" }) { index, board ->
         BoardListRow(
             board = board,
             onClick = { onOpenBoard(board) },
             onFollow = onFollowBoard?.let { follow -> { checked -> follow(board, checked) } },
             showSite = showSite,
+            first = index == 0,
+            last = index == boards.lastIndex,
         )
     }
 }
@@ -398,15 +420,21 @@ private fun LazyListScope.boardRows(
 private fun BoardSectionTitle(label: String) {
     Text(
         label,
-        style = OrbinType.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+        style =
+            OrbinType.bodyMedium.withReaderFont().copy(
+                fontSize = 20.sp,
+                lineHeight = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.4).sp,
+            ),
         color = next.ink,
         modifier =
             Modifier
                 .padding(
-                    start = BOARD_DIRECTORY_GUTTER,
-                    end = BOARD_DIRECTORY_GUTTER,
-                    top = 16.dp,
-                    bottom = 6.dp,
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 28.dp,
+                    bottom = 12.dp,
                 ).semantics { heading() },
     )
 }
@@ -417,100 +445,83 @@ private fun BoardListRow(
     onClick: () -> Unit,
     onFollow: ((Boolean) -> Unit)? = null,
     showSite: Boolean = true,
+    first: Boolean = true,
+    last: Boolean = true,
 ) {
     val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
     val openLabel = stringResource(Res.string.reader_board_open, identity)
-    val fontScale = LocalDensity.current.fontScale
-    val stacked = fontScale >= 1.5f
-    OrbinCard(
-        modifier =
-            Modifier
-                .padding(horizontal = BOARD_DIRECTORY_GUTTER, vertical = 8.dp)
-                .fillMaxWidth(),
+    val largeText = LocalDensity.current.fontScale >= 1.5f
+    val shape =
+        RoundedCornerShape(
+            topStart = if (first) 20.dp else 0.dp,
+            topEnd = if (first) 20.dp else 0.dp,
+            bottomStart = if (last) 20.dp else 0.dp,
+            bottomEnd = if (last) 20.dp else 0.dp,
+        )
+    // Each keyed row remains lazy; adjacent surfaces form one rounded Neko-style group.
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = BOARD_DIRECTORY_GUTTER)
+            .padding(bottom = if (last) 12.dp else 0.dp)
+            .clip(shape)
+            .background(reader.surfaceVariant),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = MIN_TOUCH_TARGET)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Column(
-                Modifier
-                    .weight(1f)
-                    .semantics { contentDescription = openLabel }
-                    .nextClickable(role = Role.Button, onClickLabel = openLabel, onClick = onClick),
-            ) {
-                if (stacked) {
-                    Text(
-                        board.path,
-                        style = OrbinType.cardTitle.withReaderFont(),
-                        color = reader.accent,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        board.title,
-                        style = OrbinType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
-                        color = reader.ink,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                } else {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            board.path,
-                            style = OrbinType.cardTitle.withReaderFont(),
-                            color = reader.accent,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            board.title,
-                            style = OrbinType.cardTitle.withReaderFont().copy(fontWeight = FontWeight.Medium),
-                            color = reader.ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false),
-                        )
-                    }
-                }
-                val metadata =
-                    listOfNotNull(
-                        board.site?.let(::sourceLabel)?.takeIf { showSite && it.isNotBlank() },
-                        board.threadCount?.let { count -> threadCountLabel(count) },
-                        stringResource(Res.string.next_boards_nsfw).takeIf { board.nsfw },
-                    ).joinToString(" · ")
-                if (metadata.isNotBlank()) {
-                    Text(
-                        metadata,
-                        style = OrbinType.meta.withReaderFont(),
-                        color = reader.inkSecondary,
-                        maxLines = if (stacked) 2 else 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            if (onFollow != null) {
-                FollowChip(board = board, onFollow = onFollow)
-            }
-            BoardIcon(
-                siteId = board.site ?: board.id.substringBefore('/'),
-                boardId = board.path,
-                title = board.title,
+            Row(
                 modifier =
                     Modifier
-                        .size(BOARD_THUMBNAIL_SIZE)
+                        .weight(1f)
+                        .heightIn(min = MIN_TOUCH_TARGET)
+                        .semantics { contentDescription = openLabel }
                         .nextClickable(role = Role.Button, onClickLabel = openLabel, onClick = onClick),
-                shape = RoundedCornerShape(OrbinRadius.thumbnail),
-                size = BOARD_THUMBNAIL_SIZE,
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                BoardIcon(
+                    siteId = board.site ?: board.id.substringBefore('/'),
+                    boardId = board.path,
+                    title = board.title,
+                    modifier = Modifier.size(BOARD_THUMBNAIL_SIZE),
+                    shape = RoundedCornerShape(13.dp),
+                    size = BOARD_THUMBNAIL_SIZE,
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        board.title,
+                        style =
+                            OrbinType.cardTitle.withReaderFont().copy(
+                                fontSize = 15.5.sp,
+                                lineHeight = 21.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        color = reader.ink,
+                        maxLines = if (largeText) Int.MAX_VALUE else 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val metadata =
+                        listOfNotNull(
+                            board.path,
+                            board.site?.let(::sourceLabel)?.takeIf { showSite && it.isNotBlank() },
+                            board.threadCount?.let { count -> threadCountLabel(count) },
+                            stringResource(Res.string.next_boards_nsfw).takeIf { board.nsfw },
+                        ).joinToString(" · ")
+                    Text(
+                        metadata,
+                        style = OrbinType.meta.withReaderFont().copy(fontSize = 12.5.sp, lineHeight = 17.sp),
+                        color = reader.inkSecondary,
+                        maxLines = if (largeText) Int.MAX_VALUE else 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (onFollow != null) FollowChip(board, onFollow)
         }
+        if (!last) ReaderHairline(Modifier.padding(start = 68.dp))
     }
 }
 
@@ -522,49 +533,24 @@ private fun FollowChip(
     val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
     val actionDescription =
         stringResource(
-            if (board.followed) {
-                Res.string.reader_board_unfollow
-            } else {
-                Res.string.reader_board_follow
-            },
+            if (board.followed) Res.string.reader_board_unfollow else Res.string.reader_board_follow,
             identity,
         )
-    val shape = RoundedCornerShape(OrbinRadius.pill)
-    val followed = board.followed
-    val fill = if (followed) reader.selected else reader.accent
-    val stroke = reader.accent
-    val ink = if (followed) reader.accent else reader.onAccent
     Box(
         Modifier
-            .widthIn(min = 80.dp)
-            .heightIn(min = MIN_TOUCH_TARGET)
-            .nextClickable(role = Role.Button) { onFollow(!followed) }
+            .size(MIN_TOUCH_TARGET)
+            .nextClickable(role = Role.Button) { onFollow(!board.followed) }
             .semantics {
                 contentDescription = actionDescription
-                selected = followed
+                selected = board.followed
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            stringResource(
-                if (followed) Res.string.reader_board_following else Res.string.reader_board_follow_label,
-            ),
-            style =
-                OrbinType.bodyMedium.copy(
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                ),
-            color = ink,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier =
-                Modifier
-                    .clip(shape)
-                    .background(fill)
-                    .border(ORBIN_OUTLINE, stroke, shape)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+        Icon(
+            imageVector = if (board.followed) ReaderIcons.HeartFilled else ReaderIcons.Heart,
+            contentDescription = null,
+            tint = if (board.followed) Color(0xFFF472B6) else reader.inkSecondary,
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -589,5 +575,4 @@ internal fun formatThreadCount(count: Int): String {
 }
 
 private val BOARD_DIRECTORY_GUTTER = 16.dp
-private val BOARD_THUMBNAIL_SIZE = 56.dp
-private val ORBIN_OUTLINE = 2.dp
+private val BOARD_THUMBNAIL_SIZE = 44.dp

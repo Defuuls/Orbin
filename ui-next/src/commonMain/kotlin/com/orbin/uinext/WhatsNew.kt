@@ -34,12 +34,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_whats_new_done
 import com.orbin.uinext.resources.next_whats_new_title
@@ -142,19 +144,31 @@ fun UpdateSetupScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Brush.linearGradient(listOf(reader.accent.copy(alpha = 0.22f), reader.selected)))
+                        .border(1.dp, reader.accent.copy(alpha = 0.22f), RoundedCornerShape(24.dp))
+                        .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                OrbinLogoMark(modifier = Modifier.size(40.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                OrbinLogoMark(modifier = Modifier.size(54.dp).clip(RoundedCornerShape(17.dp)))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         text = stringResource(Res.string.next_whats_new_title, notes.version.replace('-', ' ')),
-                        style = OrbinType.stateTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
+                        style =
+                            OrbinType.stateTitle.withReaderFont().copy(
+                                fontSize = 20.sp,
+                                lineHeight = 26.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            ),
                         color = reader.ink,
                         modifier = Modifier.semantics { heading() },
                     )
                     Text(
-                        text = "What's new & theme setup",
+                        text = "What's new & appearance",
                         style = OrbinType.meta.withReaderFont(),
                         color = reader.inkMuted,
                     )
@@ -175,13 +189,17 @@ fun UpdateSetupScreen(
             notes.sections.filter { it.entries.isNotEmpty() }.forEach { section ->
                 OrbinCard(modifier = Modifier.fillMaxWidth()) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Text(
-                            text = section.heading,
-                            style = OrbinType.rowTitle.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-                            color = reader.accent,
+                            text = section.heading.uppercase(),
+                            style =
+                                OrbinType.meta.withReaderFont().copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    letterSpacing = 1.1.sp,
+                                ),
+                            color = reader.inkMuted,
                         )
                         section.entries.forEach { entry ->
                             Text(
