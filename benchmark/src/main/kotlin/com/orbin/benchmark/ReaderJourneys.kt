@@ -15,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
+import java.util.regex.Pattern
 
 internal const val READER_PACKAGE = "com.orbin.app"
 private const val FIXTURE_ACTIVITY = "com.orbin.app.benchmark.ReaderBenchmarkActivity"
@@ -26,6 +27,10 @@ private const val CATALOG_ROW = "catalog-row"
 private const val THREAD_LIST = "thread-list"
 private const val THREAD_POST = "thread-post"
 private const val THREAD_FILE = "thread-file"
+private const val FEED_GRID = "reader-feed-grid"
+
+/** Home feed rows are tagged per thread; an item tag ending in ":" matches that prefix. */
+private const val FEED_ROW_PREFIX = "reader-feed-row:"
 
 /** Stable production component tags, exported as resource IDs by the benchmark-only host. */
 internal enum class ReaderJourney(
@@ -41,7 +46,12 @@ internal enum class ReaderJourney(
     THREAD("thread", THREAD_LIST, THREAD_POST),
     FILES("files", THREAD_LIST, THREAD_FILE),
     TWO_PANE("two-pane", CATALOG_GRID, CATALOG_ROW, widthPx = 1280, heightPx = 800, densityDpi = 160),
+    HOME_FEED("home-feed", FEED_GRID, FEED_ROW_PREFIX),
+    CARD("catalog-card", CATALOG_GRID, "catalog-card"),
 }
+
+private fun ReaderJourney.itemSelector() =
+    if (itemTag.endsWith(":")) By.res(Pattern.compile(Pattern.quote(itemTag) + ".+")) else By.res(itemTag)
 
 internal fun resetReaderWindow() {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -161,7 +171,7 @@ private fun MacrobenchmarkScope.assertFixtureGeometry(journey: ReaderJourney) {
             assertEquals(WIDE_CATALOG_PX, requiredObject("reader-catalog-pane").visibleBounds.width())
             assertEquals(WIDE_DETAIL_PX, requiredObject("reader-thread-pane").visibleBounds.width())
         }
-        ReaderJourney.LIST, ReaderJourney.GRID ->
+        ReaderJourney.LIST, ReaderJourney.GRID, ReaderJourney.CARD, ReaderJourney.HOME_FEED ->
             assertEquals(
                 "Single-pane catalog must fill the drawn width",
                 journey.widthPx,
@@ -241,7 +251,7 @@ private fun MacrobenchmarkScope.assertPopulated(journey: ReaderJourney) {
     )
     assertTrue(
         "Production $journey contains no visible fixture items",
-        device.wait(Until.hasObject(By.res(journey.itemTag)), WAIT_TIMEOUT_MS),
+        device.wait(Until.hasObject(journey.itemSelector()), WAIT_TIMEOUT_MS),
     )
     val collection = requiredObject(journey.collectionTag)
     assertTrue("Collection has no visible bounds for $journey", collection.visibleBounds.height() > 0)
@@ -259,7 +269,7 @@ private fun MacrobenchmarkScope.scroll(
 
 private fun MacrobenchmarkScope.scrollPosition(journey: ReaderJourney): String =
     when (journey) {
-        ReaderJourney.LIST, ReaderJourney.GRID -> {
+        ReaderJourney.LIST, ReaderJourney.GRID, ReaderJourney.CARD -> {
             val status = fixtureStatus()
             "${status.getValue("index")}:${status.getValue("offset")}"
         }
@@ -268,6 +278,8 @@ private fun MacrobenchmarkScope.scrollPosition(journey: ReaderJourney): String =
             checkNotNull(device.findObject(By.descStartsWith("benchmark/bench/"))) {
                 "Files journey has no local thumbnail fixture"
             }.contentDescription
+        ReaderJourney.HOME_FEED ->
+            checkNotNull(device.findObject(journey.itemSelector())) { "Home feed shows no fixture row" }.resourceName
         ReaderJourney.TWO_PANE -> error("Two-pane retention uses its full catalog snapshot")
     }
 
