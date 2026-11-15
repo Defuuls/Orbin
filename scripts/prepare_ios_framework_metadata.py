@@ -90,19 +90,49 @@ def plist_version(value: object) -> tuple[int, int, int]:
     return parts[0], parts[1], parts[2]
 
 
-def prepare_archive(archive: Path) -> dict[str, object]:
+def archived_directory(archive: Path, relative: Path) -> Path:
+    """Resolve a bundle inside the archive, refusing any symlink on the way to it."""
     if archive.is_symlink() or not archive.is_dir():
         raise MetadataError("Expected an archive directory, not a symlink")
-    framework = archive.resolve()
-    for part in FRAMEWORK_PATH.parts:
-        framework /= part
-        if framework.is_symlink() or not framework.is_dir():
-            raise MetadataError("The archived framework path must contain only real directories")
+    directory = archive.resolve()
+    for part in relative.parts:
+        directory /= part
+        if directory.is_symlink() or not directory.is_dir():
+            raise MetadataError(f"The archived {relative.name} path must contain only real directories")
+    return directory
+
+
+def require_regular_file(path: Path) -> None:
+    if path.is_symlink() or not path.is_file():
+        raise MetadataError(f"Expected a regular, non-symlink {path.name}")
+
+
+def replace_plist(info_path: Path, info: dict[str, object], original: bytes) -> None:
+    """Atomically rewrite a plist in its existing format and file mode."""
+    fmt = plistlib.FMT_BINARY if original.startswith(b"bplist00") else plistlib.FMT_XML
+    updated = plistlib.dumps(info, fmt=fmt, sort_keys=False)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", dir=info_path.parent, prefix=".orbin-Info-", delete=False
+        ) as output:
+            temporary = Path(output.name)
+            os.fchmod(output.fileno(), stat.S_IMODE(info_path.stat().st_mode))
+            output.write(updated)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, info_path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def prepare_archive(archive: Path) -> dict[str, object]:
+    framework = archived_directory(archive, FRAMEWORK_PATH)
     info_path = framework / "Info.plist"
     executable = framework / "ffmpegkit"
     for path in (info_path, executable):
-        if path.is_symlink() or not path.is_file():
-            raise MetadataError(f"Expected a regular, non-symlink {path.name}")
+        require_regular_file(path)
     original = info_path.read_bytes()
     try:
         info = plistlib.loads(original)
@@ -124,22 +154,7 @@ def prepare_archive(archive: Path) -> dict[str, object]:
     if changed:
         info.setdefault("MinimumOSVersion", version_string(minimum))
         info.setdefault("CFBundleSupportedPlatforms", ["iPhoneOS"])
-        fmt = plistlib.FMT_BINARY if original.startswith(b"bplist00") else plistlib.FMT_XML
-        updated = plistlib.dumps(info, fmt=fmt, sort_keys=False)
-        temporary: Path | None = None
-        try:
-            with tempfile.NamedTemporaryFile(
-                mode="wb", dir=framework, prefix=".orbin-Info-", delete=False
-            ) as output:
-                temporary = Path(output.name)
-                os.fchmod(output.fileno(), stat.S_IMODE(info_path.stat().st_mode))
-                output.write(updated)
-                output.flush()
-                os.fsync(output.fileno())
-            os.replace(temporary, info_path)
-        finally:
-            if temporary is not None:
-                temporary.unlink(missing_ok=True)
+        replace_plist(info_path, info, original)
     return {
         "framework": str(FRAMEWORK_PATH),
         "minimumOSVersion": version_string(minimum),

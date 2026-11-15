@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- Declared the camera purpose string App Store Connect requires for the bundled FFmpeg library, which Orbin never uses to access the camera, and checked every iOS archive for missing purpose strings before upload.
+
 ## [211-Alabaster] - 2026-11-15
 
 ### Fixed

@@ -1,6 +1,7 @@
 name: Retry TestFlight 211
 
-# Temporary retry of the validated 211 release with corrected memory and framework metadata.
+# Temporary retry of the validated 211 release with corrected memory, framework metadata and the
+# camera purpose string App Store Connect required (ITMS-90683), filled from this commit's spec.
 # Remove this workflow after the App Store Connect upload is confirmed.
 on:
   push:
