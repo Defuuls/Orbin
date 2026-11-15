@@ -1,6 +1,8 @@
 package com.orbin.feature.gallery
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewModelScope
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
@@ -36,8 +38,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 
@@ -52,6 +57,18 @@ private const val THREAD = 1L
 class GalleryViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    private val viewModelStore = ViewModelStore()
+    private val viewModelJobs = mutableListOf<Job>()
+
+    @After
+    fun clearViewModelsBeforeMainDispatcherIsReset() =
+        runTest {
+            // These scopes are not children of an individual runTest. Wait for Default-backed
+            // presentation work to finish cancelling while MainDispatcherRule still owns Main.
+            viewModelStore.clear()
+            viewModelJobs.joinAll()
+        }
 
     private val key = ThreadKey(ProviderId(PROVIDER), BoardId(BOARD), ThreadId(THREAD))
 
@@ -364,7 +381,10 @@ class GalleryViewModelTest {
         imageClipboard = mockk(relaxed = true),
         imagePreloader = preloader,
         videoPreloader = video,
-    )
+    ).also { model ->
+        viewModelJobs += model.viewModelScope.coroutineContext.job
+        viewModelStore.put("gallery-${viewModelJobs.size}", model)
+    }
 
     private fun thread() =
         Thread(

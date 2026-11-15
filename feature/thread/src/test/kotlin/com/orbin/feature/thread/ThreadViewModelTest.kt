@@ -549,7 +549,11 @@ class ThreadViewModelTest {
                         forceRefresh: Boolean,
                     ) = OrbinResult.Success(loaded)
                 }
-            val viewModel = createViewModel(threadRepository = repository)
+            val viewModel =
+                createViewModel(
+                    threadRepository = repository,
+                    presentationDispatcher = UnconfinedTestDispatcher(testScheduler),
+                )
             viewModel.uiState.test {
                 awaitSuccess()
                 val poll = backgroundScope.launch { viewModel.pollWhileVisible() }
