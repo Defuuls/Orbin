@@ -67,7 +67,7 @@ import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderDarkColors
 
-/** Drawer roots and secondary destinations shared by the Android and iOS hosts. */
+/** Every destination; where each one appears is defined once in [ReaderNavigationSpec]. */
 enum class NextDestination {
     FEED,
     SEARCH,
@@ -76,19 +76,6 @@ enum class NextDestination {
     SAVED,
     DOWNLOADS,
     SETTINGS,
-}
-
-/** Compatibility entry point; permanent bottom navigation has been replaced by the drawer. */
-@Deprecated("Use ReaderDrawer or ReaderScaffold")
-@Suppress("UNUSED_PARAMETER")
-@Composable
-fun DestinationPill(
-    selected: NextDestination,
-    onSelect: (NextDestination) -> Unit,
-    modifier: Modifier = Modifier,
-    immersive: Boolean = false,
-) {
-    ReaderDrawer(selected = selected, onSelect = onSelect, modifier = modifier)
 }
 
 /** Space to keep scrolling content clear of [CompactTitleBar]. */

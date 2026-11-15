@@ -27,6 +27,7 @@ import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.shouldLoadSharpPreview
+import com.orbin.core.reader.boardLabel
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
@@ -88,7 +89,7 @@ fun NextBoardScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var searchVisible by rememberSaveable { mutableStateOf(false) }
     var pickerVisible by rememberSaveable { mutableStateOf(false) }
-    val board = "/${viewModel.boardId}/"
+    val board = boardLabel(viewModel.boardId)
     val snapshot = threads.itemSnapshotList
     val byThreadId = remember(snapshot) { snapshot.items.associate { it.thread.key.thread.value to it.thread } }
     val rows =
