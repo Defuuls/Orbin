@@ -5,11 +5,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -246,12 +245,14 @@ class ProposalScreenshotTest {
 
     @Test
     fun navigationMaxText() =
-        capture(
-            "next_navigation_max_text",
-            fontScale = MAX_FONT_SCALE,
-            beforeCapture = { composeRule.onNodeWithContentDescription("Menu").performClick() },
-        ) {
-            ReaderScaffold(title = "Saved", destination = NextDestination.SAVED, onDestination = {}) {}
+        capture("next_navigation_max_text", fontScale = MAX_FONT_SCALE) {
+            // Library at max text: section tabs above the bottom bar, no drawer.
+            CompositionLocalProvider(
+                LocalLibraryNavigation provides
+                    LibraryNavigation(onSelect = {}, onPrimary = {}, watchedBadge = 2),
+            ) {
+                ReaderScaffold(title = "Saved", destination = NextDestination.SAVED, onDestination = {}) {}
+            }
         }
 
     /** The list at rest: every row closed. */
