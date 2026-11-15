@@ -120,7 +120,9 @@ final class OrbinCloudSync {
                         return
                     }
                     let task = Task { @MainActor in
-                        await self.perform(operation, request: envelope, completion: completion)
+                        await self.perform(operation, request: envelope, completion: { value in
+                            _ = completion(value)
+                        })
                     }
                     self.requests[envelope.requestId] = RunningRequest(
                         operation: operation, sessionID: envelope.sessionId, task: task)

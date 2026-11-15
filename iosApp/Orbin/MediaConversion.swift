@@ -21,16 +21,16 @@ final class OrbinMediaConverter {
 
     func install() {
         NativeMediaConversion.shared.setHandler { [weak self] operation, requestID, sourcePath, completion in
-            guard let self else { completion(nil, "Media conversion is unavailable."); return }
+            guard let self else { _ = completion(nil, "Media conversion is unavailable."); return }
             if operation == "cancel" {
                 self.cancel(requestID)
-                completion(nil, nil)
+                _ = completion(nil, nil)
                 return
             }
             self.convert(requestID: requestID, source: URL(fileURLWithPath: sourcePath)) { result in
                 switch result {
-                case .success(let output): completion(output.path, nil)
-                case .failure: completion(nil, "This video could not be converted for Photos.")
+                case .success(let output): _ = completion(output.path, nil)
+                case .failure: _ = completion(nil, "This video could not be converted for Photos.")
                 }
             }
         }
