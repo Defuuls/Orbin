@@ -39,6 +39,7 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.reader.ReaderPostComment
+import com.orbin.core.reader.boardLabel
 import com.orbin.core.reader.mediaPostId
 import com.orbin.core.reader.readerRows
 import com.orbin.core.reader.readerThreadStatus
@@ -416,7 +417,7 @@ private fun LoadedThread(
         Box(modifier = Modifier.fillMaxSize()) {
             ThreadScreen(
                 subject = thread.subject ?: viewModel.title,
-                board = "/${thread.key.board.value}/",
+                board = boardLabel(thread.key.board.value),
                 siteName = thread.key.provider.value,
                 onBack = onBack,
                 posts = rows,

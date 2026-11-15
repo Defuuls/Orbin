@@ -48,12 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_drawer
-import com.orbin.uinext.resources.reader_nav_boards
-import com.orbin.uinext.resources.reader_nav_home
-import com.orbin.uinext.resources.reader_nav_saved
-import com.orbin.uinext.resources.reader_nav_search
-import com.orbin.uinext.resources.reader_nav_settings
-import com.orbin.uinext.resources.reader_nav_watched
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderSize
@@ -304,34 +298,9 @@ private data class DrawerEntry(
 
 @Composable
 private fun readerDrawerEntries(): List<DrawerEntry> =
-    listOf(
-        DrawerEntry(
-            NextDestination.FEED,
-            stringResource(Res.string.reader_nav_home),
-            ReaderIcons.Home,
-            ReaderIcons.HomeFilled,
-        ),
-        DrawerEntry(
-            NextDestination.WATCHED,
-            stringResource(Res.string.reader_nav_watched),
-            ReaderIcons.Watched,
-            ReaderIcons.WatchedFilled,
-        ),
-        DrawerEntry(
-            NextDestination.BOARDS,
-            stringResource(Res.string.reader_nav_boards),
-            ReaderIcons.Boards,
-            ReaderIcons.BoardsFilled,
-        ),
-        DrawerEntry(NextDestination.SEARCH, stringResource(Res.string.reader_nav_search), ReaderIcons.Search),
-        DrawerEntry(
-            NextDestination.SAVED,
-            stringResource(Res.string.reader_nav_saved),
-            ReaderIcons.Saved,
-            ReaderIcons.SavedFilled,
-        ),
-        DrawerEntry(NextDestination.SETTINGS, stringResource(Res.string.reader_nav_settings), ReaderIcons.Settings),
-    )
+    ReaderNavigationSpec.entries(NavSurface.DRAWER, NavWindow.COMPACT).map {
+        DrawerEntry(it.destination, stringResource(it.drawerLabel), it.icon, it.selectedIcon)
+    }
 
 internal fun NextDestination?.isReaderRoot(): Boolean =
     this == NextDestination.FEED ||

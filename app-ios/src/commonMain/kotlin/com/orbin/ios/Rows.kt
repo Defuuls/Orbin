@@ -7,6 +7,7 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Thread
 import com.orbin.core.model.toSearchResult
+import com.orbin.core.reader.boardLabel
 import com.orbin.core.reader.catalogRow
 import com.orbin.core.reader.firstMediaIndex
 import com.orbin.core.reader.mediaPostId
@@ -56,7 +57,7 @@ internal fun FeedThread.toFeedRow(
     thread.toRow(nowMillis, read).copy(
         id = feedRowId,
         site = sourceLabel(provider.value),
-        board = "/${thread.key.board.value}/",
+        board = boardLabel(thread.key.board.value),
         threadNumber =
             thread.key.thread.value
                 .toString(),
