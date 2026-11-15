@@ -13,6 +13,8 @@
     <string name="settings_feed_columns">Feed columns</string>
     <string name="settings_feed_columns_unfolded">Feed columns when unfolded</string>
     <string name="settings_catalog_view">Catalog view</string>
+    <string name="settings_sharp_previews">Sharp previews</string>
+    <string name="settings_sharp_previews_hint">Load full-size still images in card and grid views. Videos, GIFs, and files over 4 MB keep the thumbnail. Wi-Fi only also stays on the thumbnail when Data Saver is on.</string>
     <string name="settings_one_column">1 column</string>
     <string name="settings_columns">%1$d columns</string>
     <string name="settings_true_black">AMOLED black</string>

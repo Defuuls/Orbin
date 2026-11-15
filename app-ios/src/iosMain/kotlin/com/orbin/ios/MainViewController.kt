@@ -113,6 +113,7 @@ private fun startApp(): StartedApp {
             onWatch = graph.notifier::requestPermission,
             threadMemory = graph.threadMemory,
             threadCopies = graph.savedThreads,
+            networkMonitor = IosNetworkMonitor(),
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
     val managedMedia = IosManagedMediaFiles()

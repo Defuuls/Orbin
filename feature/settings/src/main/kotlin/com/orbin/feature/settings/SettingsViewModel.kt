@@ -15,6 +15,7 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostFilterKind
 import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.AppUpdater
@@ -180,6 +181,8 @@ class SettingsViewModel
         ) = update { repository.setFeedColumns(formFactor, columns) }
 
         fun setCatalogMode(mode: CatalogMode) = update { repository.setCatalogMode(mode) }
+
+        fun setSharpPreviews(mode: SharpPreviewsMode) = update { repository.setSharpPreviews(mode) }
 
         fun setVideoCacheMegabytes(megabytes: Int) =
             update {

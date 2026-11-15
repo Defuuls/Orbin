@@ -8,6 +8,8 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
+import com.orbin.core.common.network.NetworkMonitor
+import com.orbin.core.common.network.StaticNetworkMonitor
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
@@ -62,6 +64,7 @@ class BoardViewModel
         historyRepository: HistoryRepository,
         private val settingsRepository: SettingsRepository,
         threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
+        networkMonitor: NetworkMonitor = StaticNetworkMonitor(),
     ) : ViewModel() {
         val providerId: String = savedStateHandle.get<String>("provider").orEmpty()
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
@@ -83,6 +86,14 @@ class BoardViewModel
                         showStickyThreads = it.showStickyThreads,
                     )
                 }.distinctUntilChanged()
+
+        val isMetered: StateFlow<Boolean> =
+            networkMonitor.isMetered
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), true)
+
+        val isDataSaver: StateFlow<Boolean> =
+            networkMonitor.isDataSaver
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
         /** Device-wide catalog presentation, shared by settings and the catalog overflow. */
         val settings: StateFlow<AppSettings> =

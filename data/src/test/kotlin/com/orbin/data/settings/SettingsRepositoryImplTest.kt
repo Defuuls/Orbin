@@ -13,6 +13,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -70,6 +71,7 @@ class SettingsRepositoryImplTest {
         repository.setOnboardingCompleted(true)
         repository.setFeedColumns(FormFactor.FOLDABLE, 3)
         repository.setFeedColumns(FormFactor.TABLET, 4)
+        repository.setSharpPreviews(SharpPreviewsMode.ALWAYS)
     }
 
     private fun expectedSettings(): AppSettings =
@@ -84,6 +86,7 @@ class SettingsRepositoryImplTest {
             onboardingCompleted = true,
             unfoldedFeedColumns = 3,
             tabletFeedColumns = 4,
+            sharpPreviews = SharpPreviewsMode.ALWAYS,
         )
 
     private suspend fun kotlinx.coroutines.test.TestScope.repository(

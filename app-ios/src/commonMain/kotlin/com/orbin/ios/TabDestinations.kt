@@ -28,8 +28,10 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.domain.bookmarks.collectionUnread
 import com.orbin.ios.resources.Res
@@ -80,6 +82,8 @@ internal fun FeedDestination(
     val feed by browser.feed.collectAsState()
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val isMetered by browser.networkMonitor.isMetered.collectAsState(true)
+    val isDataSaver by browser.networkMonitor.isDataSaver.collectAsState(false)
     val downloadBadge = rememberActiveDownloadBadge(downloads)
     val site by browser.feedSite.collectAsState()
     val favoritesOnly by browser.feedFavoritesOnly.collectAsState()
@@ -192,7 +196,15 @@ internal fun FeedDestination(
                         ReaderThumbnail(
                             attachment.copy(isSpoiler = false),
                             modifier,
-                            sharp = catalogMode.sharpensThumbnails,
+                            sharp =
+                                shouldLoadSharpPreview(
+                                    modeWantsSharp = catalogMode.sharpensThumbnails,
+                                    setting = settings.sharpPreviews,
+                                    isMetered = isMetered,
+                                    isDataSaver = isDataSaver,
+                                    mediaType = attachment.type,
+                                    sizeBytes = attachment.sizeBytes,
+                                ),
                         )
                     }
                 },
@@ -630,6 +642,8 @@ internal fun SettingsDestination(
                     SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
                     SettingIds.CATALOG_MODE ->
                         CatalogMode.entries.getOrNull(index)?.let(browser.settings::setCatalogMode)
+                    SettingIds.SHARP_PREVIEWS ->
+                        SharpPreviewsMode.entries.getOrNull(index)?.let(browser.settings::setSharpPreviews)
                 }
             }
             expanded = null

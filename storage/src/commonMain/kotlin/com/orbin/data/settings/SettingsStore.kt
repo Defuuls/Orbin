@@ -20,6 +20,7 @@ import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import com.orbin.domain.privacy.PrivacySession
 import com.orbin.domain.repository.SettingsRepository
@@ -190,6 +191,10 @@ class SettingsStore(
         edit { it[Keys.catalogMode] = mode.name }
     }
 
+    override suspend fun setSharpPreviews(mode: SharpPreviewsMode) {
+        edit { it[Keys.sharpPreviews] = mode.name }
+    }
+
     override suspend fun setVideoCacheMegabytes(megabytes: Int) {
         edit { it[Keys.videoCacheMegabytes] = megabytes.coerceAtLeast(0) }
     }
@@ -263,6 +268,9 @@ class SettingsStore(
             unfoldedFeedColumns = this[Keys.unfoldedFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
             tabletFeedColumns = this[Keys.tabletFeedColumns] ?: DEFAULT_WIDE_FEED_COLUMNS,
             catalogMode = CatalogMode.entries.firstOrNull { it.name == this[Keys.catalogMode] } ?: CatalogMode.GRID,
+            sharpPreviews =
+                SharpPreviewsMode.entries.firstOrNull { it.name == this[Keys.sharpPreviews] }
+                    ?: SharpPreviewsMode.WIFI_ONLY,
             videoCacheMegabytes = this[Keys.videoCacheMegabytes] ?: DEFAULT_VIDEO_CACHE_MEGABYTES,
         )
 
@@ -306,6 +314,7 @@ class SettingsStore(
         val unfoldedFeedColumns = intPreferencesKey("unfolded_feed_columns")
         val tabletFeedColumns = intPreferencesKey("tablet_feed_columns")
         val catalogMode = stringPreferencesKey("catalog_mode")
+        val sharpPreviews = stringPreferencesKey("sharp_previews")
         val videoCacheMegabytes = intPreferencesKey("video_cache_megabytes")
     }
 }

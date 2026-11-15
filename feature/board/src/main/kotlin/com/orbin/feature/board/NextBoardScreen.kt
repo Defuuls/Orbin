@@ -26,6 +26,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.boardLabel
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
@@ -78,6 +79,8 @@ fun NextBoardScreen(
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
     val retainedRefreshFailure by viewModel.catalogRefreshFailure.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isMetered by viewModel.isMetered.collectAsStateWithLifecycle()
+    val isDataSaver by viewModel.isDataSaver.collectAsStateWithLifecycle()
     val boardOptions by picker.options.collectAsStateWithLifecycle()
     val windowSize = LocalWindowInfo.current.containerSize
     val density = LocalDensity.current
@@ -237,7 +240,15 @@ fun NextBoardScreen(
                                     MediaThumbnail(
                                         // The shared catalog slot owns spoiler reveal before composing media.
                                         attachment = attachment.copy(isSpoiler = false),
-                                        fullResolution = mode.sharpensThumbnails,
+                                        fullResolution =
+                                            shouldLoadSharpPreview(
+                                                modeWantsSharp = mode.sharpensThumbnails,
+                                                setting = settings.sharpPreviews,
+                                                isMetered = isMetered,
+                                                isDataSaver = isDataSaver,
+                                                mediaType = attachment.type,
+                                                sizeBytes = attachment.sizeBytes,
+                                            ),
                                         contentScale = ContentScale.Crop,
                                         cornerRadius = 0.dp,
                                         modifier = tileModifier,

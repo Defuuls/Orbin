@@ -31,6 +31,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.readerPaneWidths
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_catalog_empty_message
@@ -79,6 +80,8 @@ internal fun CatalogDestination(
     val refreshFailure by browser.catalogRefreshFailure.collectAsState()
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val isMetered by browser.networkMonitor.isMetered.collectAsState(true)
+    val isDataSaver by browser.networkMonitor.isDataSaver.collectAsState(false)
     val sort by browser.catalogSort.collectAsState()
     val visited by remember(board) { browser.visitedThreads(board) }.collectAsState(emptySet())
     val unread by remember(board) { browser.watched.unread(board) }.collectAsState(emptyMap())
@@ -229,7 +232,15 @@ internal fun CatalogDestination(
                             ReaderThumbnail(
                                 attachment.copy(isSpoiler = false),
                                 modifier,
-                                sharp = mode.sharpensThumbnails,
+                                sharp =
+                                    shouldLoadSharpPreview(
+                                        modeWantsSharp = mode.sharpensThumbnails,
+                                        setting = settings.sharpPreviews,
+                                        isMetered = isMetered,
+                                        isDataSaver = isDataSaver,
+                                        mediaType = attachment.type,
+                                        sizeBytes = attachment.sizeBytes,
+                                    ),
                             )
                         }
                     },
@@ -272,6 +283,9 @@ internal fun BoardMediaDestination(
     val catalog by browser.catalog.collectAsState()
     val refreshing by browser.catalogRefreshing.collectAsState()
     val refreshFailure by browser.catalogRefreshFailure.collectAsState()
+    val settings by browser.settings.current.collectAsState()
+    val isMetered by browser.networkMonitor.isMetered.collectAsState(true)
+    val isDataSaver by browser.networkMonitor.isDataSaver.collectAsState(false)
     val reload = remember(browser, board) { { browser.refreshCatalog(board) } }
     val label = "/${board.board.id.value}/"
     ReaderScaffold(
@@ -324,6 +338,15 @@ internal fun BoardMediaDestination(
                                                 contentDescription = null,
                                                 Modifier.fillMaxSize(),
                                                 fill = Modifier.fillMaxSize(),
+                                                loadOriginal =
+                                                    shouldLoadSharpPreview(
+                                                        modeWantsSharp = true,
+                                                        setting = settings.sharpPreviews,
+                                                        isMetered = isMetered,
+                                                        isDataSaver = isDataSaver,
+                                                        mediaType = item.attachment.type,
+                                                        sizeBytes = item.attachment.sizeBytes,
+                                                    ),
                                             )
                                         }
                                     }
@@ -493,6 +516,7 @@ internal fun SharpImage(
     fill: Modifier = Modifier.fillMaxWidth(),
     videoFrame: Boolean = true,
     contentScale: ContentScale = ContentScale.Crop,
+    loadOriginal: Boolean = false,
 ) {
     // Hovering the Apple Pencil over a picture shows it larger, without opening it.
     PencilHoverPreview(attachment, modifier) {
@@ -502,8 +526,8 @@ internal fun SharpImage(
             contentScale = contentScale,
             modifier = fill,
         )
-        val sharp = attachment.cardImageUrl()
-        if (sharp != attachment.thumbnailUrl) {
+        val sharp = attachment.cardImageUrl().takeIf { loadOriginal }
+        if (sharp != null && sharp != attachment.thumbnailUrl) {
             AsyncImage(
                 model = sharp,
                 contentDescription = null,

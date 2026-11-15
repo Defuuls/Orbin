@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Added a Sharp previews setting (Always, Wi-Fi only, Never; default Wi-Fi only) so card and grid views load full-size still images only on an unmetered connection, under a 4 MB size cap, and never for videos or GIFs. Android Data Saver and iOS Low Data Mode treat Wi-Fi only as Never.
+
 ## [212-Albite] - 2026-11-15
 
 ### Fixed
