@@ -30,6 +30,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.reader.boardLabel
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.CatalogMode
@@ -444,7 +445,7 @@ private fun CatalogThread.toEntry(
             FeedRow(
                 id = "${key.provider.value}/${key.board.value}/${key.thread.value}",
                 subject = title,
-                board = "/${key.board.value}/",
+                board = boardLabel(key.board.value),
                 site = sourceLabel(key.provider.value),
                 poster = originalPost.poster.name?.takeIf { it.isNotBlank() } ?: "Anonymous",
                 mediaLabel =

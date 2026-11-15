@@ -783,9 +783,10 @@ private fun SettingsRowDivider() {
     )
 }
 
-private fun settingsRowIcon(id: String): ImageVector =
+internal fun settingsRowIcon(id: String): ImageVector =
     when (id) {
-        "themeMode", "amoled" -> ReaderIcons.Palette
+        "themeMode" -> ReaderIcons.Palette
+        "amoled" -> ReaderIcons.TrueBlack
         "boards", "catalogMode", "feedColumns" -> ReaderIcons.Boards
         "favorites" -> ReaderIcons.Heart
         "openThreadComments" -> ReaderIcons.Chat

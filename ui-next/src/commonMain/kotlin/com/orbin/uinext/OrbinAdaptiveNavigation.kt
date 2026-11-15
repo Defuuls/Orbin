@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 
 /** Primary screens omit their bottom navigation when the root reserves a real side rail. */
 val LocalOrbinNavigationAtSide = staticCompositionLocalOf { false }
@@ -43,7 +42,7 @@ fun OrbinAdaptiveNavigation(
     content: @Composable () -> Unit,
 ) {
     BoxWithConstraints(modifier.fillMaxSize()) {
-        val atSide = enabled && maxWidth >= 840.dp
+        val atSide = enabled && NavWindow.of(maxWidth) == NavWindow.EXPANDED
         val readingDirection = LocalLayoutDirection.current
         CompositionLocalProvider(
             LocalOrbinNavigationAtSide provides atSide,

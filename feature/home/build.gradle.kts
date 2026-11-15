@@ -15,6 +15,7 @@ android {
 dependencies {
     implementation(libs.kermit)
     implementation(project(":media"))
+    implementation(project(":core:reader"))
     implementation(project(":ui-next"))
 
     // The feed's counts are plural resources now, so checking them means resolving them — which

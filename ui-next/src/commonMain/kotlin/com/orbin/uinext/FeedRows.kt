@@ -167,12 +167,9 @@ internal fun FeedHeader(
     }
 }
 
-/** Source names are formatted by adapters; a board always keeps its familiar slash notation. */
+/** Source and board labels are formatted by adapters (`boardLabel` in `:core:reader`); shown as given. */
 internal val FeedRow.sourceAndBoard: String
-    get() {
-        val path = "/${board.trim('/')}/"
-        return if (site.isBlank()) path else "$site · $path"
-    }
+    get() = if (site.isBlank()) board else "$site · $board"
 
 @Composable
 internal fun FeedGridCell(
