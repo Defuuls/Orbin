@@ -199,10 +199,16 @@ final class StartupSmokeTests: XCTestCase {
             description: "The /3/ catalog shows the bundled threads"
         )
         attachScreenshot(named: "ios-bundled-catalog-" + textSize)
-        let back = app.buttons.matching(NSPredicate(format: "label == %@", "Back")).firstMatch
-        if becomesHittable([back], timeout: 5) {
-            back.tap()
-        }
+        // On a phone the catalog is pushed full screen: it has no Back button and no bottom bar.
+        // Back is the system edge swipe (NavigationBackHandler in OrbinApp), which returns to Boards.
+        XCTAssertFalse(navigationEntry("LIBRARY").exists, "The pushed catalog hides the bottom bar")
+        swipeBackFromLeadingEdge()
+        let boardsHeader = destinationHeader("BOARDS", title: "Boards")
+        let poppedToBoards = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in boardsHeader.exists && !catalogGrid.exists },
+            object: nil
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [poppedToBoards], timeout: 30), .completed, "The edge swipe returns to Boards")
 
         tapNavigationEntry("LIBRARY")
         waitUntilExists([appBarTitle("Library")], description: "The Library app bar")
@@ -219,6 +225,13 @@ final class StartupSmokeTests: XCTestCase {
         waitUntilExists([appBarTitle("Library")], description: "Back returns to Library")
         tapNavigationEntry("FEED")
         waitUntilExists([appBarTitle("Feed")], description: "The Feed app bar")
+    }
+
+    /// The iOS back gesture: a drag that starts on the leading screen edge.
+    private func swipeBackFromLeadingEdge() {
+        let edge = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+        let target = app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        edge.press(forDuration: 0.05, thenDragTo: target, withVelocity: .slow, thenHoldForDuration: 0.05)
     }
 
     /// Scrolling can tuck the bottom bar away; scroll back until the tab can be tapped.
