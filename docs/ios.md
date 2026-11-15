@@ -193,10 +193,9 @@ Simulator tests remain on Apple silicon because the app's simulator frameworks a
 The archive step is bounded to 90 minutes and keeps release optimizations enabled.
 
 Release 211's initial TestFlight attempt exhausted its previous 4 GB heap during native release
-linking before upload. `retry-testflight-211.yml` temporarily retries the unchanged, validated
-release commit after the corrected workflow merges. Remove that retry wrapper after a confirmed
-upload. A successful Debug simulator build does not establish that the optimized device archive
-fits its compiler memory budget; the separate Release archive check must actually pass.
+linking before upload. A successful Debug simulator build does not establish that the optimized
+device archive fits its compiler memory budget; the separate Release archive check must actually
+pass.
 
 ## Setting up TestFlight
 
