@@ -41,9 +41,12 @@ import com.orbin.uinext.OrbinBottomBar
 import com.orbin.uinext.ReaderAction
 import com.orbin.uinext.ReaderIcons
 import com.orbin.uinext.ReaderScaffold
+import com.orbin.uinext.readerKeyboardShortcuts
 
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1
+internal const val INITIAL_THREAD_POST_ID_KEY = "initialThreadPostId"
+internal const val INITIAL_THREAD_POST_OWNER_KEY = "initialThreadPostOwner"
 
 @Composable
 fun OrbinNavHost(
@@ -70,7 +73,7 @@ fun OrbinNavHost(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier,
+        modifier = modifier.readerKeyboardShortcuts(onDestination = navController::openPrimaryDestination),
         enterTransition = { nextEnter(threadPresentation) },
         exitTransition = { nextExit(threadPresentation) },
         popEnterTransition = { nextPopEnter(threadPresentation) },
@@ -101,6 +104,7 @@ fun OrbinNavHost(
 
         composable<Route.BoardGallery> {
             BoardGalleryScreen(
+                onOpenThread = openThread,
                 downloadBadge = primaryDownloadBadge(),
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
@@ -116,17 +120,32 @@ fun OrbinNavHost(
             )
         }
 
-        composable<Route.Search> {
-            NextScaffold(
-                where = stringResource(R.string.nav_search),
+        composable<Route.Search> { backStackEntry ->
+            SourceReaderRouteDestination(
+                navController = navController,
+                backStackEntry = backStackEntry,
+                twoPane = twoPaneBoardDetail,
+                title = stringResource(R.string.nav_search),
                 destination = NextDestination.SEARCH,
                 onDestination = onDestination,
-            ) { padding ->
-                Box(Modifier.fillMaxSize().padding(padding)) {
-                    NextSearchScreen(
-                        onOpenThread = openThread,
-                        onBack = null,
-                    )
+            ) { sourceOpenThread ->
+                NextScaffold(
+                    where = stringResource(R.string.nav_search),
+                    destination = NextDestination.SEARCH,
+                    onDestination = onDestination,
+                ) { padding ->
+                    Box(Modifier.fillMaxSize().padding(padding)) {
+                        NextSearchScreen(
+                            onOpenThread = sourceOpenThread,
+                            onBack = null,
+                            onOpenPost = { provider, board, thread, post, title ->
+                                backStackEntry.savedStateHandle[INITIAL_THREAD_POST_OWNER_KEY] =
+                                    "$provider/$board/$thread"
+                                backStackEntry.savedStateHandle[INITIAL_THREAD_POST_ID_KEY] = post
+                                sourceOpenThread(provider, board, thread, title)
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -208,16 +227,26 @@ fun OrbinNavHost(
                 backStackEntry.savedStateHandle
                     .getStateFlow(THREAD_MEDIA_SCROLL_INDEX_KEY, NO_THREAD_MEDIA_SCROLL_INDEX)
                     .collectAsStateWithLifecycle()
+            val initialPostId by backStackEntry.savedStateHandle
+                .getStateFlow(INITIAL_THREAD_POST_ID_KEY, -1L)
+                .collectAsStateWithLifecycle()
             NextThreadScreen(
                 onBack = { navController.navigateUp() },
                 onOpenMedia = { index ->
                     navController.navigate(Route.Gallery(route.provider, route.board, route.thread, index))
+                },
+                onOpenMediaFiltered = { index, filter ->
+                    navController.navigate(
+                        Route.FilteredMedia(route.provider, route.board, route.thread, index, filter.name),
+                    )
                 },
                 mediaScrollIndex = mediaScrollIndex.takeIf { it != NO_THREAD_MEDIA_SCROLL_INDEX },
                 onMediaScrollConsumed = {
                     backStackEntry.savedStateHandle[THREAD_MEDIA_SCROLL_INDEX_KEY] =
                         NO_THREAD_MEDIA_SCROLL_INDEX
                 },
+                initialPostId = initialPostId.takeIf { it > 0 },
+                onInitialPostConsumed = { backStackEntry.savedStateHandle[INITIAL_THREAD_POST_ID_KEY] = -1L },
             )
         }
 
@@ -236,6 +265,15 @@ fun OrbinNavHost(
             GalleryScreen(onClose = navController::navigateUp)
         }
 
+        composable<Route.FilteredMedia> {
+            GalleryScreen(
+                onClose = navController::navigateUp,
+                onMediaPageChanged = { page ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set(THREAD_MEDIA_SCROLL_INDEX_KEY, page)
+                },
+            )
+        }
+
         composable<Route.SelectedMedia> {
             GalleryScreen(onClose = navController::navigateUp)
         }
@@ -244,31 +282,57 @@ fun OrbinNavHost(
             GalleryScreen(onClose = navController::navigateUp)
         }
 
-        composable<Route.Saved> {
-            ThreadCollectionsDestination(
-                kind = CollectionKind.SAVED,
+        composable<Route.Saved> { backStackEntry ->
+            SourceReaderRouteDestination(
+                navController = navController,
+                backStackEntry = backStackEntry,
+                twoPane = twoPaneBoardDetail,
                 title = stringResource(R.string.nav_saved),
-                onOpenThread = openThread,
-                onSettings = { navController.navigate(Route.Settings) },
+                destination = NextDestination.SAVED,
                 onDestination = onDestination,
-            )
+            ) { sourceOpenThread ->
+                ThreadCollectionsDestination(
+                    kind = CollectionKind.SAVED,
+                    title = stringResource(R.string.nav_saved),
+                    onOpenThread = sourceOpenThread,
+                    onSettings = { navController.navigate(Route.Settings) },
+                    onDestination = onDestination,
+                )
+            }
         }
-        composable<Route.History> {
-            ThreadCollectionsDestination(
-                kind = CollectionKind.HISTORY,
+        composable<Route.History> { backStackEntry ->
+            SourceReaderRouteDestination(
+                navController = navController,
+                backStackEntry = backStackEntry,
+                twoPane = twoPaneBoardDetail,
                 title = stringResource(R.string.nav_history),
-                onOpenThread = openThread,
-                onBack = { navController.navigateUp() },
-            )
+                destination = null,
+            ) { sourceOpenThread ->
+                ThreadCollectionsDestination(
+                    kind = CollectionKind.HISTORY,
+                    title = stringResource(R.string.nav_history),
+                    onOpenThread = sourceOpenThread,
+                    onBack = { navController.navigateUp() },
+                )
+            }
         }
-        composable<Route.Watched> {
-            ThreadCollectionsDestination(
-                kind = CollectionKind.WATCHED,
+        composable<Route.Watched> { backStackEntry ->
+            SourceReaderRouteDestination(
+                navController = navController,
+                backStackEntry = backStackEntry,
+                twoPane = twoPaneBoardDetail,
                 title = stringResource(R.string.nav_watched),
-                onOpenThread = openThread,
-                onSettings = { navController.navigate(Route.Settings) },
+                destination = NextDestination.WATCHED,
                 onDestination = onDestination,
-            )
+            ) { sourceOpenThread ->
+                ThreadCollectionsDestination(
+                    kind = CollectionKind.WATCHED,
+                    title = stringResource(R.string.nav_watched),
+                    onOpenThread = sourceOpenThread,
+                    onSettings = { navController.navigate(Route.Settings) },
+                    onDestination = onDestination,
+                )
+            }
         }
         composable<Route.Downloads> {
             DownloadsScreen(

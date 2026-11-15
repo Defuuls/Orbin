@@ -1,0 +1,7 @@
+<resources>
+    <string name="reader_open_thread_link">Open thread link</string>
+    <string name="reader_thread_link_label">Thread link</string>
+    <string name="reader_thread_link_hint">Paste a thread URL from a supported site</string>
+    <string name="reader_thread_link_invalid">Enter a supported thread link.</string>
+    <string name="reader_thread_link_open">Open</string>
+</resources>

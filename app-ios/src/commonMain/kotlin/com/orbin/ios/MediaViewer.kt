@@ -33,6 +33,8 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,8 +59,13 @@ import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.ios.resources.Res
+import com.orbin.ios.resources.ios_media_auto_advance_off
+import com.orbin.ios.resources.ios_media_auto_advance_on
 import com.orbin.ios.resources.ios_media_close
 import com.orbin.ios.resources.ios_media_download_rest
+import com.orbin.ios.resources.ios_media_file_information
+import com.orbin.ios.resources.ios_media_filter
+import com.orbin.ios.resources.ios_media_image_search
 import com.orbin.ios.resources.ios_media_loop_off
 import com.orbin.ios.resources.ios_media_loop_on
 import com.orbin.ios.resources.ios_media_more_options
@@ -71,11 +78,25 @@ import com.orbin.ios.resources.ios_media_saving
 import com.orbin.ios.resources.ios_media_spoiler
 import com.orbin.ios.resources.ios_media_spoiler_reveal
 import com.orbin.ios.resources.ios_media_unmute
+import com.orbin.ios.resources.ios_saved_cancel
+import com.orbin.ios.resources.ios_saved_continue
+import com.orbin.ios.resources.ios_saved_export_confirm
+import com.orbin.ios.resources.ios_saved_export_title
+import com.orbin.uinext.MediaFileInfo
+import com.orbin.uinext.MediaFileInfoDialog
+import com.orbin.uinext.MediaFilterDialog
+import com.orbin.uinext.MediaKindFilter
 import com.orbin.uinext.ReaderMediaAction
 import com.orbin.uinext.ReaderMediaSpeedOptions
 import com.orbin.uinext.ReaderMediaToolbar
+import com.orbin.uinext.ReverseImageSearchDialog
+import com.orbin.uinext.mediaFilterIndices
+import com.orbin.uinext.mediaKindOf
+import com.orbin.uinext.mediaSearchTarget
+import com.orbin.uinext.nextMediaPageAfterCompletion
 import com.orbin.uinext.reader
 import com.orbin.uinext.readerMediaSwipeToClose
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.exp
 
@@ -102,19 +123,42 @@ internal fun MediaViewer(
     onPageChanged: (Int) -> Unit = {},
     playback: PlaybackSettings = PlaybackSettings(),
     onDownloadRest: ((Int) -> Unit)? = null,
+    autoAdvance: Boolean = false,
+    onAutoAdvanceChange: ((Boolean) -> Unit)? = null,
+    initialFilter: MediaKindFilter = MediaKindFilter.ALL,
+    trustedLocalFiles: Set<String> = emptySet(),
+    askBeforePhotos: Boolean = false,
 ) {
-    if (files.isEmpty()) {
-        LaunchedEffect(Unit) { onClose() }
+    var filter by rememberSaveable(initialFilter) { mutableStateOf(initialFilter) }
+    val originalKeys = remember(files) { mediaViewerKeys(files) }
+    val visibleIndices = remember(files, filter) { mediaFilterIndices(files.map { mediaKindOf(it.type.name) }, filter) }
+    val visibleFiles = remember(files, visibleIndices) { visibleIndices.map(files::get) }
+    if (visibleFiles.isEmpty()) {
+        LaunchedEffect(files, filter) {
+            if (files.isEmpty()) onClose() else filter = MediaKindFilter.ALL
+        }
         return
     }
-    val selection = rememberMediaViewerSelection(files, startIndex, onPageChanged)
+    val selection =
+        rememberMediaViewerSelection(
+            visibleFiles,
+            visibleIndices.indexOf(startIndex).coerceAtLeast(0),
+            onPageChanged = { index -> visibleIndices.getOrNull(index)?.let(onPageChanged) },
+            pageKeys = visibleIndices.map(originalKeys::get),
+        )
+    val latestSelection by rememberUpdatedState(selection)
+    val scope = rememberCoroutineScope()
+    var viewerAutoAdvance by rememberSaveable(autoAdvance) { mutableStateOf(autoAdvance) }
+    val currentAutoAdvance by rememberUpdatedState(viewerAutoAdvance)
+    val itemCount by rememberUpdatedState(visibleFiles.size)
     val pager = selection.pager
     val preloader = remember { createNativeMediaPreloader() }
     DisposableEffect(preloader) {
         onDispose { preloader.close() }
     }
     val close = {
-        onPageChanged(selection.index)
+        visibleFiles.getOrNull(selection.index)?.sourceUrl?.let(::prepareNativeMediaHandoff)
+        onPageChanged(visibleIndices[selection.index])
         onClose()
     }
     var pencilMenu by remember { mutableStateOf(false) }
@@ -122,20 +166,47 @@ internal fun MediaViewer(
     OnPencilGesture { gesture ->
         when (gesture) {
             PencilGesture.DOUBLE_TAP ->
-                if (selection.index < files.lastIndex) pager.animateScrollToPage(selection.index + 1)
+                if (selection.index < visibleFiles.lastIndex) pager.animateScrollToPage(selection.index + 1)
             PencilGesture.SQUEEZE -> pencilMenu = true
         }
     }
-    val current = files[selection.index]
+    val current = visibleFiles[selection.index]
     var muted by remember(playback.startMuted) { mutableStateOf(playback.startMuted && SessionAudio.muted) }
     var playbackSpeed by rememberSaveable { mutableFloatStateOf(1f) }
     val saveResults = remember { mutableStateMapOf<String, Boolean>() }
+    var pendingPublicSave by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     fun saveFile(
         file: MediaAttachment,
         key: String,
     ) {
-        if (saveResults[key] == null) saveResults[key] = onSave(file)
+        if (saveResults[key] == null) {
+            val save = { saveResults[key] = onSave(file) }
+            if (askBeforePhotos && saveTargetOf(file.originalFileName) != SaveTarget.FILE) {
+                pendingPublicSave = save
+            } else {
+                save()
+            }
+        }
+    }
+    if (pendingPublicSave != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { pendingPublicSave = null },
+            title = { Text(stringResource(Res.string.ios_saved_export_title)) },
+            text = { Text(stringResource(Res.string.ios_saved_export_confirm)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    val action = pendingPublicSave
+                    pendingPublicSave = null
+                    action?.invoke()
+                }) { Text(stringResource(Res.string.ios_saved_continue)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { pendingPublicSave = null }) {
+                    Text(stringResource(Res.string.ios_saved_cancel))
+                }
+            },
+        )
     }
     val loopOverrides = remember { mutableStateMapOf<String, Boolean>() }
     val revealedFiles = remember { mutableStateMapOf<String, Boolean>() }
@@ -145,10 +216,10 @@ internal fun MediaViewer(
     val currentLoop = loopOverrides[selection.key] ?: playback.loopVideos
     val currentPlayable = current.playsInApp || (current.isWebM && supportsWebM)
     val currentReady = playbackReady[selection.key] == true
-    LaunchedEffect(preloader, files, selection.index, playback.preloadNextClip, currentReady) {
+    LaunchedEffect(preloader, visibleFiles, selection.index, playback.preloadNextClip, currentReady) {
         prepareUpcomingAfterSettle(
             nextMediaPreloadTarget(
-                files,
+                visibleFiles,
                 selection.index,
                 playback.preloadNextClip,
                 supportsWebM,
@@ -161,6 +232,9 @@ internal fun MediaViewer(
     var toolbarHeight by remember { mutableStateOf(56.dp) }
     val uriHandler = LocalUriHandler.current
     var moreMenu by remember(selection.key) { mutableStateOf(false) }
+    var fileInfo by remember { mutableStateOf<MediaAttachment?>(null) }
+    var imageSearch by remember { mutableStateOf<String?>(null) }
+    var filterMenu by remember { mutableStateOf(false) }
     Box(
         Modifier
             .fillMaxSize()
@@ -176,7 +250,7 @@ internal fun MediaViewer(
             beyondViewportPageCount = if (playback.preloadNextClip) 1 else 0,
             modifier = Modifier.fillMaxSize().testTag(MediaViewerTags.PAGER),
         ) { page ->
-            val file = files.getOrNull(page) ?: return@VerticalPager
+            val file = visibleFiles.getOrNull(page) ?: return@VerticalPager
             val active = selection.keys.getOrNull(page) == selection.key
             Box(
                 Modifier
@@ -200,12 +274,27 @@ internal fun MediaViewer(
                     preloader = preloader,
                     revealed = revealedFiles[revealKey] ?: !file.isSpoiler,
                     onReveal = { revealedFiles[revealKey] = true },
-                    looping = loopOverrides[fileKey] ?: playback.loopVideos,
+                    looping = (loopOverrides[fileKey] ?: playback.loopVideos) && !viewerAutoAdvance,
                     muted = muted,
                     onMuteChange = { muted = it },
                     playbackSpeed = playbackSpeed,
                     onDoubleTapSave = if (active) ({ saveFile(file, fileKey) }) else null,
                     onPlaybackReadyChange = { playbackReady[fileKey] = it },
+                    trustedLocalFile = file.sourceUrl in trustedLocalFiles,
+                    onPlaybackEnded = {
+                        scope.launch {
+                            val currentSelection = latestSelection
+                            nextMediaPageAfterCompletion(
+                                fileKey,
+                                currentSelection.key,
+                                currentSelection.index,
+                                itemCount,
+                                currentAutoAdvance,
+                                true,
+                                currentSelection.pager.isScrollInProgress,
+                            )?.let { currentSelection.pager.animateScrollToPage(it) }
+                        }
+                    },
                 )
             }
         }
@@ -216,7 +305,7 @@ internal fun MediaViewer(
                 } else {
                     stringResource(Res.string.ios_media_spoiler)
                 },
-            position = "${selection.index + 1}/${files.size}",
+            position = "${selection.index + 1}/${visibleFiles.size}",
             closeLabel = stringResource(Res.string.ios_media_close),
             onClose = close,
             modifier = Modifier.onSizeChanged { toolbarHeight = with(density) { it.height.toDp() } },
@@ -247,6 +336,35 @@ internal fun MediaViewer(
                     shape = RoundedCornerShape(22.dp),
                     containerColor = reader.surfaceVariant,
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.ios_media_filter)) },
+                        onClick = {
+                            moreMenu = false
+                            filterMenu = true
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.ios_media_file_information)) },
+                        onClick = {
+                            moreMenu = false
+                            fileInfo = current
+                        },
+                    )
+                    val searchTarget =
+                        if (currentRevealed) {
+                            mediaSearchTarget(current.sourceUrl, current.thumbnailUrl, mediaKindOf(current.type.name))
+                        } else {
+                            null
+                        }
+                    if (searchTarget != null) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.ios_media_image_search)) },
+                            onClick = {
+                                moreMenu = false
+                                imageSearch = searchTarget
+                            },
+                        )
+                    }
                     val external = safeExternalLink(current.sourceUrl)
                     if (external != null) {
                         DropdownMenuItem(
@@ -262,11 +380,34 @@ internal fun MediaViewer(
                             text = { Text(stringResource(Res.string.ios_media_download_rest)) },
                             onClick = {
                                 moreMenu = false
-                                downloadRest(selection.index)
+                                val index = visibleIndices[selection.index]
+                                if (askBeforePhotos) {
+                                    pendingPublicSave = { downloadRest(index) }
+                                } else {
+                                    downloadRest(index)
+                                }
                             },
                         )
                     }
                     if (currentPlayable && currentRevealed) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (viewerAutoAdvance) {
+                                            Res.string.ios_media_auto_advance_off
+                                        } else {
+                                            Res.string.ios_media_auto_advance_on
+                                        },
+                                    ),
+                                )
+                            },
+                            onClick = {
+                                moreMenu = false
+                                viewerAutoAdvance = !viewerAutoAdvance
+                                onAutoAdvanceChange?.invoke(viewerAutoAdvance)
+                            },
+                        )
                         ReaderMediaSpeedOptions(playbackSpeed) { speed ->
                             playbackSpeed = speed
                             moreMenu = false
@@ -291,6 +432,42 @@ internal fun MediaViewer(
                     }
                 }
             }
+        }
+        if (filterMenu) {
+            MediaFilterDialog(
+                filter,
+                images = files.count { it.type == MediaType.IMAGE || it.type == MediaType.ANIMATED_IMAGE },
+                videos = files.count { it.type == MediaType.VIDEO },
+                total = files.size,
+                onChange = {
+                    filter = it
+                    filterMenu = false
+                },
+                onDismiss = { filterMenu = false },
+            )
+        }
+        fileInfo?.let { file ->
+            MediaFileInfoDialog(
+                MediaFileInfo(
+                    file.originalFileName,
+                    file.extension,
+                    file.width,
+                    file.height,
+                    file.sizeBytes,
+                    file.durationMs,
+                ),
+                onDismiss = { fileInfo = null },
+            )
+        }
+        imageSearch?.let { target ->
+            ReverseImageSearchDialog(
+                imageUrl = target,
+                onOpenUrl = { url ->
+                    imageSearch = null
+                    safeExternalLink(url)?.let(uriHandler::openUri)
+                },
+                onDismiss = { imageSearch = null },
+            )
         }
         PencilMenu(
             expanded = pencilMenu,
@@ -343,9 +520,15 @@ private fun MediaPage(
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
     onPlaybackReadyChange: (Boolean) -> Unit,
+    onPlaybackEnded: (() -> Unit)? = null,
+    trustedLocalFile: Boolean = false,
 ) {
-    val playable = remember(file) { file.takeIf { it.playsInApp }?.let { safeExternalLink(it.sourceUrl) } }
-    val webm = remember(file) { file.takeIf { it.isWebM }?.let { safeExternalLink(it.sourceUrl) } }
+    val approvedSource =
+        remember(file, trustedLocalFile) {
+            safeExternalLink(file.sourceUrl) ?: file.sourceUrl.takeIf { trustedLocalFile && it.startsWith("file://") }
+        }
+    val playable = approvedSource?.takeIf { file.playsInApp }
+    val webm = approvedSource?.takeIf { file.isWebM }
     // A spoilered file (a spoiler, or one the violent-media cover marked) waits behind the cover
     // until tapped, and nothing of it plays before then.
     if (!revealed) {
@@ -378,6 +561,7 @@ private fun MediaPage(
                 preloader = preloader,
                 modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
                 onPlaybackReadyChange = onPlaybackReadyChange,
+                onPlaybackEnded = onPlaybackEnded,
             )
         webm != null && supportsWebM ->
             NativeWebMPlayer(
@@ -392,6 +576,7 @@ private fun MediaPage(
                 loop = looping,
                 preloader = preloader,
                 onPlaybackReadyChange = onPlaybackReadyChange,
+                onPlaybackEnded = onPlaybackEnded,
             )
         else -> ExternalFile(file)
     }

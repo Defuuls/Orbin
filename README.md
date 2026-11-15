@@ -4,9 +4,9 @@ Privacy-focused, read-only **Android & iOS imageboard browser** built with Kotli
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [License](LICENSE)
 
-**Current release:** [209 — Aegirine](https://github.com/Defuuls/Orbin/releases/tag/v209-Aegirine)
+**Current release:** [210 — Agate](https://github.com/Defuuls/Orbin/releases/tag/v210-Agate)
 
-**What's new in 209:** NekoSurf-inspired design across Android and iOS, with grouped settings, native iOS typography and adaptive tablet navigation.
+**What's new in 210:** Expanded Orbin reader with nested threads, independent favourites, full-site search, saved media and private offline backups.
 
 - **Read-only browsing:** Combined multi-site feed, board directories, List/Grid/Card catalogs, and adaptive two-pane layout (`4chan` & `BBWChan`).
 - **Thread & media reader:** Posts, Files, and Card views, inline quote expansion, backlinks, Coil 3 images, Media3 / AVPlayer video, and swipe gallery.

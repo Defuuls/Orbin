@@ -25,11 +25,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/**
- * An iOS database written at schema 7 opens, keeps its rows and gains version 8's indices, over the
- * same bundled driver the app uses. Schema 8 only added indices, so a version-7 file is today's
- * file without them, stamped with version 7's number and identity.
- */
+/** Opens a genuine schema-7 database through the complete migration chain on the app's native driver. */
 class ConnectionMigrationsIosTest {
     private val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".db"
     private val key = ThreadKey(ProviderId("p"), BoardId("g"), ThreadId(7))
@@ -43,31 +39,74 @@ class ConnectionMigrationsIosTest {
     }
 
     @Test
-    fun aSchema7DatabaseOpensWithItsHistoryAndTheNewIndices() =
+    fun aSchema7DatabaseMigratesTo9WithItsHistoryIndicesAndNewStorageColumns() =
         runTest {
             val entry =
-                HistoryEntry(key = key, title = "Hi", lastVisitedMillis = 9L, lastReadPostId = PostId(7))
-            open().run {
-                HistoryRepositoryImpl(historyDao()).record(entry)
-                close()
-            }
-            BundledSQLiteDriver().open(path).run {
-                SCHEMA_8_INDEX_NAMES.forEach { name -> execSQL("DROP INDEX `$name`") }
-                execSQL("UPDATE room_master_table SET identity_hash = '$SCHEMA_7_IDENTITY' WHERE id = 42")
-                execSQL("PRAGMA user_version = 7")
-                close()
-            }
-
+                HistoryEntry(
+                    key = key,
+                    title = "Hi",
+                    lastVisitedMillis = 9L,
+                    lastReadPostId = PostId(7),
+                    lastReadOffsetPx = 31,
+                )
+            createSchema7(entry)
             val migrated = open(*migrations())
-            assertEquals(entry, HistoryRepositoryImpl(migrated.historyDao()).getEntry(key))
-            val indices =
-                migrated.useReaderConnection { connection ->
-                    connection.usePrepared("SELECT name FROM sqlite_master WHERE type = 'index'") { statement ->
-                        buildSet { while (statement.step()) add(statement.getText(0)) }
+            try {
+                assertEquals(entry, HistoryRepositoryImpl(migrated.historyDao()).getEntry(key))
+                val indices = migrated.readStrings("SELECT name FROM sqlite_master WHERE type = 'index'")
+                assertTrue(indices.containsAll(SCHEMA_8_INDEX_NAMES), "indices after migrating: $indices")
+                val version =
+                    migrated.useReaderConnection { connection ->
+                        connection.usePrepared("PRAGMA user_version") { statement ->
+                            assertTrue(statement.step())
+                            statement.getLong(0)
+                        }
                     }
+                assertEquals(9L, version)
+                for ((table, expected) in SCHEMA_9_COLUMNS) {
+                    val actual = migrated.readStrings("PRAGMA table_info(`$table`)", column = 1)
+                    assertTrue(actual.containsAll(expected), "$table columns after migrating: $actual")
                 }
-            assertTrue(indices.containsAll(SCHEMA_8_INDEX_NAMES), "indices after migrating: $indices")
-            migrated.close()
+            } finally {
+                migrated.close()
+            }
+        }
+
+    private fun createSchema7(entry: HistoryEntry) {
+        val connection = BundledSQLiteDriver().open(path)
+        try {
+            Schema7DatabaseFixture.statements.forEach(connection::execSQL)
+            val insert =
+                connection.prepare(
+                    "INSERT INTO history(provider, board, thread, title, thumbnailUrl, " +
+                        "lastVisitedMillis, lastReadPostId, lastReadOffsetPx) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                )
+            try {
+                insert.bindText(1, entry.key.provider.value)
+                insert.bindText(2, entry.key.board.value)
+                insert.bindLong(3, entry.key.thread.value)
+                insert.bindText(4, entry.title)
+                insert.bindNull(5)
+                insert.bindLong(6, entry.lastVisitedMillis)
+                insert.bindLong(7, checkNotNull(entry.lastReadPostId).value)
+                insert.bindLong(8, entry.lastReadOffsetPx.toLong())
+                insert.step()
+            } finally {
+                insert.close()
+            }
+        } finally {
+            connection.close()
+        }
+    }
+
+    private suspend fun OrbinDatabase.readStrings(
+        sql: String,
+        column: Int = 0,
+    ): Set<String> =
+        useReaderConnection { connection ->
+            connection.usePrepared(sql) { statement ->
+                buildSet { while (statement.step()) add(statement.getText(column)) }
+            }
         }
 
     private fun open(vararg migrations: Migration): OrbinDatabase =
@@ -90,8 +129,15 @@ class ConnectionMigrationsIosTest {
             }.toTypedArray()
 
     private companion object {
-        /** From `storage/schemas/.../7.json`. */
-        const val SCHEMA_7_IDENTITY = "fe1533596a57805d02d3102fd81b0b24"
+        val SCHEMA_9_COLUMNS =
+            mapOf(
+                "bookmarks" to setOf("availability", "statusCheckedAtMillis"),
+                "downloads" to setOf("mediaContextJson", "privateTarget"),
+                "thread_memory" to setOf("provider", "board", "thread", "updatedAtMillis", "payload"),
+                "offline_thread_copies" to
+                    setOf("provider", "board", "thread", "payload", "updatedAtMillis", "sizeBytes"),
+                "media_library" to setOf("id", "provider", "storageKey", "fileName", "savedAtMillis", "payload"),
+            )
 
         val SCHEMA_8_INDEX_NAMES =
             listOf(

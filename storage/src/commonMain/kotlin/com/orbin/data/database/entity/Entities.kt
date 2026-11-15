@@ -1,5 +1,6 @@
 package com.orbin.data.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 
@@ -28,6 +29,8 @@ data class BookmarkEntity(
     val lastSeenReplyCount: Int,
     val latestReplyCount: Int,
     val isThreadDead: Boolean,
+    @ColumnInfo(defaultValue = "'UNKNOWN'") val availability: String = "UNKNOWN",
+    @ColumnInfo(defaultValue = "0") val statusCheckedAtMillis: Long = 0,
 )
 
 @Entity(
@@ -152,4 +155,6 @@ data class DownloadEntity(
      * organization setting changes in between.
      */
     val relativeDir: String = "",
+    val mediaContextJson: String? = null,
+    @ColumnInfo(defaultValue = "0") val privateTarget: Boolean = false,
 )

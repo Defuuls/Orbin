@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gallery_file_information">File information</string>
+    <string name="gallery_image_search">Search image</string>
+    <string name="gallery_media_filter">Show media</string>
+    <string name="gallery_auto_advance_on">Play next when video ends</string>
+    <string name="gallery_auto_advance_off">Stay on the current video</string>
+    <string name="gallery_public_save_title">Save to device?</string>
+    <string name="gallery_public_save_message">Selected media will be saved to public device storage outside Orbin’s private library.</string>
+    <string name="gallery_public_save_confirm">Save</string>
+</resources>

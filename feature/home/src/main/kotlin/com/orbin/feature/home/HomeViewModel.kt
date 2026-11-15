@@ -63,6 +63,9 @@ class HomeViewModel
             observeActiveProvider()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, registry.default())
 
+        /** Registered metadata for validating pasted links without guessing a source. */
+        internal val threadLinkProviders = registry.all().map { it.metadata }
+
         internal val sites =
             registry.all().map {
                 FeedSiteOption(
@@ -86,6 +89,25 @@ class HomeViewModel
                             BoardFollowState(provider.metadata.id.value, boards.map { it.value }.toSet())
                         }.onStart { emit(BoardFollowState(provider.metadata.id.value)) }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), BoardFollowState())
+
+        internal val favoriteBoards: StateFlow<BoardFollowState> =
+            activeProvider
+                .flatMapLatest { provider ->
+                    boardPreferencesRepository
+                        .observeFavoriteBoards(provider.metadata.id)
+                        .map { boards -> BoardFollowState(provider.metadata.id.value, boards.map { it.value }.toSet()) }
+                        .onStart { emit(BoardFollowState(provider.metadata.id.value)) }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), BoardFollowState())
+
+        fun setFavorite(
+            boardId: String,
+            favorite: Boolean,
+            sourceId: String = activeProvider.value.metadata.id.value,
+        ) {
+            viewModelScope.launch {
+                boardPreferencesRepository.setFavoriteBoard(ProviderId(sourceId), BoardId(boardId), favorite)
+            }
+        }
 
         val followedBoardIds: StateFlow<Set<String>> =
             combine(activeProvider, followedBoards) { provider, followed ->

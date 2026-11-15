@@ -38,6 +38,8 @@ internal class WebMPageDelegate(
 ) : NSObject(),
     WKNavigationDelegateProtocol,
     WKUIDelegateProtocol {
+    var localDocumentUrl: String? = null
+
     override fun webView(
         webView: WKWebView,
         decidePolicyForNavigationAction: WKNavigationAction,
@@ -45,7 +47,7 @@ internal class WebMPageDelegate(
     ) {
         val url = decidePolicyForNavigationAction.request.URL?.absoluteString
         decisionHandler(
-            if (shouldAllowWebMNavigation(url)) {
+            if (shouldAllowWebMNavigation(url, localDocumentUrl)) {
                 WKNavigationActionPolicy.WKNavigationActionPolicyAllow
             } else {
                 WKNavigationActionPolicy.WKNavigationActionPolicyCancel

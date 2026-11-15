@@ -88,6 +88,8 @@ fun ReaderScaffold(
     drawAppBar: Boolean = true,
     immersive: Boolean = false,
     drawerDestinations: Set<NextDestination>? = null,
+    onRefresh: (() -> Unit)? = null,
+    onSearch: (() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     if (LocalReaderFramePresent.current && !drawAppBar) {
@@ -102,7 +104,17 @@ fun ReaderScaffold(
     val openDrawer: () -> Unit = { scope.launch(start = CoroutineStart.UNDISPATCHED) { drawerState.open() } }
     val closeDrawer: () -> Unit = { scope.launch(start = CoroutineStart.UNDISPATCHED) { drawerState.close() } }
     val drawerVisible = drawerState.isOpen || drawerState.targetValue == DrawerValue.Open
-    BoxWithConstraints(modifier.testTag("reader-frame").fillMaxSize().semantics { paneTitle = title }) {
+    BoxWithConstraints(
+        modifier
+            .readerKeyboardShortcuts(
+                onBack = if (drawerVisible) closeDrawer else onBack,
+                onRefresh = onRefresh ?: actions.firstOrNull { it.icon == ReaderIcons.Refresh }?.onClick,
+                onSearch = onSearch ?: actions.firstOrNull { it.icon == ReaderIcons.Search }?.onClick,
+            ).readerBackSwipe(onBack.takeUnless { drawerVisible })
+            .testTag("reader-frame")
+            .fillMaxSize()
+            .semantics { paneTitle = title },
+    ) {
         val drawerWidth = minOf(ReaderSize.drawerMax, (maxWidth - ReaderSize.appBar).coerceAtLeast(0.dp))
         ModalNavigationDrawer(
             drawerState = drawerState,

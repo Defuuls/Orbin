@@ -59,7 +59,7 @@ class GalleryPagerContinuityTest {
                 content,
                 currentSelection,
                 Modifier.fillMaxSize().testTag("gallery-pager"),
-            ) { item, active, _ ->
+            ) { item, active, _, _ ->
                 if (active) {
                     DisposableEffect(Unit) {
                         mounts[item.id] = mounts.getOrDefault(item.id, 0) + 1
@@ -139,7 +139,7 @@ class GalleryPagerContinuityTest {
                 content,
                 currentSelection,
                 Modifier.fillMaxSize().testTag("gallery-pager"),
-            ) { item, active, _ ->
+            ) { item, active, _, _ ->
                 if (active) {
                     DisposableEffect(Unit) {
                         mounts[item.id] = mounts.getOrDefault(item.id, 0) + 1

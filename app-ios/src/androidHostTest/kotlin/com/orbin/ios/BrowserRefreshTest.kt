@@ -78,16 +78,28 @@ class BrowserRefreshTest {
             retry.response.complete(Reply(catalog(8)))
             browser.catalogRefreshing.first { !it }
 
-            assertEquals(
-                listOf(8L),
-                assertIs<Load.Ready<List<CatalogThread>>>(browser.catalog.value).value.map { it.key.thread.value },
+            val replacement =
+                assertIs<Load.Ready<List<CatalogThread>>>(
+                    browser.catalog.first { ready ->
+                        ready is Load.Ready && ready.value.map { it.key.thread.value } == listOf(8L)
+                    },
+                )
+            assertEquals(listOf(8L), replacement.value.map { it.key.thread.value })
+            val replacementKeys = replacement.value.mapTo(mutableSetOf()) { it.key }
+            assertTrue(
+                browser.preparedCatalogRows.value.keys
+                    .containsAll(replacementKeys),
+                "Every replacement row must already be prepared when its catalog becomes visible",
             )
             assertNull(browser.catalogRefreshFailure.value)
+            val finalPrepared =
+                withTimeout(5_000) {
+                    browser.preparedCatalogRows.first { it.keys == replacementKeys }
+                }
             assertEquals(
                 listOf(8L),
-                browser.preparedCatalogRows.value.keys
-                    .map { it.thread.value },
-                "Prepared row identities must be published with the replacement catalog",
+                finalPrepared.keys.map { it.thread.value },
+                "Obsolete prepared rows must be trimmed after the replacement catalog is visible",
             )
         }
 
@@ -239,7 +251,11 @@ class BrowserRefreshTest {
 
             assertEquals(
                 listOf(8L),
-                assertIs<Load.Ready<List<CatalogThread>>>(browser.catalog.value).value.map { it.key.thread.value },
+                assertIs<Load.Ready<List<CatalogThread>>>(
+                    browser.catalog.first { ready ->
+                        ready is Load.Ready && ready.value.map { it.key.thread.value } == listOf(8L)
+                    },
+                ).value.map { it.key.thread.value },
             )
             assertSame(loadedThread, assertIs<Load.Ready<Thread>>(browser.thread.value).value)
             assertEquals(Route.ThreadPage(key), browser.backStack.value.last())

@@ -28,7 +28,6 @@ import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.attachmentDetails
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.readerPaneWidths
@@ -42,7 +41,6 @@ import com.orbin.ios.resources.ios_reader_reload
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.LocalReaderOpenDrawer
-import com.orbin.uinext.MediaCell
 import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
@@ -103,8 +101,8 @@ internal fun CatalogDestination(
         }
     val byRow = remember(threads) { threads.associateBy { it.key.catalogRowId } }
     val availableBoards =
-        remember(boards, settings.hideNsfwBoards) {
-            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        remember(boards, settings.nsfwContentHidden) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.nsfwContentHidden && it.board.isNsfw }
         }
     val boardOptions =
         remember(availableBoards) {
@@ -317,12 +315,7 @@ internal fun BoardMediaDestination(
                                 cells =
                                     remember(items) {
                                         items.map {
-                                            MediaCell(
-                                                id = "${it.key.provider.value}/${it.id}",
-                                                board = "${it.key.provider.value} $label",
-                                                spoiler = it.attachment.isSpoiler,
-                                                details = it.attachment.attachmentDetails(),
-                                            )
+                                            it.toBoardMediaCell(label)
                                         }
                                     },
                                 showRail = false,

@@ -11,16 +11,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -31,17 +28,24 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.common.result.DataError
+import com.orbin.core.model.PostFilterKind
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.mediaPostId
+import com.orbin.core.reader.readerRows
 import com.orbin.core.reader.readerThreadStatus
+import com.orbin.core.reader.unseenPostIds
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.MessageScreen
+import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.NextSnackbarHostState
@@ -54,8 +58,11 @@ import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderThreadSkeleton
 import com.orbin.uinext.ThreadLayout
 import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.rememberThreadInlineMediaState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withContext
 
 @Composable
 fun NextThreadScreen(
@@ -65,6 +72,9 @@ fun NextThreadScreen(
     onMediaScrollConsumed: () -> Unit = {},
     viewModel: ThreadViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null,
+    onOpenMediaFiltered: ((Int, com.orbin.uinext.MediaKindFilter) -> Unit)? = null,
+    initialPostId: Long? = null,
+    onInitialPostConsumed: () -> Unit = {},
 ) {
     val windowSize = LocalWindowInfo.current.containerSize
     val density = LocalDensity.current
@@ -89,6 +99,10 @@ fun NextThreadScreen(
     val exportMessage by viewModel.exportMessage.collectAsStateWithLifecycle()
     val initialScrollPosition by viewModel.initialScrollPosition.collectAsStateWithLifecycle()
     val initialScrollLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(viewModel, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { viewModel.pollWhileVisible() }
+    }
     val snackbarHostState = remember { NextSnackbarHostState() }
     LaunchedEffect(exportMessage) {
         exportMessage?.let {
@@ -132,6 +146,9 @@ fun NextThreadScreen(
                     onOpenMedia = onOpenMedia,
                     modifier = modifier,
                     onBack = onBack,
+                    onOpenMediaFiltered = onOpenMediaFiltered,
+                    initialPostId = initialPostId,
+                    onInitialPostConsumed = onInitialPostConsumed,
                 )
         }
     }
@@ -153,6 +170,9 @@ private fun LoadedThread(
     onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    onOpenMediaFiltered: ((Int, com.orbin.uinext.MediaKindFilter) -> Unit)? = null,
+    initialPostId: Long? = null,
+    onInitialPostConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val windowSize = LocalWindowInfo.current.containerSize
@@ -173,19 +193,80 @@ private fun LoadedThread(
     val haptics = LocalHapticFeedback.current
     val thread = state.thread
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
-    val collapsed =
-        rememberSaveable(
-            thread.key,
-            saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() }),
-        ) { mutableStateListOf<String>() }
+    var mediaFilter by rememberSaveable(thread.key) { mutableStateOf(com.orbin.uinext.MediaKindFilter.ALL) }
     val presentation = state.presentation
+    val memory by viewModel.readerMemory.collectAsStateWithLifecycle()
+    val preferences by viewModel.readerPreferences.collectAsStateWithLifecycle()
+    val revealed by viewModel.revealedPosts.collectAsStateWithLifecycle()
     val statusText = readerThreadStatus(presentation)
-    val rows = presentation.rows
+    val rows by produceState<List<com.orbin.uinext.Post>>(
+        emptyList(),
+        initialScrollLoaded,
+        presentation,
+        memory.foldedPaths,
+        memory.hiddenPostIds,
+        memory.hiddenPosterIds,
+        memory.seenPostIds,
+        preferences.threadLayout,
+        preferences.postFilterRules,
+        revealed,
+    ) {
+        if (!initialScrollLoaded) return@produceState
+        value =
+            withContext(Dispatchers.Default) {
+                presentation.readerRows(
+                    nested = preferences.threadLayout == com.orbin.core.model.ThreadLayout.NESTED,
+                    foldedPaths = memory.foldedPaths,
+                    hiddenPostIds = memory.hiddenPostIds,
+                    hiddenPosterIds = memory.hiddenPosterIds,
+                    postFilters = preferences.postFilterRules,
+                    revealedPostIds = revealed,
+                    unseenPostIds = presentation.unseenPostIds(memory.seenPostIds),
+                )
+            }
+    }
+    val detailRows by produceState<List<com.orbin.uinext.Post>>(
+        emptyList(),
+        initialScrollLoaded,
+        presentation,
+        memory.hiddenPostIds,
+        memory.hiddenPosterIds,
+        memory.seenPostIds,
+        preferences.postFilterRules,
+        revealed,
+    ) {
+        if (!initialScrollLoaded) return@produceState
+        value =
+            withContext(Dispatchers.Default) {
+                presentation.readerRows(
+                    nested = false,
+                    hiddenPostIds = memory.hiddenPostIds,
+                    hiddenPosterIds = memory.hiddenPosterIds,
+                    postFilters = preferences.postFilterRules,
+                    revealedPostIds = revealed,
+                    unseenPostIds = presentation.unseenPostIds(memory.seenPostIds),
+                )
+            }
+    }
+    val visibleOwners =
+        remember(rows, memory.foldedPaths) {
+            rows
+                .filter {
+                    it.hiddenReason == null && !it.preview && it.branchPath !in memory.foldedPaths
+                }.mapTo(mutableSetOf()) { it.id }
+        }
+    val visibleFiles =
+        remember(presentation, visibleOwners) {
+            presentation.fileCells.filterIndexed { index, _ ->
+                presentation.postIdForMediaIndex(index)?.value?.toString() in
+                    visibleOwners
+            }
+        }
     val listState =
         remember(thread.key) {
             val saved = initialScrollPosition.takeIf { initialScrollLoaded }
-            val savedIdx = saved?.let { pos -> rows.indexOfFirst { it.post.id == pos.postId } } ?: -1
-            val unreadIdx = firstUnreadPostId?.let { id -> rows.indexOfFirst { it.post.id == id } } ?: -1
+            val savedIdx = saved?.let { pos -> rows.indexOfFirst { it.id == pos.postId.value.toString() } } ?: -1
+            val unreadIdx = firstUnreadPostId?.let { id -> rows.indexOfFirst { it.id == id.value.toString() } } ?: -1
             when {
                 savedIdx >= 0 -> LazyListState(savedIdx + 1, saved?.offsetPx?.coerceAtLeast(0) ?: 0)
                 unreadIdx > 0 -> LazyListState(unreadIdx + 1, 0)
@@ -193,47 +274,120 @@ private fun LoadedThread(
             }
         }
 
+    val inlineMedia = rememberThreadInlineMediaState(thread.key.toString())
     var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
     var downloadSheet by rememberSaveable(thread.key) { mutableStateOf(false) }
+    var pendingPublicDownload by rememberSaveable(thread.key) { mutableStateOf<Boolean?>(null) }
     var initialScrollRestored by rememberSaveable(thread.key) { mutableStateOf(false) }
+    var requestedPostUnavailable by remember(thread.key) { mutableStateOf(false) }
+
+    fun downloadMedia(videosOnly: Boolean) {
+        if (preferences.askBeforePhotos && !preferences.privateSavedFiles) {
+            pendingPublicDownload = videosOnly
+        } else {
+            viewModel.downloadAllMedia(videosOnly)
+        }
+    }
 
     fun saveVisiblePost(flush: Boolean = false) {
         if (layout == ThreadLayout.FILES || rows.isEmpty()) return
         val visibleItem = listState.firstVisibleItemIndex
         val postIndex = (visibleItem - 1).coerceIn(0, rows.lastIndex)
         val offset = if (visibleItem == 0) 0 else listState.firstVisibleItemScrollOffset
-        viewModel.saveScrollPosition(rows[postIndex].post.id, offset)
+        rows[postIndex].id.toLongOrNull()?.let {
+            viewModel.saveScrollPosition(
+                PostId(it),
+                offset,
+                rows[postIndex].branchPath,
+            )
+        }
         if (flush) viewModel.flushScrollPosition()
     }
 
     fun openMedia(index: Int) {
         saveVisiblePost(flush = true)
-        onOpenMedia(index)
+        val filter = if (layout == ThreadLayout.FILES) mediaFilter else com.orbin.uinext.MediaKindFilter.ALL
+        if (onOpenMediaFiltered != null) onOpenMediaFiltered(index, filter) else onOpenMedia(index)
     }
 
-    LaunchedEffect(initialScrollLoaded, initialScrollPosition, firstUnreadPostId, rows, initialScrollRestored) {
-        if (!initialScrollLoaded || initialScrollRestored) return@LaunchedEffect
+    LaunchedEffect(initialScrollLoaded, initialScrollPosition, rows, initialScrollRestored, initialPostId) {
+        val restorePending = initialScrollLoaded && !initialScrollRestored
+        val waitingForTarget = rows.isEmpty() || initialPostId != null
+        if (!restorePending || waitingForTarget) {
+            return@LaunchedEffect
+        }
         val saved = initialScrollPosition
-        val savedTarget = saved?.let { pos -> rows.indexOfFirst { it.post.id == pos.postId } } ?: -1
+        val exactPath =
+            if (preferences.autoScrollToLastSeen) {
+                memory.rowPath?.let { path ->
+                    rows.indexOfFirst {
+                        it.branchPath ==
+                            path
+                    }
+                }
+                    ?: -1
+            } else {
+                -1
+            }
+        val savedTarget =
+            if (exactPath >=
+                0
+            ) {
+                exactPath
+            } else {
+                saved?.let { pos -> rows.indexOfFirst { it.id == pos.postId.value.toString() } } ?: -1
+            }
         if (savedTarget >= 0) {
             listState.scrollToItem(savedTarget + 1, saved?.offsetPx?.coerceAtLeast(0) ?: 0)
-        } else {
-            val unread = firstUnreadPostId?.let { id -> rows.indexOfFirst { it.post.id == id } } ?: -1
-            if (unread > 0) listState.scrollToItem(unread + 1)
         }
         initialScrollRestored = true
     }
 
-    LaunchedEffect(mediaScrollIndex, rows, layout, initialScrollRestored) {
+    LaunchedEffect(initialPostId, rows, layout, initialScrollLoaded) {
+        val id = initialPostId ?: return@LaunchedEffect
+        if (!initialScrollLoaded || rows.isEmpty()) return@LaunchedEffect
+        if (layout == ThreadLayout.FILES) {
+            layout = ThreadLayout.POSTS
+            return@LaunchedEffect
+        }
+        val number = id.toString()
+        val target = rows.indexOfFirst { it.id == number && !it.preview }
+        val missingProjectedTarget = target < 0 && number in presentation.rowsById
+        val targetRow = rows.getOrNull(target)
+        val targetNeedsReveal =
+            targetRow?.let { it.hiddenReason != null || it.branchPath in memory.foldedPaths } == true
+        if (missingProjectedTarget || targetNeedsReveal) {
+            viewModel.expandToPost(id)
+            return@LaunchedEffect
+        }
+        requestedPostUnavailable = target < 0
+        listState.scrollToItem(if (target >= 0) target + 1 else 0)
+        initialScrollRestored = true
+        if (target >= 0) {
+            viewModel.saveScrollPosition(PostId(id), 0, rows[target].branchPath)
+            viewModel.flushScrollPosition()
+        }
+        onInitialPostConsumed()
+    }
+
+    LaunchedEffect(mediaScrollIndex, rows, layout, initialScrollRestored, initialPostId) {
         val index = mediaScrollIndex ?: return@LaunchedEffect
-        if (!initialScrollRestored || layout == ThreadLayout.FILES || rows.isEmpty()) return@LaunchedEffect
+        val waitingForPosts = !initialScrollRestored || layout == ThreadLayout.FILES
+        val waitingForTarget = rows.isEmpty() || initialPostId != null
+        if (waitingForPosts || waitingForTarget) {
+            return@LaunchedEffect
+        }
 
         val targetPostId = presentation.postIdForMediaIndex(index)
-        val target = targetPostId?.let { postId -> rows.indexOfFirst { it.post.id == postId } } ?: -1
+        val target = targetPostId?.let { postId -> rows.indexOfFirst { it.id == postId.value.toString() } } ?: -1
+        if (target < 0 && targetPostId != null && targetPostId.value.toString() in presentation.rowsById) {
+            viewModel.expandToPost(targetPostId.value)
+            return@LaunchedEffect
+        }
         if (target >= 0) {
-            collapsed.remove(rows[target].row.id)
+            rows[target].id.toLongOrNull()?.let(viewModel::expandToPost)
             listState.scrollToItem(target + 1)
-            viewModel.saveScrollPosition(rows[target].post.id, 0)
+            rows[target].id.toLongOrNull()?.let { viewModel.saveScrollPosition(PostId(it), 0, rows[target].branchPath) }
             viewModel.flushScrollPosition()
         }
         onMediaScrollConsumed()
@@ -252,7 +406,7 @@ private fun LoadedThread(
         onDispose { saveVisiblePost(flush = true) }
     }
 
-    val collapsedSet by remember { derivedStateOf { collapsed.toSet() } }
+    val collapsedSet = memory.foldedPaths
 
     NextPullToRefresh(
         isRefreshing = isRefreshing,
@@ -265,7 +419,26 @@ private fun LoadedThread(
                 board = "/${thread.key.board.value}/",
                 siteName = thread.key.provider.value,
                 onBack = onBack,
-                posts = presentation.rowModels,
+                posts = rows,
+                allPosts = detailRows,
+                externalPostId = initialPostId?.toString(),
+                onHidePost = { it.id.toLongOrNull()?.let(viewModel::toggleHiddenPost) },
+                onHidePosterId = { it.posterId?.let(viewModel::toggleHiddenPoster) },
+                onRevealPost = { it.id.toLongOrNull()?.let(viewModel::revealPost) },
+                onVisiblePosts = viewModel::markVisible,
+                onMarkAllRead = viewModel::markAllRead,
+                unreadPostIds = presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() },
+                onMediaFilterChange = { mediaFilter = it },
+                onAddPostFilter = { post, target ->
+                    val pattern =
+                        when (target) {
+                            com.orbin.uinext.PostFilterTarget.TEXT -> post.body.take(80)
+                            com.orbin.uinext.PostFilterTarget.NAME -> post.posterName.orEmpty()
+                            com.orbin.uinext.PostFilterTarget.TRIPCODE -> post.posterTripcode.orEmpty()
+                            com.orbin.uinext.PostFilterTarget.COUNTRY -> post.posterCountry.orEmpty()
+                        }
+                    viewModel.addPostFilter(PostFilterKind.valueOf(target.name), pattern)
+                },
                 subtitle = statusText,
                 statusText = statusText,
                 reloading = isRefreshing,
@@ -277,7 +450,7 @@ private fun LoadedThread(
                     if (layout != ThreadLayout.FILES) saveVisiblePost(flush = true)
                     layout = it
                 },
-                files = presentation.fileCells,
+                files = visibleFiles,
                 onOpenFile = { cell -> presentation.mediaIndex[cell.id]?.let(::openMedia) },
                 fileTile = { cell, tileModifier ->
                     presentation.attachmentsById[cell.id]?.let { attachment ->
@@ -294,7 +467,7 @@ private fun LoadedThread(
                 collapsed = collapsedSet,
                 onToggleCollapse = { post ->
                     haptics.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                    if (!collapsed.remove(post.id)) collapsed.add(post.id)
+                    viewModel.toggleFold(post.branchPath)
                 },
                 listState = listState,
                 scrollToPostId = scrollTarget,
@@ -337,7 +510,7 @@ private fun LoadedThread(
                             row = entry,
                             onQuoteClick = { target ->
                                 val id = target.value.toString()
-                                collapsed.remove(id)
+                                id.toLongOrNull()?.let(viewModel::expandToPost)
                                 scrollTarget = id
                             },
                             onLinkClick = { link -> SafeExternalLinks.open(context, link) },
@@ -345,15 +518,14 @@ private fun LoadedThread(
                     }
                 },
                 media = { row, tileModifier ->
-                    // The post's first file, cropped to the square the screen gives it. The viewer
-                    // pages through the rest.
-                    presentation.rowsById[row.id]?.post?.attachments?.firstOrNull()?.let { first ->
-                        MediaThumbnail(
-                            attachment = first.copy(isSpoiler = false),
-                            fullResolution = false,
+                    presentation.rowsById[row.id]?.post?.attachments?.firstOrNull()?.let { attachment ->
+                        ThreadInlineMedia(
+                            attachment = attachment.copy(isSpoiler = false),
+                            identity = "${thread.key}/${row.stableKey}",
+                            state = inlineMedia,
+                            playback = preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board),
+                            onOpenFullscreen = { presentation.firstMediaIndex(row.id)?.let(::openMedia) },
                             modifier = tileModifier,
-                            cornerRadius = 0.dp,
-                            onClick = { presentation.firstMediaIndex(row.id)?.let(::openMedia) },
                         )
                     }
                 },
@@ -365,7 +537,7 @@ private fun LoadedThread(
                         }
                     },
                 onPostReference = { id ->
-                    collapsed.remove(id)
+                    id.toLongOrNull()?.let(viewModel::expandToPost)
                     scrollTarget = id
                 },
                 wideWindow = wideWindow,
@@ -374,6 +546,13 @@ private fun LoadedThread(
                 ReaderRefreshFailure(
                     cause = failure.readerCause(),
                     onRetry = viewModel::refresh,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+            if (state.refreshFailure == null && requestedPostUnavailable) {
+                ReaderRefreshFailure(
+                    cause = ReaderFailureCause.NOT_FOUND,
+                    message = stringResource(R.string.thread_requested_post_unavailable),
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
@@ -389,7 +568,7 @@ private fun LoadedThread(
                         TextButton(
                             onClick = {
                                 downloadSheet = false
-                                viewModel.downloadAllMedia(videosOnly = true)
+                                downloadMedia(videosOnly = true)
                             },
                         ) { Text(stringResource(R.string.thread_download_videos)) }
                     },
@@ -397,9 +576,22 @@ private fun LoadedThread(
                         TextButton(
                             onClick = {
                                 downloadSheet = false
-                                viewModel.downloadAllMedia(videosOnly = false)
+                                downloadMedia(videosOnly = false)
                             },
                         ) { Text(stringResource(R.string.thread_download_everything)) }
+                    },
+                )
+            }
+            pendingPublicDownload?.let { videosOnly ->
+                NextConfirmDialog(
+                    title = stringResource(R.string.thread_public_save_title),
+                    message = stringResource(R.string.thread_public_save_message),
+                    confirmLabel = stringResource(R.string.thread_public_save_confirm),
+                    destructive = false,
+                    onDismiss = { pendingPublicDownload = null },
+                    onConfirm = {
+                        pendingPublicDownload = null
+                        viewModel.downloadAllMedia(videosOnly)
                     },
                 )
             }

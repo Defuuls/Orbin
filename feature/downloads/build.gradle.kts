@@ -14,6 +14,8 @@ android {
 
 dependencies {
     implementation(project(":ui-next"))
+    implementation(project(":media"))
+    implementation(libs.androidx.core.ktx)
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)

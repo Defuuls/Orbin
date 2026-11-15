@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ios_media_file_information">File information</string>
+    <string name="ios_media_image_search">Search image</string>
+    <string name="ios_media_filter_all">All media</string>
+    <string name="ios_media_filter">Show media</string>
+    <string name="ios_saved_export_title">Save to device?</string>
+    <string name="ios_saved_export_confirm">Selected files will be exported to Photos or Files outside Orbin’s private library.</string>
+    <string name="ios_saved_cancel">Cancel</string>
+    <string name="ios_saved_continue">Save</string>
+    <string name="ios_saved_prepare">Preparing saved media</string>
+    <string name="ios_saved_delete">Deleting saved media</string>
+    <string name="ios_saved_unavailable">Saved media is unavailable.</string>
+    <string name="ios_saved_library_tab">Library</string>
+    <string name="ios_saved_transfers_tab">Transfers</string>
+    <string name="ios_media_auto_advance_on">Play next when video ends</string>
+    <string name="ios_media_auto_advance_off">Stay on the current video</string>
+</resources>

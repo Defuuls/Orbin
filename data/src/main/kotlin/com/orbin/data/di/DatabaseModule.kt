@@ -3,6 +3,7 @@ package com.orbin.data.di
 import android.content.Context
 import androidx.room.Room
 import com.orbin.data.crypto.DatabasePassphrase
+import com.orbin.data.crypto.prepareDatabase
 import com.orbin.data.database.DatabaseKeyRepair
 import com.orbin.data.database.MIGRATION_2_3
 import com.orbin.data.database.MIGRATION_3_4
@@ -10,6 +11,7 @@ import com.orbin.data.database.MIGRATION_4_5
 import com.orbin.data.database.MIGRATION_5_6
 import com.orbin.data.database.MIGRATION_6_7
 import com.orbin.data.database.MIGRATION_7_8
+import com.orbin.data.database.MIGRATION_8_9
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.database.SelfHealingOpenHelperFactory
 import com.orbin.data.database.dao.BoardDao
@@ -39,13 +41,23 @@ object DatabaseModule {
     @Singleton
     fun providesDatabase(
         @ApplicationContext context: Context,
+    ): OrbinDatabase = openDatabase(context)
+
+    /** The same encrypted provider path with a caller-owned file name, used by isolated fixtures. */
+    fun openDatabase(
+        context: Context,
+        name: String = OrbinDatabase.NAME,
+    ): OrbinDatabase = createDatabase(context, DatabasePassphrase(context).resolve(), name)
+
+    internal fun createDatabase(
+        context: Context,
+        resolved: DatabasePassphrase.Resolved,
+        name: String = OrbinDatabase.NAME,
     ): OrbinDatabase {
-        // sqlcipher-android does not auto-load its native library the way the older
-        // android-database-sqlcipher artifact did; without this, SupportOpenHelperFactory's first
-        // open throws UnsatisfiedLinkError on nativeOpen.
+        // sqlcipher-android requires loading its native library before the first lazy Room open.
         System.loadLibrary("sqlcipher")
-        val (passphrase, wipeDatabase, persisted) = DatabasePassphrase(context).resolve()
-        if (!persisted) {
+        val passphrase = resolved.passphrase
+        if (!resolved.persisted) {
             // The Keystore would not save a key. Opening orbin.db with one that will not exist next
             // launch would fail and the repair below would delete it, so this session runs in
             // memory and leaves the file for the next start to open. The reader is told.
@@ -53,14 +65,10 @@ object DatabaseModule {
                 .inMemoryDatabaseBuilder(context, OrbinDatabase::class.java)
                 .build()
         }
-        if (wipeDatabase) {
-            // No usable passphrase existed yet: either a pre-encryption install left a plaintext
-            // orbin.db that SQLCipher cannot open, or the stored key was lost. Drop the old file so
-            // the database is (re)created encrypted with the fresh passphrase.
-            context.deleteDatabase(OrbinDatabase.NAME)
-        }
+        // A cached key-loss verdict must never unlink a database another graph already opened.
+        resolved.prepareDatabase(context, name)
         return Room
-            .databaseBuilder(context, OrbinDatabase::class.java, OrbinDatabase.NAME)
+            .databaseBuilder(context, OrbinDatabase::class.java, name)
             // The passphrase array must stay intact for as long as the database is open: Room opens
             // lazily (on whichever thread first touches a DAO, long after this function returns) and
             // SQLCipher keeps the array by reference, re-reading it every time the connection pool
@@ -70,9 +78,17 @@ object DatabaseModule {
             .openHelperFactory(
                 SelfHealingOpenHelperFactory(
                     delegate = SupportOpenHelperFactory(passphrase),
-                    repair = DatabaseKeyRepair(context, passphrase)::repair,
+                    repair = DatabaseKeyRepair(context, passphrase, name)::repair,
                 ),
-            ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+            ).addMigrations(
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+            )
             // Only v1 predates exported schemas, so it cannot be migrated faithfully and is
             // recreated. Every version from 2 on migrates: a missing migration now fails loudly
             // at open time instead of silently dropping the user's bookmarks and history.

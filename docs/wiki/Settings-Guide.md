@@ -52,9 +52,9 @@ remains reachable even when it has not yet been assigned to a named group.
 | Clear local activity | Clears browsing history, download records and cached images; Android also clears recent searches. Tap again within four seconds to confirm. Saved files in system storage remain. |
 | Clear image cache | Clears cached images, which can download again. Android displays the cache size. |
 | Video cache size / Clear video cache | Android controls the encrypted video cache and displays its current usage. |
-| Export data / Import data | Transfers compatible portable settings, followed boards and bookmarks; Android also includes saved searches. |
+| Export data / Import data | Transfers portable settings, followed/favorite boards, bookmarks, persistent history, reader memory and saved media in a ZIP. Android also includes saved searches. Legacy JSON imports remain supported. |
 
-Exported backups are plain JSON files and do not inherit the encryption of the
+Exported backups are portable, unencrypted ZIP files and do not inherit the encryption of the
 live database. Invalid entries are skipped. iOS treats restoration as completed
 setup; Android's summary counts accepted saved searches.
 

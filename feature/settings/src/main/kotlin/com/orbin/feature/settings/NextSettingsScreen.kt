@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val CLEAR_ARMED_MS = 4_000L
-private const val BACKUP_FILE_NAME = "orbin-backup.json"
+private const val BACKUP_FILE_NAME = "orbin-backup.zip"
 private const val BYTES_PER_MB = 1024L * 1024L
 
 /**
@@ -86,22 +86,34 @@ fun NextSettingsScreen(
 
     // The ViewModel produces the text and never sees a SAF URI; writing the file is this side's job.
     val backupExporter =
-        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
             uri ?: return@rememberLauncherForActivityResult
-            viewModel.exportBackup(appVersionName(context)) { json ->
+            viewModel.exportBackupArchive(appVersionName(context)) { path ->
                 withContext(Dispatchers.IO) {
-                    context.contentResolver.openOutputStream(uri)?.use { it.write(json.toByteArray()) }
-                        ?: error("Could not open the selected file for writing")
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        java.io
+                            .File(path)
+                            .inputStream()
+                            .use { input -> input.copyBackupArchiveTo(output) }
+                    } ?: error("Could not open the selected file for writing")
                 }
             }
         }
     val backupImporter =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri ?: return@rememberLauncherForActivityResult
-            viewModel.importBackup {
-                withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use { it.readBackupText() }
-                        ?: error("Could not open the selected file for reading")
+            viewModel.importBackupArchive {
+                val staged = java.io.File.createTempFile("orbin-import-", ".archive", context.cacheDir)
+                var completed = false
+                try {
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use { input ->
+                            staged.outputStream().use { output -> input.copyBackupArchiveTo(output) }
+                        } ?: error("Could not open the selected file for reading")
+                    }
+                    staged.absolutePath.also { completed = true }
+                } finally {
+                    if (!completed) staged.delete()
                 }
             }
         }
@@ -121,12 +133,14 @@ fun NextSettingsScreen(
 
     val cacheLabel = imageCacheUsageBytes.cacheSizeLabel(strings)
     val videoCacheLabel = videoCacheUsageBytes.cacheSizeLabel(strings)
+    val mediaCacheLabel = (imageCacheUsageBytes + videoCacheUsageBytes).cacheSizeLabel(strings)
     val model =
         remember(
             settings,
             updateCheck,
             cacheLabel,
             videoCacheLabel,
+            mediaCacheLabel,
             clearArmed,
             checkUpdatesOnLaunch,
             strictDns,
@@ -142,6 +156,7 @@ fun NextSettingsScreen(
                 clearArmed,
                 checkUpdatesOnLaunch,
                 DnsRowState(strict = strictDns, fallbackActive = dnsFallbackActive),
+                mediaCacheLabel = mediaCacheLabel,
             )
         }
 
@@ -165,7 +180,10 @@ fun NextSettingsScreen(
                         "inheritPlayback" -> if (preferences.hasOverride(playbackScope)) null else playback
                         else -> null
                     }
-                if (item.id == "openThreadComments") {
+                if (item.id == "nsfwReveal") {
+                    com.orbin.domain.privacy.PrivacySession
+                        .revealNsfw()
+                } else if (item.id == "openThreadComments") {
                     viewModel.setOpenThreadComments(!settings.openThreadComments)
                 } else if (item.id in
                     setOf("startMuted", "loopVideos", "inheritPlayback", "resetPlayback")
@@ -179,35 +197,61 @@ fun NextSettingsScreen(
                         SettingKind.ACTION ->
                             dispatch(
                                 item = item,
-                                onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
-                                onImport = { backupImporter.launch(arrayOf("application/json", "*/*")) },
-                                onClear = {
-                                    if (clearArmed) {
-                                        clearArmed = false
-                                        viewModel.clearLocalActivity { cleared ->
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(
-                                                    strings.get(
-                                                        if (cleared) {
-                                                            R.string.settings_clear_activity_done
-                                                        } else {
-                                                            R.string.settings_clear_activity_failed
-                                                        },
-                                                    ),
-                                                )
+                                actions =
+                                    SettingsActions(
+                                        onExport = { backupExporter.launch(BACKUP_FILE_NAME) },
+                                        onImport = {
+                                            backupImporter.launch(
+                                                arrayOf(
+                                                    "application/zip",
+                                                    "application/json",
+                                                    "application/octet-stream",
+                                                ),
+                                            )
+                                        },
+                                        onClear = {
+                                            if (clearArmed) {
+                                                clearArmed = false
+                                                viewModel.clearLocalActivity { cleared ->
+                                                    scope.launch {
+                                                        snackbarHostState.showSnackbar(
+                                                            strings.get(
+                                                                if (cleared) {
+                                                                    R.string.settings_clear_activity_done
+                                                                } else {
+                                                                    R.string.settings_clear_activity_failed
+                                                                },
+                                                            ),
+                                                        )
+                                                    }
+                                                }
+                                            } else {
+                                                clearArmed = true
                                             }
-                                        }
-                                    } else {
-                                        clearArmed = true
-                                    }
-                                },
-                                onClearImageCache = viewModel::clearImageCache,
-                                onClearVideoCache = viewModel::clearVideoCache,
-                                onCheckUpdates = {
-                                    if (updateCheck != UpdateCheckState.Checking) {
-                                        viewModel.checkForUpdate(appVersionName(context))
-                                    }
-                                },
+                                        },
+                                        onClearMediaCache = {
+                                            viewModel.clearMediaCache { cleared ->
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        strings.get(
+                                                            if (cleared) {
+                                                                R.string.settings_clear_media_cache_done
+                                                            } else {
+                                                                R.string.settings_clear_media_cache_failed
+                                                            },
+                                                        ),
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onClearImageCache = viewModel::clearImageCache,
+                                        onClearVideoCache = viewModel::clearVideoCache,
+                                        onCheckUpdates = {
+                                            if (updateCheck != UpdateCheckState.Checking) {
+                                                viewModel.checkForUpdate(appVersionName(context))
+                                            }
+                                        },
+                                    ),
                             )
                         SettingKind.INFO -> Unit
                     }
@@ -238,27 +282,34 @@ fun NextSettingsScreen(
                 model.commit(item.id, value)
                 expanded = null
             },
+            onCommitFilters = { item, rules -> viewModel.commitFilters(item.id, rules) },
             modifier = modifier,
         )
     }
 }
 
+private data class SettingsActions(
+    val onExport: () -> Unit,
+    val onImport: () -> Unit,
+    val onClear: () -> Unit,
+    val onClearMediaCache: () -> Unit,
+    val onClearImageCache: () -> Unit,
+    val onClearVideoCache: () -> Unit,
+    val onCheckUpdates: () -> Unit,
+)
+
 private fun dispatch(
     item: SettingItem,
-    onExport: () -> Unit,
-    onImport: () -> Unit,
-    onClear: () -> Unit,
-    onClearImageCache: () -> Unit,
-    onClearVideoCache: () -> Unit,
-    onCheckUpdates: () -> Unit,
+    actions: SettingsActions,
 ) {
     when (item.id) {
-        "exportBackup" -> onExport()
-        "importBackup" -> onImport()
-        "clearActivity" -> onClear()
-        "clearImageCache" -> onClearImageCache()
-        "clearVideoCache" -> onClearVideoCache()
-        "checkUpdates" -> onCheckUpdates()
+        "exportBackup" -> actions.onExport()
+        "importBackup" -> actions.onImport()
+        "clearActivity" -> actions.onClear()
+        "clearMediaCache" -> actions.onClearMediaCache()
+        "clearImageCache" -> actions.onClearImageCache()
+        "clearVideoCache" -> actions.onClearVideoCache()
+        "checkUpdates" -> actions.onCheckUpdates()
     }
 }
 
@@ -276,22 +327,31 @@ private fun BackupStatus.message(strings: SettingsStrings): String =
     when (this) {
         BackupStatus.Exported -> strings.get(R.string.settings_backup_saved)
         is BackupStatus.Imported ->
-            if (summary.skippedUnknownProvider > 0) {
-                strings.get(
-                    R.string.settings_backup_restored_skipped,
-                    summary.subscribedBoards,
-                    summary.bookmarks,
-                    summary.savedSearches,
-                    summary.skippedUnknownProvider,
-                )
-            } else {
-                strings.get(
-                    R.string.settings_backup_restored,
-                    summary.subscribedBoards,
-                    summary.bookmarks,
-                    summary.savedSearches,
-                )
-            }
+            (
+                if (summary.skippedUnknownProvider > 0) {
+                    strings.get(
+                        R.string.settings_backup_restored_skipped,
+                        summary.subscribedBoards,
+                        summary.bookmarks,
+                        summary.savedSearches,
+                        summary.skippedUnknownProvider,
+                    )
+                } else {
+                    strings.get(
+                        R.string.settings_backup_restored,
+                        summary.subscribedBoards,
+                        summary.bookmarks,
+                        summary.savedSearches,
+                    )
+                }
+            ) +
+                if (summary.mediaFiles >
+                    0
+                ) {
+                    strings.get(R.string.settings_backup_restored_media, summary.mediaFiles)
+                } else {
+                    ""
+                }
         is BackupStatus.Failed -> message
     }
 

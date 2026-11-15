@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,11 +25,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
@@ -89,6 +92,8 @@ import com.orbin.uinext.resources.reader_search
 import com.orbin.uinext.resources.reader_sort
 import com.orbin.uinext.resources.reader_sort_bump_order
 import com.orbin.uinext.resources.reader_sort_catalog
+import com.orbin.uinext.resources.reader_sort_images
+import com.orbin.uinext.resources.reader_sort_oldest
 import com.orbin.uinext.resources.reader_sort_reply_count
 import com.orbin.uinext.resources.reader_unread
 import com.orbin.uinext.resources.reader_view_card
@@ -146,20 +151,24 @@ data class CatalogSortTab(
     val label: String,
 )
 
-/** Ids for the three Coral catalog tabs, matching [com.orbin.core.model.CatalogSort] names. */
+/** Stable host sort IDs for every primary catalog order. */
 object CatalogSortTabs {
     const val CATALOG = "CREATION_DATE"
     const val BUMP_ORDER = "BUMP_ORDER"
     const val REPLY_COUNT = "REPLY_COUNT"
+    const val OLDEST = "OLDEST"
+    const val IMAGE_COUNT = "IMAGE_COUNT"
 }
 
-/** Catalog, Bump order, and Reply count — only existing [CatalogSort] values, mockup labels. */
+/** The five browsing orders shared by both hosts, with their persisted model IDs. */
 @Composable
 fun catalogSortTabs(): List<CatalogSortTab> =
     listOf(
         CatalogSortTab(CatalogSortTabs.CATALOG, stringResource(Res.string.reader_sort_catalog)),
         CatalogSortTab(CatalogSortTabs.BUMP_ORDER, stringResource(Res.string.reader_sort_bump_order)),
+        CatalogSortTab(CatalogSortTabs.OLDEST, stringResource(Res.string.reader_sort_oldest)),
         CatalogSortTab(CatalogSortTabs.REPLY_COUNT, stringResource(Res.string.reader_sort_reply_count)),
+        CatalogSortTab(CatalogSortTabs.IMAGE_COUNT, stringResource(Res.string.reader_sort_images)),
     )
 
 /**
@@ -210,6 +219,14 @@ fun BoardScreen(
     Column(
         modifier =
             modifier
+                .readerKeyboardShortcuts(
+                    onBack =
+                        onNavigation.takeIf {
+                            navigation == ReaderNavigation.BACK
+                        },
+                    onRefresh = onReload,
+                    onSearch = onSearch,
+                ).readerBackSwipe(onNavigation.takeIf { navigation == ReaderNavigation.BACK })
                 .fillMaxSize()
                 .background(colors.background)
                 .semantics { paneTitle = board },
@@ -1323,8 +1340,9 @@ private fun CatalogSortTabRow(
                 .border(ReaderSize.hairline, reader.hairline, RoundedCornerShape(16.dp))
                 .padding(4.dp)
                 .heightIn(min = MIN_TOUCH_TARGET)
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         tabs.forEach { tab ->
@@ -1332,7 +1350,7 @@ private fun CatalogSortTabRow(
             Column(
                 modifier =
                     Modifier
-                        .weight(1f)
+                        .widthIn(min = 64.dp)
                         .heightIn(min = MIN_TOUCH_TARGET)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (selected) reader.accent.copy(alpha = 0.14f) else Color.Transparent)
@@ -1340,7 +1358,8 @@ private fun CatalogSortTabRow(
                             selected = selected,
                             role = Role.Tab,
                             onClick = { if (!selected) onSelect(tab.id) },
-                        ).semantics { contentDescription = tab.label },
+                        ).semantics { contentDescription = tab.label }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {

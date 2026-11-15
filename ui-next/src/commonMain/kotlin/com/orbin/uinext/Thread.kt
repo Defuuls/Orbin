@@ -40,13 +40,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -62,6 +71,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isFinite
 import androidx.compose.ui.unit.sp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed
@@ -97,6 +109,8 @@ import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -106,6 +120,8 @@ enum class ThreadLayout {
     FILES,
     CARDS,
 }
+
+enum class PostFilterTarget { TEXT, NAME, TRIPCODE, COUNTRY }
 
 /**
  * A post as the thread screen draws it. Hosts build these once per load, already formatted.
@@ -131,6 +147,20 @@ data class Post(
     val stableKey: String = id,
     val imageSpoiler: Boolean = false,
     val subject: String = "",
+    val branchPath: String = stableKey,
+    val primaryPath: String = branchPath,
+    val ancestorPaths: List<String> = emptyList(),
+    val descendantIds: Set<String> = emptySet(),
+    val hiddenReason: String? = null,
+    val preview: Boolean = false,
+    val unseen: Boolean = false,
+    val posterId: String? = null,
+    val posterName: String? = null,
+    val posterTripcode: String? = null,
+    val posterCountry: String? = null,
+    val posterCapcode: String? = null,
+    val hiddenByUser: Boolean = false,
+    val hiddenByPoster: Boolean = false,
 )
 
 object ThreadTags {
@@ -197,32 +227,124 @@ fun ThreadScreen(
     onOpenBrowser: (() -> Unit)? = null,
     statusText: String? = null,
     stateContent: (@Composable () -> Unit)? = null,
+    allPosts: List<Post> = posts,
+    onHidePost: ((Post) -> Unit)? = null,
+    onHidePosterId: ((Post) -> Unit)? = null,
+    onAddPostFilter: ((Post, PostFilterTarget) -> Unit)? = null,
+    onRevealPost: ((Post) -> Unit)? = null,
+    onVisiblePosts: ((Set<String>) -> Unit)? = null,
+    onMarkAllRead: (() -> Unit)? = null,
+    onMediaFilterChange: (MediaKindFilter) -> Unit = {},
+    unreadPostIds: Set<String> = emptySet(),
+    externalPostId: String? = null,
 ) {
+    var detailPostId by rememberSaveable(subject, board, siteName) { mutableStateOf<String?>(null) }
+    val detailPost = detailPostId?.let { id -> allPosts.firstOrNull { it.id == id } }
+    var detailById by rememberSaveable(subject, board, siteName) { mutableStateOf(false) }
+    var postMenu by remember { mutableStateOf<Post?>(null) }
+    var mediaFilter by rememberSaveable(subject, board, siteName) { mutableStateOf(MediaKindFilter.ALL) }
+    LaunchedEffect(externalPostId) { if (externalPostId != null) detailPostId = null }
+    val displayedPosts =
+        detailPost?.let { root ->
+            allPosts
+                .distinctBy { it.id }
+                .filter { post ->
+                    if (detailById) post.posterId == root.posterId else post.id in root.descendantIds
+                }.map {
+                    if (detailById) {
+                        it.copy(
+                            depth = 0,
+                            hiddenReason = null,
+                            preview = false,
+                        )
+                    } else {
+                        it.copy(depth = 0)
+                    }
+                }
+        } ?: posts
+    val detailState = rememberLazyListState()
     val colors = reader
-    val state = listState ?: rememberLazyListState()
+    val rootState = listState ?: rememberLazyListState()
+    val state = if (detailPost == null) rootState else detailState
     val filesState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
+    fun openDetail(
+        post: Post,
+        byId: Boolean,
+    ) {
+        detailPostId = post.id
+        detailById = byId
+        scope.launch { detailState.scrollToItem(0) }
+    }
     val showingPosts = layout != ThreadLayout.FILES
     val cardMode = layout == ThreadLayout.CARDS
+    val closeDetail: () -> Unit = { detailPostId = null }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = detailPost != null,
+        onBackCompleted = closeDetail,
+    )
+    val visibleCallback by rememberUpdatedState(onVisiblePosts)
+    LaunchedEffect(state, displayedPosts, showingPosts, collapsed) {
+        if (!showingPosts) return@LaunchedEffect
+        val byKey = displayedPosts.associateBy { it.stableKey }
+        snapshotFlow { state.layoutInfo.visibleItemsInfo.mapNotNull { byKey[it.key.toString()] } }
+            .collectLatest { visible ->
+                delay(180)
+                val read =
+                    visible.filter {
+                        it.hiddenReason == null &&
+                            !it.preview &&
+                            it.branchPath !in collapsed &&
+                            it.id !in collapsed
+                    }
+                visibleCallback?.invoke(read.mapTo(mutableSetOf()) { it.id })
+            }
+    }
+    val input = LocalReaderInputState.current
+    val effectiveBack = if (detailPost != null) closeDetail else onBack
 
     // Expands a collapsed post before bringing it into view, so the reader lands on its text.
     val reveal: (String) -> Unit = { id ->
-        val target = posts.indexOfFirst { it.id == id }
-        if (target >= 0) {
-            if (posts[target].id in collapsed) onToggleCollapse?.invoke(posts[target])
+        val target = displayedPosts.indexOfFirst { it.id == id }
+        if (target < 0 ||
+            displayedPosts.getOrNull(target)?.preview == true ||
+            displayedPosts.getOrNull(target)?.hiddenReason != null
+        ) {
+            onPostReference?.invoke(id)
+        } else {
+            if (displayedPosts[target].branchPath in collapsed ||
+                displayedPosts[target].id in collapsed
+            ) {
+                onToggleCollapse?.invoke(displayedPosts[target])
+            }
             scope.launch { state.animateScrollToItem(target + HEADER_ITEMS) }
         }
     }
-    var returnToId by remember { mutableStateOf<String?>(null) }
-    var returnToNumber by remember { mutableStateOf<String?>(null) }
+    var returnToId by rememberSaveable { mutableStateOf<String?>(null) }
+    var returnToNumber by rememberSaveable { mutableStateOf<String?>(null) }
+    var returnToPath by rememberSaveable { mutableStateOf<String?>(null) }
+    var returnToOffset by rememberSaveable { mutableStateOf(0) }
+    var handledReference by remember { mutableStateOf<String?>(null) }
+    var returnDetailPostId by rememberSaveable { mutableStateOf<String?>(null) }
+    var returnDetailById by rememberSaveable { mutableStateOf(false) }
     val openReference: ((String) -> Unit)? =
         onPostReference?.let { outer ->
             { id ->
-                val visible = posts.getOrNull((state.firstVisibleItemIndex - HEADER_ITEMS).coerceAtLeast(0))
+                if (detailPost != null && displayedPosts.none { it.id == id }) {
+                    returnDetailPostId = detailPostId
+                    returnDetailById = detailById
+                    detailPostId = null
+                }
+                val visible = displayedPosts.getOrNull((state.firstVisibleItemIndex - HEADER_ITEMS).coerceAtLeast(0))
                 if (visible != null && visible.id != id) {
                     returnToId = visible.id
                     returnToNumber = visible.number
+                    returnToPath = visible.branchPath
+                    returnToOffset = state.firstVisibleItemScrollOffset
                 }
+                handledReference = id
                 outer(id)
             }
         }
@@ -236,16 +358,57 @@ fun ThreadScreen(
         onBackTo
             ?: returnToId?.let { id ->
                 {
-                    reveal(id)
+                    if (returnDetailPostId != null) {
+                        detailPostId = returnDetailPostId
+                        detailById = returnDetailById
+                        returnDetailPostId = null
+                    } else {
+                        val pathIndex = displayedPosts.indexOfFirst { it.branchPath == returnToPath }
+                        val target = if (pathIndex >= 0) pathIndex else displayedPosts.indexOfFirst { it.id == id }
+                        if (target >=
+                            0
+                        ) {
+                            scope.launch { state.animateScrollToItem(target + HEADER_ITEMS, returnToOffset) }
+                        } else {
+                            reveal(id)
+                        }
+                    }
                     returnToId = null
                     returnToNumber = null
                 }
             }
-    LaunchedEffect(scrollToPostId, posts, layout) {
+    LaunchedEffect(scrollToPostId, displayedPosts, layout) {
         if (!showingPosts) return@LaunchedEffect
-        val target = posts.indexOfFirst { it.id == scrollToPostId }
-        if (scrollToPostId != null && target >= 0) {
-            if (posts[target].id in collapsed) onToggleCollapse?.invoke(posts[target])
+        if (scrollToPostId == null) {
+            handledReference = null
+            return@LaunchedEffect
+        }
+        if (handledReference != scrollToPostId) {
+            val source = displayedPosts.getOrNull((state.firstVisibleItemIndex - HEADER_ITEMS).coerceAtLeast(0))
+            if (source != null && source.id != scrollToPostId) {
+                returnToId = source.id
+                returnToNumber = source.number
+                returnToPath = source.branchPath
+                returnToOffset = state.firstVisibleItemScrollOffset
+            }
+            handledReference = scrollToPostId
+        }
+        if (detailPost != null &&
+            displayedPosts.none { it.id == scrollToPostId } &&
+            allPosts.any { it.id == scrollToPostId }
+        ) {
+            returnDetailPostId = detailPostId
+            returnDetailById = detailById
+            detailPostId = null
+            return@LaunchedEffect
+        }
+        val target = displayedPosts.indexOfFirst { it.id == scrollToPostId }
+        if (target >= 0) {
+            if (displayedPosts[target].branchPath in collapsed ||
+                displayedPosts[target].id in collapsed
+            ) {
+                onToggleCollapse?.invoke(displayedPosts[target])
+            }
             state.animateScrollToItem(target + HEADER_ITEMS)
             onScrollConsumed()
         }
@@ -256,16 +419,72 @@ fun ThreadScreen(
             modifier
                 .fillMaxSize()
                 .background(colors.background)
-                .semantics { paneTitle = subject },
+                .readerKeyboardShortcuts(onBack = effectiveBack, onRefresh = onReload)
+                .readerBackSwipe(effectiveBack)
+                .onPreviewKeyEvent { event ->
+                    val editingOrCommand = input.textEntryActive || event.isMetaPressed || event.isCtrlPressed
+                    if (event.type != KeyEventType.KeyDown || editingOrCommand) {
+                        false
+                    } else {
+                        when (event.key) {
+                            Key.J, Key.DirectionDown -> {
+                                scope.launch {
+                                    state.animateScrollToItem(
+                                        (state.firstVisibleItemIndex + 1).coerceAtMost(displayedPosts.size),
+                                    )
+                                }
+                                true
+                            }
+                            Key.K, Key.DirectionUp -> {
+                                scope.launch {
+                                    state.animateScrollToItem(
+                                        (state.firstVisibleItemIndex - 1).coerceAtLeast(0),
+                                    )
+                                }
+                                true
+                            }
+                            Key.Escape -> {
+                                if (detailPost !=
+                                    null
+                                ) {
+                                    closeDetail()
+                                    true
+                                } else if (onBack != null) {
+                                    onBack()
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            Key.R ->
+                                if ((event.isMetaPressed || event.isCtrlPressed) &&
+                                    onReload != null
+                                ) {
+                                    onReload()
+                                    true
+                                } else {
+                                    false
+                                }
+                            else -> false
+                        }
+                    }
+                }.semantics { paneTitle = subject },
     ) {
         ReaderAppBar(
-            title = subject,
+            title = detailPost?.let { if (detailById) "ID:${it.posterId}" else "Replies to ${it.number}" } ?: subject,
             subtitle = listOf(sourceLabel(siteName), board).filter(String::isNotBlank).joinToString(" · "),
-            navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
-            onNavigation = onBack ?: {},
+            navigation = if (onBack != null || detailPost != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+            onNavigation = if (detailPost != null) closeDetail else onBack ?: {},
             onTitleTap = { scope.launch { state.animateScrollToItem(0) } },
             titleTapLabel = stringResource(Res.string.next_thread_scroll_top),
-            actions = threadActions(watching, layout, onWatch, onLayoutChange, onDownloadAll),
+            actions =
+                threadActions(
+                    watching,
+                    layout,
+                    onWatch,
+                    onLayoutChange.takeIf { detailPost == null },
+                    onDownloadAll,
+                ),
             overflow =
                 threadOverflow(
                     subject = subject,
@@ -280,7 +499,10 @@ fun ThreadScreen(
                     onDownloadAll = onDownloadAll,
                     onSavePage = onSavePage,
                     onOpenBrowser = onOpenBrowser,
-                ),
+                ) +
+                    listOfNotNull(
+                        onMarkAllRead?.let { ReaderMenuItem("Mark all read", icon = ReaderIcons.Check, onClick = it) },
+                    ),
         )
         Box(Modifier.fillMaxWidth().height(ReaderSize.progress)) {
             if (reloading) {
@@ -298,8 +520,16 @@ fun ThreadScreen(
             return@Column
         }
         val unreadFrom =
-            firstUnreadPostId?.let { id -> posts.indexOfFirst { it.id == id } }?.takeIf { it > 0 }
-        val newCount = unreadFrom?.let { posts.size - it }
+            firstUnreadPostId?.let { id -> displayedPosts.indexOfFirst { it.id == id } }?.takeIf { it > 0 }
+        val newCount =
+            if (unreadPostIds.isNotEmpty()) {
+                unreadPostIds.size
+            } else {
+                unreadFrom?.let {
+                    displayedPosts.size -
+                        it
+                }
+            }
         ReaderFastScrollThumb(state = state, enabled = showingPosts, modifier = Modifier.fillMaxSize()) {
             BoxWithConstraints(
                 Modifier
@@ -307,7 +537,8 @@ fun ThreadScreen(
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
             ) {
                 val fileColumns = catalogGridColumns(maxWidth)
-                val fileRows = remember(files, fileColumns) { files.chunked(fileColumns) }
+                val visibleFiles = remember(files, mediaFilter) { files.filter { mediaFilter.shows(it.kind) } }
+                val fileRows = remember(visibleFiles, fileColumns) { visibleFiles.chunked(fileColumns) }
                 val cardImageHeight = orbinCatalogCardSpec(maxWidth).imageHeight
                 val postImageWidth = (maxWidth - 28.dp).coerceAtLeast(1.dp)
                 val viewportHeight = maxHeight
@@ -333,6 +564,19 @@ fun ThreadScreen(
                         },
                 ) {
                     item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
+                        if (!showingPosts) {
+                            MediaFilterPills(
+                                filter = mediaFilter,
+                                images = files.count { it.kind == MediaKind.IMAGE },
+                                videos = files.count { it.kind == MediaKind.VIDEO },
+                                onChange = {
+                                    mediaFilter = it
+                                    onMediaFilterChange(it)
+                                },
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                total = files.size,
+                            )
+                        }
                         if (!subtitle.isNullOrBlank()) {
                             Text(
                                 text = subtitle,
@@ -347,7 +591,7 @@ fun ThreadScreen(
                         }
                     }
                     if (showingPosts) {
-                        itemsIndexed(posts, key = {
+                        itemsIndexed(displayedPosts, key = {
                             _,
                             post,
                             ->
@@ -356,12 +600,14 @@ fun ThreadScreen(
                             index,
                             post,
                             ->
+                            val hasHideActions = onHidePost != null || onHidePosterId != null || onAddPostFilter != null
+                            val hasPostDetails = post.descendantIds.isNotEmpty() || !post.posterId.isNullOrBlank()
                             Column(Modifier.fillMaxWidth()) {
                                 if (index > 0 && post.id == firstUnreadPostId) UnreadMarker()
                                 PostCell(
                                     post = post,
-                                    original = index == 0,
-                                    collapsed = post.id in collapsed,
+                                    original = post.id == allPosts.firstOrNull()?.id,
+                                    collapsed = post.branchPath in collapsed || post.id in collapsed,
                                     wideWindow = wideWindow,
                                     cardImageHeight = if (cardMode) cardImageHeight else null,
                                     inlineImageHeight =
@@ -371,6 +617,16 @@ fun ThreadScreen(
                                         ),
                                     onToggleCollapse = onToggleCollapse,
                                     onClick = onPostClick,
+                                    onMenu =
+                                        if (hasHideActions || hasPostDetails) {
+                                            { postMenu = it }
+                                        } else {
+                                            null
+                                        },
+                                    onReveal = onRevealPost,
+                                    onShowId = { openDetail(it, true) },
+                                    onReplies = { openDetail(it, false) },
+                                    unreadReplies = post.descendantIds.count { it in unreadPostIds },
                                     onReference = openReference,
                                     body = body,
                                     media = media,
@@ -379,8 +635,8 @@ fun ThreadScreen(
                         }
                         item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
                             ThreadStatus(
-                                replies = maxOf(0, posts.size - 1),
-                                fileCount = posts.sumOf { it.mediaCount },
+                                replies = maxOf(0, displayedPosts.distinctBy { it.id }.size - 1),
+                                fileCount = displayedPosts.distinctBy { it.id }.sumOf { it.mediaCount },
                                 statusText = statusText,
                             )
                         }
@@ -408,6 +664,72 @@ fun ThreadScreen(
                 )
             }
         }
+    }
+    postMenu?.let { post ->
+        val actions =
+            buildList {
+                if (post.descendantIds.isNotEmpty()) {
+                    add(NextSheetAction("Replies to ${post.number}", { openDetail(post, false) }, ReaderIcons.Chat))
+                }
+                if (!post.posterId.isNullOrBlank()) {
+                    add(NextSheetAction("Posts by ID:${post.posterId}", { openDetail(post, true) }, ReaderIcons.Info))
+                }
+                if (post.id != allPosts.firstOrNull()?.id) {
+                    onHidePost?.let { hide ->
+                        add(
+                            NextSheetAction(if (post.hiddenByUser) "Stop hiding this post" else "Hide this post", {
+                                hide(post)
+                            }, ReaderIcons.Hide),
+                        )
+                    }
+                }
+                if (!post.posterId.isNullOrBlank()) {
+                    onHidePosterId?.let { hide ->
+                        val label =
+                            if (post.hiddenByPoster) "Stop hiding ID:${post.posterId}" else "Hide ID:${post.posterId}"
+                        add(
+                            NextSheetAction(label, {
+                                hide(post)
+                            }, ReaderIcons.Hide),
+                        )
+                    }
+                }
+                onAddPostFilter?.let { filter ->
+                    if (post.body.isNotBlank()) {
+                        add(
+                            NextSheetAction("Hide posts with this text", {
+                                filter(post, PostFilterTarget.TEXT)
+                            }, ReaderIcons.Hide),
+                        )
+                    }
+                    if (!post.posterName.isNullOrBlank() &&
+                        !post.posterName.equals("Anonymous", true)
+                    ) {
+                        add(
+                            NextSheetAction(
+                                "Hide posts by ${post.posterName}",
+                                { filter(post, PostFilterTarget.NAME) },
+                                ReaderIcons.Hide,
+                            ),
+                        )
+                    }
+                    if (!post.posterTripcode.isNullOrBlank()) {
+                        add(
+                            NextSheetAction("Hide posts by ${post.posterTripcode}", {
+                                filter(post, PostFilterTarget.TRIPCODE)
+                            }, ReaderIcons.Hide),
+                        )
+                    }
+                    if (!post.posterCountry.isNullOrBlank()) {
+                        add(
+                            NextSheetAction("Hide posts from ${post.posterCountry}", {
+                                filter(post, PostFilterTarget.COUNTRY)
+                            }, ReaderIcons.Hide),
+                        )
+                    }
+                }
+            }
+        if (actions.isNotEmpty()) OrbinActionSheet(post.number, actions, onDismiss = { postMenu = null })
     }
 }
 
@@ -648,6 +970,11 @@ private fun PostCell(
     inlineImageHeight: Dp,
     onToggleCollapse: ((Post) -> Unit)?,
     onClick: ((Post) -> Unit)?,
+    onMenu: ((Post) -> Unit)?,
+    onReveal: ((Post) -> Unit)?,
+    onShowId: ((Post) -> Unit)?,
+    onReplies: ((Post) -> Unit)?,
+    unreadReplies: Int,
     onReference: ((String) -> Unit)?,
     body: (@Composable (Post) -> Unit)?,
     media: (@Composable (Post, Modifier) -> Unit)?,
@@ -663,7 +990,45 @@ private fun PostCell(
             OrbinType.postDetails
                 .withReaderFont()
         }
-    val clickModifier = if (onClick != null) Modifier.nextClickable(role = null) { onClick(post) } else Modifier
+    val hasClickAction = onClick != null || onMenu != null || onToggleCollapse != null
+    val hasPlaceholderAction = post.hiddenReason != null || post.preview
+    val clickModifier =
+        if (hasClickAction || hasPlaceholderAction) {
+            Modifier.nextClickable(role = null, onLongClick = onMenu?.let { { it(post) } }) {
+                when {
+                    post.hiddenReason != null -> onReveal?.invoke(post)
+                    post.preview -> onReference?.invoke(post.id)
+                    onClick != null -> onClick(post)
+                    else -> onToggleCollapse?.invoke(post)
+                }
+            }
+        } else {
+            Modifier
+        }
+    if (post.hiddenReason != null || post.preview) {
+        Column(
+            Modifier
+                .testTag(ThreadTags.POST)
+                .fillMaxWidth()
+                .then(
+                    clickModifier,
+                ).padding(start = 14.dp + indent, end = 14.dp, top = 12.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(post.number, style = detailStyle, color = colors.inkMuted)
+            Text(
+                post.hiddenReason ?: "Reply shown in another branch",
+                style = bodyStyle,
+                color = colors.inkMuted,
+                modifier = Modifier.testTag("thread-placeholder:${post.branchPath}"),
+            )
+            if (post.hiddenReason != null && onReveal != null) OrbinTextButton("Reveal post", { onReveal(post) })
+            if (post.preview && onReference != null) OrbinTextButton("Go to full post", { onReference(post.id) })
+            if (post.replies > 0) Text("${post.replies} replies", style = detailStyle, color = colors.accent)
+            if (unreadReplies > 0) Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+        }
+        return
+    }
     CompositionLocalProvider(
         LocalReaderPostBodyStyle provides bodyStyle,
         LocalTextStyle provides bodyStyle,
@@ -678,6 +1043,7 @@ private fun PostCell(
                         .then(clickModifier)
                         .semantics(mergeDescendants = true) {},
                 elevated = false,
+                containerColor = if (post.unseen) colors.accent.copy(alpha = 0.08f) else null,
                 shape = RoundedCornerShape(OrbinRadius.card),
             ) {
                 Column(
@@ -687,13 +1053,23 @@ private fun PostCell(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle, onShowId)
+                    if (collapsed &&
+                        unreadReplies > 0
+                    ) {
+                        Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+                    }
                     if (!collapsed) {
                         PostBody(post, body)
                         if (showThumbnail) {
                             PostThumbnail(post, media, Modifier.fillMaxWidth().height(cardImageHeight))
                         }
                         PostReplies(post, onReference)
+                        if (post.descendantIds.isNotEmpty() &&
+                            onReplies != null
+                        ) {
+                            OrbinTextButton("${post.replies} replies", { onReplies(post) })
+                        }
                     }
                 }
             }
@@ -702,7 +1078,7 @@ private fun PostCell(
                 Modifier
                     .testTag(ThreadTags.POST)
                     .fillMaxWidth()
-                    .background(colors.background)
+                    .background(if (post.unseen) colors.accent.copy(alpha = 0.08f) else colors.background)
                     .then(clickModifier)
                     .semantics(mergeDescendants = true) {},
             ) {
@@ -723,13 +1099,23 @@ private fun PostCell(
                         }.padding(start = 14.dp + indent, end = 14.dp, top = 11.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle)
+                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle, onShowId)
+                    if (collapsed &&
+                        unreadReplies > 0
+                    ) {
+                        Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+                    }
                     if (!collapsed) {
                         PostBody(post, body)
                         if (showThumbnail) {
                             PostThumbnail(post, media, Modifier.fillMaxWidth().height(inlineImageHeight))
                         }
                         PostReplies(post, onReference)
+                        if (post.descendantIds.isNotEmpty() &&
+                            onReplies != null
+                        ) {
+                            OrbinTextButton("${post.replies} replies", { onReplies(post) })
+                        }
                     }
                 }
                 ReaderHairline(Modifier.padding(start = 14.dp + indent, end = 14.dp))
@@ -802,8 +1188,26 @@ private fun PostHeader(
     collapsed: Boolean,
     onToggleCollapse: ((Post) -> Unit)?,
     detailStyle: TextStyle,
+    onShowId: ((Post) -> Unit)?,
 ) {
     val colors = reader
+    val author =
+        if (listOf(
+                post.posterName,
+                post.posterTripcode,
+                post.posterCountry,
+                post.posterCapcode,
+            ).any { !it.isNullOrBlank() }
+        ) {
+            listOfNotNull(
+                post.posterName,
+                post.posterTripcode,
+                post.posterCapcode,
+                post.posterCountry,
+            ).filter(String::isNotBlank).joinToString(" · ")
+        } else {
+            post.author
+        }
     val expandLabel = stringResource(Res.string.next_post_expand)
     val collapseLabel = stringResource(Res.string.next_post_collapse)
     val collapsedState = stringResource(Res.string.next_post_collapsed_state)
@@ -825,11 +1229,23 @@ private fun PostHeader(
                 ),
     ) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(ReaderSpace.line), verticalArrangement = Arrangement.Top) {
-            if (post.author.isNotBlank()) {
+            if (author.isNotBlank()) {
                 Text(
-                    text = post.author,
+                    text = author,
                     style = detailStyle.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
                     color = colors.ink,
+                )
+            }
+            if (!post.posterId.isNullOrBlank() && onShowId != null) {
+                Text(
+                    "ID:${post.posterId}",
+                    style = detailStyle.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.accent,
+                    modifier =
+                        Modifier
+                            .heightIn(min = MIN_TOUCH_TARGET)
+                            .nextClickable(role = Role.Button) { onShowId(post) }
+                            .padding(horizontal = 6.dp, vertical = 8.dp),
                 )
             }
             Text(text = post.number, style = detailStyle, color = colors.inkMuted)

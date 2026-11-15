@@ -11,6 +11,9 @@ internal interface NativeMediaPreloader {
 
 internal expect fun createNativeMediaPreloader(): NativeMediaPreloader
 
+/** Called before explicit viewer navigation; normal scrolling must still release its decoder. */
+internal expect fun prepareNativeMediaHandoff(url: String)
+
 /** Keeps the upcoming WebKit document in the viewer's live window without playing or taking input. */
 @Composable
 internal expect fun NativeMediaPreloadHost(preloader: NativeMediaPreloader)

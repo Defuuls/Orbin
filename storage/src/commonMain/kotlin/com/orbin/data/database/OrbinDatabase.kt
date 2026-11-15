@@ -8,17 +8,23 @@ import com.orbin.data.database.dao.BoardDao
 import com.orbin.data.database.dao.BookmarkDao
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.dao.HistoryDao
+import com.orbin.data.database.dao.MediaLibraryDao
+import com.orbin.data.database.dao.OfflineThreadCopyDao
 import com.orbin.data.database.dao.RecentSearchDao
 import com.orbin.data.database.dao.SavedSearchDao
 import com.orbin.data.database.dao.SavedThreadDao
+import com.orbin.data.database.dao.ThreadMemoryDao
 import com.orbin.data.database.entity.BoardEntity
 import com.orbin.data.database.entity.BookmarkEntity
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.data.database.entity.HistoryEntity
+import com.orbin.data.database.entity.MediaLibraryEntity
+import com.orbin.data.database.entity.OfflineThreadCopyEntity
 import com.orbin.data.database.entity.RecentSearchEntity
 import com.orbin.data.database.entity.SavedPostEntity
 import com.orbin.data.database.entity.SavedSearchEntity
 import com.orbin.data.database.entity.SavedThreadEntity
+import com.orbin.data.database.entity.ThreadMemoryEntity
 
 /**
  * The app's Room database, shared by Android and iOS. Schemas are exported to `storage/schemas`
@@ -32,6 +38,9 @@ import com.orbin.data.database.entity.SavedThreadEntity
 @Database(
     entities = [
         BookmarkEntity::class,
+        ThreadMemoryEntity::class,
+        OfflineThreadCopyEntity::class,
+        MediaLibraryEntity::class,
         HistoryEntity::class,
         RecentSearchEntity::class,
         DownloadEntity::class,
@@ -45,6 +54,12 @@ import com.orbin.data.database.entity.SavedThreadEntity
 )
 @ConstructedBy(OrbinDatabaseConstructor::class)
 abstract class OrbinDatabase : RoomDatabase() {
+    abstract fun offlineThreadCopyDao(): OfflineThreadCopyDao
+
+    abstract fun threadMemoryDao(): ThreadMemoryDao
+
+    abstract fun mediaLibraryDao(): MediaLibraryDao
+
     abstract fun boardDao(): BoardDao
 
     abstract fun savedThreadDao(): SavedThreadDao
@@ -63,7 +78,7 @@ abstract class OrbinDatabase : RoomDatabase() {
         const val NAME = "orbin.db"
 
         /** A bump needs a step in [OrbinSchemaMigrations], which both platforms open the database with. */
-        const val VERSION = 8
+        const val VERSION = 9
     }
 }
 

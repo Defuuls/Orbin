@@ -1,0 +1,24 @@
+Orbin uses FFmpegKit Extended and FFmpeg for local WebM-to-MP4 conversion.
+FFmpegKit wrapper copyright (c) 2025 Akash Patel; FFmpeg copyright the FFmpeg developers.
+The bundled base-small build is licensed under GNU LGPL version 3 or later, with
+GPL and nonfree components disabled. The LGPL and incorporated GPL license texts
+accompany this notice. Orbin does not restrict reverse engineering for debugging
+modifications to these libraries. The library remains a separately embedded dynamic
+framework; Orbin's complete application source and native package integration are
+available at https://github.com/Defuuls/Orbin .
+
+Immutable native source/build specification:
+https://github.com/akashskypatel/ffmpeg-kit-builders/tree/4e18e05b007024cdb2574fee6f90e55b27681038
+Binary release: v0.10.5-ios, bundle-base-ios-universal-small-lgpl.xcframework.zip
+SHA-256: 34d13d53814e1bc9148354d62d122a058e1d07d8a81b3cba3e5b89edf645316c
+https://github.com/akashskypatel/ffmpeg-kit-builders/releases/tag/v0.10.5-ios
+
+Native decoding uses FFmpeg VP8/VP9 and Opus support. Encoding uses Apple's
+VideoToolbox H.264 encoder and FFmpeg's AAC encoder. No libx264, libx265, or
+nonfree codec is enabled. The archive's generated config.h declares
+FFMPEG_LICENSE "LGPL version 3 or later" and the native adapter verifies
+GPL/nonfree build flags before use.
+
+Supporting library source/licenses can be obtained from the pinned builder's
+source and build scripts. Rebuild the same dynamic framework and relink using
+Orbin's published XcodeGen and local SwiftPM package sources.

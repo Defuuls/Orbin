@@ -7,4 +7,8 @@
     <cache-path
         name="updates"
         path="updates/" />
+    <!-- Explicit saved-media shares: each operation gets its own temporary directory. -->
+    <cache-path
+        name="saved_media_shares"
+        path="shared-media/" />
 </paths>

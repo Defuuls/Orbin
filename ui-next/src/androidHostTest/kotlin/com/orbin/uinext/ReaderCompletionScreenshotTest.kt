@@ -393,5 +393,11 @@ private val completionPosts =
 private val completionFiles =
     listOf("JPG 640×480 · 128 KB", "PNG 320×240 · 64 KB", "JPG 800×600 · 192 KB", "JPG 1024×768 · 256 KB")
         .mapIndexed { index, details ->
-            MediaCell(id = "fourchan/g/100/file-$index", board = "/g/", spoiler = index == 1, details = details)
+            MediaCell(
+                id = "fourchan/g/100/file-$index",
+                board = "/g/",
+                spoiler = index == 1,
+                details = details,
+                kind = MediaKind.IMAGE,
+            )
         }

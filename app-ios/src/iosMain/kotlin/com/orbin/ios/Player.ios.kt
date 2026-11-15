@@ -34,8 +34,6 @@ import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
 import platform.AVFoundation.AVPlayerItemStatusReadyToPlay
 import platform.AVFoundation.AVPlayerItemStatusUnknown
 import platform.AVFoundation.AVPlayerTimeControlStatusWaitingToPlayAtSpecifiedRate
-import platform.AVFoundation.asset
-import platform.AVFoundation.cancelLoading
 import platform.AVFoundation.currentItem
 import platform.AVFoundation.currentTime
 import platform.AVFoundation.defaultRate
@@ -44,7 +42,6 @@ import platform.AVFoundation.muted
 import platform.AVFoundation.pause
 import platform.AVFoundation.play
 import platform.AVFoundation.rate
-import platform.AVFoundation.replaceCurrentItemWithPlayerItem
 import platform.AVFoundation.seekToTime
 import platform.AVFoundation.status
 import platform.AVFoundation.timeControlStatus
@@ -89,10 +86,13 @@ internal actual fun NativePlayer(
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
     onPlaybackReadyChange: ((Boolean) -> Unit)?,
+    onPlaybackEnded: (() -> Unit)?,
 ) {
+    val handoff = remember(url, preloader) { NativePlaybackContinuity.takeNative(url) }
+    val bookmark = remember(url, preloader) { handoff?.bookmark ?: NativePlaybackContinuity.bookmark(url) }
     val player =
         remember(url, preloader) {
-            preloader?.takeNative(url)
+            handoff?.player ?: preloader?.takeNative(url)
                 ?: NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = initiallyMuted } }
         } ?: return
     val controller =
@@ -102,12 +102,13 @@ internal actual fun NativePlayer(
                 allowsPictureInPicturePlayback = !feedMode
             }
         }
-    var muted by remember(player) { mutableStateOf(player.muted) }
+    var muted by remember(player) { mutableStateOf(bookmark?.muted ?: player.muted) }
     val currentLoop = rememberUpdatedState(loop)
     val currentSpeed = rememberUpdatedState(mediaPlaybackSpeed(playbackSpeed))
     val reportIntent by rememberUpdatedState(onPlayIntentChange)
     val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
     val reportReady by rememberUpdatedState(onPlaybackReadyChange)
+    val reportEnded by rememberUpdatedState(onPlaybackEnded)
     val currentActive = rememberUpdatedState(active)
     val foreground =
         remember(player) {
@@ -115,7 +116,9 @@ internal actual fun NativePlayer(
                 !feedMode || UIApplication.sharedApplication.applicationState == UIApplicationStateActive,
             )
         }
-    var playRequested by remember(player) { mutableStateOf(active && autoPlay) }
+    var playRequested by remember(player) { mutableStateOf(active && (bookmark?.playing ?: autoPlay)) }
+    var appliedInitialIntent by remember(player) { mutableStateOf(false) }
+    var appliedInitialAudio by remember(player) { mutableStateOf(false) }
     var state by remember(player) { mutableStateOf(VideoState(loading = active && autoPlay)) }
     val duration = remember(player) { ReadyMediaDuration() }
     DisposableEffect(player) {
@@ -132,8 +135,10 @@ internal actual fun NativePlayer(
                     player.play()
                     player.rate = currentSpeed.value
                 } else if (!currentLoop.value) {
+                    val completedWhilePlaying = playRequested && visibleAndForeground
                     playRequested = false
                     reportIntent?.invoke(false)
+                    if (completedWhilePlaying) reportEnded?.invoke()
                 }
             }
         val resignObserver =
@@ -169,23 +174,38 @@ internal actual fun NativePlayer(
             center.removeObserver(observer)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
-            player.pause()
-            // Stop the asset's outstanding loads too, so nothing keeps the item's network and
-            // decoder alive until Kotlin's collector releases the player object.
-            player.currentItem?.asset?.cancelLoading()
-            player.replaceCurrentItemWithPlayerItem(null)
+            controller.player = null
+            NativePlaybackContinuity.retain(
+                url,
+                player,
+                PlaybackBookmark(seconds(player.currentTime()), playRequested, muted),
+            )
             reportReady?.invoke(false)
         }
     }
     // Audio policy must not change a manually started or paused player's playback state.
     LaunchedEffect(player, initiallyMuted) {
-        muted = if (feedMode) initiallyMuted else initiallyMuted && SessionAudio.muted
+        muted =
+            if (!appliedInitialAudio && bookmark != null) {
+                bookmark.muted
+            } else if (feedMode) {
+                initiallyMuted
+            } else {
+                initiallyMuted && SessionAudio.muted
+            }
+        appliedInitialAudio = true
         player.muted = muted
         val category = if (muted) AVAudioSessionCategoryAmbient else AVAudioSessionCategoryPlayback
         AVAudioSession.sharedInstance().setCategory(category, error = null)
     }
+    LaunchedEffect(player) {
+        if (handoff == null && bookmark != null && bookmark.position > 0.0) {
+            player.seekToTime(CMTimeMakeWithSeconds(bookmark.position, SEEK_TIMESCALE))
+        }
+    }
     LaunchedEffect(player, active, autoPlay) {
-        playRequested = active && autoPlay
+        playRequested = active && (if (!appliedInitialIntent) bookmark?.playing ?: autoPlay else autoPlay)
+        if (active) appliedInitialIntent = true
     }
     LaunchedEffect(player, active, playRequested, foreground.value) {
         if (active && playRequested && foreground.value) {
@@ -241,6 +261,7 @@ internal actual fun NativePlayer(
                     loading = loading,
                     displayReady = ready && displayed && !loading,
                 )
+            NativePlaybackContinuity.remember(url, PlaybackBookmark(position, playRequested, muted))
             reportReady?.invoke(state.displayReady && foreground.value)
             delay(CONTROLS_REFRESH_MS)
         }
@@ -347,13 +368,18 @@ internal actual fun NativeWebMPlayer(
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
     onPlaybackReadyChange: ((Boolean) -> Unit)?,
+    onPlaybackEnded: (() -> Unit)?,
 ) {
-    var muted by remember(url, initiallyMuted) { mutableStateOf(initiallyMuted) }
-    var playRequested by remember(url) { mutableStateOf(active && autoPlay) }
+    val handoff = remember(url, preloader) { NativePlaybackContinuity.takeWebM(url) }
+    val bookmark = remember(url, preloader) { handoff?.bookmark ?: NativePlaybackContinuity.bookmark(url) }
+    var muted by remember(url, initiallyMuted) { mutableStateOf(bookmark?.muted ?: initiallyMuted) }
+    var playRequested by remember(url) { mutableStateOf(active && (bookmark?.playing ?: autoPlay)) }
+    var appliedInitialIntent by remember(url) { mutableStateOf(false) }
     val reportIntent by rememberUpdatedState(onPlayIntentChange)
     val reportMuteIntent by rememberUpdatedState(onMuteIntentChange)
     val reportReady by rememberUpdatedState(onPlaybackReadyChange)
-    var playCommand by remember(url) { mutableIntStateOf(0) }
+    val reportEnded by rememberUpdatedState(onPlaybackEnded)
+    var playCommand by remember(url) { mutableIntStateOf((bookmark?.command ?: -1) + 1) }
     var foreground by remember(url) {
         mutableStateOf(
             !feedMode || UIApplication.sharedApplication.applicationState == UIApplicationStateActive,
@@ -366,17 +392,28 @@ internal actual fun NativeWebMPlayer(
         WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop, playbackSpeed)
     }
     val live = remember(url) { LiveWebMSession() }
+    val restorePosition = bookmark?.position?.takeIf { it.isFinite() && it > 0.0 }
     val navigation =
         remember(url) {
             WebMPageDelegate { webView ->
                 if (live.active && webView.hasPlaybackSurface()) {
+                    if (handoff == null && restorePosition != null) {
+                        webView.evaluateJavaScript(
+                            "(function(){var v=document.getElementById('v');if(!v||v.__orbinRestoredPosition)return;" +
+                                "v.__orbinRestoredPosition=true;" +
+                                "function restore(){v.currentTime=$restorePosition;}" +
+                                "if(v.readyState>=1)restore();" +
+                                "else v.addEventListener('loadedmetadata',restore,{once:true});})()",
+                            completionHandler = null,
+                        )
+                    }
                     webView.evaluateJavaScript(webMPlaybackScript(request()), completionHandler = null)
                 }
             }
         }
     val webView =
         remember(url, preloader) {
-            val warmed = preloader?.takeWebM(url)
+            val warmed = handoff?.view ?: preloader?.takeWebM(url)
             if (warmed != null) {
                 warmed.applyWebMPolicy(navigation)
                 return@remember warmed
@@ -401,7 +438,7 @@ internal actual fun NativeWebMPlayer(
                         "${if (muted) "muted " else ""}" +
                         "${if (loop) "loop " else ""}playsinline>" +
                         "</video></body></html>"
-                loadHTMLString(string = html, baseURL = null)
+                loadWebMDocument(html, url, navigation)
             }
         }
     var state by remember(webView) { mutableStateOf(VideoState(loading = active && autoPlay)) }
@@ -412,7 +449,8 @@ internal actual fun NativeWebMPlayer(
         }
     }
     LaunchedEffect(webView, active, autoPlay) {
-        playRequested = active && autoPlay
+        playRequested = active && (if (!appliedInitialIntent) bookmark?.playing ?: autoPlay else autoPlay)
+        if (active) appliedInitialIntent = true
         playCommand++
     }
     // Apply controls immediately, then retry the same command after document/media loading.
@@ -432,12 +470,17 @@ internal actual fun NativeWebMPlayer(
             webView.script(webMPlaybackScript(sent))?.let(::parseWebMState)?.let {
                 if (playCommand == sent.command) {
                     state = it.copy(loading = sent.play && (it.loading || !it.playing) && !it.atEnd)
+                    NativePlaybackContinuity.remember(
+                        url,
+                        PlaybackBookmark(it.position, playRequested, muted, playCommand),
+                    )
                     reportReady?.invoke(it.displayReady && currentActive && foreground)
                     val completedClip = !currentLoop && it.atEnd
                     if (completedClip && playRequested) {
                         playRequested = false
                         playCommand++
                         reportIntent?.invoke(false)
+                        if (currentActive && foreground) reportEnded?.invoke()
                     }
                 }
             }
@@ -490,19 +533,34 @@ internal actual fun NativeWebMPlayer(
             }
         onDispose {
             live.active = false
+            navigation.releaseLocalDocument()
             center.removeObserver(foregroundObserver)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
             // A neighbouring pager page must not keep playing audio or video.
             webView.navigationDelegate = null
             webView.UIDelegate = null
-            webView.tearDownMedia()
+            webView.evaluateJavaScript(
+                webMPlaybackScript(WebMPlaybackRequest(playCommand + 1, false, muted, loop, playbackSpeed)),
+                null,
+            )
             reportReady?.invoke(false)
         }
     }
     Box(modifier) {
         key(webView) {
-            UIKitView(factory = { webView }, modifier = Modifier.fillMaxSize(), properties = PASS_THROUGH)
+            UIKitView(
+                factory = { webView },
+                onRelease = { released ->
+                    NativePlaybackContinuity.retain(
+                        url,
+                        released,
+                        PlaybackBookmark(state.position, playRequested, muted, playCommand),
+                    )
+                },
+                modifier = Modifier.fillMaxSize(),
+                properties = PASS_THROUGH,
+            )
         }
         val toggleMute: () -> Unit = {
             muted = SessionAudio.toggle(muted)

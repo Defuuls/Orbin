@@ -71,6 +71,8 @@ class DownloadsViewModelTest {
             boardId: String?,
             threadId: Long?,
             threadTitle: String?,
+            mediaContext: com.orbin.core.model.DownloadMediaContext?,
+            privateTarget: Boolean,
         ): Long = 0L
 
         override suspend fun refreshStatuses() {

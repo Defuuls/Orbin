@@ -6,6 +6,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.MediaAttachment
@@ -25,6 +26,9 @@ import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.core.testing.repository.FakeHistoryRepository
 import com.orbin.core.testing.repository.FakeSavedThreadRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
+import com.orbin.domain.bookmarks.collectionUnread
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import kotlinx.collections.immutable.ImmutableList
@@ -38,6 +42,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
@@ -163,13 +168,61 @@ class ThreadViewModelTest {
                 while (state !is ThreadUiState.Success) state = awaitItem()
                 assertThat(state.fromSavedCopy).isTrue()
                 viewModel.downloadAllMedia()
-                runCurrent()
+                viewModel.exportMessage.first { it != null }
                 assertThat(downloads.enqueuedUrls)
                     .containsExactly(
                         "https://example.org/jpg",
                         "https://example.org/webm",
                         "https://example.org/mp4",
                     )
+            }
+        }
+
+    @Test
+    fun `offline reading registers copied posts without clearing newer live replies`() =
+        runTest {
+            val memories = InMemoryThreadMemoryRepository()
+            val bookmarks = FakeBookmarkRepository()
+            bookmarks.addBookmark(Bookmark(key, "Watched", createdAtMillis = 0, isWatched = true, latestReplyCount = 5))
+            val replies =
+                persistentListOf(
+                    Post(PostId(THREAD + 1), BoardId(BOARD), ThreadId(THREAD), false),
+                    Post(PostId(THREAD + 2), BoardId(BOARD), ThreadId(THREAD), false),
+                )
+            val saved = defaultThread().copy(replies = replies, stats = ThreadStats(replyCount = 2))
+            val viewModel =
+                createViewModel(
+                    threadRepository = FailingThreadRepository(),
+                    savedThreadRepository = FakeSavedThreadRepository(mutableMapOf(key to saved)),
+                    bookmarkRepository = bookmarks,
+                    memoryRepository = memories,
+                )
+            viewModel.uiState.test {
+                assertThat(awaitSuccess().fromSavedCopy).isTrue()
+                assertThat(memories.get(key).knownPostIds).containsExactly(THREAD, THREAD + 1, THREAD + 2)
+                viewModel.markVisible(replies.mapTo(mutableSetOf()) { it.id.value.toString() })
+                runCurrent()
+                val bookmark = bookmarks.getBookmark(key)!!
+                assertThat(bookmark.latestReplyCount).isEqualTo(5)
+                assertThat(bookmark.lastSeenReplyCount).isEqualTo(0)
+                assertThat(bookmark.collectionUnread(memories.get(key))).isEqualTo(3)
+            }
+        }
+
+    @Test
+    fun `offline copy applies current NSFW covers before its files enter presentation`() =
+        runTest {
+            val viewModel =
+                createViewModel(
+                    threadRepository = FailingThreadRepository(),
+                    savedThreadRepository = FakeSavedThreadRepository(mutableMapOf(key to threadWithMixedMedia())),
+                    settingsRepository = FakeSettingsRepository(AppSettings.Default.copy(coverNsfwMedia = true)),
+                )
+            viewModel.uiState.test {
+                val saved = awaitSuccess()
+                assertThat(saved.fromSavedCopy).isTrue()
+                assertThat(saved.presentation.attachments).isNotEmpty()
+                assertThat(saved.presentation.attachments.all { it.isSpoiler }).isTrue()
             }
         }
 
@@ -189,7 +242,7 @@ class ThreadViewModelTest {
                 var state = awaitItem()
                 while (state !is ThreadUiState.Success) state = awaitItem()
                 viewModel.downloadAllMedia(videosOnly = true)
-                runCurrent()
+                viewModel.exportMessage.first { it != null }
                 assertThat(downloads.enqueuedUrls)
                     .containsExactly(
                         "https://example.org/webm",
@@ -411,6 +464,112 @@ class ThreadViewModelTest {
         return state
     }
 
+    @Test
+    fun `visible reading and branch position survive a fresh view model without clearing unread on load`() =
+        runTest {
+            val memories = InMemoryThreadMemoryRepository()
+            val bookmarks = FakeBookmarkRepository()
+            bookmarks.addBookmark(Bookmark(key, "Watched", createdAtMillis = 0, isWatched = true, latestReplyCount = 1))
+            val reply = Post(PostId(THREAD + 1), BoardId(BOARD), ThreadId(THREAD), false)
+            val loaded = defaultThread().copy(replies = persistentListOf(reply), stats = ThreadStats(replyCount = 1))
+            val first = createViewModel(thread = loaded, bookmarkRepository = bookmarks, memoryRepository = memories)
+            val path = "$PROVIDER/$BOARD/$THREAD/${THREAD + 1}"
+            first.uiState.test {
+                awaitSuccess()
+                runCurrent()
+                assertThat(bookmarks.getBookmark(key)?.lastSeenReplyCount).isEqualTo(0)
+                first.markVisible(setOf(reply.id.value.toString()))
+                first.toggleFold(path)
+                first.saveScrollPosition(reply.id, 23, path)
+                advanceTimeBy(650)
+                runCurrent()
+                assertThat(memories.get(key).seenPostIds).contains(reply.id.value)
+                assertThat(memories.get(key).foldedPaths).contains(path)
+                assertThat(bookmarks.getBookmark(key)?.lastSeenReplyCount).isEqualTo(1)
+            }
+            val reopened = createViewModel(thread = loaded, memoryRepository = memories)
+            reopened.initialScrollPosition.test {
+                val position = awaitItem() ?: awaitItem()
+                assertThat(position?.postId).isEqualTo(reply.id)
+                assertThat(position?.offsetPx).isEqualTo(23)
+            }
+        }
+
+    @Test
+    fun `session-only seen and mark all read do not persist bookmark acknowledgements`() =
+        runTest {
+            val memories = InMemoryThreadMemoryRepository()
+            val bookmarks = FakeBookmarkRepository()
+            bookmarks.addBookmark(Bookmark(key, "Watched", createdAtMillis = 0, isWatched = true, latestReplyCount = 2))
+            val replies =
+                persistentListOf(
+                    Post(PostId(THREAD + 1), BoardId(BOARD), ThreadId(THREAD), false),
+                    Post(PostId(THREAD + 2), BoardId(BOARD), ThreadId(THREAD), false),
+                )
+            val viewModel =
+                createViewModel(
+                    thread = defaultThread().copy(replies = replies, stats = ThreadStats(replyCount = 2)),
+                    bookmarkRepository = bookmarks,
+                    settingsRepository = FakeSettingsRepository(AppSettings.Default.copy(historySessionOnly = true)),
+                    memoryRepository = memories,
+                )
+            viewModel.uiState.test {
+                awaitSuccess()
+                runCurrent()
+                viewModel.markVisible(replies.mapTo(mutableSetOf()) { it.id.value.toString() })
+                runCurrent()
+                assertThat(bookmarks.getBookmark(key)?.lastSeenReplyCount).isEqualTo(0)
+                viewModel.markAllRead()
+                runCurrent()
+                assertThat(memories.get(key).acknowledgedReplyCount).isEqualTo(2)
+                assertThat(bookmarks.getBookmark(key)?.lastSeenReplyCount).isEqualTo(0)
+            }
+        }
+
+    @Test
+    fun `foreground polling backs off idle threads and stops when its reader leaves`() =
+        runTest {
+            val requests = mutableListOf<Boolean>()
+            val loaded = defaultThread()
+            val repository =
+                object : ThreadRepository {
+                    override fun observeThread(
+                        key: ThreadKey,
+                        forceRefresh: Boolean,
+                    ): Flow<OrbinResult<Thread>> =
+                        flow {
+                            requests += forceRefresh
+                            emit(OrbinResult.Success(loaded))
+                        }
+
+                    override suspend fun refreshThread(
+                        provider: ProviderId,
+                        board: BoardId,
+                        thread: ThreadId,
+                        forceRefresh: Boolean,
+                    ) = OrbinResult.Success(loaded)
+                }
+            val viewModel = createViewModel(threadRepository = repository)
+            viewModel.uiState.test {
+                awaitSuccess()
+                val poll = backgroundScope.launch { viewModel.pollWhileVisible() }
+                runCurrent()
+                advanceTimeBy(8_000)
+                runCurrent()
+                assertThat(requests).hasSize(2)
+                advanceTimeBy(15_999)
+                runCurrent()
+                assertThat(requests).hasSize(2)
+                advanceTimeBy(1)
+                runCurrent()
+                assertThat(requests).hasSize(3)
+                poll.cancel()
+                advanceTimeBy(120_000)
+                runCurrent()
+                assertThat(requests).hasSize(3)
+            }
+        }
+
     private fun createViewModel(
         thread: Thread = defaultThread(),
         threadRepository: ThreadRepository = FakeThreadRepository(thread),
@@ -420,6 +579,7 @@ class ThreadViewModelTest {
         historyRepository: FakeHistoryRepository = FakeHistoryRepository(),
         savedThreadRepository: FakeSavedThreadRepository = FakeSavedThreadRepository(),
         presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        memoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
     ) = ThreadViewModel(
         savedStateHandle =
             SavedStateHandle(
@@ -432,6 +592,7 @@ class ThreadViewModelTest {
         settingsRepository = settingsRepository,
         savedThreadRepository = savedThreadRepository,
         presentationDispatcher = presentationDispatcher,
+        threadMemoryRepository = memoryRepository,
     )
 
     private fun defaultThread() =

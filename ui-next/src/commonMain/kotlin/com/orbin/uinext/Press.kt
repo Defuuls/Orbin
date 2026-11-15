@@ -94,16 +94,18 @@ fun Modifier.nextClickable(
     onClick: () -> Unit,
 ): Modifier {
     val interaction = remember { MutableInteractionSource() }
-    return combinedClickable(
-        interactionSource = interaction,
-        indication = NextHighlightIndication,
-        enabled = enabled,
-        onClickLabel = onClickLabel,
-        role = role,
-        onLongClickLabel = onLongClickLabel,
-        onLongClick = onLongClick,
-        onClick = onClick,
-    )
+    val click =
+        combinedClickable(
+            interactionSource = interaction,
+            indication = NextHighlightIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onLongClickLabel = onLongClickLabel,
+            onLongClick = onLongClick,
+            onClick = onClick,
+        )
+    return if (onLongClick != null) click.readerSecondaryClick(enabled, onLongClick) else click
 }
 
 /**

@@ -21,6 +21,7 @@ internal actual fun NativePlayer(
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
     onPlaybackReadyChange: ((Boolean) -> Unit)?,
+    onPlaybackEnded: (() -> Unit)?,
 ) {
     Box(modifier)
 }
@@ -43,6 +44,7 @@ internal actual fun NativeWebMPlayer(
     playbackSpeed: Float,
     onDoubleTapSave: (() -> Unit)?,
     onPlaybackReadyChange: ((Boolean) -> Unit)?,
+    onPlaybackEnded: (() -> Unit)?,
 ) {
     Box(modifier)
 }

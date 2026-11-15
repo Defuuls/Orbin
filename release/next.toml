@@ -1,28 +1,40 @@
-# Orbin 209 - Aegirine
+# Orbin 210 - Agate
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 209
-codename = "Aegirine"
-version_code = 227
+number = 210
+codename = "Agate"
+version_code = 228
 
-highlight = "NekoSurf-inspired design across Android and iOS, with grouped settings, native iOS typography and adaptive tablet navigation."
+highlight = "Expanded Orbin reader with nested threads, independent favourites, full-site search, saved media and private offline backups."
 
 summary = [
-  "bump Orbin to 209-Aegirine / versionCode 227",
-  "apply NekoSurf layouts across Orbin while preserving its identity and features",
-  "add adaptive side navigation and retain full system text sizing",
+  "bump Orbin to 210-Agate / versionCode 228",
+  "complete NekoSurf reader workflows with Orbin branding and source-qualified data",
+  "add real saved-media, offline reading, privacy controls and portable ZIP backups",
 ]
 
 [changelog]
-Changed = [
-  "Applied NekoSurf-inspired surfaces, rounded controls, image-led catalogs and navigation across Android and iOS while retaining Orbin branding and existing browsing, saved-thread and media actions.",
-  "Replaced the settings directory with one grouped page containing an Orbin identity card, inline choices and all existing settings, search and platform actions.",
-  "Placed default thread media below comments with bounded full-width previews, and updated the media viewer with gradient overlays and rounded playback controls.",
-  "Used the native iOS system font while retaining Android Roboto and uncapped system text sizing on both platforms.",
-]
 Added = [
-  "Added a left navigation rail on primary pages at window widths of 840dp and above, preserving phone bottom navigation and screen state across resizing.",
+  "Added nested and flat conversations, recursive branch folding, poster-ID pages, post hiding, keyword and regex filters, durable reading positions and visibility-based unread tracking.",
+  "Added independent board favourites and a favourites feed, five catalog sorts, and validated pasted thread links for registered sites.",
+  "Added full-site 4chan search with visible verification, real result pagination and native Orbin content filtering; followed-board search remains available across sites.",
+  "Added a saved-media library with offline viewing, selection, bulk sharing, export and deletion, while retaining saved threads and transfer history.",
+  "Added gallery media filters, reverse image search, file details, optional video-end advance and native player handoffs between inline and fullscreen viewing.",
+  "Added native WebM-to-MP4 conversion for iOS Photos exports, retaining the original file and using protected temporary output.",
+  "Added automatic last-loaded thread copies for bookmarks and persistent visits, with an explicit offline notice and retry action.",
+  "Added ZIP backups containing portable preferences, collections, reading data and owned media, with integrity validation and compatible JSON imports.",
+  "Added Orbin and fifteen accent themes, session-only NSFW reveal and history, private saved-file destinations, and a combined cache-size and clearing action.",
+]
+Changed = [
+  "Restored image and text threads to Home and kept favourites, follows, saved threads and watched threads independent.",
+  "Extended tablet source-and-reader layouts to search, saved threads, history and watched threads, preserving selection and scroll state across window changes.",
+  "Added hardware keyboard commands, secondary-click menus and page swipe-back while preserving text editing, media gestures and system text sizing.",
+]
+Fixed = [
+  "Preserved quote-return positions, gallery-to-post navigation, temporary content covers, and private reading state across navigation and lifecycle changes.",
+  "Distinguished live, archived and deleted bookmarks and added confirmed collection cleanup and reading acknowledgements.",
 ]
 Testing = [
-  "Added grouped-settings, playback-action, text-sizing, RTL, adaptive-navigation and layout regressions; refreshed shared visual references for the new design.",
+  "Added source-qualified persistence, filtering, navigation, media-library, offline-copy, archive-integrity, privacy and native media regression coverage.",
+  "Added native CloudKit transport and merge tests for optionally entitled iOS builds; production iCloud activation remains separately provisioned.",
 ]

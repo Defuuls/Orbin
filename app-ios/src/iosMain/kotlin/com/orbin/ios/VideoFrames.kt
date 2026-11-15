@@ -38,6 +38,18 @@ internal interface VideoFrameExtraction {
 internal object VideoFrames {
     private val frames = LinkedHashMap<String, ImageBitmap>()
     private val framesMutex = NSLock()
+    private var generation = 0L
+
+    fun usageBytes(): Long =
+        framesMutex.withLock {
+            frames.values.sumOf { it.width.toLong() * it.height * RGBA_BYTES_PER_PIXEL }
+        }
+
+    fun clear() =
+        framesMutex.withLock {
+            generation++
+            frames.clear()
+        }
 
     fun cached(url: String): ImageBitmap? = framesMutex.withLock { frames[url] }
 
@@ -48,6 +60,7 @@ internal object VideoFrames {
     ): ImageBitmap? {
         framesMutex.withLock { frames[url] }?.let { return it }
         return iosVideoLoadGate.withPermit {
+            val requestedGeneration = framesMutex.withLock { generation }
             // Another request may have filled the cache while this one waited for its turn.
             framesMutex.withLock { frames[url] }?.let { return@withPermit it }
             val frame =
@@ -55,8 +68,10 @@ internal object VideoFrames {
                     createExtraction(url)?.let { decode(it) }
                 } ?: return@withPermit null
             framesMutex.withLock {
-                frames[url] = frame
-                while (frames.size > MAX_FRAMES) frames.remove(frames.keys.first())
+                if (generation == requestedGeneration) {
+                    frames[url] = frame
+                    while (frames.size > MAX_FRAMES) frames.remove(frames.keys.first())
+                }
             }
             frame
         }
@@ -161,3 +176,5 @@ private inline fun <T> NSLock.withLock(block: () -> T): T {
         unlock()
     }
 }
+
+private const val RGBA_BYTES_PER_PIXEL = 4

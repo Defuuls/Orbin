@@ -42,7 +42,7 @@ class BoardPickerViewModel
             cachedBoards
                 .combine(settings.settings) { entries, current ->
                     entries
-                        .filterNot { current.hideNsfwBoards && it.board.isNsfw }
+                        .filterNot { current.nsfwContentHidden && it.board.isNsfw }
                         .filterNot { it.board.matchesFilterTokens(emptySet()) }
                         .map { entry ->
                             ReaderBoardOption(

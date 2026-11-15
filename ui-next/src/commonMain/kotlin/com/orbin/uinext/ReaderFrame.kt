@@ -54,7 +54,12 @@ import org.jetbrains.compose.resources.stringResource
 
 /** The reader design's colors for the brightness mode in scope. */
 val reader: ReaderColors
-    @Composable get() = readerColors(dark = next.dark, amoled = next.amoled)
+    @Composable get() {
+        val palette = next
+        return remember(palette.dark, palette.amoled, palette.accentTheme) {
+            readerColors(dark = palette.dark, amoled = palette.amoled, accentTheme = palette.accentTheme)
+        }
+    }
 
 /** What the leading control of an app bar does. */
 enum class ReaderNavigation {

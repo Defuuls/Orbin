@@ -1,5 +1,6 @@
 package com.orbin.app.di
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.orbin.core.common.dispatchers.Dispatcher
@@ -7,15 +8,18 @@ import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.data.database.OrbinDatabase
 import com.orbin.data.settings.BoardPreferencesStore
 import com.orbin.data.settings.SettingsStore
+import com.orbin.domain.bookmarks.BookmarkStatusRefresher
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.MediaLibraryRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadArchiveRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.domain.repository.WhatsNewRepository
@@ -23,10 +27,12 @@ import com.orbin.graph.SharedGraph
 import com.orbin.graph.createSharedGraph
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderDiagnostics
+import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.ProviderRegistry
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.ElementsIntoSet
 import io.ktor.client.HttpClient
@@ -48,6 +54,7 @@ object SharedGraphModule {
     @Provides
     @Singleton
     fun providesSharedGraph(
+        @ApplicationContext context: Context,
         client: HttpClient,
         database: OrbinDatabase,
         preferences: DataStore<Preferences>,
@@ -58,6 +65,7 @@ object SharedGraphModule {
             database,
             preferences,
             ioDispatcher,
+            offlineDirectory = context.filesDir.absolutePath,
         )
 
     @Provides
@@ -74,6 +82,23 @@ object SharedGraphModule {
 
     @Provides
     fun providesHistoryRepository(graph: SharedGraph): HistoryRepository = graph.history
+
+    @Provides
+    @Singleton
+    fun providesBookmarkStatusRefresher(
+        bookmarks: BookmarkRepository,
+        providers: ProviderRegistry,
+    ): BookmarkStatusRefresher =
+        BookmarkStatusRefresher(bookmarks, fetch = { key ->
+            val provider = providers.get(key.provider) ?: throw ProviderException.Unsupported("Unknown provider")
+            provider.getThread(key.board, key.thread)
+        })
+
+    @Provides
+    fun providesThreadMemoryRepository(graph: SharedGraph): ThreadMemoryRepository = graph.threadMemory
+
+    @Provides
+    fun providesMediaLibraryRepository(graph: SharedGraph): MediaLibraryRepository = graph.mediaLibrary
 
     @Provides
     fun providesBoardRepository(graph: SharedGraph): BoardRepository = graph.boards

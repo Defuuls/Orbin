@@ -43,6 +43,16 @@ fun SearchScreen(
     onOpenRow: (SearchRow) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
+    webSearch: (@Composable (String) -> Unit)? = null,
+    onWebSearch: ((String) -> Unit)? = null,
 ) {
-    ReaderSearchScreen(query, onQueryChange, onSearch, state, onOpenRow, modifier, onBack)
+    ReaderSearchScreen(query, onQueryChange, onSearch, state, onOpenRow, modifier, onBack, webSearch, onWebSearch)
 }
+
+/** Reuses Orbin's source-qualified result cards for a platform-backed search. */
+@Composable
+fun SearchResultsContent(
+    state: SearchState,
+    onOpenRow: (SearchRow) -> Unit,
+    onRetry: () -> Unit,
+) = ReaderSearchResults(state, onOpenRow, onRetry)

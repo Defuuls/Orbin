@@ -6,7 +6,11 @@ import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppUpdateState
+import com.orbin.core.model.BoardId
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.UpdateStatus
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeAppUpdater
@@ -22,7 +26,11 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.core.testing.repository.FakeUpdateRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.ImageCacheRepository
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
+import com.orbin.domain.repository.VideoCacheRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
@@ -33,6 +41,51 @@ import org.junit.Test
 class SettingsViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    @Test
+    fun `cache-only clearing attempts both caches and preserves collections`() =
+        runTest {
+            val image = mockk<ImageCacheRepository>()
+            val video = mockk<VideoCacheRepository>()
+            coEvery { image.usageBytes() } returns 12L
+            coEvery { video.usageBytes() } returns 34L
+            coEvery { image.clear() } throws IllegalStateException("image cache unavailable")
+            coEvery { video.clear() } returns Unit
+            val record =
+                com.orbin.core.model.DownloadRecord(
+                    1L,
+                    "https://site/a.jpg",
+                    "a.jpg",
+                    com.orbin.core.model.DownloadStatus.COMPLETED,
+                    1L,
+                )
+            val visit =
+                com.orbin.core.model.HistoryEntry(
+                    com.orbin.core.model.ThreadKey(
+                        com.orbin.core.model
+                            .ProviderId("site"),
+                        com.orbin.core.model
+                            .BoardId("b"),
+                        com.orbin.core.model
+                            .ThreadId(42),
+                    ),
+                    "A thread",
+                    lastVisitedMillis = 1L,
+                )
+            val downloads = FakeDownloadRepository(listOf(record))
+            val history = FakeHistoryRepository(listOf(visit))
+            val viewModel =
+                createViewModel(imageCache = image, videoCache = video, downloads = downloads, history = history)
+            val results = mutableListOf<Boolean>()
+            viewModel.clearMediaCache { results += it }
+            assertThat(results).containsExactly(false)
+            coVerify(exactly = 1) { image.clear() }
+            coVerify(exactly = 1) { video.clear() }
+            assertThat(viewModel.imageCacheUsageBytes.value).isEqualTo(12L)
+            assertThat(viewModel.videoCacheUsageBytes.value).isEqualTo(34L)
+            assertThat(history.observeHistory().first()).containsExactly(visit)
+            assertThat(downloads.observeDownloads().first()).containsExactly(record)
+        }
 
     @Test
     fun `activeProvider falls back to the default when the persisted id is unknown`() =
@@ -60,6 +113,17 @@ class SettingsViewModelTest {
 
             val resolved = viewModel.activeProvider.first()
             assertThat(resolved.id.value).isEqualTo("fourchan")
+        }
+
+    @Test
+    fun `clearLocalActivity removes persisted reading anchors seen IDs and hidden post choices`() =
+        runTest {
+            val memories = InMemoryThreadMemoryRepository()
+            val key = ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(42))
+            memories.update(key) { it.copy(anchorPostId = 45, seenPostIds = setOf(42, 45), hiddenPostIds = setOf(43)) }
+            val viewModel = createViewModel(memory = memories)
+            viewModel.clearLocalActivity()
+            assertThat(memories.observeAll().first()).isEmpty()
         }
 
     @Test
@@ -249,6 +313,8 @@ class SettingsViewModelTest {
         registry: FakeProviderRegistry = FakeProviderRegistry(),
         appUpdater: FakeAppUpdater = FakeAppUpdater(),
         imageCache: ImageCacheRepository = mockk(relaxed = true),
+        videoCache: VideoCacheRepository = mockk(relaxed = true),
+        memory: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
     ) = SettingsViewModel(
         repository = settings,
         historyRepository = history,
@@ -261,5 +327,7 @@ class SettingsViewModelTest {
         dnsPrivacyMonitor = FakeDnsPrivacyMonitor(),
         registry = registry,
         imageCacheRepository = imageCache,
+        videoCacheRepository = videoCache,
+        threadMemoryRepository = memory,
     )
 }

@@ -40,6 +40,9 @@ class ReaderHomeLaunchTest {
     val hiltRule = HiltAndroidRule(this)
 
     @get:Rule(order = 1)
+    val graphResources = GraphResourcesRule()
+
+    @get:Rule(order = 2)
     val notificationPermission: TestRule =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
@@ -47,7 +50,7 @@ class ReaderHomeLaunchTest {
             TestRule { base, _ -> base }
         }
 
-    @get:Rule(order = 2)
+    @get:Rule(order = 3)
     val composeRule = createEmptyComposeRule()
 
     @Inject

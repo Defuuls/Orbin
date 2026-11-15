@@ -16,6 +16,7 @@ import androidx.work.WorkRequest
 import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.worker.DownloadWorker
+import com.orbin.domain.repository.ManagedMediaFiles
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -32,7 +33,10 @@ class AndroidDownloadQueue
     constructor(
         @ApplicationContext private val context: Context,
         private val dao: DownloadDao,
+        private val managedMediaFiles: ManagedMediaFiles? = null,
     ) : DownloadPlatformQueue {
+        override suspend fun privateFileExists(id: Long): Boolean = managedMediaFiles?.contains("download-$id") == true
+
         private val workManager: WorkManager
             get() = WorkManager.getInstance(context)
 

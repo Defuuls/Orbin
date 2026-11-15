@@ -38,17 +38,24 @@ internal fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): Ma
 /** Unknown platform controls remain visible rather than disappearing during a redesign. */
 internal fun settingsSectionId(id: String): String =
     when (id) {
-        "themeMode", "amoled" -> "theme"
+        "themeMode", "accentTheme", "amoled" -> "theme"
         "catalogMode", "feedColumns" -> "boards"
-        "openThreadComments" -> "threads"
+        "openThreadComments", "threadLayout", "autoScrollToLastSeen" -> "threads"
+        "showStickyThreads" -> "boards"
         "playbackScope", "autoplay", "startMuted", "loopVideos",
-        "preloadNextClip", "inheritPlayback", "resetPlayback",
+        "preloadNextClip", "inheritPlayback", "resetPlayback", "fullscreenAutoAdvance",
         -> "media"
-        "hideNsfw", "coverViolent" -> "hidden"
-        "biometric", "screenPrivacy", "dohProvider", "strictDns" -> "privacy"
-        "saveSearchHistory", "saveBrowsingHistory" -> "history"
-        "clearActivity", "clearImageCache", "videoCacheLimit", "clearVideoCache" -> "storage"
-        "exportBackup", "importBackup" -> "backup"
+        "hideNsfw", "coverViolent", "nsfwEachSession", "nsfwReveal", "coverNsfwMedia",
+        "hiddenThreadPatterns", "postFilterRules",
+        -> "hidden"
+        "biometric", "screenPrivacy", "dohProvider", "strictDns", "privateSavedFiles",
+        "askBeforePhotos", "showSavedMediaTab",
+        -> "privacy"
+        "saveSearchHistory", "saveBrowsingHistory", "historySessionOnly" -> "history"
+        "clearActivity", "clearImageCache", "videoCacheLimit", "clearVideoCache", "clearMediaCache" -> "storage"
+        "exportBackup", "importBackup", "cloudSyncEnable", "cloudSyncNow", "cloudSyncDelete", "cloudSyncStatus",
+        "cloudSyncAvailability",
+        -> "backup"
         "checkUpdates", "updateOnLaunch", "version", "privacy", "contact" -> "about"
         else -> "other"
     }

@@ -7,25 +7,36 @@ import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.MediaType
+import com.orbin.core.model.PostFilterKind
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThreadMemory
+import com.orbin.core.model.downloadContext
 import com.orbin.core.model.matchesFilterTokens
+import com.orbin.core.model.withNsfwMediaCovered
 import com.orbin.core.model.withViolentMediaCovered
 import com.orbin.core.reader.ThreadPresentationCache
+import com.orbin.core.reader.knownPostIds
+import com.orbin.core.reader.readerRows
+import com.orbin.core.reader.visibleMediaIndices
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.DisabledThreadArchive
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadArchiveRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
@@ -34,12 +45,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -47,6 +61,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -69,6 +84,7 @@ class ThreadViewModel
         @Dispatcher(
             OrbinDispatcher.Default,
         ) private val presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        private val threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
@@ -76,6 +92,18 @@ class ThreadViewModel
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
         private val key = ThreadKey(provider, board, threadId)
+        private val readingActions =
+            ThreadReadingActions(key, viewModelScope, threadMemoryRepository, historyRepository)
+        private val _readerMemory = MutableStateFlow(ThreadMemory(key))
+        val readerMemory = _readerMemory.asStateFlow()
+        val readerPreferences =
+            settingsRepository.settings.stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                AppSettings.Default,
+            )
+        private val _revealedPosts = MutableStateFlow<Set<Long>>(emptySet())
+        val revealedPosts = _revealedPosts.asStateFlow()
 
         val threadWebUrl: String?
             get() = observeThread.threadWebUrl(key)
@@ -93,7 +121,7 @@ class ThreadViewModel
         val initialScrollLoaded: StateFlow<Boolean> = _initialScrollLoaded.asStateFlow()
 
         private var scrollPersistJob: Job? = null
-        private var lastPersistedScrollPosition: ThreadScrollPosition? = null
+        private var pendingRowPath: String? = null
 
         init {
             viewModelScope.launch {
@@ -103,10 +131,18 @@ class ThreadViewModel
                 settingsRepository.setActiveProviderId(provider)
 
                 val existing = historyRepository.getEntry(key)
+                val memory = threadMemoryRepository.get(key)
+                _readerMemory.value = memory
                 _initialScrollPosition.value =
-                    existing?.lastReadPostId?.let { ThreadScrollPosition(it, existing.lastReadOffsetPx) }
-                lastPersistedScrollPosition = _initialScrollPosition.value
+                    if (!settingsRepository.settings.first().autoScrollToLastSeen) {
+                        null
+                    } else {
+                        memory.anchorPostId?.let { ThreadScrollPosition(PostId(it), memory.offsetPx) }
+                            ?: existing?.lastReadPostId?.let { ThreadScrollPosition(it, existing.lastReadOffsetPx) }
+                    }
+                readingActions.lastPersistedPosition = _initialScrollPosition.value
                 _initialScrollLoaded.value = true
+                threadMemoryRepository.observe(key).collect { _readerMemory.value = it }
             }
         }
 
@@ -146,25 +182,33 @@ class ThreadViewModel
                 lastSuccess = null
                 return ThreadUiState.Blocked
             }
-            onThreadLoaded(presentation.thread)
+            onThreadLoaded(presentation.thread, thread)
             return ThreadUiState.Success(presentation.thread, presentation).also { lastSuccess = it }
         }
 
         private suspend fun stateForFailure(error: DataError): ThreadUiState {
             lastSuccess?.let { return it.copy(refreshFailure = error) }
             val rawSaved = savedThreadRepository.load(key) ?: return ThreadUiState.Error(error.message, error)
+            val options = settingsRepository.settings.first()
+            // An offline copy has no trusted board classification. Keep its media covered until
+            // current provider metadata is available, while preserving the provider's own spoiler.
             val saved =
-                if (settingsRepository.settings.first().coverViolentMedia) {
-                    rawSaved.withViolentMediaCovered()
-                } else {
-                    rawSaved
-                }
+                rawSaved
+                    .withViolentMediaCovered(options.coverViolentMedia)
+                    .withNsfwMediaCovered(options.coverNsfwMedia)
             val presentation =
                 presentationCache.prepareVisible(
                     saved,
                     fromSavedCopy = true,
                     dispatcher = presentationDispatcher,
                 ) ?: return ThreadUiState.Blocked
+            val offlineIds = presentation.thread.allPosts.mapTo(mutableSetOf()) { it.id.value }
+            threadMemoryRepository.update(key) {
+                it.copy(
+                    knownPostIds = it.knownPostIds + offlineIds,
+                    seenPostIds = it.seenPostIds + presentation.thread.originalPost.id.value,
+                )
+            }
             return ThreadUiState
                 .Success(
                     thread = presentation.thread,
@@ -192,16 +236,13 @@ class ThreadViewModel
         private val _firstUnreadPostId = MutableStateFlow<PostId?>(null)
 
         val firstUnreadPostId: StateFlow<PostId?> =
-            combine(_firstUnreadPostId, bookmark, uiState) { capturedUnread, savedBookmark, state ->
+            combine(readerMemory, uiState) { memory, state ->
                 val success = state as? ThreadUiState.Success
-                if (savedBookmark == null || !savedBookmark.isWatched || success == null) {
-                    null
-                } else {
-                    capturedUnread
-                        ?: success.thread.replies
-                            .getOrNull(savedBookmark.lastSeenReplyCount)
-                            ?.id
-                }
+                success
+                    ?.thread
+                    ?.replies
+                    ?.firstOrNull { it.id.value !in memory.seenPostIds }
+                    ?.id
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), null)
 
         fun refresh() {
@@ -237,20 +278,37 @@ class ThreadViewModel
             // populated by a successful network result, so a thread restored from its saved copy
             // rendered normally but made this action silently return without downloading anything.
             // Duplicate skips are handled when the download is queued.
-            val thread = (uiState.value as? ThreadUiState.Success)?.thread ?: return
+            val success = uiState.value as? ThreadUiState.Success ?: return
+            val thread = success.thread
             val threadTitle = title.ifBlank { thread.subject }
-            val attachments =
-                thread.allPosts
-                    .flatMap { it.attachments }
-                    .filter { !videosOnly || it.type == MediaType.VIDEO }
             viewModelScope.launch {
-                attachments.forEach { attachment ->
+                val options = settingsRepository.settings.first()
+                val memory = threadMemoryRepository.get(key)
+                val attachments =
+                    withContext(presentationDispatcher) {
+                        val allowed =
+                            success.presentation
+                                .visibleMediaIndices(
+                                    options,
+                                    memory,
+                                    revealedPosts.value,
+                                ).toSet()
+                        thread.allPosts
+                            .flatMap { post -> post.attachments.map { post.id to it } }
+                            .filterIndexed { index, (_, attachment) ->
+                                index in allowed &&
+                                    (!videosOnly || attachment.type == MediaType.VIDEO)
+                            }
+                    }
+                attachments.forEach { (postId, attachment) ->
                     downloadRepository.enqueue(
                         url = attachment.sourceUrl,
-                        fileName = attachment.downloadFileName(),
+                        fileName = attachment.downloadFileName(key),
                         boardId = board.value,
                         threadId = threadId.value,
                         threadTitle = threadTitle,
+                        mediaContext = attachment.downloadContext(thread.key, postId.value),
+                        privateTarget = options.privateSavedFiles,
                     )
                 }
                 _exportMessage.value =
@@ -340,14 +398,19 @@ class ThreadViewModel
         fun saveScrollPosition(
             postId: PostId,
             offsetPx: Int,
+            rowPath: String? = null,
         ) {
             val position = ThreadScrollPosition(postId, offsetPx)
+            pendingRowPath = rowPath
             _initialScrollPosition.value = position
             scrollPersistJob?.cancel()
             scrollPersistJob =
                 viewModelScope.launch {
                     delay(SCROLL_PERSIST_DEBOUNCE_MS)
-                    persistScrollPosition(position)
+                    threadMemoryRepository.update(
+                        key,
+                    ) { it.copy(anchorPostId = postId.value, rowPath = rowPath, offsetPx = offsetPx) }
+                    readingActions.persistScrollPosition(position)
                 }
         }
 
@@ -358,28 +421,39 @@ class ThreadViewModel
             scrollPersistJob =
                 viewModelScope.launch {
                     withContext(NonCancellable) {
-                        persistScrollPosition(position)
+                        threadMemoryRepository.update(key) {
+                            it.copy(
+                                anchorPostId = position.postId.value,
+                                rowPath = pendingRowPath,
+                                offsetPx = position.offsetPx,
+                            )
+                        }
+                        readingActions.persistScrollPosition(position)
                     }
                 }
         }
 
-        private suspend fun persistScrollPosition(position: ThreadScrollPosition) {
-            if (position == lastPersistedScrollPosition) return
-            historyRepository.updateScrollPosition(key, position.postId, position.offsetPx)
-            lastPersistedScrollPosition = position
-        }
-
-        private fun onThreadLoaded(visible: Thread) {
+        private fun onThreadLoaded(
+            visible: Thread,
+            canonical: Thread = visible,
+        ) {
             loadedThread = visible
             viewModelScope.launch {
                 val existingBookmark = bookmarkRepository.getBookmark(key)
+                val ids = visible.allPosts.mapTo(mutableSetOf()) { it.id.value }
+                threadMemoryRepository.update(key) {
+                    it.copy(
+                        knownPostIds = ids,
+                        seenPostIds =
+                            (it.seenPostIds intersect ids) + visible.originalPost.id.value,
+                    )
+                }
                 if (existingBookmark?.isWatched == true) {
                     _firstUnreadPostId.value =
                         visible.replies
                             .getOrNull(existingBookmark.lastSeenReplyCount)
                             ?.id
                     bookmarkRepository.updateLatest(key, visible.stats.replyCount, visible.stats.isArchived)
-                    bookmarkRepository.markRead(key)
                 } else {
                     _firstUnreadPostId.value = null
                 }
@@ -397,6 +471,155 @@ class ThreadViewModel
                         ),
                     )
                 }
+                savedThreadRepository.cacheLastLoaded(canonical)
+            }
+        }
+
+        fun toggleFold(path: String) =
+            readingActions.updateMemory { memory ->
+                memory.copy(
+                    foldedPaths =
+                        if (path in
+                            memory.foldedPaths
+                        ) {
+                            memory.foldedPaths - path
+                        } else {
+                            memory.foldedPaths + path
+                        },
+                )
+            }
+
+        fun toggleHiddenPost(id: Long) {
+            _revealedPosts.update { it - id }
+            readingActions.updateMemory {
+                it.copy(
+                    hiddenPostIds =
+                        if (id in
+                            it.hiddenPostIds
+                        ) {
+                            it.hiddenPostIds - id
+                        } else {
+                            it.hiddenPostIds + id
+                        },
+                )
+            }
+        }
+
+        fun toggleHiddenPoster(id: String) =
+            readingActions.updateMemory {
+                it.copy(
+                    hiddenPosterIds =
+                        if (id in
+                            it.hiddenPosterIds
+                        ) {
+                            it.hiddenPosterIds - id
+                        } else {
+                            it.hiddenPosterIds + id
+                        },
+                )
+            }
+
+        fun addPostFilter(
+            kind: PostFilterKind,
+            pattern: String,
+        ) {
+            if (pattern.isBlank()) return
+            viewModelScope.launch {
+                settingsRepository.setPostFilterRules(
+                    (
+                        settingsRepository.settings.first().postFilterRules +
+                            PostFilterRule(kind, pattern)
+                    ).distinct(),
+                )
+            }
+        }
+
+        fun revealPost(id: Long) {
+            _revealedPosts.update { it + id }
+        }
+
+        fun expandToPost(id: Long) {
+            revealPost(id)
+            val presentation = (uiState.value as? ThreadUiState.Success)?.presentation ?: return
+            val target =
+                presentation
+                    .readerRows(
+                        nested =
+                            readerPreferences.value.threadLayout == com.orbin.core.model.ThreadLayout.NESTED,
+                    ).firstOrNull { it.id == id.toString() && !it.preview } ?: return
+            readingActions.updateMemory {
+                it.copy(foldedPaths = it.foldedPaths - target.ancestorPaths.toSet() - target.branchPath)
+            }
+        }
+
+        fun markVisible(ids: Set<String>) {
+            val visible = ids.mapNotNull(String::toLongOrNull).toSet()
+            if (visible.isEmpty() || readerMemory.value.seenPostIds.containsAll(visible)) return
+            viewModelScope.launch {
+                threadMemoryRepository.update(key) {
+                    it.copy(
+                        seenPostIds =
+                            it.seenPostIds + (visible intersect it.knownPostIds),
+                    )
+                }
+                val memory = threadMemoryRepository.get(key)
+                val snapshot = uiState.value as? ThreadUiState.Success
+                val currentBookmark = bookmarkRepository.getBookmark(key)
+                val coversLatest =
+                    snapshot?.fromSavedCopy != true ||
+                        (currentBookmark?.latestReplyCount ?: 0) <= snapshot.thread.stats.replyCount
+                val allKnownSeen =
+                    memory.knownPostIds.isNotEmpty() && memory.seenPostIds.containsAll(memory.knownPostIds)
+                val persistentAcknowledgement = !settingsRepository.settings.first().historySessionOnly && coversLatest
+                if (persistentAcknowledgement && allKnownSeen) {
+                    bookmarkRepository.markRead(key)
+                }
+            }
+        }
+
+        fun markAllRead() {
+            viewModelScope.launch {
+                val count =
+                    maxOf(
+                        (uiState.value as? ThreadUiState.Success)?.thread?.stats?.replyCount ?: 0,
+                        bookmarkRepository.getBookmark(key)?.latestReplyCount ?: 0,
+                    )
+                threadMemoryRepository.update(key) {
+                    it.copy(
+                        seenPostIds = it.knownPostIds,
+                        acknowledgedReplyCount = maxOf(it.acknowledgedReplyCount, count),
+                    )
+                }
+                if (!settingsRepository.settings.first().historySessionOnly) bookmarkRepository.markRead(key)
+            }
+        }
+
+        /** A visible reader backs off idle/error polling and never polls a closed, archived or offline copy. */
+        suspend fun pollWhileVisible() {
+            var interval = POLL_INITIAL_DELAY_MS
+            while (currentCoroutineContext().isActive) {
+                delay(interval)
+                if (uiState.value == ThreadUiState.Blocked ||
+                    (uiState.value as? ThreadUiState.Error)?.cause is DataError.NotFound
+                ) {
+                    return
+                }
+                val before = uiState.value as? ThreadUiState.Success ?: continue
+                if (before.thread.stats.isArchived || before.thread.stats.isClosed || before.fromSavedCopy) return
+                if (_isRefreshing.value) continue
+                val count = before.thread.allPosts.size
+                refresh()
+                isRefreshing.filter { !it }.first()
+                val after = uiState.value as? ThreadUiState.Success
+                if (after?.refreshFailure is DataError.NotFound) return
+                interval =
+                    if (after != null &&
+                        after.thread.allPosts.size > count
+                    ) {
+                        POLL_INITIAL_DELAY_MS
+                    } else {
+                        (interval * POLL_BACKOFF_FACTOR).coerceAtMost(POLL_MAX_DELAY_MS)
+                    }
             }
         }
 
@@ -417,19 +640,13 @@ class ThreadViewModel
             )
         }
 
-        private fun com.orbin.core.model.MediaAttachment.downloadFileName(): String {
-            val cleanName =
-                originalFileName
-                    .ifBlank { id }
-                    .replace(UNSAFE_FILENAME_CHARS, "_")
-            return "${board.value}_${threadId.value}_${id}_$cleanName"
-        }
-
         private companion object {
-            val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
             const val STOP_TIMEOUT_MS = 5_000L
             const val SCROLL_PERSIST_DEBOUNCE_MS = 650L
             const val ZIP_MIME_TYPE = "application/zip"
+            const val POLL_INITIAL_DELAY_MS = 8_000L
+            const val POLL_MAX_DELAY_MS = 60_000L
+            const val POLL_BACKOFF_FACTOR = 2
         }
     }
 
@@ -437,6 +654,13 @@ data class ThreadScrollPosition(
     val postId: PostId,
     val offsetPx: Int,
 )
+
+private val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
+
+private fun com.orbin.core.model.MediaAttachment.downloadFileName(key: ThreadKey): String {
+    val cleanName = originalFileName.ifBlank { id }.replace(UNSAFE_FILENAME_CHARS, "_")
+    return "${key.provider.value}_${key.board.value}_${key.thread.value}_${id}_$cleanName"
+}
 
 internal fun Thread.hidingMatches(
     tokens: Set<String>,

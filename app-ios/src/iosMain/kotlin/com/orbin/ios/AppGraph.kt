@@ -5,12 +5,14 @@ import com.orbin.data.settings.LegacySyncCleanup
 import com.orbin.data.settings.LegacyThemeMigration
 import com.orbin.graph.createSharedGraph
 import com.orbin.network.NetworkConfig
+import com.orbin.provider.api.NsfwMediaCoverProvider
 import com.orbin.provider.api.ViolentMediaCoverProvider
 import io.ktor.client.engine.darwin.Darwin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSBundle
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
@@ -71,6 +73,15 @@ internal object AppGraph {
             database,
             preferences,
             Dispatchers.Default,
+            offlineDirectory =
+                (
+                    NSSearchPathForDirectoriesInDomains(
+                        NSApplicationSupportDirectory,
+                        NSUserDomainMask,
+                        true,
+                    ).first() as String
+                ) +
+                    "/Orbin",
         )
 
     init {
@@ -95,6 +106,9 @@ internal object AppGraph {
     val boardPreferences = shared.boardPreferences
     val bookmarks = shared.bookmarks
     val history = shared.history
+    val threadMemory = shared.threadMemory
+    val mediaLibrary = shared.mediaLibrary
+    val savedThreads = shared.savedThreads
 
     val whatsNew = shared.whatsNew
 
@@ -110,7 +124,9 @@ internal object AppGraph {
     /** The sites, with the same violent-media cover Android applies, following the same setting. */
     val providers =
         shared.providers.map { provider ->
-            ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia }
+            NsfwMediaCoverProvider(
+                ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia },
+            ) { settingsStore.settings.first().coverNsfwMedia }
         }
 
     /** Posts new replies on watched threads, and asks to once the reader first watches one. */

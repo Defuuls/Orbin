@@ -6,10 +6,13 @@ import com.orbin.core.model.SavedThreadSummary
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.data.database.dao.OfflineThreadCopyDao
 import com.orbin.data.database.dao.SavedThreadDao
 import com.orbin.data.database.toDomain
 import com.orbin.data.database.toSavedEntities
+import com.orbin.data.offline.OfflineThreadCopies
 import com.orbin.domain.repository.SavedThreadRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -25,7 +28,11 @@ class SavedThreadRepositoryImpl(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val storageDir: Path? = null,
     private val fileSystem: FileSystem = com.orbin.data.util.defaultFileSystem,
+    private val canRetainAutomaticCopy: suspend (ThreadKey) -> Boolean = { true },
+    automaticCopyDao: OfflineThreadCopyDao? = null,
 ) : SavedThreadRepository {
+    private val automaticCopies = automaticCopyDao?.let { OfflineThreadCopies(it, ioDispatcher) }
+
     override fun observeSaved(): Flow<List<SavedThreadSummary>> =
         savedThreadDao.observeSavedThreads().map { threads ->
             threads.map { saved ->
@@ -54,6 +61,9 @@ class SavedThreadRepositoryImpl(
 
     override suspend fun load(key: ThreadKey): Thread? =
         withContext(ioDispatcher) {
+            if (automaticCopies != null && canRetainAutomaticCopy(key)) {
+                automaticCopies.read(key)?.let { return@withContext it }
+            }
             val saved =
                 savedThreadDao.getSavedThread(key.provider.value, key.board.value, key.thread.value)
                     ?: return@withContext null
@@ -76,5 +86,21 @@ class SavedThreadRepositoryImpl(
                 }
             }
         }
+    }
+
+    // Optional SQLite cache writes may fail with platform-specific exceptions; network content stays usable.
+    @Suppress("TooGenericExceptionCaught")
+    override suspend fun cacheLastLoaded(thread: Thread) {
+        try {
+            if (automaticCopies != null && canRetainAutomaticCopy(thread.key)) automaticCopies.keep(thread)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // Keeping an automatic copy must never interrupt successful foreground reading.
+        }
+    }
+
+    override suspend fun pruneAutomaticCopies(retained: Set<ThreadKey>) {
+        automaticCopies?.retain(retained)
     }
 }

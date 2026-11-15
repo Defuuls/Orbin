@@ -169,7 +169,7 @@ class WindowInsetsTest {
     fun `the Home drawer keeps the themed bottom system inset`() {
         composeRule.setContent {
             NextTheme(darkTheme = false) {
-                FeedScreen(rows = emptyList(), onOpenBoards = {}) {}
+                FeedScreen(rows = emptyList(), onOpenBoards = {}, onOpenMedia = {})
             }
         }
         applySystemBars()

@@ -15,13 +15,62 @@ import kotlin.test.assertTrue
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class SettingsRowsTest {
     @Test
+    fun combinedCacheRowReportsMeasuredImageAndVideoBytesWithoutActivityDeletion() {
+        val row =
+            settingsGroups(AppSettings.Default, false, false, mediaCacheLabel = "4 MiB · 4194304 B")
+                .flatMap { it.second }
+                .single { it.id == SettingIds.CLEAR_MEDIA_CACHE }
+        assertEquals("Clear cache", row.label)
+        assertEquals("4 MiB · 4194304 B", row.value)
+        assertTrue(row.hint.orEmpty().contains("Keeps browsing history"))
+    }
+
+    @Test
     fun sectionsKeepEverySettingReachableExactlyOnce() {
         val groups = settingsGroups(AppSettings.Default, false, false)
         assertEquals(listOf("Appearance", "Privacy and safety", "Data and storage", "About"), groups.map { it.first })
         assertTrue(groups.all { it.second.isNotEmpty() })
         val ids = groups.flatMap { it.second }.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
-        assertEquals(17, ids.size)
+        assertEquals(31, ids.size)
+        assertEquals(
+            setOf(
+                "themeMode",
+                "amoled",
+                "catalogMode",
+                "accentTheme",
+                "hideNsfw",
+                "coverViolent",
+                "biometric",
+                "screenPrivacy",
+                "dohProvider",
+                "strictDns",
+                "saveSearchHistory",
+                "saveBrowsingHistory",
+                "nsfwEachSession",
+                "coverNsfwMedia",
+                "historySessionOnly",
+                "privateSavedFiles",
+                "askBeforePhotos",
+                "showSavedMediaTab",
+                "fullscreenAutoAdvance",
+                "threadLayout",
+                "autoScrollToLastSeen",
+                "showStickyThreads",
+                "hiddenThreadPatterns",
+                "postFilterRules",
+                "clearActivity",
+                "clearMediaCache",
+                "clearImageCache",
+                "exportBackup",
+                "importBackup",
+                "privacy",
+                "contact",
+            ),
+            ids.toSet(),
+        )
+        assertTrue("colorTheme" !in ids)
+        assertTrue("color_theme" !in ids)
     }
 
     @Test

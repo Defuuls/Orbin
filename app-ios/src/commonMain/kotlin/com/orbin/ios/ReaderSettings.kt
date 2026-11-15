@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -8,12 +9,18 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterKind
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadLayout
 import com.orbin.data.database.dao.DownloadDao
+import com.orbin.domain.privacy.PrivacySession
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
+import com.orbin.uinext.SettingFilterRule
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +40,7 @@ class ReaderSettings(
     private val history: HistoryRepository,
     private val scope: CoroutineScope,
     private val downloadDao: DownloadDao? = null,
+    private val threadMemory: ThreadMemoryRepository? = null,
 ) {
     val current: StateFlow<AppSettings> =
         repository.settings.stateIn(
@@ -101,6 +109,99 @@ class ReaderSettings(
 
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
+    fun setAccentTheme(theme: AccentTheme): Job = scope.launch { repository.setAccentTheme(theme) }
+
+    fun setPostFilterRules(rules: List<PostFilterRule>): Job = scope.launch { repository.setPostFilterRules(rules) }
+
+    internal fun commitFilter(
+        id: String,
+        value: List<SettingFilterRule>,
+    ): Boolean {
+        when (id) {
+            "postFilterRules" ->
+                setPostFilterRules(
+                    value.mapNotNull { rule ->
+                        PostFilterKind.entries.firstOrNull { it.name == rule.kind }?.let {
+                            PostFilterRule(
+                                it,
+                                rule.pattern,
+                                rule.regex,
+                            )
+                        }
+                    },
+                )
+            "hiddenThreadPatterns" -> scope.launch { repository.setHiddenThreadPatterns(value.map { it.pattern }) }
+            else -> return false
+        }
+        return true
+    }
+
+    fun setFullscreenAutoAdvance(value: Boolean): Job = scope.launch { repository.setFullscreenAutoAdvance(value) }
+
+    fun setCollectionNewestFirst(value: Boolean): Job = scope.launch { repository.setCollectionNewestFirst(value) }
+
+    /** Keeps the platform host's dispatch small while all values use the shared persisted setters. */
+    internal fun activatePrivacy(
+        id: String,
+        settings: AppSettings,
+    ): Boolean {
+        val work: suspend () -> Unit =
+            when (id) {
+                "nsfwEachSession" -> {
+                    { repository.setNsfwEachSession(!settings.nsfwEachSession) }
+                }
+                "coverNsfwMedia" -> {
+                    { repository.setCoverNsfwMedia(!settings.coverNsfwMedia) }
+                }
+                "historySessionOnly" -> {
+                    { repository.setHistorySessionOnly(!settings.historySessionOnly) }
+                }
+                "privateSavedFiles" -> {
+                    { repository.setPrivateSavedFiles(!settings.privateSavedFiles) }
+                }
+                "askBeforePhotos" -> {
+                    { repository.setAskBeforePhotos(!settings.askBeforePhotos) }
+                }
+                "showSavedMediaTab" -> {
+                    { repository.setShowSavedMediaTab(!settings.showSavedMediaTab) }
+                }
+                "fullscreenAutoAdvance" -> {
+                    { repository.setFullscreenAutoAdvance(!settings.fullscreenAutoAdvance) }
+                }
+                "autoScrollToLastSeen" -> {
+                    { repository.setAutoScrollToLastSeen(!settings.autoScrollToLastSeen) }
+                }
+                "showStickyThreads" -> {
+                    { repository.setShowStickyThreads(!settings.showStickyThreads) }
+                }
+                "nsfwReveal" -> {
+                    PrivacySession.revealNsfw()
+                    return true
+                }
+                else -> return false
+            }
+        scope.launch { work() }
+        return true
+    }
+
+    internal fun selectAppearance(
+        id: String,
+        index: Int,
+    ): Boolean =
+        when (id) {
+            "accentTheme" -> {
+                AccentTheme.entries.getOrNull(index)?.let(::setAccentTheme)
+                true
+            }
+            "threadLayout" -> {
+                ThreadLayout.entries.getOrNull(index)?.let { value ->
+                    scope.launch { repository.setThreadLayout(value) }
+                }
+                true
+            }
+            else -> false
+        }
+
     fun setAmoled(amoled: Boolean): Job = scope.launch { repository.setAmoled(amoled) }
 
     fun setActiveProviderId(site: ProviderId): Job = scope.launch { repository.setActiveProviderId(site) }
@@ -124,6 +225,7 @@ class ReaderSettings(
     fun clearActivity(onClearCaches: (suspend () -> Unit)? = null): Job =
         scope.launch {
             history.clear()
+            threadMemory?.clear()
             downloadDao?.clear()
             onClearCaches?.invoke()
         }
@@ -148,6 +250,7 @@ internal object SettingIds {
     const val SAVE_BROWSING_HISTORY = "saveBrowsingHistory"
     const val CLEAR_ACTIVITY = "clearActivity"
     const val CLEAR_IMAGE_CACHE = "clearImageCache"
+    const val CLEAR_MEDIA_CACHE = "clearMediaCache"
     const val EXPORT_BACKUP = "exportBackup"
     const val IMPORT_BACKUP = "importBackup"
     const val VERSION = "version"
@@ -173,10 +276,13 @@ internal fun settingsGroups(
     imageCacheCleared: Boolean,
     backup: BackupState = BackupState.Idle,
     version: AppVersion = AppVersion(),
+    cloudSyncRows: List<SettingItem> = emptyList(),
+    mediaCacheLabel: String = "Empty",
 ): List<Pair<String, List<SettingItem>>> =
     listOf(
-        "" to appearanceAndPrivacyRows(settings),
-        "" to storageAndAboutRows(clearArmed, imageCacheCleared, backup, version),
+        "" to (appearanceAndPrivacyRows(settings) + privacyExtras(settings)),
+        "" to storageAndAboutRows(clearArmed, imageCacheCleared, backup, version, mediaCacheLabel),
+        "" to cloudSyncRows,
     ).let(::settingsSections)
 
 private fun appearanceAndPrivacyRows(settings: AppSettings): List<SettingItem> =
@@ -235,11 +341,112 @@ private fun appearanceAndPrivacyRows(settings: AppSettings): List<SettingItem> =
         ),
     )
 
+private fun privacyExtras(settings: AppSettings): List<SettingItem> =
+    appearanceAndSessionRows(settings) + savedMediaSettingsRows(settings) + threadReadingSettingsRows(settings)
+
+private fun appearanceAndSessionRows(settings: AppSettings): List<SettingItem> =
+    buildList {
+        add(
+            SettingItem(
+                "accentTheme",
+                "Accent color",
+                settings.accentTheme.name
+                    .lowercase()
+                    .replaceFirstChar(Char::uppercase),
+                SettingKind.CHOICE,
+                options = AccentTheme.entries.map { it.name.lowercase().replaceFirstChar(Char::uppercase) },
+                selected = settings.accentTheme.ordinal,
+            ),
+        )
+        add(
+            toggle(
+                "nsfwEachSession",
+                "Reveal NSFW each session",
+                settings.nsfwEachSession,
+                hint = "Require another reveal after leaving Orbin. Permanent hiding still applies.",
+            ),
+        )
+        if (settings.nsfwEachSession && !settings.hideNsfwBoards && !settings.nsfwSessionRevealed) {
+            add(SettingItem("nsfwReveal", "Show NSFW for this session", "Reveal", SettingKind.ACTION))
+        }
+        add(toggle("coverNsfwMedia", "Cover NSFW media until opened", settings.coverNsfwMedia))
+        add(
+            toggle(
+                "historySessionOnly",
+                "Only keep history this session",
+                settings.historySessionOnly,
+                hint = "Never stored or backed up; forgotten when you leave Orbin.",
+            ),
+        )
+    }
+
+private fun savedMediaSettingsRows(settings: AppSettings): List<SettingItem> =
+    buildList {
+        add(
+            toggle(
+                "privateSavedFiles",
+                "Keep new saved files in Orbin",
+                settings.privateSavedFiles,
+                hint = "New saves stay in private app storage. Existing public files stay where they are.",
+            ),
+        )
+        add(
+            toggle(
+                "askBeforePhotos",
+                "Ask before saving to Photos",
+                settings.askBeforePhotos,
+                hint = "Confirm before adding media to your photo library.",
+            ),
+        )
+        add(toggle("showSavedMediaTab", "Show the Downloads tab", settings.showSavedMediaTab))
+        add(toggle("fullscreenAutoAdvance", "Play the next item when a video ends", settings.fullscreenAutoAdvance))
+    }
+
+private fun threadReadingSettingsRows(settings: AppSettings): List<SettingItem> =
+    buildList {
+        add(
+            SettingItem(
+                "threadLayout",
+                "Thread layout",
+                settings.threadLayout.name
+                    .lowercase()
+                    .replaceFirstChar(Char::uppercase),
+                SettingKind.CHOICE,
+                options =
+                    ThreadLayout.entries.map {
+                        it.name.lowercase().replaceFirstChar(Char::uppercase)
+                    },
+                selected = settings.threadLayout.ordinal,
+            ),
+        )
+        add(toggle("autoScrollToLastSeen", "Open threads where you left them", settings.autoScrollToLastSeen))
+        add(toggle("showStickyThreads", "Show pinned threads", settings.showStickyThreads))
+        add(
+            SettingItem(
+                "hiddenThreadPatterns",
+                "Hidden thread filters",
+                settings.hiddenThreadPatterns.size.toString(),
+                SettingKind.TEXT,
+                filterRules = settings.hiddenThreadPatterns.map { SettingFilterRule(pattern = it) },
+            ),
+        )
+        add(
+            SettingItem(
+                "postFilterRules",
+                "Hidden post filters",
+                settings.postFilterRules.size.toString(),
+                SettingKind.TEXT,
+                filterRules = settings.postFilterRules.map { SettingFilterRule(it.kind.name, it.pattern, it.regex) },
+            ),
+        )
+    }
+
 private fun storageAndAboutRows(
     clearArmed: Boolean,
     imageCacheCleared: Boolean,
     backup: BackupState,
     version: AppVersion,
+    mediaCacheLabel: String,
 ): List<SettingItem> =
     listOfNotNull(
         SettingItem(
@@ -248,6 +455,14 @@ private fun storageAndAboutRows(
             value = if (clearArmed) "Tap again to delete" else "Delete",
             kind = SettingKind.ACTION,
             hint = "Deletes browsing history, download records and cached images on this device.",
+            destructive = true,
+        ),
+        SettingItem(
+            id = SettingIds.CLEAR_MEDIA_CACHE,
+            label = "Clear cache",
+            value = mediaCacheLabel,
+            hint = "Cached images and video frames. Keeps browsing history, transfers and saved media.",
+            kind = SettingKind.ACTION,
             destructive = true,
         ),
         SettingItem(
@@ -267,14 +482,18 @@ private fun storageAndAboutRows(
                     else -> "Save"
                 },
             kind = SettingKind.ACTION,
-            hint = "Followed boards, watched threads and settings, as a file Android can restore too.",
+            hint =
+                "Portable ZIP with settings, followed boards, bookmarks, history and saved media. " +
+                    "Android can restore it too.",
         ),
         SettingItem(
             id = SettingIds.IMPORT_BACKUP,
             label = "Import data",
             value =
                 when (backup) {
-                    is BackupState.Imported -> "Restored ${backup.boards} boards, ${backup.bookmarks} threads"
+                    is BackupState.Imported ->
+                        "Restored ${backup.boards} boards, ${backup.bookmarks} threads" +
+                            if (backup.mediaFiles > 0) ", ${backup.mediaFiles} saved media files" else ""
                     is BackupState.Failed -> backup.message
                     else -> "Restore"
                 },

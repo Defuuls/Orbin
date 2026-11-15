@@ -99,25 +99,28 @@ fun Post.withMediaCovered(): Post =
         copy(attachments = attachments.map { it.copy(isSpoiler = true) }.toImmutableList())
     }
 
-private fun Post.coveredIf(cover: Boolean): Post = if (cover || hasViolentLabel()) withMediaCovered() else this
+private fun Post.coveredIf(
+    cover: Boolean,
+    enabled: Boolean,
+): Post = withGeneratedMediaCover(APP_COVER_VIOLENCE, enabled && (cover || hasViolentLabel()))
 
 /**
  * Covers the media of every post with a violent label. When the opening post has one, every file
  * in the thread is covered: a thread titled for fight videos is full of them, labelled or not.
  */
-fun Thread.withViolentMediaCovered(): Thread {
+fun Thread.withViolentMediaCovered(enabled: Boolean = true): Thread {
     val wholeThread = originalPost.hasViolentLabel()
     return copy(
-        originalPost = originalPost.coveredIf(wholeThread),
-        replies = replies.map { it.coveredIf(wholeThread) }.toImmutableList(),
+        originalPost = originalPost.coveredIf(wholeThread, enabled),
+        replies = replies.map { it.coveredIf(wholeThread, enabled) }.toImmutableList(),
     )
 }
 
 /** As [Thread.withViolentMediaCovered], for a catalog entry and its preview replies. */
-fun CatalogThread.withViolentMediaCovered(): CatalogThread {
+fun CatalogThread.withViolentMediaCovered(enabled: Boolean = true): CatalogThread {
     val wholeThread = originalPost.hasViolentLabel()
     return copy(
-        originalPost = originalPost.coveredIf(wholeThread),
-        previewReplies = previewReplies.map { it.coveredIf(wholeThread) }.toImmutableList(),
+        originalPost = originalPost.coveredIf(wholeThread, enabled),
+        previewReplies = previewReplies.map { it.coveredIf(wholeThread, enabled) }.toImmutableList(),
     )
 }

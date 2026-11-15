@@ -10,6 +10,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -70,6 +71,7 @@ data class NextPalette(
     val quoteLink: Color,
     val dark: Boolean,
     val amoled: Boolean = false,
+    val accentTheme: NextAccentTheme = NextAccentTheme.ORBIN,
 )
 
 enum class NextPlatform { IOS, ANDROID }
@@ -103,12 +105,19 @@ fun NextTheme(
     fontScale: Float? = null,
     palette: NextPalette? = null,
     platform: NextPlatform? = null,
+    showSavedMediaTab: Boolean? = null,
     content: @Composable () -> Unit,
 ) {
     val inherited = LocalNext.current.takeIf { LocalNextThemed.current }
     val inheritedScale = LocalNextFontScale.current
 
-    val noOverrides = darkTheme == null && amoled == null && fontScale == null && palette == null && platform == null
+    val noOverrides =
+        darkTheme == null &&
+            amoled == null &&
+            fontScale == null &&
+            palette == null &&
+            platform == null &&
+            showSavedMediaTab == null
     if (inherited != null && noOverrides) {
         content()
         return
@@ -119,10 +128,16 @@ fun NextTheme(
     val dark = darkTheme ?: palette?.dark ?: inherited?.dark ?: isSystemInDarkTheme()
     val black = amoled ?: palette?.amoled ?: inherited?.amoled ?: false
     val scale = fontScale ?: inheritedScale
+    val savedMediaTabVisible = showSavedMediaTab ?: LocalOrbinSavedMediaTabVisible.current
+    val inputState = if (inherited != null) LocalReaderInputState.current else remember { ReaderInputState() }
 
     val resolvedPalette =
         (palette ?: inherited)?.takeIf { it.dark == dark && it.amoled == (dark && black) }
-            ?: canonicalNextPalette(dark, black)
+            ?: canonicalNextPalette(
+                dark,
+                black,
+                palette?.accentTheme ?: inherited?.accentTheme ?: NextAccentTheme.ORBIN,
+            )
 
     // Every Material role comes from the reader palette, including error containers. Mode
     // overrides resolve the complete palette so AMOLED blackens every ground together.
@@ -131,6 +146,8 @@ fun NextTheme(
     val density = LocalDensity.current
     CompositionLocalProvider(
         LocalNextFontFamily provides fontFamily,
+        LocalOrbinSavedMediaTabVisible provides savedMediaTabVisible,
+        LocalReaderInputState provides inputState,
         LocalNextPlatform provides resolvedPlatform,
         LocalNext provides resolvedPalette,
         LocalNextThemed provides true,

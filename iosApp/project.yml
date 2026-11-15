@@ -4,6 +4,9 @@
 #
 # then open iosApp/Orbin.xcodeproj. See docs/ios.md.
 name: Orbin
+packages:
+  OrbinFFmpegNative:
+    path: Packages/OrbinFFmpegNative
 options:
   deploymentTarget:
     iOS: "16.0"
@@ -22,12 +25,18 @@ settings:
     ORBIN_BUNDLE_ID: io.github.defuuls.orbin
     # Your Apple Developer team, for signing. Empty builds for the simulator only.
     ORBIN_TEAM_ID: ""
+    # Set only after the team's matching iCloud container and production OrbinItem schema exist.
+    # Non-entitled installations keep using local storage; the runtime checks both signatures.
+    ORBIN_CLOUD_ENTITLEMENTS: ""
 targets:
   Orbin:
     type: application
     platform: iOS
     sources:
       - Orbin
+    dependencies:
+      - package: OrbinFFmpegNative
+        product: OrbinFFmpegNative
     info:
       path: Orbin/Info.plist
       properties:
@@ -93,6 +102,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: $(ORBIN_BUNDLE_ID)
         DEVELOPMENT_TEAM: $(ORBIN_TEAM_ID)
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: $(ORBIN_CLOUD_ENTITLEMENTS)
         # iPhone and iPad: the shared screens size themselves to the window.
         TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -115,6 +125,20 @@ targets:
         script: |
           cd "$SRCROOT/.."
           ./gradlew :app-ios:embedAndSignAppleFrameworkForXcode
+  OrbinNativeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - OrbinNativeTests
+    dependencies:
+      - target: Orbin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(ORBIN_BUNDLE_ID).nativetests
+        GENERATE_INFOPLIST_FILE: YES
+        FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../app-ios/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        SWIFT_VERSION: "5.0"
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
   OrbinUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -142,6 +166,7 @@ schemes:
       language: en
       region: US
       targets:
+        - OrbinNativeTests
         - OrbinUITests
     archive:
       config: Release

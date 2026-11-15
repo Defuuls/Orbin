@@ -25,6 +25,8 @@ import java.security.SecureRandom
  * [Resolved.wipeDatabase] verdict - is handed to every caller. Resolving independently let two
  * first-launch callers each generate and store a different key, and after a key loss only the first
  * caller was told to wipe, leaving the other database keyed with a passphrase that no longer exists.
+ * Each physical database consumes that reset once through [Resolved.prepareDatabaseOnce]; later
+ * components reuse the same key epoch without unlinking another live connection's database.
  */
 internal class DatabasePassphrase(
     context: Context,
@@ -71,6 +73,21 @@ internal class DatabasePassphrase(
         val wipeDatabase: Boolean,
         val persisted: Boolean = true,
     ) {
+        private val preparationLock = Any()
+        private val preparedDatabases = mutableSetOf<String>()
+
+        /** Reset one database per key epoch, marking success only after its reset actually succeeds. */
+        fun prepareDatabaseOnce(
+            identity: String,
+            reset: () -> Unit,
+        ) {
+            synchronized(preparationLock) {
+                if (identity in preparedDatabases) return
+                if (persisted && wipeDatabase) reset()
+                preparedDatabases += identity
+            }
+        }
+
         override fun equals(other: Any?): Boolean =
             this === other ||
                 (

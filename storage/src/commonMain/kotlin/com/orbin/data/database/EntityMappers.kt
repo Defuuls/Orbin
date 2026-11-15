@@ -13,6 +13,7 @@ import com.orbin.core.model.PostNode
 import com.orbin.core.model.PosterInfo
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
+import com.orbin.core.model.ThreadAvailability
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
@@ -36,6 +37,8 @@ fun BookmarkEntity.toDomain(): Bookmark =
         lastSeenReplyCount = lastSeenReplyCount,
         latestReplyCount = latestReplyCount,
         isThreadDead = isThreadDead,
+        availability = ThreadAvailability.entries.firstOrNull { it.name == availability } ?: ThreadAvailability.UNKNOWN,
+        statusCheckedAtMillis = statusCheckedAtMillis,
     )
 
 fun Bookmark.toEntity(): BookmarkEntity =
@@ -50,6 +53,8 @@ fun Bookmark.toEntity(): BookmarkEntity =
         lastSeenReplyCount = lastSeenReplyCount,
         latestReplyCount = latestReplyCount,
         isThreadDead = isThreadDead,
+        availability = availability.name,
+        statusCheckedAtMillis = statusCheckedAtMillis,
     )
 
 fun HistoryEntity.toDomain(): HistoryEntry =

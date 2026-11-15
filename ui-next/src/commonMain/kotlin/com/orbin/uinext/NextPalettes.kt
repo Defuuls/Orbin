@@ -4,17 +4,35 @@ import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
+import com.orbin.uinext.tokens.readerColors
 
 /** The shared rounded-reader palette family, selected by brightness and AMOLED mode. */
 fun canonicalNextPalette(
     dark: Boolean,
     amoled: Boolean,
+    accentTheme: NextAccentTheme = NextAccentTheme.ORBIN,
 ): NextPalette =
-    when {
-        dark && amoled -> AmoledPalette
-        dark -> DarkPalette
-        else -> LightPalette
+    if (accentTheme != NextAccentTheme.ORBIN) {
+        readerColors(dark, amoled, accentTheme).asNextPalette(dark, dark && amoled, accentTheme)
+    } else {
+        when {
+            dark && amoled -> AmoledPalette
+            dark -> DarkPalette
+            else -> LightPalette
+        }
     }
+
+/** Unknown future preference values retain Orbin's default appearance. */
+fun canonicalNextPalette(
+    dark: Boolean,
+    amoled: Boolean,
+    accentTheme: String,
+): NextPalette =
+    canonicalNextPalette(
+        dark,
+        amoled,
+        NextAccentTheme.entries.firstOrNull { it.name == accentTheme } ?: NextAccentTheme.ORBIN,
+    )
 
 /**
  * Compatibility roles for screens that still read `next`, mapped only from reader color tokens:
@@ -29,6 +47,7 @@ fun canonicalNextPalette(
 private fun ReaderColors.asNextPalette(
     dark: Boolean,
     amoled: Boolean = false,
+    accentTheme: NextAccentTheme = NextAccentTheme.ORBIN,
 ): NextPalette =
     NextPalette(
         background = background,
@@ -53,6 +72,7 @@ private fun ReaderColors.asNextPalette(
         quoteLink = quoteLink,
         dark = dark,
         amoled = amoled,
+        accentTheme = accentTheme,
     )
 
 internal val LightPalette = ReaderLightColors.asNextPalette(dark = false)

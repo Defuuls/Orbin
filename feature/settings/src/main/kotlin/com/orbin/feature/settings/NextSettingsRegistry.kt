@@ -1,12 +1,15 @@
 package com.orbin.feature.settings
 
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.ThreadLayout
 import com.orbin.core.model.VIDEO_CACHE_MEGABYTE_OPTIONS
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
+import com.orbin.uinext.SettingFilterRule
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 
@@ -26,11 +29,16 @@ internal fun buildSettings(
     clearArmed: Boolean = false,
     checkUpdatesOnLaunch: Boolean = true,
     dns: DnsRowState = DnsRowState(),
+    mediaCacheLabel: String = imageCacheLabel,
 ): SettingsModel {
     val rows = Rows(strings)
-    val preferences = rows.preferences(settings, vm, checkUpdatesOnLaunch) + rows.strictDns(dns, vm)
-    val data = rows.data(settings, vm, updateState, imageCacheLabel, videoCacheLabel, clearArmed)
-    val appearanceIds = setOf("themeMode", "amoled", "catalogMode")
+    val preferences =
+        rows.preferences(settings, vm, checkUpdatesOnLaunch) +
+            rows.appearanceExtras(settings, vm) + rows.privacyExtras(settings, vm) +
+            rows.historyAndMediaExtras(settings, vm) + rows.readingExtras(settings, vm) +
+            rows.filterEditors(settings) + rows.strictDns(dns, vm)
+    val data = rows.data(settings, vm, updateState, imageCacheLabel, videoCacheLabel, clearArmed, mediaCacheLabel)
+    val appearanceIds = setOf("themeMode", "accentTheme", "amoled", "catalogMode")
     val groups =
         listOf(
             strings.get(R.string.settings_section_appearance) to preferences.filter { it.id in appearanceIds },
@@ -63,6 +71,141 @@ private class Rows(
      * alone, without re-plumbing either.
      */
     val texts = mutableMapOf<String, (String) -> Unit>()
+
+    fun appearanceExtras(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+    ) = listOf(
+        choice(
+            "accentTheme",
+            strings.get(R.string.settings_accent_theme),
+            AccentTheme.entries,
+            settings.accentTheme,
+            Enum<*>::titleCase,
+            vm::setAccentTheme,
+        ),
+    )
+
+    fun privacyExtras(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+    ) = buildList {
+        add(
+            toggle(
+                "nsfwEachSession",
+                strings.get(R.string.settings_nsfw_session),
+                settings.nsfwEachSession,
+                vm::setNsfwEachSession,
+                strings.get(R.string.settings_nsfw_session_hint),
+            ),
+        )
+        if (settings.nsfwEachSession && !settings.hideNsfwBoards && !settings.nsfwSessionRevealed) {
+            add(
+                action(
+                    "nsfwReveal",
+                    strings.get(R.string.settings_reveal_nsfw),
+                    strings.get(R.string.settings_reveal_nsfw_action),
+                ),
+            )
+        }
+        add(
+            toggle(
+                "coverNsfwMedia",
+                strings.get(R.string.settings_cover_nsfw),
+                settings.coverNsfwMedia,
+                vm::setCoverNsfwMedia,
+            ),
+        )
+        add(
+            toggle(
+                "privateSavedFiles",
+                strings.get(R.string.settings_private_files),
+                settings.privateSavedFiles,
+                vm::setPrivateSavedFiles,
+                strings.get(R.string.settings_private_files_hint),
+            ),
+        )
+        add(
+            toggle(
+                "askBeforePhotos",
+                strings.get(R.string.settings_ask_photos),
+                settings.askBeforePhotos,
+                vm::setAskBeforePhotos,
+                strings.get(R.string.settings_ask_photos_hint),
+            ),
+        )
+        add(
+            toggle(
+                "showSavedMediaTab",
+                strings.get(R.string.settings_saved_tab),
+                settings.showSavedMediaTab,
+                vm::setShowSavedMediaTab,
+            ),
+        )
+    }
+
+    fun historyAndMediaExtras(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+    ) = listOf(
+        toggle(
+            "historySessionOnly",
+            strings.get(R.string.settings_session_history),
+            settings.historySessionOnly,
+            vm::setHistorySessionOnly,
+            strings.get(R.string.settings_session_history_hint),
+        ),
+        toggle(
+            "fullscreenAutoAdvance",
+            strings.get(R.string.settings_auto_advance),
+            settings.fullscreenAutoAdvance,
+            vm::setFullscreenAutoAdvance,
+        ),
+    )
+
+    fun readingExtras(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+    ) = listOf(
+        choice(
+            "threadLayout",
+            strings.get(R.string.settings_thread_layout),
+            ThreadLayout.entries,
+            settings.threadLayout,
+            Enum<*>::titleCase,
+            vm::setThreadLayout,
+        ),
+        toggle(
+            "autoScrollToLastSeen",
+            strings.get(R.string.settings_last_seen),
+            settings.autoScrollToLastSeen,
+            vm::setAutoScrollToLastSeen,
+        ),
+        toggle(
+            "showStickyThreads",
+            strings.get(R.string.settings_sticky),
+            settings.showStickyThreads,
+            vm::setShowStickyThreads,
+        ),
+    )
+
+    fun filterEditors(settings: AppSettings): List<SettingItem> =
+        listOf(
+            SettingItem(
+                "hiddenThreadPatterns",
+                strings.get(R.string.settings_hidden_threads),
+                settings.hiddenThreadPatterns.size.toString(),
+                SettingKind.TEXT,
+                filterRules = settings.hiddenThreadPatterns.map { SettingFilterRule(pattern = it) },
+            ),
+            SettingItem(
+                "postFilterRules",
+                strings.get(R.string.settings_hidden_posts),
+                settings.postFilterRules.size.toString(),
+                SettingKind.TEXT,
+                filterRules = settings.postFilterRules.map { SettingFilterRule(it.kind.name, it.pattern, it.regex) },
+            ),
+        )
 
     fun toggle(
         id: String,
@@ -213,6 +356,7 @@ private class Rows(
         imageCacheLabel: String,
         videoCacheLabel: String,
         clearArmed: Boolean,
+        mediaCacheLabel: String,
     ) = listOf(
         action(
             "clearActivity",
@@ -222,6 +366,13 @@ private class Rows(
                 if (clearArmed) R.string.settings_clear_activity_armed else R.string.settings_clear_activity_action,
             ),
             strings.get(R.string.settings_clear_activity_hint),
+            destructive = true,
+        ),
+        action(
+            "clearMediaCache",
+            strings.get(R.string.settings_clear_media_cache),
+            mediaCacheLabel,
+            strings.get(R.string.settings_clear_media_cache_hint),
             destructive = true,
         ),
         action(

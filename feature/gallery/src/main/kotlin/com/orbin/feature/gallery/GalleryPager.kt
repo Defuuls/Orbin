@@ -54,7 +54,7 @@ internal fun GalleryMediaPager(
     content: GalleryContentState.Ready,
     selection: GalleryPagerSelection,
     modifier: Modifier = Modifier,
-    pageContent: @Composable (item: MediaAttachment, isActive: Boolean, isNear: Boolean) -> Unit,
+    pageContent: @Composable (item: MediaAttachment, isActive: Boolean, isNear: Boolean, pageKey: String) -> Unit,
 ) {
     val activeIndex = selection.activeIndexIn(content)
     VerticalPager(
@@ -64,6 +64,11 @@ internal fun GalleryMediaPager(
         beyondViewportPageCount = 0,
     ) { page ->
         val item = content.media[page.coerceIn(0, content.media.lastIndex)]
-        pageContent(item, content.pageKey(page) == selection.activePageKey, abs(page - activeIndex) <= 1)
+        pageContent(
+            item,
+            content.pageKey(page) == selection.activePageKey,
+            abs(page - activeIndex) <= 1,
+            content.pageKey(page),
+        )
     }
 }

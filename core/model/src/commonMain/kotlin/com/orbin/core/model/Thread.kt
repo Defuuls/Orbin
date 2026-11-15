@@ -24,6 +24,8 @@ data class Thread(
     val originalPost: Post,
     val replies: ImmutableList<Post> = persistentListOf(),
     val stats: ThreadStats = ThreadStats(),
+    /** Transient display provenance; offline codecs preserve the canonical content only. */
+    val isOfflineCopy: Boolean = false,
 ) {
     /** OP followed by replies, the natural reading order. */
     val allPosts: List<Post> get() =

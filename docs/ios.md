@@ -236,3 +236,36 @@ and full uploaded build number. It attaches the release's notes to that build us
 App Store Connect secrets. It performs no archive or upload and fails visibly if the notes
 cannot be saved. For example, release `202-Arracacha` uses marketing version `202` and the exact
 build number from its successful upload, such as `220.202611121516`.
+
+## Optional iCloud sync provisioning
+
+Sync is off by default and uses the Apple account's private CloudKit database. It has no Orbin
+account, analytics, or Android cloud-backup dependency. Local app-lock settings, security keys,
+installation paths and session-only activity must never be exported. The native bridge checks
+the executable's signed entitlements and the embedded profile before constructing a container;
+unsigned, simulator and sideloaded builds therefore continue to work locally.
+
+Before enabling distribution signing for sync, the Apple Developer team must:
+
+1. Register `iCloud.<bundle id>` (normally `iCloud.io.github.defuuls.orbin`) and associate it with
+   Orbin's App ID using the CloudKit service.
+2. Create the `OrbinItem` record type in the container's Development schema, with String fields
+   `itemID`, `origin`, `payload`; Int64 fields `revision`, `deleted`, `hasFile`, `hasThumbnail`; and Asset fields
+   `file`, `thumbnail`. Allow queries for this record type, then deploy the schema to Production. Records live
+   in the user's private `OrbinPortableData` zone, not a public database.
+3. Set repository variable `IOS_ICLOUD_ENABLED=true`. The archive then requests
+   `Orbin/CloudSync.entitlements`; distribution export must produce a matching signed profile.
+   The empty default keeps existing TestFlight signing working until the container is ready.
+4. Validate with two entitled devices: opt in, merge independent items, change and delete the
+   same item, go offline and retry, reinstall and restore, then delete cloud data while keeping
+   local data. Check signed-out and quota errors. Session history and device security preferences
+   must remain absent from records and file backups.
+
+Each portable entity has a source-qualified key, revision and deletion marker; concurrent updates
+resolve deterministically. Saves use CloudKit's record change tags, so another device's write
+causes a fresh merge instead of silently overwriting it. Media is stored as Assets, and unchanged
+media is not downloaded again during Sync now. Disabling sync keeps existing cloud data; the
+separate confirmed Delete iCloud data action removes the private Orbin zone and leaves local files.
+
+Source code and tests alone do not establish that the Apple capability or Production schema has
+been activated. Record that distribution check separately in the feature-parity checklist.

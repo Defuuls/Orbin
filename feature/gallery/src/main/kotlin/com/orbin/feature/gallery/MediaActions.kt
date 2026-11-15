@@ -36,6 +36,11 @@ internal fun MediaActionsMenu(
     onSaveRemaining: (() -> Unit)? = null,
     playbackSpeed: Float? = null,
     onPlaybackSpeedChange: ((Float) -> Unit)? = null,
+    onFileInfo: ((MediaAttachment) -> Unit)? = null,
+    onImageSearch: ((MediaAttachment) -> Unit)? = null,
+    autoAdvance: Boolean = false,
+    onAutoAdvanceChange: ((Boolean) -> Unit)? = null,
+    onShowMediaFilter: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val actions =
@@ -60,12 +65,55 @@ internal fun MediaActionsMenu(
                 containerColor = reader.surfaceVariant,
                 shadowElevation = 8.dp,
             ) {
+                onShowMediaFilter?.let { showFilter ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gallery_media_filter), color = reader.ink) },
+                        onClick = {
+                            onDismiss()
+                            showFilter()
+                        },
+                    )
+                }
+                onFileInfo?.let { showInfo ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gallery_file_information), color = reader.ink) },
+                        onClick = {
+                            onDismiss()
+                            showInfo(attachment)
+                        },
+                    )
+                }
+                onImageSearch?.let { search ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gallery_image_search), color = reader.ink) },
+                        onClick = {
+                            onDismiss()
+                            search(attachment)
+                        },
+                    )
+                }
                 onSaveRemaining?.let { downloadRest ->
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.gallery_download_rest), color = reader.ink) },
                         onClick = {
                             onDismiss()
                             downloadRest()
+                        },
+                    )
+                }
+                onAutoAdvanceChange?.let { change ->
+                    DropdownMenuItem(
+                        text = {
+                            val label =
+                                when {
+                                    autoAdvance -> R.string.gallery_auto_advance_off
+                                    else -> R.string.gallery_auto_advance_on
+                                }
+                            Text(stringResource(label))
+                        },
+                        onClick = {
+                            onDismiss()
+                            change(!autoAdvance)
                         },
                     )
                 }

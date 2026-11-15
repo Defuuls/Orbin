@@ -15,6 +15,8 @@ data class Bookmark(
     /** Latest known reply count from the most recent refresh. */
     val latestReplyCount: Int = 0,
     val isThreadDead: Boolean = false,
+    val availability: ThreadAvailability = ThreadAvailability.UNKNOWN,
+    val statusCheckedAtMillis: Long = 0,
 ) {
     val unreadCount: Int get() = (latestReplyCount - lastSeenReplyCount).coerceAtLeast(0)
     val hasUnread: Boolean get() = unreadCount > 0

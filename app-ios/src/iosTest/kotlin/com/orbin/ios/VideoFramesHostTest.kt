@@ -30,6 +30,30 @@ import kotlin.test.assertTrue
 
 class VideoFramesHostTest {
     @Test
+    fun clearingFramesReportsOwnedBytesAndPreventsInFlightRepopulation() =
+        runBlocking {
+            VideoFrames.clear()
+            val cached = ControlledExtraction()
+            val cachedLoad = async(Dispatchers.Default) { VideoFrames.load("cache-count-test") { cached } }
+            cached.started.await()
+            cached.finish(ImageBitmap(3, 2))
+            cachedLoad.await()
+            assertEquals(24L, VideoFrames.usageBytes())
+            val pending = ControlledExtraction()
+            val pendingLoad = async(Dispatchers.Default) { VideoFrames.load("cache-pending-test") { pending } }
+            pending.started.await()
+            VideoFrames.clear()
+            pending.finish(ImageBitmap(4, 4))
+            pendingLoad.await()
+            assertEquals(0L, VideoFrames.usageBytes())
+            assertNull(VideoFrames.cached("cache-count-test"))
+            assertNull(
+                VideoFrames.cached("cache-pending-test"),
+                "A clear action invalidates older extraction generations",
+            )
+        }
+
+    @Test
     fun cancelledFrameLoadsReleaseBothSlotsBeforeNativeCompletion() =
         runBlocking {
             val identity = NSUUID().UUIDString

@@ -1,5 +1,6 @@
 package com.orbin.data.repository
 
+import com.orbin.core.model.DownloadMediaContext
 import com.orbin.core.model.DownloadStatus
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
@@ -20,6 +21,32 @@ private const val THREAD = 42L
 private const val TITLE = "Clips"
 
 class DownloadEnqueueTest {
+    @Test
+    fun privateQueueTargetsKeepTheirSourceIdentityAndStaySeparateFromPublicSaves() =
+        runTest {
+            val dao = FakeDownloadDao()
+            val queue = RecordingQueue()
+            val repo = DownloadRepositoryImpl(dao, queue, Dispatchers.Unconfined)
+            val context = DownloadMediaContext("fourchan", BOARD, THREAD, attachmentId = "attachment-1")
+            val publicId = repo.enqueue(URL, NAME, BOARD, THREAD, TITLE, context, false)
+            val privateId = repo.enqueue(URL, NAME, BOARD, THREAD, TITLE, context, true)
+            assertTrue(publicId != privateId)
+            assertEquals(privateId, repo.enqueue(URL, NAME, BOARD, THREAD, TITLE, context, true))
+            val before = checkNotNull(dao.getById(privateId))
+            assertTrue(before.privateTarget)
+            assertEquals(
+                context,
+                kotlinx.serialization.json.Json.decodeFromString<DownloadMediaContext>(
+                    checkNotNull(before.mediaContextJson),
+                ),
+            )
+            dao.updateStatus(privateId, DownloadStatus.FAILED.name)
+            repo.retry(privateId)
+            val after = checkNotNull(dao.getById(privateId))
+            assertEquals(before.mediaContextJson, after.mediaContextJson)
+            assertTrue(after.privateTarget)
+        }
+
     @Test
     fun aQueuedOrRunningRowIsReturnedAndAFailedRowIsRequeued() {
         val queued = entry(1, DownloadStatus.QUEUED)

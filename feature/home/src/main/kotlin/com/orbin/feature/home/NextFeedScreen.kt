@@ -38,9 +38,11 @@ import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.sourceLabel
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 private const val RELATIVE_TIME_TICK_MS = 60_000L
 
@@ -58,6 +60,7 @@ fun NextFeedScreen(
     headerContent: @Composable () -> Unit = {},
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
     providerFilter: String? = null,
+    favoritesOnly: Boolean = false,
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
@@ -79,6 +82,7 @@ fun NextFeedScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mode by viewModel.feedMode.collectAsStateWithLifecycle()
     LaunchedEffect(providerFilter) { viewModel.setProviderFilter(providerFilter) }
+    LaunchedEffect(favoritesOnly) { viewModel.setFavoritesOnly(favoritesOnly) }
     val actionsViewModel: FeedActionsViewModel = hiltViewModel()
     val activeDownloads =
         if (downloadBadge != null) {
@@ -120,13 +124,25 @@ fun NextFeedScreen(
     }
     var localQuery by rememberSaveable { mutableStateOf("") }
     val presentationScope =
-        FeedPresentationScope(mode, providerFilter, localQuery, settings.hideNsfwBoards, settings.coverViolentMedia)
+        FeedPresentationScope(
+            mode,
+            providerFilter,
+            localQuery,
+            settings.nsfwContentHidden,
+            settings.coverViolentMedia,
+            settings.coverNsfwMedia,
+            favoritesOnly,
+            settings.hiddenThreadPatterns,
+            settings.showStickyThreads,
+        )
     val state =
         (uiState as? SubscribedFeedUiState.Success)?.takeIf {
             it.mode == mode &&
                 it.providerFilter == providerFilter &&
-                it.hideNsfwBoards == settings.hideNsfwBoards &&
-                it.coverViolentMedia == settings.coverViolentMedia
+                it.favoritesOnly == favoritesOnly &&
+                it.hideNsfwBoards == settings.nsfwContentHidden &&
+                it.coverViolentMedia == settings.coverViolentMedia &&
+                it.coverNsfwMedia == settings.coverNsfwMedia
         }
     var mapped by remember { mutableStateOf<MappedFeed?>(null) }
     LaunchedEffect(state?.boards, visited, presentationScope) {
@@ -134,12 +150,25 @@ fun NextFeedScreen(
         val entries =
             withContext(Dispatchers.Default) {
                 feedEntries(
-                    current.boards,
+                    current.boards.map { board ->
+                        val filters =
+                            com.orbin.core.model.UserContentFilters(
+                                threadPatterns = settings.hiddenThreadPatterns,
+                            )
+                        board.copy(
+                            threads =
+                                board.threads
+                                    .filter { thread ->
+                                        (settings.showStickyThreads || !thread.stats.isSticky) &&
+                                            (settings.hiddenThreadPatterns.isEmpty() || !filters.hidesThread(thread))
+                                    }.toImmutableList(),
+                        )
+                    },
                     visited,
                     System.currentTimeMillis(),
                     localQuery,
                     FeedSort.ACTIVITY,
-                    videosOnly = true,
+                    videosOnly = false,
                 )
             }
         mapped = MappedFeed(presentationScope, current.boards, entries)
@@ -202,9 +231,16 @@ fun NextFeedScreen(
             onRefresh = viewModel::refresh,
             modifier = modifier.fillMaxSize(),
         ) {
-            val catalogMode = CatalogMode.CARD
+            val catalogMode =
+                when (settings.catalogMode) {
+                    StoredCatalogMode.LIST -> CatalogMode.LIST
+                    StoredCatalogMode.GRID -> CatalogMode.GRID
+                    StoredCatalogMode.CARD -> CatalogMode.CARD
+                }
             FeedScreen(
                 rows = rows,
+                emptyTitle = stringResource(R.string.feed_favorites_empty_title).takeIf { favoritesOnly },
+                emptyMessage = stringResource(R.string.feed_favorites_empty_message).takeIf { favoritesOnly },
                 isLoading = loading,
                 errorMessage = (uiState as? SubscribedFeedUiState.Error)?.message ?: emptyError,
                 onRetry = viewModel::refresh,
@@ -227,7 +263,15 @@ fun NextFeedScreen(
                 onQueryChange = { localQuery = it },
                 mode = catalogMode,
                 downloadBadge = activeDownloads,
-                onModeChange = null,
+                onModeChange = { selected ->
+                    viewModel.setCatalogMode(
+                        when (selected) {
+                            CatalogMode.LIST -> StoredCatalogMode.LIST
+                            CatalogMode.GRID -> StoredCatalogMode.GRID
+                            CatalogMode.CARD -> StoredCatalogMode.CARD
+                        },
+                    )
+                },
                 wideWindow = wideWindow,
                 hideRailOnScroll = hideRailOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -324,6 +368,10 @@ private data class FeedPresentationScope(
     val query: String,
     val hideNsfw: Boolean,
     val coverViolent: Boolean,
+    val coverNsfw: Boolean = false,
+    val favoritesOnly: Boolean = false,
+    val hiddenThreadPatterns: List<String> = emptyList(),
+    val showStickyThreads: Boolean = true,
 )
 
 private data class MappedFeed(

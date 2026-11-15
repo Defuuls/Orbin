@@ -26,6 +26,9 @@ class HistoryRepositoryImpl(
             list.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
         }
 
+    override fun observeAllEntries(): Flow<List<HistoryEntry>> =
+        dao.observeAllEntries().map { rows -> rows.map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() } }
+
     override fun observeVisitedKeys(): Flow<Set<ThreadKey>> =
         dao
             .observeKeys()
@@ -56,6 +59,8 @@ class HistoryRepositoryImpl(
         postId: PostId,
         offsetPx: Int,
     ) = dao.updateScrollPosition(key.provider.value, key.board.value, key.thread.value, postId.value, offsetPx)
+
+    override suspend fun remove(key: ThreadKey) = dao.deleteByKey(key.provider.value, key.board.value, key.thread.value)
 
     override suspend fun clear() = dao.clear()
 }

@@ -129,6 +129,8 @@ fun FeedScreen(
     wideWindow: Boolean = false,
     downloadBadge: Int = 0,
     onOpenMedia: ((FeedRow) -> Unit)? = null,
+    emptyTitle: String? = null,
+    emptyMessage: String? = null,
 ) {
     val previewCallback by rememberUpdatedState(onActivePreviewChanged)
     val upcomingCallback by rememberUpdatedState(onUpcomingPreviewChanged)
@@ -237,6 +239,8 @@ fun FeedScreen(
                         activityText = activityText,
                         actions = rowActions,
                         bottomPadding = if (showBottomBar) PaddingValues() else bottomPadding,
+                        emptyTitle = emptyTitle,
+                        emptyMessage = emptyMessage,
                     )
                 }
             }
@@ -286,6 +290,8 @@ private fun ReaderFeedGrid(
     activityText: @Composable (FeedRow) -> String,
     actions: ReaderFeedRowActions,
     bottomPadding: PaddingValues,
+    emptyTitle: String?,
+    emptyMessage: String?,
 ) {
     val state = rememberReaderFeedState(rows, mode)
     val loadMoreCallback by rememberUpdatedState(onLoadMore)
@@ -328,7 +334,16 @@ private fun ReaderFeedGrid(
             if (rows.isEmpty()) {
                 item(key = "reader-feed-state", span = { GridItemSpan(maxLineSpan) }) {
                     Box(Modifier.fillMaxWidth().height(stateHeight)) {
-                        ReaderFeedEmpty(isLoading, errorMessage, onRetry, onOpenBoards, mode, wideWindow)
+                        ReaderFeedEmpty(
+                            isLoading,
+                            errorMessage,
+                            onRetry,
+                            onOpenBoards,
+                            mode,
+                            wideWindow,
+                            emptyTitle,
+                            emptyMessage,
+                        )
                     }
                 }
             } else {
@@ -401,6 +416,8 @@ private fun ReaderFeedEmpty(
     onOpenBoards: (() -> Unit)?,
     mode: CatalogMode,
     wideWindow: Boolean,
+    emptyTitle: String?,
+    emptyMessage: String?,
 ) {
     when {
         isLoading -> ReaderCatalogSkeleton(mode = mode, wideWindow = wideWindow, gutter = GRID_SIDE_INSET)
@@ -408,8 +425,8 @@ private fun ReaderFeedEmpty(
         else ->
             Column(Modifier.fillMaxSize()) {
                 ReaderEmptyState(
-                    title = stringResource(Res.string.feed_redesign_empty_title),
-                    message = stringResource(Res.string.feed_redesign_empty_hint),
+                    title = emptyTitle ?: stringResource(Res.string.feed_redesign_empty_title),
+                    message = emptyMessage ?: stringResource(Res.string.feed_redesign_empty_hint),
                     onReload = onRetry,
                     modifier = Modifier.weight(1f),
                 )

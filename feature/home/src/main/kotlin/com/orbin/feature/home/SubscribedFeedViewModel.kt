@@ -73,10 +73,12 @@ sealed interface SubscribedFeedUiState {
         val canLoadMore: Boolean = false,
         val mode: HomeFeedMode = HomeFeedMode.FOLLOWING,
         val providerFilter: String? = null,
+        val favoritesOnly: Boolean = false,
         /** The published request token coalesces repeated end-of-page callbacks. */
         val discoveryLimit: Int = 0,
         val hideNsfwBoards: Boolean = false,
         val coverViolentMedia: Boolean = true,
+        val coverNsfwMedia: Boolean = false,
         /** Preserves a source outage even when healthy catalogs contain no eligible videos. */
         val errorMessage: String? = null,
     ) : SubscribedFeedUiState
@@ -120,6 +122,12 @@ class SubscribedFeedViewModel
         private val _feedMode = MutableStateFlow(HomeFeedMode.FOLLOWING)
         val feedMode: StateFlow<HomeFeedMode> = _feedMode.asStateFlow()
         private val providerFilter = MutableStateFlow<String?>(null)
+        private val favoritesSelection = MutableStateFlow(false)
+
+        fun setFavoritesOnly(enabled: Boolean) {
+            favoritesSelection.value = enabled
+        }
+
         private val discoveryLimit = MutableStateFlow(DISCOVERY_PAGE_SIZE)
         private val indexResults = MutableStateFlow<Map<String, String?>>(emptyMap())
 
@@ -240,58 +248,69 @@ class SubscribedFeedViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), emptySet())
 
         val uiState: StateFlow<SubscribedFeedUiState> =
-            combine(_feedMode, providerFilter, discoveryLimit, loadSettings, ::FeedSelection)
-                .flatMapLatest { selection ->
-                    // Privacy changes replace every source together before old cached rows can
-                    // be mixed with a source that has already applied the new policy.
-                    val policyChanged = catalogs.prepare(selection.settings)
-                    val selected =
-                        providers.filter {
-                            selection.providerFilter == null ||
-                                it.metadata.id.value == selection.providerFilter
-                        }
-                    val content: Flow<SubscribedFeedUiState> =
-                        if (selected.isEmpty()) {
-                            flowOf(
-                                SubscribedFeedUiState.Success(
-                                    persistentListOf(),
-                                    mode = selection.mode,
-                                    providerFilter = selection.providerFilter,
-                                    discoveryLimit = selection.discoveryLimit,
-                                    hideNsfwBoards = selection.settings.hideNsfwBoards,
-                                    coverViolentMedia = selection.settings.coverViolentMedia,
-                                ),
-                            )
-                        } else {
-                            val quota = (selection.discoveryLimit + selected.size - 1) / selected.size
-                            combine(selected.map { observeProviderFeed(it, selection, quota) }) { states ->
-                                when (val merged = mergeProviderFeeds(states.toList())) {
-                                    is SubscribedFeedUiState.Success ->
-                                        merged.copy(
-                                            mode = selection.mode,
-                                            providerFilter = selection.providerFilter,
-                                            discoveryLimit = selection.discoveryLimit,
-                                            hideNsfwBoards = selection.settings.hideNsfwBoards,
-                                            coverViolentMedia = selection.settings.coverViolentMedia,
-                                        )
-                                    else -> merged
-                                }
+            combine(
+                _feedMode,
+                providerFilter,
+                discoveryLimit,
+                loadSettings,
+                favoritesSelection,
+            ) { mode, source, limit, options, favorites ->
+                FeedSelection(mode, source, limit, options, favorites)
+            }.flatMapLatest { selection ->
+                // Privacy changes replace every source together before old cached rows can
+                // be mixed with a source that has already applied the new policy.
+                val policyChanged = catalogs.prepare(selection.settings)
+                val selected =
+                    providers.filter {
+                        selection.providerFilter == null ||
+                            it.metadata.id.value == selection.providerFilter
+                    }
+                val content: Flow<SubscribedFeedUiState> =
+                    if (selected.isEmpty()) {
+                        flowOf(
+                            SubscribedFeedUiState.Success(
+                                persistentListOf(),
+                                mode = selection.mode,
+                                providerFilter = selection.providerFilter,
+                                favoritesOnly = selection.favoritesOnly,
+                                discoveryLimit = selection.discoveryLimit,
+                                hideNsfwBoards = selection.settings.hideNsfwBoards,
+                                coverViolentMedia = selection.settings.coverViolentMedia,
+                                coverNsfwMedia = selection.settings.coverNsfwMedia,
+                            ),
+                        )
+                    } else {
+                        val quota = (selection.discoveryLimit + selected.size - 1) / selected.size
+                        combine(selected.map { observeProviderFeed(it, selection, quota) }) { states ->
+                            when (val merged = mergeProviderFeeds(states.toList())) {
+                                is SubscribedFeedUiState.Success ->
+                                    merged.copy(
+                                        mode = selection.mode,
+                                        providerFilter = selection.providerFilter,
+                                        favoritesOnly = selection.favoritesOnly,
+                                        discoveryLimit = selection.discoveryLimit,
+                                        hideNsfwBoards = selection.settings.hideNsfwBoards,
+                                        coverViolentMedia = selection.settings.coverViolentMedia,
+                                        coverNsfwMedia = selection.settings.coverNsfwMedia,
+                                    )
+                                else -> merged
                             }
                         }
-                    content.onStart {
-                        if (policyChanged) emit(SubscribedFeedUiState.Loading)
                     }
-                }.onEach { state ->
-                    if (state !is SubscribedFeedUiState.Loading &&
-                        (state !is SubscribedFeedUiState.Success || !state.isLoadingMore)
-                    ) {
-                        _isRefreshing.value = false
-                    }
-                }.stateIn(
-                    viewModelScope,
-                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-                    SubscribedFeedUiState.Loading,
-                )
+                content.onStart {
+                    if (policyChanged) emit(SubscribedFeedUiState.Loading)
+                }
+            }.onEach { state ->
+                if (state !is SubscribedFeedUiState.Loading &&
+                    (state !is SubscribedFeedUiState.Success || !state.isLoadingMore)
+                ) {
+                    _isRefreshing.value = false
+                }
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                SubscribedFeedUiState.Loading,
+            )
 
         /** Cache and failures stay source-scoped even when two sites reuse a board code. */
         private fun observeProviderFeed(
@@ -301,7 +320,11 @@ class SubscribedFeedViewModel
         ): Flow<SubscribedFeedUiState> =
             combine(
                 boardRepository.observeBoards(provider.metadata.id),
-                boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id),
+                if (selection.favoritesOnly) {
+                    boardPreferencesRepository.observeFavoriteBoards(provider.metadata.id)
+                } else {
+                    boardPreferencesRepository.observeSubscribedBoards(provider.metadata.id)
+                },
                 indexResults,
             ) { boards, subscribed, indexes ->
                 val settings = selection.settings
@@ -434,12 +457,14 @@ class SubscribedFeedViewModel
 internal data class FeedLoadSettings(
     val hideNsfwBoards: Boolean,
     val coverViolentMedia: Boolean,
+    val coverNsfwMedia: Boolean = false,
 )
 
 private fun AppSettings.toFeedLoadSettings(): FeedLoadSettings =
     FeedLoadSettings(
-        hideNsfwBoards = hideNsfwBoards,
+        hideNsfwBoards = nsfwContentHidden,
         coverViolentMedia = coverViolentMedia,
+        coverNsfwMedia = coverNsfwMedia,
     )
 
 private data class FeedSelection(
@@ -447,6 +472,7 @@ private data class FeedSelection(
     val providerFilter: String?,
     val discoveryLimit: Int,
     val settings: FeedLoadSettings,
+    val favoritesOnly: Boolean = false,
 )
 
 private data class ProviderFeedSelection(

@@ -4,6 +4,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.InstrumentedImageBoardProvider
+import com.orbin.provider.api.NsfwMediaCoverProvider
 import com.orbin.provider.api.ProviderDiagnostics
 import com.orbin.provider.api.ProviderRegistry
 import com.orbin.provider.api.ViolentMediaCoverProvider
@@ -27,6 +28,8 @@ class ProviderRegistryImpl(
             .map { InstrumentedImageBoardProvider(it, diagnostics) }
             .map { provider ->
                 ViolentMediaCoverProvider(provider) { settingsRepository.settings.first().coverViolentMedia }
+            }.map { provider ->
+                NsfwMediaCoverProvider(provider) { settingsRepository.settings.first().coverNsfwMedia }
             }.sortedBy { it.metadata.displayName }
 
     private val byId: Map<ProviderId, ImageBoardProvider> =

@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +62,7 @@ import com.orbin.uinext.resources.reader_nav_settings
 import com.orbin.uinext.tokens.OrbinElevation
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
+import com.orbin.uinext.tokens.accentSecondary
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -72,6 +74,9 @@ import org.jetbrains.compose.resources.stringResource
 object OrbinStyle {
     const val WORDMARK = "Orbin"
 }
+
+/** A hidden saved-media tab remains reachable through the existing drawer and Settings actions. */
+val LocalOrbinSavedMediaTabVisible = staticCompositionLocalOf { true }
 
 /**
  * The Orbin Midnight Electric mark (`>>` quote chevrons + interlocking play spark),
@@ -181,6 +186,11 @@ fun OrbinBottomBar(
         ),
     downloadBadge: Int = 0,
 ) {
+    val shownDestinations =
+        destinations.filterNot {
+            it == NextDestination.DOWNLOADS &&
+                !LocalOrbinSavedMediaTabVisible.current
+        }
     val activeDownloads =
         if (downloadBadge > 0) {
             pluralStringResource(Res.plurals.reader_downloads_active, downloadBadge, downloadBadge)
@@ -200,7 +210,7 @@ fun OrbinBottomBar(
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            modifier = Modifier.widthIn(max = (destinations.size * 76 + 12).dp).fillMaxWidth(),
+            modifier = Modifier.widthIn(max = (shownDestinations.size * 76 + 12).dp).fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
             color = colors.surfaceVariant.copy(alpha = 0.82f),
             border = BorderStroke(1.dp, colors.hairline),
@@ -217,7 +227,7 @@ fun OrbinBottomBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                destinations.forEach { destination ->
+                shownDestinations.forEach { destination ->
                     OrbinNavigationTab(
                         destination = destination,
                         selected = destination == selected,
@@ -242,6 +252,11 @@ fun OrbinSideBar(
         listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.DOWNLOADS, NextDestination.SETTINGS),
     downloadBadge: Int = 0,
 ) {
+    val shownDestinations =
+        destinations.filterNot {
+            it == NextDestination.DOWNLOADS &&
+                !LocalOrbinSavedMediaTabVisible.current
+        }
     val colors = reader
     val direction = LocalLayoutDirection.current
     val left = WindowInsets.safeDrawing.asPaddingValues().calculateLeftPadding(direction)
@@ -274,7 +289,7 @@ fun OrbinSideBar(
             shadowElevation = 0.dp,
         ) {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(6.dp).selectableGroup()) {
-                destinations.forEach { destination ->
+                shownDestinations.forEach { destination ->
                     OrbinNavigationTab(
                         destination = destination,
                         selected = destination == selected,
@@ -302,7 +317,7 @@ private fun OrbinNavigationTab(
     val label = orbinBottomLabel(destination)
     val gradient =
         if (selected) {
-            listOf(colors.accent.copy(alpha = 0.24f), Color(0xFFA78BFA).copy(alpha = 0.20f))
+            listOf(colors.accent.copy(alpha = 0.24f), accentSecondary(next.accentTheme).copy(alpha = 0.20f))
         } else {
             listOf(Color.Transparent, Color.Transparent)
         }

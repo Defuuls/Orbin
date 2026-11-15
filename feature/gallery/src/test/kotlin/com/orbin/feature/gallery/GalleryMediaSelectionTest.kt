@@ -7,6 +7,18 @@ import kotlinx.collections.immutable.toImmutableList
 import org.junit.Test
 
 class GalleryMediaSelectionTest {
+    @Test
+    fun downloadRestHonorsOwnerPolicyWithoutDiscardingOtherVisibleKinds() {
+        val ready =
+            GalleryContentState.Ready(
+                listOf(file("visible-video", "preview")).toImmutableList(),
+                files.toImmutableList(),
+                listOf(1).toImmutableList(),
+                downloadableThreadMediaIndices = setOf(0, 1, 3),
+            )
+        assertThat(galleryRemainingMedia(ready, 0)).containsExactly(files[0], files[3]).inOrder()
+    }
+
     private val files = List(4) { file("reply-$it", "https://site.example/thumb-$it.jpg") }
 
     @Test

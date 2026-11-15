@@ -84,6 +84,7 @@ class LegacyThemeMigrationTest {
                 val settings = SettingsStore(dataStore).settings.first()
                 assertEquals(AppThemeMode.DARK, settings.themeMode, value)
                 assertTrue(settings.amoled, value)
+                assertFalse(settings.hideNsfwBoards, "existing stores retain their prior implicit preference")
                 assertFalse(LegacyThemeMigration.COLOR_THEME in dataStore.data.first(), value)
             }
         }
@@ -163,17 +164,23 @@ class LegacyThemeMigrationTest {
         }
 
     @Test
-    fun aFreshStoreIsUnchangedAndEqualsTheDefaults() =
+    fun aFreshStoreHasNoLegacyThemeAndReceivesPrivacyDefaults() =
         runTest {
             val dataStore = backgroundScope.dataStore()
             assertFalse(LegacyThemeMigration.clear(dataStore))
-            assertEquals(AppSettings.Default, SettingsStore(dataStore).settings.first())
             assertTrue(
                 dataStore.data
                     .first()
                     .asMap()
                     .isEmpty(),
+                "theme migration leaves a fresh store untouched",
             )
+            assertEquals(AppSettings.Default.copy(hideNsfwBoards = true), SettingsStore(dataStore).settings.first())
+            val initialized = dataStore.data.first()
+            assertEquals(true, initialized[booleanPreferencesKey("hide_nsfw_boards")])
+            assertFalse(LegacyThemeMigration.COLOR_THEME in initialized)
+            assertFalse(LegacyThemeMigration.clear(dataStore))
+            assertEquals(initialized.asMap(), dataStore.data.first().asMap())
         }
 
     @Test

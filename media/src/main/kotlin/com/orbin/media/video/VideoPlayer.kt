@@ -98,6 +98,7 @@ fun VideoPlayer(
     onMuteIntentChange: ((Boolean) -> Unit)? = null,
     playbackSpeed: Float = 1f,
     onDoubleTapSave: (() -> Unit)? = null,
+    onPlaybackEnded: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
@@ -164,6 +165,7 @@ fun VideoPlayer(
         }
 
     val currentActive by rememberUpdatedState(active)
+    val reportEnded by rememberUpdatedState(onPlaybackEnded)
     val currentPlaybackError by rememberUpdatedState(playbackError)
     DisposableEffect(lifecycleOwner, exoPlayer, feedMode) {
         if (feedMode) activity?.disableAutomaticVideoPip()
@@ -310,6 +312,12 @@ fun VideoPlayer(
             object : Player.Listener {
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     isBuffering = playbackState == Player.STATE_BUFFERING
+                    if (playbackState == Player.STATE_ENDED &&
+                        exoPlayer.repeatMode == Player.REPEAT_MODE_OFF &&
+                        currentSession.shouldPlay(currentActive, hasError = false)
+                    ) {
+                        reportEnded?.invoke()
+                    }
                 }
 
                 override fun onIsPlayingChanged(isPlayingNow: Boolean) {
@@ -345,8 +353,11 @@ fun VideoPlayer(
                     controlsVisible = true
                 }
             }
+        val captureHandoff = { exoPlayer.currentPosition to exoPlayer.duration }
+        PlaybackPositions.register(url, captureHandoff)
         exoPlayer.addListener(listener)
         onDispose {
+            PlaybackPositions.unregister(url, captureHandoff)
             activity?.disableAutomaticVideoPip()
             PlaybackPositions.remember(url, exoPlayer.currentPosition, exoPlayer.duration)
             exoPlayer.removeListener(listener)
@@ -553,6 +564,9 @@ private fun Activity.disableAutomaticVideoPip() {
     }
 }
 
+/** Snapshot before navigation so even short looping clips continue at the exact selected position. */
+fun prepareVideoPlaybackHandoff(url: String) = PlaybackPositions.requestHandoff(url)
+
 /**
  * Where each longer video was left, so reopening it resumes rather than restarts.
  *
@@ -560,6 +574,33 @@ private fun Activity.disableAutomaticVideoPip() {
  * bounded, in-memory map that ends with the process, so nothing about viewing is stored.
  */
 internal object PlaybackPositions {
+    private val captures = mutableMapOf<String, () -> Pair<Long, Long>>()
+    private val handoffs = mutableSetOf<String>()
+
+    @Synchronized
+    fun register(
+        url: String,
+        capture: () -> Pair<Long, Long>,
+    ) {
+        captures[url] = capture
+    }
+
+    @Synchronized
+    fun unregister(
+        url: String,
+        capture: () -> Pair<Long, Long>,
+    ) {
+        if (captures[url] === capture) captures.remove(url)
+    }
+
+    @Synchronized
+    fun requestHandoff(url: String) {
+        handoffs += url
+        captures[url]?.invoke()?.let { (position, duration) ->
+            if (position in 1 until duration) positions[url] = position
+        }
+    }
+
     private const val MAX_REMEMBERED = 50
     private const val NEAR_END_MS = 3_000L
     private val positions =
@@ -576,12 +617,21 @@ internal object PlaybackPositions {
         positionMs: Long,
         durationMs: Long,
     ) {
-        val worthResuming = !shouldLoop(durationMs) && positionMs in 1 until durationMs - NEAR_END_MS
+        val explicitHandoff = handoffs.remove(url)
+        val worthResuming =
+            if (explicitHandoff) {
+                positionMs in 1 until durationMs
+            } else {
+                !shouldLoop(durationMs) && positionMs in 1 until durationMs - NEAR_END_MS
+            }
         if (worthResuming) positions[url] = positionMs else positions.remove(url)
     }
 
     @Synchronized
-    internal fun clear() = positions.clear()
+    internal fun clear() {
+        positions.clear()
+        handoffs.clear()
+    }
 }
 
 /**

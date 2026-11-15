@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.Thread
+import com.orbin.core.model.ThreadMemory
+import com.orbin.core.reader.visibleMediaIndices
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_downloads_retry
 import com.orbin.ios.resources.ios_media_close
@@ -48,6 +50,9 @@ internal fun ThreadVideosDestination(
 ) {
     val load by browser.thread.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val presentation by browser.preparedThread.collectAsState()
+    val memory by remember(browser, route.key) { browser.threadMemory.observe(route.key) }
+        .collectAsState(ThreadMemory(route.key))
     val close = {
         browser.back()
         Unit
@@ -62,9 +67,17 @@ internal fun ThreadVideosDestination(
         is Load.Failed -> ThreadVideosStatus(message = state.message, onRetry = browser::retry, onClose = close)
         is Load.Ready -> {
             val thread = state.value.takeIf { it.key == route.key }
-            val videos = remember(thread) { thread?.videos.orEmpty() }
+            val visibleFiles =
+                remember(thread, presentation, settings, memory) {
+                    val prepared = presentation?.takeIf { it.thread === thread }
+                    prepared
+                        ?.visibleMediaIndices(settings, memory)
+                        ?.map(prepared.attachments::get)
+                        .orEmpty()
+                }
+            val videos = remember(visibleFiles) { visibleFiles.filter { it.type == MediaType.VIDEO } }
             when {
-                thread == null ->
+                thread == null || presentation?.thread !== thread ->
                     ThreadVideosStatus(
                         message = stringResource(Res.string.ios_thread_videos_loading),
                         loading = true,
@@ -75,21 +88,19 @@ internal fun ThreadVideosDestination(
                 else ->
                     MediaViewer(
                         files = videos,
+                        askBeforePhotos = settings.askBeforePhotos && !settings.privateSavedFiles,
+                        autoAdvance = settings.fullscreenAutoAdvance,
+                        onAutoAdvanceChange = { browser.settings.setFullscreenAutoAdvance(it) },
                         startIndex = 0,
                         onClose = close,
                         onSave = { file -> downloads.save(file, thread.key, thread.subject) },
                         onDownloadRest =
-                            if (thread.files.size > 1) {
+                            if (visibleFiles.size > 1) {
                                 { index ->
-                                    val current =
-                                        thread.files.indices
-                                            .filter { thread.files[it].type == MediaType.VIDEO }
-                                            .getOrNull(
-                                                index,
-                                            )
+                                    val current = videos.getOrNull(index)
                                     if (current != null) {
-                                        thread.files.forEachIndexed { fileIndex, file ->
-                                            if (fileIndex != current) downloads.save(file, thread.key, thread.subject)
+                                        visibleFiles.forEach { file ->
+                                            if (file !== current) downloads.save(file, thread.key, thread.subject)
                                         }
                                     }
                                 }

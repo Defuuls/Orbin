@@ -1,14 +1,20 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppSettings
+import com.orbin.core.model.DownloadMediaContext
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PermanentContentFilter
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.downloadContext
+import com.orbin.core.model.libraryRecord
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.data.repository.EnqueueDecision
 import com.orbin.data.repository.decideEnqueue
+import com.orbin.domain.repository.ManagedMediaFiles
+import com.orbin.domain.repository.MediaLibraryRepository
 import com.orbin.network.ktor.MAX_BUFFERED_MEDIA_BYTES
 import com.orbin.network.ktor.readBoundedBytes
 import io.ktor.client.HttpClient
@@ -17,10 +23,12 @@ import io.ktor.client.request.prepareGet
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,6 +36,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
 /** Where a saved file lands on the device. */
@@ -53,6 +63,13 @@ fun interface MediaStore {
         folder: String,
         target: SaveTarget,
     )
+
+    suspend fun saveOwned(
+        bytes: ByteArray,
+        storageKey: String,
+    ): Boolean = false
+
+    suspend fun ownedFileExists(storageKey: String): Boolean = false
 }
 
 /** Fetches [url]'s body, reporting bytes received and the total when known; throws on failure. */
@@ -93,6 +110,13 @@ class MediaDownloads(
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
     private val durableFetch: DurableMediaFetch? = null,
     private val fileExists: (fileName: String, folder: String) -> Boolean = { _, _ -> true },
+    val mediaLibrary: MediaLibraryRepository? = null,
+    val managedMediaFiles: ManagedMediaFiles? = null,
+    private val mediaSettings: Flow<AppSettings>? = null,
+    val resolveSavedBoard: suspend (
+        providerId: String,
+        boardId: String,
+    ) -> com.orbin.core.model.Board? = { _, _ -> null },
 ) {
     // Bytes so far of the saves in flight, by record id.
     private val progress = MutableStateFlow<Map<Long, Pair<Long, Long?>>>(emptyMap())
@@ -131,15 +155,31 @@ class MediaDownloads(
         file: MediaAttachment,
         thread: ThreadKey,
         threadTitle: String?,
+        privateTarget: Boolean? = null,
+        postId: Long? = null,
     ): Boolean {
         val url = safeExternalLink(file.sourceUrl) ?: return false
         val name = downloadFileName(file)
         if (PermanentContentFilter.matchesAny(listOf(name, file.originalFileName, threadTitle))) return false
         val folder = downloadFolder(thread.board.value, thread.thread.value, threadTitle)
+        val mediaContextJson = Json.encodeToString(file.downloadContext(thread, postId))
         scope.launch {
+            // Resolve persisted policy before enqueueing any transfer or public-storage side effect.
+            val savePrivately = privateTarget ?: mediaSettings?.first()?.privateSavedFiles ?: false
             val job =
                 enqueueMutex.withLock {
-                    when (val decision = decideEnqueue(dao.findByTarget(url, name, folder), fileExists(name, folder))) {
+                    val existing =
+                        dao.findByTarget(url, name, folder).filter {
+                            it.privateTarget == savePrivately && it.mediaContextJson == mediaContextJson
+                        }
+                    val present =
+                        if (savePrivately) {
+                            val completed = existing.firstOrNull { it.status == DownloadStatus.COMPLETED.name }
+                            completed != null && store.ownedFileExists("download-${completed.id}")
+                        } else {
+                            fileExists(name, folder)
+                        }
+                    when (val decision = decideEnqueue(existing, present)) {
                         is EnqueueDecision.ReturnExisting -> null
                         is EnqueueDecision.Requeue -> {
                             dao.updateStatus(decision.id, DownloadStatus.RUNNING.name)
@@ -155,6 +195,8 @@ class MediaDownloads(
                                     status = DownloadStatus.RUNNING.name,
                                     createdAtMillis = now(),
                                     relativeDir = folder,
+                                    mediaContextJson = mediaContextJson,
+                                    privateTarget = savePrivately,
                                 ),
                             )
                             TransferJob(id, url, name, folder)
@@ -193,7 +235,23 @@ class MediaDownloads(
                         progress.update { it + (id to (received to total)) }
                     }
                     val bytes = durableFetch?.fetch(id, url, onProgress) ?: fetch(url, onProgress)
-                    store.save(bytes, name, folder, saveTargetOf(name))
+                    val entry = checkNotNull(dao.getById(id)) { "Download was removed" }
+                    val context =
+                        entry.mediaContextJson?.let {
+                            runCatching { Json.decodeFromString<DownloadMediaContext>(it) }.getOrNull()
+                        }
+                    var owned = false
+                    if (context != null && mediaLibrary != null) {
+                        val record = context.libraryRecord(id, url, name, bytes.size.toLong(), now())
+                        check(store.saveOwned(bytes, record.storageKey)) { "Could not store the private original" }
+                        mediaLibrary.put(record)
+                        owned = true
+                    }
+                    if (entry.privateTarget) {
+                        check(owned) { "Private media storage is not available" }
+                    } else {
+                        store.save(bytes, name, folder, saveTargetOf(name))
+                    }
                     durableFetch?.didSave(id)
                 }
             }.onFailure { if (it is CancellationException) throw it }
@@ -217,11 +275,11 @@ fun ktorMediaFetch(client: HttpClient): MediaFetch =
         }
     }
 
-/** Photos takes stills, GIFs and the videos iOS plays; everything else goes to Files. */
+/** WebM is converted for Photos; the owned original is always retained in its source format. */
 internal fun saveTargetOf(fileName: String): SaveTarget =
     when (fileName.substringAfterLast('.', "").lowercase()) {
         "jpg", "jpeg", "png", "gif", "heic" -> SaveTarget.PHOTO
-        "mp4", "m4v", "mov" -> SaveTarget.VIDEO
+        "mp4", "m4v", "mov", "webm" -> SaveTarget.VIDEO
         else -> SaveTarget.FILE
     }
 

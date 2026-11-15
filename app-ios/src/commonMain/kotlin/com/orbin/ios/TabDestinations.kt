@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -27,8 +28,10 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.ui.date.formatPostDateTime
+import com.orbin.domain.bookmarks.collectionUnread
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_boards_no_visible
 import com.orbin.ios.resources.ios_boards_source_unavailable
@@ -36,6 +39,9 @@ import com.orbin.ios.resources.ios_collection_all_sites
 import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
+import com.orbin.ios.resources.ios_feed_favorites
+import com.orbin.ios.resources.ios_feed_favorites_empty_message
+import com.orbin.ios.resources.ios_feed_favorites_empty_title
 import com.orbin.ios.resources.ios_primary_loading
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
@@ -44,12 +50,14 @@ import com.orbin.uinext.LocalOrbinNavigationAtSide
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextScaffold
+import com.orbin.uinext.OpenThreadLinkDialog
 import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.SearchScreen
 import com.orbin.uinext.SearchState
 import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.ThreadCollectionRow
 import com.orbin.uinext.ThreadCollectionScreen
+import com.orbin.uinext.ThreadCollectionStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -73,19 +81,26 @@ internal fun FeedDestination(
     val settings by browser.settings.current.collectAsState()
     val downloadBadge = rememberActiveDownloadBadge(downloads)
     val site by browser.feedSite.collectAsState()
+    val favoritesOnly by browser.feedFavoritesOnly.collectAsState()
+    val favoriteBoards by browser.favorites.collectAsState()
+    val followedBoards by browser.followed.collectAsState()
+    val scopeBoards = if (favoritesOnly) favoriteBoards else followedBoards
     val loadingMore by browser.feedLoadingMore.collectAsState()
     val canLoadMore by browser.feedCanLoadMore.collectAsState()
     val discoveryProgress by browser.feedDiscoveryProgress.collectAsState()
     val contentPolicy by browser.feedContentPolicy.collectAsState()
     val saved by browser.savedThreads.collectAsState(emptyList())
     val visited by remember { browser.visitedKeys() }.collectAsState(emptySet())
-    val policyMatches = contentPolicy == HomeFeedContentPolicy(settings.hideNsfwBoards, settings.coverViolentMedia)
+    val policyMatches =
+        contentPolicy ==
+            HomeFeedContentPolicy(settings.nsfwContentHidden, settings.coverViolentMedia, settings.coverNsfwMedia)
     val threads =
-        remember(feed, policyMatches) {
+        remember(feed, policyMatches, scopeBoards) {
             if (policyMatches) {
-                (feed as? Load.Ready)?.value.orEmpty().mapNotNull(
-                    FeedThread::videoFeedPreview,
-                )
+                (feed as? Load.Ready)?.value.orEmpty().filter {
+                    FollowedBoard(it.thread.key.provider, it.thread.key.board) in
+                        scopeBoards
+                }
             } else {
                 emptyList()
             }
@@ -119,6 +134,8 @@ internal fun FeedDestination(
                 }
             FeedScreen(
                 rows = rows,
+                emptyTitle = stringResource(Res.string.ios_feed_favorites_empty_title).takeIf { favoritesOnly },
+                emptyMessage = stringResource(Res.string.ios_feed_favorites_empty_message).takeIf { favoritesOnly },
                 mode = catalogMode,
                 downloadBadge = downloadBadge,
                 onModeChange = { selected ->
@@ -202,9 +219,28 @@ internal fun FeedDestination(
                 onOpenWatched = { browser.openTab(Route.Watched) },
                 onSettings = { browser.openPrimaryPage(Route.Settings) },
                 sourceLabels =
-                    listOf(stringResource(Res.string.ios_collection_all_sites)) + browser.sites.map { it.name },
-                selectedSource = if (site == null) 0 else browser.sites.indexOfFirst { it.id == site } + 1,
-                onSelectSource = { index -> browser.selectFeedSite(browser.sites.getOrNull(index - 1)?.id) },
+                    listOf(
+                        stringResource(Res.string.ios_collection_all_sites),
+                        stringResource(Res.string.ios_feed_favorites),
+                    ) +
+                        browser.sites.map { it.name },
+                selectedSource =
+                    if (favoritesOnly) {
+                        1
+                    } else if (site ==
+                        null
+                    ) {
+                        0
+                    } else {
+                        browser.sites.indexOfFirst { it.id == site } + 2
+                    },
+                onSelectSource = { index ->
+                    if (index == 1) {
+                        browser.selectFeedFavoritesOnly(true)
+                    } else {
+                        browser.selectFeedSite(browser.sites.getOrNull(index - 2)?.id)
+                    }
+                },
                 uniformCards = true,
             )
         }
@@ -216,20 +252,23 @@ internal fun BoardsDestination(
     browser: Browser,
     downloads: MediaDownloads? = null,
 ) {
+    var linkDialog by rememberSaveable { mutableStateOf(false) }
     val downloadBadge = rememberActiveDownloadBadge(downloads)
     val directory by browser.boardDirectory.collectAsState()
     val followed by browser.followed.collectAsState()
+    val favorites by browser.favorites.collectAsState()
     val unreachable by browser.unreachableSites.collectAsState()
     val site by browser.activeSite.collectAsState()
     val settings by browser.settings.current.collectAsState()
     val boards = remember(directory, site) { directory.boardsOnSite(site) }
     // The selector remains available while the selected source loads or fails.
     val list =
-        remember(boards, settings.hideNsfwBoards) {
-            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        remember(boards, settings.nsfwContentHidden) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.nsfwContentHidden && it.board.isNsfw }
         }
     val byTile = remember(list) { list.associateBy { it.tileId } }
     BoardsScreen(
+        onOpenLink = { linkDialog = true },
         downloadBadge = downloadBadge,
         hideRailOnScroll = true,
         subtitle = boardsSubtitle(list.size, unreachable),
@@ -241,11 +280,17 @@ internal fun BoardsDestination(
             },
         onRetry = if (site in directory.failures) browser::retry else null,
         boards =
-            remember(list, followed) {
-                list.map { it.toTile(followed = FollowedBoard(it.provider, it.board.id) in followed) }
+            remember(list, followed, favorites) {
+                list.map {
+                    it.toTile(
+                        followed = FollowedBoard(it.provider, it.board.id) in followed,
+                        favorite = FollowedBoard(it.provider, it.board.id) in favorites,
+                    )
+                }
             },
         onOpenBoard = { tile -> byTile[tile.id]?.let(browser::openBoard) },
         onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
+        onFavoriteBoard = { tile, favorite -> byTile[tile.id]?.let { browser.setFavorite(it, favorite) } },
         onOpenFeed = { browser.openTab(Route.Feed) },
         onOpenDownloads = { browser.openPrimaryPage(Route.Downloads) },
         onOpenSaved = { browser.openTab(Route.Saved) },
@@ -254,6 +299,17 @@ internal fun BoardsDestination(
         onOpenSettings = { browser.openPrimaryPage(Route.Settings) },
         headerContent = { SiteSwitcher(browser, site, gapAfter = 0.dp, compact = true) },
     )
+    if (linkDialog) {
+        OpenThreadLinkDialog(
+            onDismiss = { linkDialog = false },
+            onOpen = { text ->
+                browser.parseThreadLink(text)?.let { key ->
+                    browser.openThread(key)
+                    true
+                } ?: false
+            },
+        )
+    }
 }
 
 /** Board directory source selector. Home adds an All sites choice separately. */
@@ -298,6 +354,12 @@ internal fun DownloadsDestination(
     val records by downloads.records.collectAsState()
     DownloadsScreen(
         records = records,
+        libraryContent =
+            if (downloads.mediaLibrary != null) {
+                { SavedMediaLibraryContent(browser, downloads) }
+            } else {
+                null
+            },
         bottomBar =
             if (LocalOrbinNavigationAtSide.current) {
                 null
@@ -319,8 +381,17 @@ internal fun SettingsDestination(
     formFactor: FormFactor,
     version: AppVersion,
     downloads: MediaDownloads? = null,
+    cloudSync: CloudSyncController? = null,
 ) {
     val settings by browser.settings.current.collectAsState()
+    val cloudState = cloudSync?.state?.collectAsState()?.value
+    var cloudDeleteArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(cloudDeleteArmed) {
+        if (cloudDeleteArmed) {
+            delay(CLEAR_ARMED_MS)
+            cloudDeleteArmed = false
+        }
+    }
     val boards by browser.boards.collectAsState()
     var playbackScope by remember { mutableStateOf(PlaybackScope()) }
     val playbackChoices =
@@ -357,6 +428,22 @@ internal fun SettingsDestination(
         }
     }
     var imageCacheCleared by remember { mutableStateOf(false) }
+    var mediaCacheBytes by remember { mutableStateOf(0L) }
+    var mediaCacheWorking by remember { mutableStateOf(false) }
+    var mediaCacheFailure by remember { mutableStateOf(false) }
+
+    suspend fun refreshMediaCacheUsage() {
+        mediaCacheBytes =
+            (imageLoader.memoryCache?.size ?: 0L) + (imageLoader.diskCache?.size ?: 0L) + nativeVideoCacheUsageBytes()
+    }
+    LaunchedEffect(imageLoader) { refreshMediaCacheUsage() }
+    val mediaCacheLabel =
+        mediaCacheSizeLabel(mediaCacheBytes) +
+            when {
+                mediaCacheWorking -> " · Clearing…"
+                mediaCacheFailure -> " · Could not clear all files"
+                else -> ""
+            }
     SettingsScreen(
         subtitle = version.name,
         bottomBar =
@@ -370,13 +457,24 @@ internal fun SettingsDestination(
                 settings,
                 clearArmed,
                 imageCacheCleared,
+                mediaCacheLabel,
                 backupState,
                 formFactor,
                 version,
                 playbackScope,
                 playbackChoices,
+                cloudState,
+                cloudDeleteArmed,
             ) {
-                settingsGroups(settings, clearArmed, imageCacheCleared, backupState, version) +
+                settingsGroups(
+                    settings,
+                    clearArmed,
+                    imageCacheCleared,
+                    backupState,
+                    version,
+                    cloudSyncRows = cloudState?.let { cloudSyncRows(it, cloudDeleteArmed) }.orEmpty(),
+                    mediaCacheLabel = mediaCacheLabel,
+                ) +
                     ("Playback" to playbackRows(settings, playbackChoices, playbackScope))
             },
         expandedId = expanded,
@@ -393,8 +491,20 @@ internal fun SettingsDestination(
             }
         },
         onActivate = { item ->
-            if (!browser.settings.activatePlayback(item.id, settings, playbackScope)) {
+            if (!browser.settings.activatePlayback(item.id, settings, playbackScope) &&
+                !browser.settings.activatePrivacy(item.id, settings)
+            ) {
                 when (item.id) {
+                    "cloudSyncEnable" -> cloudSync?.setEnabled(cloudState?.enabled != true)
+                    "cloudSyncNow" -> cloudSync?.syncNow()
+                    "cloudSyncDelete" -> {
+                        if (cloudDeleteArmed) {
+                            cloudDeleteArmed = false
+                            cloudSync?.deleteCloudData()
+                        } else {
+                            cloudDeleteArmed = true
+                        }
+                    }
                     SettingIds.HIDE_NSFW -> {
                         Haptics.light()
                         browser.settings.setHideNsfwBoards(!settings.hideNsfwBoards)
@@ -435,6 +545,8 @@ internal fun SettingsDestination(
                     SettingIds.THEME,
                     SettingIds.FEED_COLUMNS,
                     SettingIds.CATALOG_MODE,
+                    "hiddenThreadPatterns",
+                    "postFilterRules",
                     "playbackScope",
                     "autoplay",
                     "preloadNextClip",
@@ -464,19 +576,49 @@ internal fun SettingsDestination(
                     }
                     SettingIds.PRIVACY -> uriHandler.openUri(PRIVACY_POLICY_URL)
                     SettingIds.CONTACT -> uriHandler.openUri(CONTACT_URL)
+                    SettingIds.CLEAR_MEDIA_CACHE ->
+                        if (!mediaCacheWorking) {
+                            scope.launch {
+                                mediaCacheWorking = true
+                                mediaCacheFailure = false
+                                try {
+                                    imageLoader.memoryCache?.clear()
+                                    withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
+                                } catch (failure: kotlinx.coroutines.CancellationException) {
+                                    throw failure
+                                } catch (_: Exception) {
+                                    mediaCacheFailure = true
+                                }
+                                try {
+                                    clearNativeVideoCache()
+                                } catch (failure: kotlinx.coroutines.CancellationException) {
+                                    throw failure
+                                } catch (_: Exception) {
+                                    mediaCacheFailure = true
+                                } finally {
+                                    refreshMediaCacheUsage()
+                                    mediaCacheWorking = false
+                                }
+                                if (!mediaCacheFailure) Haptics.success()
+                            }
+                        }
                     SettingIds.CLEAR_IMAGE_CACHE ->
                         scope.launch {
                             imageLoader.memoryCache?.clear()
                             withContext(Dispatchers.IO) { imageLoader.diskCache?.clear() }
                             imageCacheCleared = true
+                            refreshMediaCacheUsage()
                             Haptics.success()
                         }
                 }
             }
         },
+        onCommitFilters = { item, rules -> browser.settings.commitFilter(item.id, rules) },
         onSelectOption = { item, index ->
             Haptics.light()
-            if (!browser.settings.selectPlaybackChoice(item.id, index, settings, playbackScope)) {
+            if (!browser.settings.selectPlaybackChoice(item.id, index, settings, playbackScope) &&
+                !browser.settings.selectAppearance(item.id, index)
+            ) {
                 when (item.id) {
                     "playbackScope" -> playbackChoices.getOrNull(index)?.let { playbackScope = it.first }
                     SettingIds.DOH_PROVIDER ->
@@ -497,6 +639,16 @@ internal fun SettingsDestination(
 
 @Composable
 internal fun SearchDestination(browser: Browser) {
+    val webProvider =
+        remember(browser) {
+            com.orbin.provider.api
+                .fourchanWebSearchProvider(browser.webSearchProviders)
+        }
+    val webDirectory by browser.boardDirectory.collectAsState()
+    val webBoards =
+        remember(webDirectory, webProvider) {
+            webDirectory.boards.filter { it.provider == webProvider?.id }.map { it.board }
+        }
     val query by browser.search.query.collectAsState()
     val results by browser.search.results.collectAsState()
     val followed by browser.followed.collectAsState()
@@ -527,6 +679,17 @@ internal fun SearchDestination(browser: Browser) {
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             SearchScreen(
+                onWebSearch = browser.webSearchSession?.let { it::submit },
+                webSearch =
+                    if (webProvider != null) {
+                        { submitted ->
+                            browser.webSearchTransport?.let { transport ->
+                                FourchanWebSearch(submitted, transport, webBoards, browser::openThread)
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 query = query,
                 onQueryChange = browser.search::setQuery,
                 onSearch = { browser.search.run() },
@@ -557,19 +720,53 @@ internal fun ThreadCollectionsDestination(
 ) {
     val saved by browser.savedThreads.collectAsState(emptyList())
     val history by browser.readingHistory.collectAsState(emptyList())
+    val settings by browser.settings.current.collectAsState()
+    val boardState by browser.boards.collectAsState()
+    val directory = (boardState as? Load.Ready)?.value.orEmpty().associateBy { it.provider to it.board.id }
+
+    fun visible(
+        key: com.orbin.core.model.ThreadKey,
+        title: String,
+    ): Boolean {
+        val board = directory[key.provider to key.board]?.board
+        return !com.orbin.core.model.PermanentContentFilter
+            .matchesAny(listOf(key.board.value, title)) &&
+            board?.isPermanentlyFiltered() != true &&
+            (!settings.nsfwContentHidden || board?.isNsfw == false)
+    }
+    val memory by browser.threadMemory.observeCurrent().collectAsState(emptyList())
+    val refreshing by browser.collections.isRefreshing.collectAsState()
+    val memoryByKey = memory.associateBy { it.key }
+    androidx.compose.runtime.LaunchedEffect(route) { if (route != Route.History) browser.collections.refreshStatuses() }
     val rows =
-        when (route) {
-            Route.History ->
-                history.sortedByDescending { it.lastVisitedMillis }.map {
+        if (route == Route.History) {
+            history
+                .filter {
+                    visible(it.key, it.title)
+                }.sortedBy { if (settings.collectionNewestFirst) -it.lastVisitedMillis else it.lastVisitedMillis }
+                .map {
                     it.key to
                         ThreadCollectionRow(
                             it.key.toString(),
                             it.title,
                             "${browser.siteName(it.key.provider)} · /${it.key.board.value}/",
+                            time = formatPostDateTime(it.lastVisitedMillis).orEmpty(),
+                            threadNumber =
+                                it.key.thread.value
+                                    .toString(),
+                            unread =
+                                saved
+                                    .firstOrNull { bookmark ->
+                                        bookmark.key == it.key
+                                    }?.collectionUnread(memoryByKey[it.key])
+                                    ?: memoryByKey[it.key]?.collectionUnread() ?: 0,
                         )
                 }
-            else ->
-                saved.filter { route != Route.Watched || it.isWatched }.sortedByDescending { it.createdAtMillis }.map {
+        } else {
+            saved
+                .filter { visible(it.key, it.title) && (route != Route.Watched || it.isWatched) }
+                .sortedBy { if (settings.collectionNewestFirst) -it.createdAtMillis else it.createdAtMillis }
+                .map {
                     it.key to
                         ThreadCollectionRow(
                             it.key.toString(),
@@ -579,7 +776,8 @@ internal fun ThreadCollectionsDestination(
                             threadNumber =
                                 it.key.thread.value
                                     .toString(),
-                            unread = it.unreadCount,
+                            unread = it.collectionUnread(memoryByKey[it.key]),
+                            availability = ThreadCollectionStatus.valueOf(it.availability.name),
                         )
                 }
         }
@@ -593,6 +791,7 @@ internal fun ThreadCollectionsDestination(
         )
     val byRow = rows.associate { it.second.id to it.first }
     val isTab = route == Route.Saved || route == Route.Watched
+    val bookmarkCollection = route != Route.History
     ThreadCollectionScreen(
         title = title,
         rows = rows.map { it.second },
@@ -611,5 +810,18 @@ internal fun ThreadCollectionsDestination(
             },
         onDestination = if (isTab) browser::openDestination else null,
         selectedDestination = if (route == Route.Watched) NextDestination.WATCHED else NextDestination.SAVED,
+        newestFirst = settings.collectionNewestFirst,
+        refreshing = refreshing,
+        onRefresh = { browser.collections.refreshStatuses(true) }.takeIf { bookmarkCollection },
+        onToggleOrder = { browser.settings.setCollectionNewestFirst(!settings.collectionNewestFirst) },
+        onRemove = { row -> byRow[row.id]?.let { browser.collections.remove(it, !bookmarkCollection) } },
+        onMarkRead =
+            { row: ThreadCollectionRow ->
+                byRow[row.id]?.let { browser.collections.markRead(it) }
+                Unit
+            }.takeIf { bookmarkCollection },
+        onMarkAllRead = { browser.collections.markAllRead(route == Route.Watched) }.takeIf { bookmarkCollection },
+        onClear = { browser.collections.clear(!bookmarkCollection, route == Route.Watched) },
+        onRemoveDeleted = { browser.collections.removeDeleted(route == Route.Watched) }.takeIf { bookmarkCollection },
     )
 }

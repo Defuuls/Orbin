@@ -6,6 +6,33 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [210-Agate] - 2026-11-15
+
+### Added
+- Added nested and flat conversations, recursive branch folding, poster-ID pages, post hiding, keyword and regex filters, durable reading positions and visibility-based unread tracking.
+- Added independent board favourites and a favourites feed, five catalog sorts, and validated pasted thread links for registered sites.
+- Added full-site 4chan search with visible verification, real result pagination and native Orbin content filtering; followed-board search remains available across sites.
+- Added a saved-media library with offline viewing, selection, bulk sharing, export and deletion, while retaining saved threads and transfer history.
+- Added gallery media filters, reverse image search, file details, optional video-end advance and native player handoffs between inline and fullscreen viewing.
+- Added native WebM-to-MP4 conversion for iOS Photos exports, retaining the original file and using protected temporary output.
+- Added automatic last-loaded thread copies for bookmarks and persistent visits, with an explicit offline notice and retry action.
+- Added ZIP backups containing portable preferences, collections, reading data and owned media, with integrity validation and compatible JSON imports.
+- Added Orbin and fifteen accent themes, session-only NSFW reveal and history, private saved-file destinations, and a combined cache-size and clearing action.
+
+### Changed
+- Restored image and text threads to Home and kept favourites, follows, saved threads and watched threads independent.
+- Extended tablet source-and-reader layouts to search, saved threads, history and watched threads, preserving selection and scroll state across window changes.
+- Added hardware keyboard commands, secondary-click menus and page swipe-back while preserving text editing, media gestures and system text sizing.
+
+### Fixed
+- Preserved quote-return positions, gallery-to-post navigation, temporary content covers, and private reading state across navigation and lifecycle changes.
+- Distinguished live, archived and deleted bookmarks and added confirmed collection cleanup and reading acknowledgements.
+
+### Testing
+- Added source-qualified persistence, filtering, navigation, media-library, offline-copy, archive-integrity, privacy and native media regression coverage.
+- Added native CloudKit transport and merge tests for optionally entitled iOS builds; production iCloud activation remains separately provisioned.
+
+
 ## [209-Aegirine] - 2026-11-14
 
 ### Changed
@@ -3180,7 +3207,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v209-Aegirine...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v210-Agate...HEAD
+[210-Agate]: https://github.com/Defuuls/Orbin/compare/v209-Aegirine...v210-Agate
 [209-Aegirine]: https://github.com/Defuuls/Orbin/compare/v208-Adamite...v209-Aegirine
 [208-Adamite]: https://github.com/Defuuls/Orbin/compare/v207-Actinolite...v208-Adamite
 [207-Actinolite]: https://github.com/Defuuls/Orbin/compare/v206-Sea-Beet...v207-Actinolite

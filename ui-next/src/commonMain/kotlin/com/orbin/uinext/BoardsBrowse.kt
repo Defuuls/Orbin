@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,13 +60,17 @@ import com.orbin.uinext.resources.next_boards_random
 import com.orbin.uinext.resources.next_boards_search
 import com.orbin.uinext.resources.next_boards_thread_count
 import com.orbin.uinext.resources.next_status_retry
+import com.orbin.uinext.resources.reader_board_favorite
 import com.orbin.uinext.resources.reader_board_follow
 import com.orbin.uinext.resources.reader_board_open
+import com.orbin.uinext.resources.reader_board_unfavorite
 import com.orbin.uinext.resources.reader_board_unfollow
 import com.orbin.uinext.resources.reader_boards_title
+import com.orbin.uinext.resources.reader_favorite_boards
 import com.orbin.uinext.resources.reader_feed_all_boards
 import com.orbin.uinext.resources.reader_followed_boards
 import com.orbin.uinext.resources.reader_menu
+import com.orbin.uinext.resources.reader_open_thread_link
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.pluralStringResource
@@ -80,7 +86,22 @@ data class BoardTile(
     val site: String? = null,
     /** Optional catalog size from a host that already has it. Never invented. */
     val threadCount: Int? = null,
+    /** Independent shortcut membership; favoriting never changes subscriptions. */
+    val favorite: Boolean = false,
 )
+
+internal data class BoardDirectorySections(
+    val favorites: List<BoardTile>,
+    val followed: List<BoardTile>,
+    val directory: List<BoardTile>,
+)
+
+internal fun boardDirectorySections(boards: List<BoardTile>): BoardDirectorySections =
+    BoardDirectorySections(
+        favorites = boards.filter { it.favorite },
+        followed = boards.filter { it.followed && !it.favorite },
+        directory = boards.filter { !it.followed && !it.favorite },
+    )
 
 object BoardsTags {
     const val HEADER = "boards-home-header"
@@ -114,6 +135,8 @@ fun BoardsScreen(
     emptyMessage: String? = null,
     onRetry: (() -> Unit)? = null,
     downloadBadge: Int = 0,
+    onOpenLink: (() -> Unit)? = null,
+    onFavoriteBoard: ((BoardTile, Boolean) -> Unit)? = null,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val visibleBoards =
@@ -124,8 +147,9 @@ fun BoardsScreen(
                     terms.all { term -> "${board.path} ${board.title}".contains(term, ignoreCase = true) }
                 }.sortedAlphabetically()
         }
-    val favorites = remember(visibleBoards) { visibleBoards.filter { it.followed } }
-    val directory = remember(visibleBoards) { visibleBoards.filter { !it.followed } }
+    val sections = remember(visibleBoards) { boardDirectorySections(visibleBoards) }
+    val favorites = sections.favorites
+    val directory = sections.directory
     val siteGroups =
         remember(directory) {
             directory
@@ -210,6 +234,7 @@ fun BoardsScreen(
                     subtitle = subtitle ?: boardsTitle,
                     showMenu = openDrawer != null,
                     onMenu = { openDrawer?.invoke() },
+                    onOpenLink = onOpenLink,
                 )
                 BoardsSearchRow(
                     query = query,
@@ -275,13 +300,27 @@ fun BoardsScreen(
                     } else {
                         if (favorites.isNotEmpty()) {
                             item(key = "favorite-heading") {
-                                BoardSectionTitle(stringResource(Res.string.reader_followed_boards))
+                                BoardSectionTitle(stringResource(Res.string.reader_favorite_boards))
                             }
                             boardRows(
                                 boards = favorites,
                                 keyPrefix = "favorite",
                                 onOpenBoard = onOpenBoard,
                                 onFollowBoard = onFollowBoard,
+                                onFavoriteBoard = onFavoriteBoard,
+                                showSite = true,
+                            )
+                        }
+                        if (sections.followed.isNotEmpty()) {
+                            item(
+                                key = "followed-heading",
+                            ) { BoardSectionTitle(stringResource(Res.string.reader_followed_boards)) }
+                            boardRows(
+                                boards = sections.followed,
+                                keyPrefix = "followed",
+                                onOpenBoard = onOpenBoard,
+                                onFollowBoard = onFollowBoard,
+                                onFavoriteBoard = onFavoriteBoard,
                                 showSite = true,
                             )
                         }
@@ -293,6 +332,7 @@ fun BoardsScreen(
                                 keyPrefix = "site:$heading",
                                 onOpenBoard = onOpenBoard,
                                 onFollowBoard = onFollowBoard,
+                                onFavoriteBoard = onFavoriteBoard,
                                 showSite = siteLabel.isBlank(),
                             )
                         }
@@ -328,6 +368,7 @@ private fun BoardsHomeHeader(
     subtitle: String,
     showMenu: Boolean,
     onMenu: () -> Unit,
+    onOpenLink: (() -> Unit)?,
 ) {
     Row(
         Modifier
@@ -360,6 +401,14 @@ private fun BoardsHomeHeader(
                 subtitle,
                 style = OrbinType.footnote.withReaderFont().copy(fontSize = 12.5.sp, lineHeight = 17.sp),
                 color = reader.inkSecondary,
+            )
+        }
+        if (onOpenLink != null) {
+            NextIconAction(
+                imageVector = Icons.Outlined.Link,
+                contentDescription = stringResource(Res.string.reader_open_thread_link),
+                onClick = onOpenLink,
+                tint = reader.ink,
             )
         }
         if (showMenu) {
@@ -402,6 +451,7 @@ private fun LazyListScope.boardRows(
     keyPrefix: String,
     onOpenBoard: (BoardTile) -> Unit,
     onFollowBoard: ((BoardTile, Boolean) -> Unit)?,
+    onFavoriteBoard: ((BoardTile, Boolean) -> Unit)?,
     showSite: Boolean,
 ) {
     itemsIndexed(boards, key = { _, board -> "$keyPrefix:${board.id}" }) { index, board ->
@@ -409,6 +459,7 @@ private fun LazyListScope.boardRows(
             board = board,
             onClick = { onOpenBoard(board) },
             onFollow = onFollowBoard?.let { follow -> { checked -> follow(board, checked) } },
+            onFavorite = onFavoriteBoard?.let { favorite -> { checked -> favorite(board, checked) } },
             showSite = showSite,
             first = index == 0,
             last = index == boards.lastIndex,
@@ -444,6 +495,7 @@ private fun BoardListRow(
     board: BoardTile,
     onClick: () -> Unit,
     onFollow: ((Boolean) -> Unit)? = null,
+    onFavorite: ((Boolean) -> Unit)? = null,
     showSite: Boolean = true,
     first: Boolean = true,
     last: Boolean = true,
@@ -519,9 +571,40 @@ private fun BoardListRow(
                     )
                 }
             }
+            if (onFavorite != null) FavoriteChip(board, onFavorite)
             if (onFollow != null) FollowChip(board, onFollow)
         }
         if (!last) ReaderHairline(Modifier.padding(start = 68.dp))
+    }
+}
+
+@Composable
+private fun FavoriteChip(
+    board: BoardTile,
+    onFavorite: (Boolean) -> Unit,
+) {
+    val identity = board.site?.let { "${sourceLabel(it)} · ${board.path}" } ?: board.path
+    val description =
+        stringResource(
+            if (board.favorite) Res.string.reader_board_unfavorite else Res.string.reader_board_favorite,
+            identity,
+        )
+    Box(
+        Modifier
+            .size(MIN_TOUCH_TARGET)
+            .nextClickable(role = Role.Button) { onFavorite(!board.favorite) }
+            .semantics {
+                contentDescription = description
+                selected = board.favorite
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (board.favorite) ReaderIcons.StarFilled else ReaderIcons.Star,
+            contentDescription = null,
+            tint = if (board.favorite) reader.accent else reader.inkSecondary,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 

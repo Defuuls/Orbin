@@ -7,10 +7,12 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.data.util.runCatchingProvider
+import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.BuildReplyGraphUseCase
 import com.orbin.provider.api.EngineKind
 import com.orbin.provider.api.ProviderRegistry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -25,6 +27,7 @@ class ThreadRepositoryImpl(
     private val registry: ProviderRegistry,
     private val buildReplyGraph: BuildReplyGraphUseCase = BuildReplyGraphUseCase(),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val savedThreads: SavedThreadRepository? = null,
 ) : ThreadRepository {
     private data class CachedThreadEntry(
         val thread: Thread,
@@ -86,26 +89,47 @@ class ThreadRepositoryImpl(
                 }
             }
 
-            runCatchingProvider {
-                val loaded =
-                    registry.get(provider)?.getThread(board, thread)
-                        ?: error("Unknown provider: ${provider.value}")
-                val enriched = buildReplyGraph(loaded)
+            val result =
+                runCatchingProvider {
+                    val loaded =
+                        registry.get(provider)?.getThread(board, thread)
+                            ?: error("Unknown provider: ${provider.value}")
+                    val enriched = buildReplyGraph(loaded)
 
-                cacheMutex.withLock {
-                    val now = Clock.System.now().toEpochMilliseconds()
-                    threadCache.entries.removeAll { it.value.isStale(now) }
-                    threadCache.remove(key)
-                    threadCache[key] = CachedThreadEntry(enriched, now)
-                    while (threadCache.size > MAX_CACHED_THREADS) {
-                        val eldestKey = threadCache.keys.firstOrNull() ?: break
-                        threadCache.remove(eldestKey)
+                    cacheMutex.withLock {
+                        val now = Clock.System.now().toEpochMilliseconds()
+                        threadCache.entries.removeAll { it.value.isStale(now) }
+                        threadCache.remove(key)
+                        threadCache[key] = CachedThreadEntry(enriched, now)
+                        while (threadCache.size > MAX_CACHED_THREADS) {
+                            val eldestKey = threadCache.keys.firstOrNull() ?: break
+                            threadCache.remove(eldestKey)
+                        }
                     }
-                }
 
-                enriched
+                    enriched
+                }
+            when (result) {
+                is OrbinResult.Success -> {
+                    cacheLastLoaded(result.data)
+                    result
+                }
+                // Hosts own fallback so offline provenance, current privacy policy and polling survive.
+                is OrbinResult.Failure -> result
             }
         }
+
+    /** Optional injected caches can fail with platform-specific database or filesystem exceptions. */
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun cacheLastLoaded(thread: Thread) {
+        try {
+            savedThreads?.cacheLastLoaded(thread)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // A failed optional copy must never invalidate successfully fetched network content.
+        }
+    }
 
     override fun threadWebUrl(key: ThreadKey): String? {
         val meta = registry.get(key.provider)?.metadata ?: return null

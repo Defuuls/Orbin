@@ -21,7 +21,8 @@ class ViolentMediaCoverProvider(
 ) : ImageBoardProvider by delegate {
     override suspend fun getCatalog(request: CatalogRequest): List<CatalogThread> {
         val catalog = delegate.getCatalog(request)
-        return if (enabled()) catalog.map { it.withViolentMediaCovered() } else catalog
+        val cover = enabled()
+        return catalog.map { it.withViolentMediaCovered(cover) }
     }
 
     override suspend fun getThread(
@@ -29,6 +30,6 @@ class ViolentMediaCoverProvider(
         thread: ThreadId,
     ): Thread {
         val loaded = delegate.getThread(board, thread)
-        return if (enabled()) loaded.withViolentMediaCovered() else loaded
+        return loaded.withViolentMediaCovered(enabled())
     }
 }

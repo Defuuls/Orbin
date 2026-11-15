@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -11,18 +12,24 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterKind
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadLayout
 import com.orbin.core.model.UpdateStatus
 import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.domain.repository.VideoCacheRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
+import com.orbin.uinext.SettingFilterRule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -53,6 +60,7 @@ class SettingsViewModel
         private val registry: ProviderRegistry,
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
         private val videoCacheRepository: VideoCacheRepository = EmptyVideoCacheRepository,
+        private val threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
@@ -182,6 +190,53 @@ class SettingsViewModel
 
         fun setThemeMode(mode: AppThemeMode) = update { repository.setThemeMode(mode) }
 
+        fun setAccentTheme(theme: AccentTheme) = update { repository.setAccentTheme(theme) }
+
+        fun setThreadLayout(layout: ThreadLayout) = update { repository.setThreadLayout(layout) }
+
+        fun setAutoScrollToLastSeen(enabled: Boolean) = update { repository.setAutoScrollToLastSeen(enabled) }
+
+        fun setShowStickyThreads(enabled: Boolean) = update { repository.setShowStickyThreads(enabled) }
+
+        fun setHiddenThreadPatterns(patterns: List<String>) = update { repository.setHiddenThreadPatterns(patterns) }
+
+        fun setPostFilterRules(rules: List<PostFilterRule>) = update { repository.setPostFilterRules(rules) }
+
+        fun commitFilters(
+            id: String,
+            rules: List<SettingFilterRule>,
+        ) {
+            when (id) {
+                "hiddenThreadPatterns" -> setHiddenThreadPatterns(rules.map { it.pattern })
+                "postFilterRules" ->
+                    setPostFilterRules(
+                        rules.mapNotNull { rule ->
+                            PostFilterKind.entries.firstOrNull { it.name == rule.kind }?.let {
+                                PostFilterRule(
+                                    it,
+                                    rule.pattern,
+                                    rule.regex,
+                                )
+                            }
+                        },
+                    )
+            }
+        }
+
+        fun setNsfwEachSession(enabled: Boolean) = update { repository.setNsfwEachSession(enabled) }
+
+        fun setCoverNsfwMedia(enabled: Boolean) = update { repository.setCoverNsfwMedia(enabled) }
+
+        fun setHistorySessionOnly(enabled: Boolean) = update { repository.setHistorySessionOnly(enabled) }
+
+        fun setPrivateSavedFiles(enabled: Boolean) = update { repository.setPrivateSavedFiles(enabled) }
+
+        fun setAskBeforePhotos(enabled: Boolean) = update { repository.setAskBeforePhotos(enabled) }
+
+        fun setShowSavedMediaTab(enabled: Boolean) = update { repository.setShowSavedMediaTab(enabled) }
+
+        fun setFullscreenAutoAdvance(enabled: Boolean) = update { repository.setFullscreenAutoAdvance(enabled) }
+
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
 
         fun refreshImageCacheUsage() =
@@ -198,6 +253,24 @@ class SettingsViewModel
         fun refreshVideoCacheUsage() =
             update {
                 _videoCacheUsageBytes.value = videoCacheRepository.usageBytes()
+            }
+
+        /** Cache-only action: never mutates browsing, transfers, or owned saved-media metadata. */
+        fun clearMediaCache(onComplete: (Boolean) -> Unit = {}) =
+            update {
+                var cleared = true
+                listOf<suspend () -> Unit>(imageCacheRepository::clear, videoCacheRepository::clear).forEach { clear ->
+                    try {
+                        clear()
+                    } catch (failure: CancellationException) {
+                        throw failure
+                    } catch (_: Exception) {
+                        cleared = false
+                    }
+                }
+                _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
+                _videoCacheUsageBytes.value = videoCacheRepository.usageBytes()
+                onComplete(cleared)
             }
 
         fun clearVideoCache() =
@@ -221,6 +294,7 @@ class SettingsViewModel
                 val result =
                     runCatching {
                         historyRepository.clear()
+                        threadMemoryRepository.clear()
                         searchRepository.clearRecentQueries()
                         downloadRepository.clearHistory()
                         imageCacheRepository.clear()
@@ -254,6 +328,40 @@ class SettingsViewModel
                             onSuccess = { BackupStatus.Imported(it) },
                             onFailure = { BackupStatus.Failed(it.message ?: "That file is not a valid Orbin backup") },
                         )
+            }
+
+        fun exportBackupArchive(
+            appVersionName: String,
+            sink: suspend (String) -> Unit,
+        ) = update {
+            _backupStatus.value =
+                runCatching {
+                    val file = backupService.createArchive(appVersionName)
+                    try {
+                        sink(file)
+                    } finally {
+                        backupService.discardArchive(file)
+                    }
+                }.onFailure { if (it is CancellationException) throw it }.fold(
+                    onSuccess = { BackupStatus.Exported },
+                    onFailure = { BackupStatus.Failed(it.message ?: "Could not write the backup file") },
+                )
+        }
+
+        fun importBackupArchive(source: suspend () -> String) =
+            update {
+                _backupStatus.value =
+                    runCatching {
+                        val file = source()
+                        try {
+                            backupService.importFromFile(file).getOrThrow()
+                        } finally {
+                            backupService.discardArchive(file)
+                        }
+                    }.onFailure { if (it is CancellationException) throw it }.fold(
+                        onSuccess = { BackupStatus.Imported(it) },
+                        onFailure = { BackupStatus.Failed(it.message ?: "That file is not a valid Orbin backup") },
+                    )
             }
 
         fun checkForUpdate(currentVersionName: String) =

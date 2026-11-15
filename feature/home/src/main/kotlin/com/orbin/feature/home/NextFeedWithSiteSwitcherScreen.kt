@@ -35,6 +35,7 @@ fun NextFeedWithSiteSwitcherScreen(
 ) {
     val switcherViewModel: FeedSiteSwitcherViewModel = hiltViewModel()
     val activeProviderId by switcherViewModel.activeProviderId.collectAsStateWithLifecycle()
+    val favoritesOnly by switcherViewModel.favoritesOnly.collectAsStateWithLifecycle()
     NextFeedScreen(
         onOpenThread = onOpenThread,
         onOpenThreadVideos = onOpenThreadVideos,
@@ -52,8 +53,26 @@ fun NextFeedWithSiteSwitcherScreen(
         onOpenWatched = onOpenWatched,
         onOpenBoard = onOpenBoard,
         providerFilter = activeProviderId,
-        sourceLabels = listOf(stringResource(R.string.feed_all_sites)) + switcherViewModel.sites.map { it.label },
-        selectedSource = switcherViewModel.sites.indexOfFirst { it.id == activeProviderId } + 1,
-        onSelectSource = { switcherViewModel.selectSite(switcherViewModel.sites.getOrNull(it - 1)?.id) },
+        favoritesOnly = favoritesOnly,
+        sourceLabels =
+            listOf(stringResource(R.string.feed_all_sites), stringResource(R.string.feed_favorites)) +
+                switcherViewModel.sites.map { it.label },
+        selectedSource =
+            if (favoritesOnly) {
+                1
+            } else if (activeProviderId ==
+                null
+            ) {
+                0
+            } else {
+                switcherViewModel.sites.indexOfFirst { it.id == activeProviderId } + 2
+            },
+        onSelectSource = { index ->
+            if (index == 1) {
+                switcherViewModel.selectFavorites()
+            } else {
+                switcherViewModel.selectSite(switcherViewModel.sites.getOrNull(index - 2)?.id)
+            }
+        },
     )
 }

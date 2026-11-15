@@ -6,6 +6,16 @@ import kotlin.test.assertTrue
 
 class WebMNavigationPolicyTest {
     @Test
+    fun ownedPlaybackAllowsOnlyTheExactGeneratedDocument() {
+        val document = "file:///private/app/Orbin/MediaExport/uuid/orbin-player.html"
+        assertTrue(shouldAllowWebMNavigation(document, document))
+        assertFalse(shouldAllowWebMNavigation("file:///etc/passwd", document))
+        assertFalse(shouldAllowWebMNavigation("$document/../other.html", document))
+        assertFalse(shouldAllowWebMNavigation("$document?redirect=1", document))
+        assertFalse(shouldAllowWebMNavigation("https://example.com", document))
+    }
+
+    @Test
     fun allowsTheLocalPlayerDocument() {
         assertTrue(shouldAllowWebMNavigation(null))
         assertTrue(shouldAllowWebMNavigation(""))

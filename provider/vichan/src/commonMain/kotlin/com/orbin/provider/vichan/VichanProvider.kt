@@ -59,6 +59,7 @@ class VichanProvider(
             supportedSortOptions =
                 setOf(
                     CatalogSort.BUMP_ORDER,
+                    CatalogSort.OLDEST,
                     CatalogSort.CREATION_DATE,
                     CatalogSort.REPLY_COUNT,
                     CatalogSort.IMAGE_COUNT,

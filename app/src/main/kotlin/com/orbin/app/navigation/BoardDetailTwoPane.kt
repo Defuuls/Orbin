@@ -129,4 +129,4 @@ fun BoardDetailTwoPane(
 }
 
 @Serializable
-private data object DetailPaneEmpty
+internal data object DetailPaneEmpty

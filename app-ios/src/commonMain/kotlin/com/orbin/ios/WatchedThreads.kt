@@ -3,13 +3,16 @@ package com.orbin.ios
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.unreadByThread
+import com.orbin.domain.bookmarks.collectionUnread
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.provider.api.ProviderException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
@@ -21,7 +24,7 @@ import kotlinx.coroutines.sync.withPermit
  * [refresh] runs while the app is open: at launch, on returning to a tab and when the app comes to
  * the front. The system also wakes the app now and then to run [refreshNow] in the background, as
  * Android's watch worker does; either way, new replies are handed to [notifier], which posts them as
- * Android does. Opening a watched thread [reads][read] it, which clears its unread count.
+ * Android does. Loading a watched thread updates its known count; visible posts acknowledge reads.
  *
  * [onWatch] runs when the reader starts watching a thread: where iOS asks, once, to notify.
  */
@@ -31,6 +34,7 @@ class WatchedThreads(
     private val now: () -> Long,
     private val notifier: ThreadNotifier? = null,
     private val onWatch: () -> Unit = {},
+    private val threadMemory: ThreadMemoryRepository? = null,
     private val fetch: suspend (ThreadKey) -> Thread,
 ) {
     private var refreshing: Job? = null
@@ -55,8 +59,21 @@ class WatchedThreads(
     }
 
     /** New replies on the watched threads of [board] since each was last read, by thread number. */
-    fun unread(board: SiteBoard): Flow<Map<Long, Int>> =
-        bookmarks.observeBookmarks(board.provider, board.board.id).map { it.unreadByThread() }
+    fun unread(board: SiteBoard): Flow<Map<Long, Int>> {
+        val entries = bookmarks.observeBookmarks(board.provider, board.board.id)
+        val memories = threadMemory ?: return entries.map { it.unreadByThread() }
+        return combine(entries, memories.observeCurrent()) { saved, memory ->
+            val byKey = memory.associateBy { it.key }
+            saved
+                .mapNotNull { bookmark ->
+                    bookmark
+                        .collectionUnread(
+                            byKey[bookmark.key],
+                        ).takeIf { it > 0 }
+                        ?.let { bookmark.key.thread.value to it }
+                }.toMap()
+        }
+    }
 
     /**
      * Android's watch refresh: fetches every watched thread, at most [MAX_CONCURRENT_WATCH_REFRESHES]
@@ -137,7 +154,6 @@ class WatchedThreads(
         if (!bookmark.isWatched) return null
         runCatching {
             bookmarks.updateLatest(thread.key, thread.stats.replyCount, thread.stats.isArchived)
-            bookmarks.markRead(thread.key)
         }
         return thread.replies
             .getOrNull(bookmark.lastSeenReplyCount)

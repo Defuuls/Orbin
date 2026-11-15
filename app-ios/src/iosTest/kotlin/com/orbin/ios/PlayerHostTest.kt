@@ -77,6 +77,73 @@ import kotlin.test.assertTrue
 /** Native host and decoder tests; these do not sample composited onscreen pixels. */
 class PlayerHostTest {
     @Test
+    fun explicitViewerHandoffReusesNativeItemAndPreservesPositionPauseAndAudio() {
+        NativePlaybackContinuity.clear()
+        val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
+        val bytes = Base64.decode(PlaybackFixtures.RED)
+        val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+        assertTrue(data.writeToFile(path, atomically = true))
+        val url = assertNotNull(NSURL.fileURLWithPath(path).absoluteString)
+        val visible = mutableStateOf(true)
+        val requested = mutableStateOf(true)
+        val muted = mutableStateOf(true)
+        val feed = mutableStateOf(true)
+        val root =
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                if (visible.value) {
+                    NativePlayer(
+                        url,
+                        active = true,
+                        autoPlay = requested.value,
+                        initiallyMuted = muted.value,
+                        feedMode = feed.value,
+                        loop = false,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        try {
+            withWindow(root, disposeContent = { visible.value = false }) {
+                await {
+                    root
+                        .players()
+                        .singleOrNull()
+                        ?.player
+                        ?.let { secondsForTest(it.currentTime()) > 0.15 } == true
+                }
+                val inline = assertNotNull(root.players().single().player)
+                requested.value = false
+                muted.value = false
+                await { inline.rate == 0f && !inline.muted }
+                val pausedAt = secondsForTest(inline.currentTime())
+                prepareNativeMediaHandoff(url)
+                visible.value = false
+                await { root.players().isEmpty() }
+                assertNotNull(inline.currentItem, "Only an explicit navigation handoff retains the stopped item")
+                feed.value = false
+                visible.value = true
+                await { root.players().singleOrNull()?.player != null }
+                val fullscreen = assertNotNull(root.players().single().player)
+                assertEquals(
+                    inline.objcPtr(),
+                    fullscreen.objcPtr(),
+                    "The actual buffered player transfers to fullscreen",
+                )
+                await { fullscreen.rate == 0f && !fullscreen.muted }
+                assertTrue(secondsForTest(fullscreen.currentTime()) >= pausedAt - 0.05)
+                prepareNativeMediaHandoff(url)
+                visible.value = false
+                await { root.players().isEmpty() }
+                NativePlaybackContinuity.clear()
+                assertNull(fullscreen.currentItem, "Clear cache also releases a retained handoff item")
+            }
+        } finally {
+            NativePlaybackContinuity.clear()
+            NSFileManager.defaultManager.removeItemAtPath(path, error = null)
+        }
+    }
+
+    @Test
     fun localVideoDecodesAndBecomesDisplayReadyAfterReplacementAndReopen() {
         val paths =
             listOf(PlaybackFixtures.RED, PlaybackFixtures.GREEN).map { encoded ->
@@ -277,7 +344,8 @@ class PlayerHostTest {
 
     @Test
     fun preloadedWebMTransfersItsViewAndDecodesRealFramesWhileItsClockAdvances() {
-        if (!supportsWebM) return
+        val webMCase = "PlayerHostTest.preloadedWebMTransfersItsViewAndDecodesRealFramesWhileItsClockAdvances"
+        if (!requireWebMDecodeRuntime(webMCase)) return
         val url = "data:video/webm;base64," + PlaybackFixtures.WEBM
         val preloader = createNativeMediaPreloader()
         val visible = mutableStateOf(true)
@@ -352,6 +420,7 @@ class PlayerHostTest {
         } finally {
             preloader.close()
         }
+        verifiedWebMDecodeCase(webMCase)
     }
 
     @Test
@@ -462,7 +531,8 @@ class PlayerHostTest {
 
     @Test
     fun feedWebMDecodesRealFramesAndKeepsPausedIntentAcrossBackgrounding() {
-        if (!supportsWebM) return
+        val webMCase = "PlayerHostTest.feedWebMDecodesRealFramesAndKeepsPausedIntentAcrossBackgrounding"
+        if (!requireWebMDecodeRuntime(webMCase)) return
         val requested = mutableStateOf(true)
         val visible = mutableStateOf(true)
         val root =
@@ -502,6 +572,7 @@ class PlayerHostTest {
             visible.value = false
             await { root.view.webViews().isEmpty() }
         }
+        verifiedWebMDecodeCase(webMCase)
     }
 }
 

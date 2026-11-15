@@ -79,6 +79,7 @@ fun ReaderCatalogSearch(
             cursorBrush = SolidColor(reader.accent),
             modifier =
                 Modifier
+                    .readerTextEntry()
                     .testTag("reader-catalog-query")
                     .weight(1f)
                     .heightIn(min = ReaderSize.touchTarget)

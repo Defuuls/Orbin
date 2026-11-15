@@ -35,12 +35,21 @@ internal class FeedSiteSwitcherViewModel
         /** Null selects the combined feed; the selected source survives process recreation. */
         val activeProviderId: StateFlow<String?> = savedStateHandle.getStateFlow(SITE_FILTER_KEY, null)
 
+        val favoritesOnly: StateFlow<Boolean> = savedStateHandle.getStateFlow(FAVORITES_FILTER_KEY, false)
+
+        fun selectFavorites() {
+            savedStateHandle[SITE_FILTER_KEY] = null
+            savedStateHandle[FAVORITES_FILTER_KEY] = true
+        }
+
         fun selectSite(id: String?) {
             if (id != null && sites.none { it.id == id }) return
+            savedStateHandle[FAVORITES_FILTER_KEY] = false
             savedStateHandle[SITE_FILTER_KEY] = id
         }
 
         private companion object {
+            const val FAVORITES_FILTER_KEY = "homeFavoritesFilter"
             const val SITE_FILTER_KEY = "homeSiteFilter"
         }
     }

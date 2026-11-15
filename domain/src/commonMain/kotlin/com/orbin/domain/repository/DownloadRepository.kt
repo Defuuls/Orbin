@@ -1,5 +1,6 @@
 package com.orbin.domain.repository
 
+import com.orbin.core.model.DownloadMediaContext
 import com.orbin.core.model.DownloadRecord
 import kotlinx.coroutines.flow.Flow
 
@@ -24,6 +25,8 @@ interface DownloadRepository {
         boardId: String? = null,
         threadId: Long? = null,
         threadTitle: String? = null,
+        mediaContext: DownloadMediaContext? = null,
+        privateTarget: Boolean = false,
     ): Long
 
     /** Mark a recorded download with the latest known [com.orbin.core.model.DownloadStatus]. */

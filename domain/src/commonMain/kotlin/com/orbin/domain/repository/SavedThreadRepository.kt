@@ -26,4 +26,12 @@ interface SavedThreadRepository {
     suspend fun load(key: ThreadKey): Thread?
 
     suspend fun forget(key: ThreadKey)
+
+    /** Last-loaded automatic copies do not turn the thread into an explicit Saved record. */
+    suspend fun cacheLastLoaded(thread: Thread) {}
+
+    /** Keep only bookmarked or persistently visited automatic copies. Manual saves are unaffected. */
+    suspend fun pruneAutomaticCopies(retained: Set<ThreadKey>) {}
+
+    suspend fun clearAutomaticCopies() = pruneAutomaticCopies(emptySet())
 }

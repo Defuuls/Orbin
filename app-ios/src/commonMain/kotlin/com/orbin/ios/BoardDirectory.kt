@@ -1,6 +1,7 @@
 package com.orbin.ios
 
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.isPermanentlyFiltered
 
 /** Cached rows stay usable during a retry; progress and errors belong to the requested source. */
 internal fun HomeFeedDirectory.boardsOnSite(provider: ProviderId): Load<List<SiteBoard>> {
@@ -25,3 +26,16 @@ internal fun HomeFeedDirectory.eligibleFollowing(
         .map { FollowedBoard(it.provider, it.board.id) }
         .filter { it in followed }
         .toSet()
+
+/** Unknown board classifications cannot bypass a hidden-NSFW search policy. */
+internal fun filterSearchableBoards(
+    followed: Set<FollowedBoard>,
+    knownBoards: List<SiteBoard>,
+    hideNsfw: Boolean,
+): List<FollowedBoard> {
+    val byKey = knownBoards.associateBy { FollowedBoard(it.provider, it.board.id) }
+    return followed.filterNot { followedBoard ->
+        val board = byKey[followedBoard]?.board
+        board?.isPermanentlyFiltered() == true || (hideNsfw && board?.isNsfw != false)
+    }
+}

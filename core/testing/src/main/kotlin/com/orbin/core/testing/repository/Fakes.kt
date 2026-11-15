@@ -1,6 +1,7 @@
 package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
@@ -13,12 +14,14 @@ import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
+import com.orbin.core.model.ThreadLayout
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SearchRepository
@@ -175,6 +178,41 @@ class FakeSettingsRepository(
     private val state = MutableStateFlow(initial)
 
     override val settings: Flow<AppSettings> = state
+
+    override suspend fun setAccentTheme(value: AccentTheme) = state.update { it.copy(accentTheme = value) }
+
+    override suspend fun setThreadLayout(value: ThreadLayout) = state.update { it.copy(threadLayout = value) }
+
+    override suspend fun setAutoScrollToLastSeen(value: Boolean) =
+        state.update { it.copy(autoScrollToLastSeen = value) }
+
+    override suspend fun setCollectionNewestFirst(value: Boolean) =
+        state.update { it.copy(collectionNewestFirst = value) }
+
+    override suspend fun setShowStickyThreads(value: Boolean) = state.update { it.copy(showStickyThreads = value) }
+
+    override suspend fun setNsfwEachSession(value: Boolean) = state.update { it.copy(nsfwEachSession = value) }
+
+    override suspend fun setCoverNsfwMedia(value: Boolean) = state.update { it.copy(coverNsfwMedia = value) }
+
+    override suspend fun setHistorySessionOnly(value: Boolean) = state.update { it.copy(historySessionOnly = value) }
+
+    override suspend fun setPrivateSavedFiles(value: Boolean) = state.update { it.copy(privateSavedFiles = value) }
+
+    override suspend fun setAskBeforePhotos(value: Boolean) = state.update { it.copy(askBeforePhotos = value) }
+
+    override suspend fun setShowSavedMediaTab(value: Boolean) = state.update { it.copy(showSavedMediaTab = value) }
+
+    override suspend fun setFullscreenAutoAdvance(value: Boolean) =
+        state.update { it.copy(fullscreenAutoAdvance = value) }
+
+    override suspend fun setHiddenThreadPatterns(value: List<String>) =
+        state.update {
+            it.copy(hiddenThreadPatterns = value)
+        }
+
+    override suspend fun setPostFilterRules(value: List<PostFilterRule>) =
+        state.update { it.copy(postFilterRules = value) }
 
     override suspend fun setPlaybackSettings(
         scope: PlaybackScope,

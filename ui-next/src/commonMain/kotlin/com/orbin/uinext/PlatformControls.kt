@@ -230,6 +230,7 @@ fun SchematicSearch(
             cursorBrush = SolidColor(reader.accent),
             modifier =
                 Modifier
+                    .readerTextEntry()
                     .fillMaxWidth()
                     .heightIn(min = MIN_TOUCH_TARGET)
                     .semantics { contentDescription = placeholder },

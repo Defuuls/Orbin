@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.SearchResult
@@ -20,13 +21,30 @@ fun NextSearchScreen(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     viewModel: SearchViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null,
+    onOpenPost: ((provider: String, board: String, thread: Long, postId: Long, title: String) -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     val byRow = remember(state) { (state as? SearchUiState.Results)?.results.orEmpty().associateBy { it.rowId } }
 
     NextTheme {
+        val webProvider = viewModel.webSearchProvider
+        val webBoards = viewModel.webSearchBoards
+        val fallbackBoards =
+            remember { kotlinx.coroutines.flow.MutableStateFlow(emptyList<com.orbin.core.model.Board>()) }
+        val boards by (webBoards ?: fallbackBoards).collectAsStateWithLifecycle()
         SearchScreen(
+            onWebSearch = viewModel.webSearchSession?.let { it::submit },
+            webSearch =
+                if (webProvider != null) {
+                    { submitted ->
+                        viewModel.webSearchBrowser(LocalContext.current)?.let { browser ->
+                            FourchanWebSearch(submitted, browser, boards, onOpenThread, onOpenPost)
+                        }
+                    }
+                } else {
+                    null
+                },
             query = query,
             onQueryChange = { query = it },
             onSearch = { viewModel.search(query) },

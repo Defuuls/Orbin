@@ -10,9 +10,13 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import co.touchlab.kermit.Logger
+import com.orbin.core.model.DownloadMediaContext
 import com.orbin.core.model.DownloadStatus
+import com.orbin.core.model.libraryRecord
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.repository.downloadRequestHeaders
+import com.orbin.domain.repository.ManagedMediaFiles
+import com.orbin.domain.repository.MediaLibraryRepository
 import com.orbin.network.di.VideoOkHttp
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -23,6 +27,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import java.io.File
@@ -39,6 +44,8 @@ class DownloadWorker
         private val dao: DownloadDao,
         @VideoOkHttp private val okHttpClient: OkHttpClient,
         private val hostGate: DownloadHostGate,
+        private val managedFiles: ManagedMediaFiles? = null,
+        private val library: MediaLibraryRepository? = null,
     ) : CoroutineWorker(context, workerParams) {
         override suspend fun doWork(): Result =
             withContext(Dispatchers.IO) {
@@ -70,8 +77,33 @@ class DownloadWorker
                             )
                         }
                     when (fetched) {
-                        is DownloadFetchResult.Complete ->
-                            publishToMediaStore(id, fileName, relativeDir, partial, fetched.mimeType)
+                        is DownloadFetchResult.Complete -> {
+                            val media =
+                                download.mediaContextJson?.let { encoded ->
+                                    runCatching { Json.decodeFromString<DownloadMediaContext>(encoded) }.getOrNull()
+                                }
+                            if (media != null && managedFiles != null && library != null) {
+                                val record =
+                                    media.libraryRecord(
+                                        id,
+                                        url,
+                                        fileName,
+                                        partial.length(),
+                                        System.currentTimeMillis(),
+                                    )
+                                managedFiles.importFile(record.storageKey, partial.path)
+                                library.put(record)
+                            } else if (download.privateTarget) {
+                                throw IOException("Private media storage is not available")
+                            }
+                            if (download.privateTarget) {
+                                dao.updateStatus(id, DownloadStatus.COMPLETED.name)
+                                partial.delete()
+                                Result.success()
+                            } else {
+                                publishToMediaStore(id, fileName, relativeDir, partial, fetched.mimeType)
+                            }
+                        }
                         is DownloadFetchResult.Retry ->
                             retryOrFail(id, fetched.retryAfterSeconds)
                         is DownloadFetchResult.Fail -> {

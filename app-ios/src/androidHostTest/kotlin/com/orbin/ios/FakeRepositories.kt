@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -11,9 +12,11 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThreadLayout
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.HistoryRepository
@@ -77,6 +80,8 @@ class FakeHistory : HistoryRepository {
         offsetPx: Int,
     ) = Unit
 
+    override suspend fun remove(key: ThreadKey) = entries.update { it - key }
+
     override suspend fun clear() = entries.update { emptyMap() }
 }
 
@@ -126,6 +131,47 @@ class FakeBoardPreferences : BoardPreferencesRepository {
 @Suppress("TooManyFunctions")
 class FakeSettings : SettingsRepository {
     override val settings = MutableStateFlow(AppSettings.Default)
+
+    override suspend fun setAccentTheme(value: AccentTheme) = settings.update { it.copy(accentTheme = value) }
+
+    override suspend fun setThreadLayout(value: ThreadLayout) = settings.update { it.copy(threadLayout = value) }
+
+    override suspend fun setAutoScrollToLastSeen(value: Boolean) =
+        settings.update { it.copy(autoScrollToLastSeen = value) }
+
+    override suspend fun setCollectionNewestFirst(value: Boolean) =
+        settings.update {
+            it.copy(collectionNewestFirst = value)
+        }
+
+    override suspend fun setShowStickyThreads(value: Boolean) = settings.update { it.copy(showStickyThreads = value) }
+
+    override suspend fun setNsfwEachSession(value: Boolean) = settings.update { it.copy(nsfwEachSession = value) }
+
+    override suspend fun setCoverNsfwMedia(value: Boolean) = settings.update { it.copy(coverNsfwMedia = value) }
+
+    override suspend fun setHistorySessionOnly(value: Boolean) = settings.update { it.copy(historySessionOnly = value) }
+
+    override suspend fun setPrivateSavedFiles(value: Boolean) = settings.update { it.copy(privateSavedFiles = value) }
+
+    override suspend fun setAskBeforePhotos(value: Boolean) = settings.update { it.copy(askBeforePhotos = value) }
+
+    override suspend fun setShowSavedMediaTab(value: Boolean) = settings.update { it.copy(showSavedMediaTab = value) }
+
+    override suspend fun setFullscreenAutoAdvance(value: Boolean) =
+        settings.update {
+            it.copy(fullscreenAutoAdvance = value)
+        }
+
+    override suspend fun setHiddenThreadPatterns(value: List<String>) =
+        settings.update {
+            it.copy(hiddenThreadPatterns = value)
+        }
+
+    override suspend fun setPostFilterRules(value: List<PostFilterRule>) =
+        settings.update {
+            it.copy(postFilterRules = value)
+        }
 
     override suspend fun setPlaybackSettings(
         scope: PlaybackScope,
