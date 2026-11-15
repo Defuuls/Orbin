@@ -37,7 +37,10 @@ class NativeSearchContinuityHostTest {
         val scope = MainScope()
         val transport = NativeSearchTransport(session, scope)
         val visible = mutableStateOf(true)
-        val root = ComposeUIViewController { if (visible.value) transport.Content(Modifier.fillMaxSize()) }
+        val root =
+            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                if (visible.value) transport.Content(Modifier.fillMaxSize())
+            }
         val window =
             UIWindow(CGRectMake(0.0, 0.0, 390.0, 844.0)).apply {
                 rootViewController = root

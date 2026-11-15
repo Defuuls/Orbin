@@ -31,7 +31,8 @@ import kotlin.time.TimeSource
 class LocalWebMDocumentHostTest {
     @Test
     fun ownedWebMDecodesOfflineAndCannotNavigateToAnotherLocalFile() {
-        if (!supportsWebM) return
+        val webMCase = "LocalWebMDocumentHostTest.ownedWebMDecodesOfflineAndCannotNavigateToAnotherLocalFile"
+        if (!requireWebMDecodeRuntime(webMCase)) return
         val manager = NSFileManager.defaultManager
         val support = manager.URLForDirectory(NSApplicationSupportDirectory, NSUserDomainMask, null, true, null)
         val directory = checkNotNull(support?.path) + "/Orbin/MediaExport/" + NSUUID().UUIDString
@@ -59,7 +60,8 @@ class LocalWebMDocumentHostTest {
                 var decoded = false
                 var done = false
                 web.evaluateJavaScript(
-                    "(function(){var v=document.getElementById('v');return !!v&&v.currentTime>0.05&&v.getVideoPlaybackQuality().totalVideoFrames>0})()",
+                    "(function(){var v=document.getElementById('v');" +
+                        "return !!v&&v.currentTime>0.05&&v.getVideoPlaybackQuality().totalVideoFrames>0})()",
                 ) { result, _ ->
                     decoded = result == true
                     done = true
@@ -88,6 +90,7 @@ class LocalWebMDocumentHostTest {
             window.rootViewController = null
             manager.removeItemAtPath(directory, null)
         }
+        verifiedWebMDecodeCase(webMCase)
     }
 
     private fun await(condition: () -> Boolean) {

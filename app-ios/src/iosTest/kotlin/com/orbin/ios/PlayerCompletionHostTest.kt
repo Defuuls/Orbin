@@ -27,7 +27,8 @@ import kotlin.test.assertTrue
 class PlayerCompletionHostTest {
     @Test
     fun completedGalleryWebMStaysEndedAcrossForegroundingAndCanReplay() {
-        if (!supportsWebM) return
+        val webMCase = "PlayerCompletionHostTest.completedGalleryWebMStaysEndedAcrossForegroundingAndCanReplay"
+        if (!requireWebMDecodeRuntime(webMCase)) return
         val visible = mutableStateOf(true)
         val autoplay = mutableStateOf(true)
         val reportedIntents = mutableListOf<Boolean>()
@@ -93,6 +94,7 @@ class PlayerCompletionHostTest {
                 window.rootViewController = null
             }
         }
+        verifiedWebMDecodeCase(webMCase)
     }
 
     private fun WKWebView.mediaSnapshot(): MediaSnapshot? {

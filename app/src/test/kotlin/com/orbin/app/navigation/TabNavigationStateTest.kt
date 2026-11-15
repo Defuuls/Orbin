@@ -1,5 +1,6 @@
 package com.orbin.app.navigation
 
+import android.app.Application
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -19,7 +20,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(application = Application::class, sdk = [35])
 class TabNavigationStateTest {
     @Test
     fun switchingTabsRestoresSearchStateWithoutRestoringCoveredSettings() {

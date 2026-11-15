@@ -344,7 +344,8 @@ class PlayerHostTest {
 
     @Test
     fun preloadedWebMTransfersItsViewAndDecodesRealFramesWhileItsClockAdvances() {
-        if (!supportsWebM) return
+        val webMCase = "PlayerHostTest.preloadedWebMTransfersItsViewAndDecodesRealFramesWhileItsClockAdvances"
+        if (!requireWebMDecodeRuntime(webMCase)) return
         val url = "data:video/webm;base64," + PlaybackFixtures.WEBM
         val preloader = createNativeMediaPreloader()
         val visible = mutableStateOf(true)
@@ -419,6 +420,7 @@ class PlayerHostTest {
         } finally {
             preloader.close()
         }
+        verifiedWebMDecodeCase(webMCase)
     }
 
     @Test
@@ -529,7 +531,8 @@ class PlayerHostTest {
 
     @Test
     fun feedWebMDecodesRealFramesAndKeepsPausedIntentAcrossBackgrounding() {
-        if (!supportsWebM) return
+        val webMCase = "PlayerHostTest.feedWebMDecodesRealFramesAndKeepsPausedIntentAcrossBackgrounding"
+        if (!requireWebMDecodeRuntime(webMCase)) return
         val requested = mutableStateOf(true)
         val visible = mutableStateOf(true)
         val root =
@@ -569,6 +572,7 @@ class PlayerHostTest {
             visible.value = false
             await { root.view.webViews().isEmpty() }
         }
+        verifiedWebMDecodeCase(webMCase)
     }
 }
 

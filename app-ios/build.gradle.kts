@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.orbin.kmp.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // The iOS app's Kotlin half: it wires the shared providers and screens together and is linked into
