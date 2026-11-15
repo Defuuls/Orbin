@@ -12,6 +12,7 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostFilterKind
 import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.privacy.PrivacySession
@@ -35,6 +36,7 @@ import kotlinx.coroutines.launch
  * Android's: hiding NSFW boards, covering violent media, the theme and true black, and clearing
  * what the app keeps.
  */
+@Suppress("TooManyFunctions")
 class ReaderSettings(
     private val repository: SettingsRepository,
     private val history: HistoryRepository,
@@ -106,6 +108,8 @@ class ReaderSettings(
     fun setOpenThreadComments(enabled: Boolean): Job = scope.launch { repository.setOpenThreadComments(enabled) }
 
     fun setCatalogMode(mode: CatalogMode): Job = scope.launch { repository.setCatalogMode(mode) }
+
+    fun setSharpPreviews(mode: SharpPreviewsMode): Job = scope.launch { repository.setSharpPreviews(mode) }
 
     fun setThemeMode(mode: AppThemeMode): Job = scope.launch { repository.setThemeMode(mode) }
 
@@ -242,6 +246,7 @@ internal object SettingIds {
     const val AMOLED = "amoled"
     const val FEED_COLUMNS = "feedColumns"
     const val CATALOG_MODE = "catalogMode"
+    const val SHARP_PREVIEWS = "sharpPreviews"
     const val APP_LOCK = "biometric"
     const val SCREEN_PRIVACY = "screenPrivacy"
     const val DOH_PROVIDER = "dohProvider"
@@ -305,6 +310,17 @@ private fun appearanceAndPrivacyRows(settings: AppSettings): List<SettingItem> =
             kind = SettingKind.CHOICE,
             options = CatalogMode.entries.map { it.label },
             selected = settings.catalogMode.ordinal,
+        ),
+        SettingItem(
+            id = SettingIds.SHARP_PREVIEWS,
+            label = "Sharp previews",
+            value = settings.sharpPreviews.label,
+            kind = SettingKind.CHOICE,
+            options = SharpPreviewsMode.entries.map { it.label },
+            selected = settings.sharpPreviews.ordinal,
+            hint =
+                "Load full-size still images in card and grid views. Videos, GIFs, and files over 4 MB " +
+                    "keep the thumbnail. Wi-Fi only also stays on the thumbnail when Low Data Mode is on.",
         ),
         toggle(SettingIds.APP_LOCK, "App lock", settings.biometricLockEnabled),
         toggle(
@@ -521,6 +537,7 @@ private fun settingsSections(groups: List<Pair<String, List<SettingItem>>>): Lis
             SettingIds.THEME,
             SettingIds.AMOLED,
             SettingIds.CATALOG_MODE,
+            SettingIds.SHARP_PREVIEWS,
         )
     val privacyIds =
         setOf(

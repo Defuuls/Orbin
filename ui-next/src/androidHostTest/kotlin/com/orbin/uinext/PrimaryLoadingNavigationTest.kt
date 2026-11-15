@@ -3,7 +3,6 @@ package com.orbin.uinext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,9 +20,9 @@ class PrimaryLoadingNavigationTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    /** Replaces loadingBoardsKeepAllFiveTabsUsable: navigation now opens through Menu. */
+    /** Replaces loadingBoardsKeepAllFiveTabsUsable: the bottom bar stays usable. */
     @Test
-    fun loadingBoardsKeepAllDrawerDestinationsUsable() {
+    fun loadingBoardsKeepThePrimaryBarUsable() {
         var selected: NextDestination? = null
         composeRule.setContent {
             NextTheme {
@@ -37,25 +36,22 @@ class PrimaryLoadingNavigationTest {
             }
         }
 
-        composeRule.onNodeWithContentDescription("Menu").performClick()
         listOf(
-            NextDestination.FEED,
-            NextDestination.WATCHED,
             NextDestination.BOARDS,
-            NextDestination.SEARCH,
-            NextDestination.SAVED,
+            NextDestination.FEED,
+            NextDestination.LIBRARY,
             NextDestination.SETTINGS,
         ).forEach { destination ->
-            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertIsDisplayed()
+            composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + destination.name).assertIsDisplayed()
         }
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.BOARDS.name).assertIsSelected()
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.WATCHED.name).performClick()
-        composeRule.runOnIdle { assertEquals(NextDestination.WATCHED, selected) }
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.BOARDS.name).assertIsSelected()
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.LIBRARY.name).performClick()
+        composeRule.runOnIdle { assertEquals(NextDestination.LIBRARY, selected) }
     }
 
-    /** Replaces failedHomeOffersRetryAndNavigationToAnotherTab with the equivalent drawer route. */
+    /** Replaces failedHomeOffersRetryAndNavigationToAnotherTab. */
     @Test
-    fun failedHomeOffersRetryAndNavigationToAnotherDrawerDestination() {
+    fun failedFeedOffersRetryAndNavigationToAnotherTab() {
         var retries = 0
         var selected: NextDestination? = null
         composeRule.setContent {
@@ -73,8 +69,7 @@ class PrimaryLoadingNavigationTest {
 
         composeRule.onNodeWithText("Try again").performClick()
         composeRule.runOnIdle { assertEquals(1, retries) }
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.SAVED.name).performClick()
-        composeRule.runOnIdle { assertEquals(NextDestination.SAVED, selected) }
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.BOARDS.name).performClick()
+        composeRule.runOnIdle { assertEquals(NextDestination.BOARDS, selected) }
     }
 }

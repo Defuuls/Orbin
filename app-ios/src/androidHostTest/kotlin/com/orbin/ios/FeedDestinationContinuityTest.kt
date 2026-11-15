@@ -136,11 +136,11 @@ class FeedDestinationContinuityTest {
             // Keep the real outgoing Feed binding mounted, as during a destination transition.
             showHome(browser)
 
-            repeat(2) { composeRule.onNodeWithContentDescription("Downloads").performClick() }
-            assertEquals(listOf(Route.Feed, Route.Downloads), browser.backStack.value)
+            repeat(2) { composeRule.onNodeWithContentDescription("Library").performClick() }
+            assertEquals(listOf(Route.Feed, Route.Watched), browser.backStack.value)
 
             repeat(2) { composeRule.onNodeWithContentDescription("Settings").performClick() }
-            assertEquals(listOf(Route.Feed, Route.Settings), browser.backStack.value)
+            assertEquals(listOf(Route.Feed, Route.Watched, Route.Settings), browser.backStack.value)
         }
 
     @Test

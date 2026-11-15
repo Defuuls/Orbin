@@ -28,8 +28,10 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.ui.date.formatPostDateTime
 import com.orbin.domain.bookmarks.collectionUnread
 import com.orbin.ios.resources.Res
@@ -46,6 +48,7 @@ import com.orbin.ios.resources.ios_primary_loading
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
+import com.orbin.uinext.LibrarySection
 import com.orbin.uinext.LocalOrbinNavigationAtSide
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
@@ -79,6 +82,8 @@ internal fun FeedDestination(
     val feed by browser.feed.collectAsState()
     val boards by browser.boards.collectAsState()
     val settings by browser.settings.current.collectAsState()
+    val isMetered by browser.networkMonitor.isMetered.collectAsState(true)
+    val isDataSaver by browser.networkMonitor.isDataSaver.collectAsState(false)
     val downloadBadge = rememberActiveDownloadBadge(downloads)
     val site by browser.feedSite.collectAsState()
     val favoritesOnly by browser.feedFavoritesOnly.collectAsState()
@@ -191,7 +196,15 @@ internal fun FeedDestination(
                         ReaderThumbnail(
                             attachment.copy(isSpoiler = false),
                             modifier,
-                            sharp = catalogMode.sharpensThumbnails,
+                            sharp =
+                                shouldLoadSharpPreview(
+                                    modeWantsSharp = catalogMode.sharpensThumbnails,
+                                    setting = settings.sharpPreviews,
+                                    isMetered = isMetered,
+                                    isDataSaver = isDataSaver,
+                                    mediaType = attachment.type,
+                                    sizeBytes = attachment.sizeBytes,
+                                ),
                         )
                     }
                 },
@@ -213,10 +226,12 @@ internal fun FeedDestination(
                     }
                 },
                 onOpenBoards = { browser.openTab(Route.Boards) },
-                onOpenDownloads = { browser.openPrimaryPage(Route.Downloads) },
-                onOpenSearch = { browser.openTab(Route.Search) },
-                onOpenSaved = { browser.openTab(Route.Saved) },
-                onOpenWatched = { browser.openTab(Route.Watched) },
+                onOpenDownloads = { browser.openLibrary(LibrarySection.DOWNLOADS) },
+                onOpenSearch = { browser.open(Route.Search) },
+                onOpenSaved = { browser.openLibrary(LibrarySection.SAVED) },
+                onOpenWatched = { browser.openLibrary(LibrarySection.WATCHED) },
+                onOpenLibrary = { browser.openLibrary() },
+                watchedBadge = rememberWatchedBadge(browser),
                 onSettings = { browser.openPrimaryPage(Route.Settings) },
                 sourceLabels =
                     listOf(
@@ -292,10 +307,12 @@ internal fun BoardsDestination(
         onFollowBoard = { tile, follow -> byTile[tile.id]?.let { browser.setFollowed(it, follow) } },
         onFavoriteBoard = { tile, favorite -> byTile[tile.id]?.let { browser.setFavorite(it, favorite) } },
         onOpenFeed = { browser.openTab(Route.Feed) },
-        onOpenDownloads = { browser.openPrimaryPage(Route.Downloads) },
-        onOpenSaved = { browser.openTab(Route.Saved) },
-        onOpenWatched = { browser.openTab(Route.Watched) },
-        onOpenSearch = { browser.openTab(Route.Search) },
+        onOpenDownloads = { browser.openLibrary(LibrarySection.DOWNLOADS) },
+        onOpenSaved = { browser.openLibrary(LibrarySection.SAVED) },
+        onOpenWatched = { browser.openLibrary(LibrarySection.WATCHED) },
+        onOpenLibrary = { browser.openLibrary() },
+        watchedBadge = rememberWatchedBadge(browser),
+        onOpenSearch = { browser.open(Route.Search) },
         onOpenSettings = { browser.openPrimaryPage(Route.Settings) },
         headerContent = { SiteSwitcher(browser, site, gapAfter = 0.dp, compact = true) },
     )
@@ -360,12 +377,7 @@ internal fun DownloadsDestination(
             } else {
                 null
             },
-        bottomBar =
-            if (LocalOrbinNavigationAtSide.current) {
-                null
-            } else {
-                { PrimaryNavigation(browser, downloads, NextDestination.DOWNLOADS) }
-            },
+        bottomBar = null,
         onRetry = downloads::retry,
         onClear = downloads::clear,
         onBack = { if (!browser.back()) browser.openTab(Route.Feed) },
@@ -485,8 +497,8 @@ internal fun SettingsDestination(
             when (destination) {
                 "boards", "favorites" -> browser.openTab(Route.Boards)
                 "history" -> browser.open(Route.History)
-                "watched" -> browser.openTab(Route.Watched)
-                "downloads" -> browser.open(Route.Downloads)
+                "watched" -> browser.openLibrary(LibrarySection.WATCHED)
+                "downloads" -> browser.openLibrary(LibrarySection.DOWNLOADS)
                 "help" -> uriHandler.openUri("https://github.com/Defuuls/Orbin/wiki")
             }
         },
@@ -630,6 +642,8 @@ internal fun SettingsDestination(
                     SettingIds.FEED_COLUMNS -> browser.settings.setFeedColumns(formFactor, index + 1)
                     SettingIds.CATALOG_MODE ->
                         CatalogMode.entries.getOrNull(index)?.let(browser.settings::setCatalogMode)
+                    SettingIds.SHARP_PREVIEWS ->
+                        SharpPreviewsMode.entries.getOrNull(index)?.let(browser.settings::setSharpPreviews)
                 }
             }
             expanded = null
@@ -676,6 +690,7 @@ internal fun SearchDestination(browser: Browser) {
         where = "Search",
         destination = NextDestination.SEARCH,
         onDestination = browser::openDestination,
+        onBack = { if (!browser.back()) browser.openTab(Route.Feed) },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             SearchScreen(
@@ -693,7 +708,7 @@ internal fun SearchDestination(browser: Browser) {
                 query = query,
                 onQueryChange = browser.search::setQuery,
                 onSearch = { browser.search.run() },
-                onBack = { browser.openTab(Route.Feed) },
+                onBack = { if (!browser.back()) browser.openTab(Route.Feed) },
                 state = state,
                 onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
             )
@@ -703,13 +718,8 @@ internal fun SearchDestination(browser: Browser) {
 
 internal fun Browser.openDestination(destination: NextDestination) {
     when (destination) {
-        NextDestination.FEED -> openTab(Route.Feed)
-        NextDestination.SEARCH -> openTab(Route.Search)
-        NextDestination.BOARDS -> openTab(Route.Boards)
-        NextDestination.SAVED -> openTab(Route.Saved)
-        NextDestination.WATCHED -> openTab(Route.Watched)
-        NextDestination.DOWNLOADS -> open(Route.Downloads)
         NextDestination.SETTINGS -> open(Route.Settings)
+        else -> openPrimaryDestination(destination)
     }
 }
 

@@ -12,6 +12,17 @@
             android:targetClass="com.orbin.app.MainActivity" />
     </shortcut>
     <shortcut
+        android:shortcutId="watched"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_watched"
+        android:shortcutShortLabel="@string/shortcut_watched_short"
+        android:shortcutLongLabel="@string/shortcut_watched_long">
+        <intent
+            android:action="com.orbin.shortcut.WATCHED"
+            android:targetPackage="com.orbin.app"
+            android:targetClass="com.orbin.app.MainActivity" />
+    </shortcut>
+    <shortcut
         android:shortcutId="downloads"
         android:enabled="true"
         android:icon="@drawable/ic_shortcut_downloads"

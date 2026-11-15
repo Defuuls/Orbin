@@ -1,17 +1,15 @@
 package com.orbin.uinext
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -114,30 +112,21 @@ class ReaderCompletionScreenshotTest(
         }
 
     @Test
-    fun phoneOpenDrawer() = capture("phone_390_open_drawer", openDrawer = true) { CompletionCatalog() }
-
-    @Test
-    @Config(qualifiers = "en-rUS-w960dp-h800dp-mdpi")
-    fun tabletOpenDrawer() =
-        capture("tablet_960_open_drawer", openDrawer = true) {
-            CompletionPanes(catalogWidth = 399.dp, threadOpen = true)
-        }
+    fun phoneBottomBar() = capture("phone_390_bottom_bar") { CompletionCatalogWithBar() }
 
     @Test
     @Config(qualifiers = "en-rUS-w248dp-h600dp-mdpi")
-    fun narrowRightToLeftDrawerAtMaximumText() =
+    fun narrowRightToLeftBottomBarAtMaximumText() =
         capture(
-            "narrow_248_open_drawer_rtl_font_200",
+            "narrow_248_bottom_bar_rtl_font_200",
             fontScale = 2f,
             direction = LayoutDirection.Rtl,
-            openDrawer = true,
-        ) { CompletionCatalog() }
+        ) { CompletionCatalogWithBar() }
 
     private fun capture(
         name: String,
         fontScale: Float = 1f,
         direction: LayoutDirection = LayoutDirection.Ltr,
-        openDrawer: Boolean = false,
         content: @Composable () -> Unit,
     ) {
         val palette = canonicalNextPalette(theme != "light", theme == "amoled")
@@ -154,11 +143,6 @@ class ReaderCompletionScreenshotTest(
             }
         }
         composeRule.waitForIdle()
-        if (openDrawer) {
-            composeRule.onNodeWithContentDescription("Menu").performClick()
-            composeRule.waitForIdle()
-            composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertIsDisplayed()
-        }
         composeRule.onRoot().captureRoboImage(
             "src/androidHostTest/screenshots/reader_completion_${theme}_$name.png",
         )
@@ -205,8 +189,8 @@ private fun CompletionCatalogContent(
         onOpenMedia = {},
         onOpenRow = {},
         thumbnail = { _, modifier -> CompletionThumbnail(modifier) },
-        navigation = ReaderNavigation.MENU,
-        onNavigation = LocalReaderOpenDrawer.current ?: {},
+        navigation = ReaderNavigation.NONE,
+        onNavigation = {},
         onPickBoard = {},
         onReload = {},
         onSearch = {},
@@ -214,6 +198,14 @@ private fun CompletionCatalogContent(
         selectedRowId = completionRows.first().id.takeIf { selected },
         onOpenBrowser = {},
     )
+}
+
+@Composable
+private fun CompletionCatalogWithBar() {
+    Column(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f)) { CompletionCatalog() }
+        OrbinBottomBar(selected = NextDestination.BOARDS, onSelect = {}, watchedBadge = 4)
+    }
 }
 
 @Composable

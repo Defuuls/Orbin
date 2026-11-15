@@ -28,6 +28,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.PlaybackScope
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.testing.repository.FakeAppUpdater
 import com.orbin.core.testing.repository.FakeBoardPreferencesRepository
 import com.orbin.core.testing.repository.FakeBookmarkRepository
@@ -176,6 +177,19 @@ class SettingsUserJourneyTest {
         assertThat(settings.current.themeMode).isEqualTo(AppThemeMode.SYSTEM)
     }
 
+    @Test
+    fun sharpPreviewsCanBePickedWithoutChangingTheCatalogView() {
+        launch()
+        assertThat(settings.current.sharpPreviews).isEqualTo(SharpPreviewsMode.WIFI_ONLY)
+        choose("Sharp previews", "Always")
+        assertThat(settings.current.sharpPreviews).isEqualTo(SharpPreviewsMode.ALWAYS)
+        assertThat(settings.current.catalogMode).isEqualTo(CatalogMode.GRID)
+        choose("Sharp previews", "Never")
+        assertThat(settings.current.sharpPreviews).isEqualTo(SharpPreviewsMode.NEVER)
+        choose("Sharp previews", "Wi-Fi only")
+        assertThat(settings.current.sharpPreviews).isEqualTo(SharpPreviewsMode.WIFI_ONLY)
+    }
+
     /** The whole list, and nothing it used to carry: a regression that re-adds a knob fails here. */
     @Test
     fun settingsKeepsExistingControlsReachableOnTheContinuousRoot() {
@@ -201,6 +215,7 @@ class SettingsUserJourneyTest {
             "Theme",
             "AMOLED black",
             "Catalog view",
+            "Sharp previews",
             "App lock",
             "Tell me about new releases",
             "Clear local activity",

@@ -132,6 +132,8 @@ private fun TestDestinations(
         }
         composable<Route.NextFeed> { Text("Initialized Home") }
         composable<Route.Search> { Text("Queued Search") }
+        // A notification's thread opens above Library > Watched, as in the production graph.
+        composable<Route.Watched> { Text("Library Watched") }
         composable<Route.Thread> { Text("Queued external thread") }
     }
 }

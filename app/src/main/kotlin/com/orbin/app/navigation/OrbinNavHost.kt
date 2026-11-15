@@ -30,10 +30,12 @@ import com.orbin.feature.gallery.NextAllMediaScreen
 import com.orbin.feature.home.BoardGalleryScreen
 import com.orbin.feature.home.FeedDownloadBadgeViewModel
 import com.orbin.feature.home.NextFeedWithSiteSwitcherScreen
+import com.orbin.feature.home.WatchedBadgeViewModel
 import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
+import com.orbin.uinext.LibrarySection
 import com.orbin.uinext.LocalOrbinNavigationAtSide
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextScaffold
@@ -64,8 +66,12 @@ fun OrbinNavHost(
     }
 
     val uriHandler = LocalUriHandler.current
+    val library = LocalLibraryMemory.current
     val onDestination: (NextDestination) -> Unit = { destination ->
-        navController.openDestination(destination)
+        navController.openDestination(destination, library)
+    }
+    val openPrimary: (NextDestination) -> Unit = { destination ->
+        navController.openPrimaryDestination(destination, library)
     }
     val pickBoard: (String, String, String) -> Unit = { provider, board, title ->
         navController.selectCatalogBoard(Route.Board(provider, board, title))
@@ -73,7 +79,7 @@ fun OrbinNavHost(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier.readerKeyboardShortcuts(onDestination = navController::openPrimaryDestination),
+        modifier = modifier.readerKeyboardShortcuts(onDestination = openPrimary),
         enterTransition = { nextEnter(threadPresentation) },
         exitTransition = { nextExit(threadPresentation) },
         popEnterTransition = { nextPopEnter(threadPresentation) },
@@ -91,14 +97,16 @@ fun OrbinNavHost(
                 onOpenBoard = { provider, board, title ->
                     navController.navigate(Route.Board(provider, board, title))
                 },
-                onOpenSettings = { navController.openPrimaryDestination(NextDestination.SETTINGS) },
+                onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenDownloads = { navController.openPrimaryDestination(NextDestination.DOWNLOADS) },
+                onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },
                 onOpenSearch = { navController.navigateToTab(Route.Search) },
-                onOpenSaved = { navController.navigateToTab(Route.Saved) },
-                onOpenWatched = { navController.navigateToTab(Route.Watched) },
+                onOpenSaved = { onDestination(NextDestination.SAVED) },
+                onOpenWatched = { onDestination(NextDestination.WATCHED) },
+                onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
+                watchedBadge = primaryWatchedBadge(),
             )
         }
 
@@ -110,10 +118,12 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenFeed = { navController.navigateToTab(Route.NextFeed) },
-                onOpenDownloads = { navController.openPrimaryDestination(NextDestination.DOWNLOADS) },
-                onOpenSaved = { navController.navigateToTab(Route.Saved) },
-                onOpenWatched = { navController.navigateToTab(Route.Watched) },
-                onOpenSettings = { navController.openPrimaryDestination(NextDestination.SETTINGS) },
+                onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },
+                onOpenSaved = { onDestination(NextDestination.SAVED) },
+                onOpenWatched = { onDestination(NextDestination.WATCHED) },
+                onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
+                watchedBadge = primaryWatchedBadge(),
+                onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
                 onOpenSearch = { navController.navigateToTab(Route.Search) },
                 hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
@@ -133,6 +143,7 @@ fun OrbinNavHost(
                     where = stringResource(R.string.nav_search),
                     destination = NextDestination.SEARCH,
                     onDestination = onDestination,
+                    onBack = { navController.navigateUp() },
                 ) { padding ->
                     Box(Modifier.fillMaxSize().padding(padding)) {
                         NextSearchScreen(
@@ -336,13 +347,8 @@ fun OrbinNavHost(
         }
         composable<Route.Downloads> {
             DownloadsScreen(
-                onBack = { navController.navigateUp() },
-                bottomBar =
-                    if (LocalOrbinNavigationAtSide.current) {
-                        null
-                    } else {
-                        { PrimaryBottomBar(NextDestination.DOWNLOADS, navController::openPrimaryDestination) }
-                    },
+                onBack = null,
+                bottomBar = null,
             )
         }
 
@@ -352,19 +358,11 @@ fun OrbinNavHost(
                     if (LocalOrbinNavigationAtSide.current) {
                         null
                     } else {
-                        { PrimaryBottomBar(NextDestination.SETTINGS, navController::openPrimaryDestination) }
+                        { PrimaryBottomBar(NextDestination.SETTINGS, openPrimary) }
                     },
                 snackbarHostState = LocalOrbinSnackbarHostState.current,
                 onBack = { navController.navigateUp() },
-                onNavigate = { destination ->
-                    when (destination) {
-                        "boards", "favorites" -> navController.navigateToTab(Route.BoardGallery)
-                        "history" -> navController.navigate(Route.History)
-                        "watched" -> navController.navigateToTab(Route.Watched)
-                        "downloads" -> navController.openPrimaryDestination(NextDestination.DOWNLOADS)
-                        "help" -> uriHandler.openUri("https://github.com/Defuuls/Orbin/wiki")
-                    }
-                },
+                onNavigate = { link -> navController.openSettingsLink(link, library, uriHandler::openUri) },
             )
         }
 
@@ -397,7 +395,20 @@ private fun PrimaryBottomBar(
     selected: NextDestination,
     onSelect: (NextDestination) -> Unit,
 ) {
-    OrbinBottomBar(selected = selected, onSelect = onSelect, downloadBadge = primaryDownloadBadge())
+    OrbinBottomBar(
+        selected = selected,
+        onSelect = onSelect,
+        downloadBadge = primaryDownloadBadge(),
+        watchedBadge = primaryWatchedBadge(),
+    )
+}
+
+/** New replies on watched threads, for the Library tab. */
+@Composable
+internal fun primaryWatchedBadge(): Int {
+    val model: WatchedBadgeViewModel = hiltViewModel()
+    val count by model.newReplies.collectAsStateWithLifecycle()
+    return count
 }
 
 internal val threadRouteSaver =
@@ -439,43 +450,31 @@ internal fun NavHostController.navigateToTab(route: Route) {
     }
 }
 
-/** Resolves the five tabs without confusing saved threads with downloaded files. */
-internal fun NavHostController.openDestination(destination: NextDestination) {
+/** Resolves primary tabs and Library sections; Search and Settings open over the current page. */
+internal fun NavHostController.openDestination(
+    destination: NextDestination,
+    memory: LibraryMemory? = null,
+) {
     when (destination) {
         NextDestination.FEED -> navigateToTab(Route.NextFeed)
         NextDestination.SEARCH -> navigateToTab(Route.Search)
         NextDestination.BOARDS -> navigateToTab(Route.BoardGallery)
-        NextDestination.SAVED -> navigateToTab(Route.Saved)
-        NextDestination.WATCHED -> navigateToTab(Route.Watched)
-        NextDestination.DOWNLOADS -> navigate(Route.Downloads)
+        NextDestination.LIBRARY -> openLibrary(memory?.section ?: LibrarySection.DEFAULT, memory)
+        NextDestination.SAVED -> openLibrary(LibrarySection.SAVED, memory)
+        NextDestination.WATCHED -> openLibrary(LibrarySection.WATCHED, memory)
+        NextDestination.DOWNLOADS -> openLibrary(LibrarySection.DOWNLOADS, memory)
         NextDestination.SETTINGS -> navigate(Route.Settings)
     }
 }
 
-/** Return to a retained utility page, or replace the utility trail above the current reader. */
-internal fun NavHostController.openPrimaryDestination(destination: NextDestination) {
-    val route =
-        when (destination) {
-            NextDestination.DOWNLOADS -> Route.Downloads
-            NextDestination.SETTINGS -> Route.Settings
-            else -> {
-                openDestination(destination)
-                return
-            }
-        }
-    while (
-        currentDestination?.hasRoute(Route.Downloads::class) == true ||
-        currentDestination?.hasRoute(Route.Settings::class) == true
-    ) {
-        val targetVisible =
-            when (destination) {
-                NextDestination.DOWNLOADS -> currentDestination?.hasRoute(Route.Downloads::class) == true
-                NextDestination.SETTINGS -> currentDestination?.hasRoute(Route.Settings::class) == true
-            }
-        if (targetVisible) return
-        if (!popBackStack()) break
-    }
-    navigate(route) { launchSingleTop = true }
+/** Settings returns to a retained Settings page; every other destination is a tab. */
+internal fun NavHostController.openPrimaryDestination(
+    destination: NextDestination,
+    memory: LibraryMemory? = null,
+) {
+    if (destination != NextDestination.SETTINGS) return openDestination(destination, memory)
+    if (currentDestination?.hasRoute(Route.Settings::class) == true) return
+    navigate(Route.Settings) { launchSingleTop = true }
 }
 
 /** Choosing the board already in view retains its paging generation, sort and scroll state. */

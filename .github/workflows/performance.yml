@@ -36,10 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     # Keep artifact transfer and the next method's ART reset on different emulators.
-    # Every existing method and measured iteration still runs; the aggregate requires all seven.
+    # Every existing method and measured iteration still runs; the aggregate requires all nine.
     strategy:
       fail-fast: false
-      max-parallel: 7
+      max-parallel: 9
       matrix:
         case:
           - coldStartup
@@ -49,6 +49,8 @@ jobs:
           - threadScrollFrames
           - filesScrollFrames
           - twoPaneScrollRetentionFrames
+          - homeFeedScrollFrames
+          - catalogCardScrollFrames
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -152,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Require all seven measurement jobs
+      - name: Require all nine measurement jobs
         env:
           MEASUREMENT_RESULT: ${{ needs.measure.result }}
         run: test "$MEASUREMENT_RESULT" = success

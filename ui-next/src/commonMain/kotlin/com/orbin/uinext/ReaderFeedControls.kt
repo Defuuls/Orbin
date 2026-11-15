@@ -243,8 +243,9 @@ private fun ReaderFeedModeToggle(
             },
         )
     NextIconAction(
+        // The icon shows the layout on screen now; the spoken action names the one a tap switches to.
         imageVector =
-            when (target) {
+            when (mode) {
                 CatalogMode.GRID -> Icons.Filled.GridView
                 CatalogMode.LIST -> Icons.AutoMirrored.Filled.ViewList
                 CatalogMode.CARD -> Icons.Filled.ViewAgenda

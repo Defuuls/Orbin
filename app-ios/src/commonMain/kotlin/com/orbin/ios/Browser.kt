@@ -1,5 +1,7 @@
 package com.orbin.ios
 
+import com.orbin.core.common.network.NetworkMonitor
+import com.orbin.core.common.network.StaticNetworkMonitor
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
@@ -25,6 +27,7 @@ import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.isVisibleInOrbin
 import com.orbin.uinext.FeedRow
+import com.orbin.uinext.LibrarySection
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -176,6 +179,7 @@ class Browser(
         com.orbin.domain.repository
             .InMemoryThreadMemoryRepository(),
     private val threadCopies: com.orbin.domain.repository.SavedThreadRepository? = null,
+    val networkMonitor: NetworkMonitor = StaticNetworkMonitor(),
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
@@ -536,6 +540,30 @@ class Browser(
             reader.ifEmpty { listOf(Route.Feed) } + page
         }
         loadCurrent()
+    }
+
+    /** The Library section the reader last used; the Library tab reopens it. */
+    var librarySection: LibrarySection = LibrarySection.DEFAULT
+        private set
+
+    /**
+     * Opens Library on [section] (the last one used by default). Library sits directly above
+     * Feed, so Back returns to Feed as Android's tab back stack does.
+     */
+    fun openLibrary(section: LibrarySection = librarySection) {
+        librarySection = section
+        val page = section.route()
+        mediaScroll.clear()
+        _backStack.value = listOf(Route.Feed, page)
+        cancelHiddenPages()
+        loadCurrent()
+        watched.refresh()
+    }
+
+    /** A watched-thread notification: the thread, over Library's Watched section. */
+    fun openWatchedThread(key: ThreadKey) {
+        openLibrary(LibrarySection.WATCHED)
+        openThread(key)
     }
 
     fun openBoard(board: SiteBoard) {

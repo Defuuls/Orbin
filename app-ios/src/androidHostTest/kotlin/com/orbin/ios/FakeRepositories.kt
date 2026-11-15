@@ -15,6 +15,7 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadLayout
 import com.orbin.domain.repository.BoardPreferencesRepository
@@ -248,4 +249,6 @@ class FakeSettings : SettingsRepository {
     }
 
     override suspend fun setCatalogMode(mode: CatalogMode) = settings.update { it.copy(catalogMode = mode) }
+
+    override suspend fun setSharpPreviews(mode: SharpPreviewsMode) = settings.update { it.copy(sharpPreviews = mode) }
 }

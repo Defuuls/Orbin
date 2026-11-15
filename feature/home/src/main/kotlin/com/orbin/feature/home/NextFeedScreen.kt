@@ -30,6 +30,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.boardLabel
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
@@ -65,6 +66,8 @@ fun NextFeedScreen(
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = onOpenWatched,
+    watchedBadge: Int = 0,
     sourceLabels: List<String> = emptyList(),
     selectedSource: Int = 0,
     onSelectSource: (Int) -> Unit = {},
@@ -98,6 +101,8 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isMetered by viewModel.isMetered.collectAsStateWithLifecycle()
+    val isDataSaver by viewModel.isDataSaver.collectAsStateWithLifecycle()
     val windowSize = LocalWindowInfo.current.containerSize
     val density = LocalDensity.current
     val wideWindow =
@@ -283,6 +288,8 @@ fun NextFeedScreen(
                 onOpenSearch = onOpenSearch,
                 onOpenSaved = onOpenSaved,
                 onOpenWatched = onOpenWatched,
+                onOpenLibrary = onOpenLibrary,
+                watchedBadge = watchedBadge,
                 onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
                 onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
                 onShareRow = { row ->
@@ -351,7 +358,15 @@ fun NextFeedScreen(
                         MediaThumbnail(
                             // The shared reader owns spoiler reveal before composing the image.
                             attachment.copy(isSpoiler = false),
-                            fullResolution = catalogMode.sharpensThumbnails,
+                            fullResolution =
+                                shouldLoadSharpPreview(
+                                    modeWantsSharp = catalogMode.sharpensThumbnails,
+                                    setting = settings.sharpPreviews,
+                                    isMetered = isMetered,
+                                    isDataSaver = isDataSaver,
+                                    mediaType = attachment.type,
+                                    sizeBytes = attachment.sizeBytes,
+                                ),
                             contentScale = ContentScale.Crop,
                             cornerRadius = 0.dp,
                             modifier = tileModifier,

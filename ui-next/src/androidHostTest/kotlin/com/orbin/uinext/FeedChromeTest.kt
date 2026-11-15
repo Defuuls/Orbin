@@ -40,7 +40,7 @@ class FeedChromeTest {
                 FeedScreen(rows = rows, mode = mode, onModeChange = { mode = it })
             }
         }
-        compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Home")
+        compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Feed")
         compose.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("Card view").performClick()
         compose.runOnIdle { assertEquals(CatalogMode.CARD, mode) }
         val pane = compose.onNodeWithTag(ReaderFeedTags.GRID).getUnclippedBoundsInRoot()
@@ -73,7 +73,7 @@ class FeedChromeTest {
     }
 
     @Test
-    fun theBottomBarNavigatesOnlyWiredDestinationsAndUpdatesItsDownloadBadge() {
+    fun theBottomBarNavigatesOnlyWiredDestinationsAndUpdatesTheLibraryBadge() {
         var badge by mutableIntStateOf(2)
         val opened = mutableListOf<String>()
         compose.setContent {
@@ -88,15 +88,15 @@ class FeedChromeTest {
             }
         }
         compose.onNode(tab("Feed")).assertIsSelected().performClick()
-        compose.onNode(tab("Downloads")).assertIsDisplayed().performClick()
+        compose.onNode(tab("Library")).assertIsDisplayed().performClick()
         compose.onNode(tab("Settings")).assertIsDisplayed().performClick()
         compose.onNode(tab("Boards")).assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(listOf("downloads", "settings", "boards"), opened) }
-        compose.onNode(tab("Downloads")).assert(
+        compose.onNode(tab("Library")).assert(
             SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "2 downloads in progress"),
         )
         compose.runOnIdle { badge = 0 }
-        compose.onNode(tab("Downloads")).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
+        compose.onNode(tab("Library")).assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.StateDescription))
         compose.onNode(tab("Search")).assertDoesNotExist()
         compose.onNode(tab("Watched")).assertDoesNotExist()
         compose.onNode(tab("Saved")).assertDoesNotExist()

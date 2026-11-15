@@ -21,6 +21,8 @@ fun NextFeedWithSiteSwitcherScreen(
     onOpenSearch: (() -> Unit)? = null,
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = onOpenWatched,
+    watchedBadge: Int = 0,
     onOpenBoard: ((provider: String, board: String, title: String) -> Unit)? = null,
     onOpenThreadVideos: (provider: String, board: String, thread: Long, title: String) -> Unit = onOpenThread,
     onOpenMedia: (
@@ -51,6 +53,8 @@ fun NextFeedWithSiteSwitcherScreen(
         onOpenSearch = onOpenSearch,
         onOpenSaved = onOpenSaved,
         onOpenWatched = onOpenWatched,
+        onOpenLibrary = onOpenLibrary,
+        watchedBadge = watchedBadge,
         onOpenBoard = onOpenBoard,
         providerFilter = activeProviderId,
         favoritesOnly = favoritesOnly,

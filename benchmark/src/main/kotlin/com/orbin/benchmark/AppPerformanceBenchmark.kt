@@ -44,6 +44,12 @@ class AppPerformanceBenchmark {
     @Test
     fun twoPaneScrollRetentionFrames() = measureReader(ReaderJourney.TWO_PANE)
 
+    @Test
+    fun homeFeedScrollFrames() = measureReader(ReaderJourney.HOME_FEED)
+
+    @Test
+    fun catalogCardScrollFrames() = measureReader(ReaderJourney.CARD)
+
     private fun measureReader(journey: ReaderJourney) {
         benchmarkRule.measureRepeated(
             packageName = READER_PACKAGE,

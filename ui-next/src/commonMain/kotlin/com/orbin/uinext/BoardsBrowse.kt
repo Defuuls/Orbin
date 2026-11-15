@@ -69,7 +69,7 @@ import com.orbin.uinext.resources.reader_boards_title
 import com.orbin.uinext.resources.reader_favorite_boards
 import com.orbin.uinext.resources.reader_feed_all_boards
 import com.orbin.uinext.resources.reader_followed_boards
-import com.orbin.uinext.resources.reader_menu
+import com.orbin.uinext.resources.reader_nav_search
 import com.orbin.uinext.resources.reader_open_thread_link
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinType
@@ -132,9 +132,11 @@ fun BoardsScreen(
     headerContent: @Composable () -> Unit = {},
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = onOpenWatched,
     emptyMessage: String? = null,
     onRetry: (() -> Unit)? = null,
     downloadBadge: Int = 0,
+    watchedBadge: Int = 0,
     onOpenLink: (() -> Unit)? = null,
     onFavoriteBoard: ((BoardTile, Boolean) -> Unit)? = null,
 ) {
@@ -174,7 +176,7 @@ fun BoardsScreen(
             onOpenDownloads != null ||
             onOpenSearch != null ||
             onOpenSaved != null ||
-            onOpenWatched != null
+            onOpenLibrary != null
     val onDestination: ((NextDestination) -> Unit)? =
         if (hasTabs) {
             { dest ->
@@ -186,6 +188,7 @@ fun BoardsScreen(
                     NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
                     NextDestination.SETTINGS -> onOpenSettings?.invoke()
                     NextDestination.BOARDS -> Unit
+                    NextDestination.LIBRARY -> onOpenLibrary?.invoke()
                 }
             }
         } else {
@@ -200,18 +203,8 @@ fun BoardsScreen(
         railVisible = railVisible,
         destination = NextDestination.BOARDS.takeIf { showRail && hasTabs },
         onDestination = onDestination.takeIf { showRail },
-        drawerDestinations =
-            buildSet {
-                add(NextDestination.BOARDS)
-                if (onOpenFeed != null) add(NextDestination.FEED)
-                if (onOpenWatched != null) add(NextDestination.WATCHED)
-                if (onOpenSaved != null) add(NextDestination.SAVED)
-                if (onOpenSearch != null) add(NextDestination.SEARCH)
-                if (onOpenSettings != null) add(NextDestination.SETTINGS)
-            },
         drawAppBar = false,
     ) { bottomPad ->
-        val openDrawer = LocalReaderOpenDrawer.current
         val density = LocalDensity.current
         var barHeightPx by remember { mutableIntStateOf(0) }
         val barHeight = with(density) { barHeightPx.toDp() }
@@ -232,8 +225,7 @@ fun BoardsScreen(
             ) {
                 BoardsHomeHeader(
                     subtitle = subtitle ?: boardsTitle,
-                    showMenu = openDrawer != null,
-                    onMenu = { openDrawer?.invoke() },
+                    onSearch = onOpenSearch,
                     onOpenLink = onOpenLink,
                 )
                 BoardsSearchRow(
@@ -346,10 +338,11 @@ fun BoardsScreen(
                             buildList {
                                 add(NextDestination.BOARDS)
                                 if (onOpenFeed != null) add(NextDestination.FEED)
-                                if (onOpenDownloads != null) add(NextDestination.DOWNLOADS)
+                                if (onOpenLibrary != null) add(NextDestination.LIBRARY)
                                 if (onOpenSettings != null) add(NextDestination.SETTINGS)
                             },
                         downloadBadge = downloadBadge,
+                        watchedBadge = watchedBadge,
                         modifier =
                             Modifier
                                 .align(Alignment.BottomCenter)
@@ -366,8 +359,7 @@ fun BoardsScreen(
 @Composable
 private fun BoardsHomeHeader(
     subtitle: String,
-    showMenu: Boolean,
-    onMenu: () -> Unit,
+    onSearch: (() -> Unit)?,
     onOpenLink: (() -> Unit)?,
 ) {
     Row(
@@ -411,11 +403,11 @@ private fun BoardsHomeHeader(
                 tint = reader.ink,
             )
         }
-        if (showMenu) {
+        if (onSearch != null) {
             NextIconAction(
-                imageVector = ReaderIcons.Menu,
-                contentDescription = stringResource(Res.string.reader_menu),
-                onClick = onMenu,
+                imageVector = ReaderIcons.Search,
+                contentDescription = stringResource(Res.string.reader_nav_search),
+                onClick = onSearch,
                 tint = reader.ink,
             )
         }

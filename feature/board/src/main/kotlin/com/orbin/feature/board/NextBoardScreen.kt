@@ -26,12 +26,12 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.boardLabel
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.FeedRow
-import com.orbin.uinext.LocalReaderOpenDrawer
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
@@ -79,6 +79,8 @@ fun NextBoardScreen(
     val catalogSort by viewModel.catalogSort.collectAsStateWithLifecycle()
     val retainedRefreshFailure by viewModel.catalogRefreshFailure.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isMetered by viewModel.isMetered.collectAsStateWithLifecycle()
+    val isDataSaver by viewModel.isDataSaver.collectAsStateWithLifecycle()
     val boardOptions by picker.options.collectAsStateWithLifecycle()
     val windowSize = LocalWindowInfo.current.containerSize
     val density = LocalDensity.current
@@ -137,7 +139,6 @@ fun NextBoardScreen(
             onBack = onBack.takeIf { onDestination == null },
             drawAppBar = false,
         ) {
-            val openDrawer = LocalReaderOpenDrawer.current
             Box(Modifier.fillMaxSize()) {
                 NextPullToRefresh(isRefreshing = load.isRefreshing, onRefresh = threads::refresh) {
                     BoardScreen(
@@ -154,12 +155,8 @@ fun NextBoardScreen(
                             runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(viewModel::setCatalogSort)
                         },
                         navigation =
-                            when {
-                                onBack != null -> ReaderNavigation.BACK
-                                openDrawer != null -> ReaderNavigation.MENU
-                                else -> ReaderNavigation.NONE
-                            },
-                        onNavigation = onBack ?: openDrawer ?: {},
+                            if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+                        onNavigation = onBack ?: {},
                         onPickBoard =
                             onOpenBoard?.let {
                                 {
@@ -243,7 +240,15 @@ fun NextBoardScreen(
                                     MediaThumbnail(
                                         // The shared catalog slot owns spoiler reveal before composing media.
                                         attachment = attachment.copy(isSpoiler = false),
-                                        fullResolution = mode.sharpensThumbnails,
+                                        fullResolution =
+                                            shouldLoadSharpPreview(
+                                                modeWantsSharp = mode.sharpensThumbnails,
+                                                setting = settings.sharpPreviews,
+                                                isMetered = isMetered,
+                                                isDataSaver = isDataSaver,
+                                                mediaType = attachment.type,
+                                                sizeBytes = attachment.sizeBytes,
+                                            ),
                                         contentScale = ContentScale.Crop,
                                         cornerRadius = 0.dp,
                                         modifier = tileModifier,

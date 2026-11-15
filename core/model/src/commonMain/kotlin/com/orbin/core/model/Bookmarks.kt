@@ -37,3 +37,6 @@ data class HistoryEntry(
 /** New replies on each of these bookmarks since it was last read, by thread number; read ones are left out. */
 fun List<Bookmark>.unreadByThread(): Map<Long, Int> =
     filter { it.hasUnread }.associate { it.key.thread.value to it.unreadCount }
+
+/** New replies across every watched thread: the Library tab's badge. */
+fun List<Bookmark>.watchedNewReplies(): Int = filter { it.isWatched }.sumOf { it.unreadCount }

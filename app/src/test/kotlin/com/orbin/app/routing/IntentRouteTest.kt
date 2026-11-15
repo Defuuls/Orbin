@@ -45,4 +45,13 @@ class IntentRouteTest {
         assertEquals(token, NotificationLaunchToken.get(context))
         assertNotEquals("", token)
     }
+
+    @Test
+    fun `the Watched shortcut and its action both open Watched`() {
+        assertEquals(IntentRoute.WatchedShortcut, Intent("com.orbin.shortcut.WATCHED").route())
+        assertEquals(
+            IntentRoute.WatchedShortcut,
+            Intent().putExtra(EXTRA_SHORTCUT_DESTINATION, "watched").route(),
+        )
+    }
 }

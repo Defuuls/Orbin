@@ -17,7 +17,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -103,37 +102,6 @@ class NavigationAppearanceTest {
                 .left.value,
         ).isWithin(0.5f)
             .of(68f)
-    }
-
-    @Test
-    fun `drawer is capped at the maximum token width`() {
-        installNavigation(immersive = false, width = 411.dp)
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(336.dp)
-    }
-
-    @Test
-    fun `a phone drawer leaves a 62dp app bar strip when that is narrower than the cap`() {
-        installNavigation(immersive = false, width = 390.dp)
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(328.dp)
-    }
-
-    @Test
-    fun `drawer content starts with eight dp vertical padding`() {
-        composeRule.setContent { NextTheme { ReaderDrawer(NextDestination.FEED, {}) } }
-        val header =
-            composeRule
-                .onNodeWithTag(ReaderDrawerTags.HEADER)
-                .getUnclippedBoundsInRoot()
-        assertThat(header.top.value).isWithin(0.5f).of(8f)
-    }
-
-    @Test
-    fun `narrow drawer leaves one app bar width visible`() {
-        installNavigation(immersive = false, width = 320.dp)
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertWidthIsEqualTo(320.dp - ReaderSize.appBar)
     }
 
     private fun installNavigation(

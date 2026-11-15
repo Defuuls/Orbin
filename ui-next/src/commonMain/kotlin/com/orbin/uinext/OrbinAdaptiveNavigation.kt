@@ -25,6 +25,11 @@ val LocalOrbinNavigationAtSide = staticCompositionLocalOf { false }
 object OrbinNavigationTags {
     const val RAIL = "orbin-navigation-rail"
     const val BODY = "orbin-navigation-body"
+
+    /** Each primary tab is tagged with this prefix and its [NextDestination] name, on both platforms. */
+    const val ENTRY = "reader-navigation-entry-"
+    const val LABEL = "reader-navigation-label"
+    const val BADGE = "reader-navigation-badge"
 }
 
 /**

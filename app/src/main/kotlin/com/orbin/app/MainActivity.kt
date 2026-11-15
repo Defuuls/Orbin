@@ -345,6 +345,7 @@ class MainActivity : FragmentActivity() {
                     Route.Thread(route.provider, route.board, route.thread, route.title)
                 IntentRoute.FeedShortcut -> Route.NextFeed
                 IntentRoute.DownloadsShortcut -> Route.Downloads
+                IntentRoute.WatchedShortcut -> Route.Watched
                 IntentRoute.BoardsShortcut -> Route.BoardGallery
                 IntentRoute.Unknown -> return
             }

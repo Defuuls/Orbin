@@ -19,6 +19,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadLayout
@@ -292,6 +293,10 @@ class FakeSettingsRepository(
 
     override suspend fun setCatalogMode(mode: CatalogMode) {
         update { copy(catalogMode = mode) }
+    }
+
+    override suspend fun setSharpPreviews(mode: SharpPreviewsMode) {
+        update { copy(sharpPreviews = mode) }
     }
 
     override suspend fun setVideoCacheMegabytes(megabytes: Int) {

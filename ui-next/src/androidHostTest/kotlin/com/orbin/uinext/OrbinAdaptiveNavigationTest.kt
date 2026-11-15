@@ -109,7 +109,7 @@ class OrbinAdaptiveNavigationTest {
         assertRailPrecedesBody()
         tabsInside(OrbinNavigationTags.RAIL).assertCountEquals(4)
         tabsInside(OrbinNavigationTags.BODY).assertCountEquals(0)
-        for (label in listOf("Boards", "Feed", "Downloads", "Settings")) {
+        for (label in listOf("Boards", "Feed", "Library", "Settings")) {
             val target = compose.onNode(isTab and hasContentDescription(label))
             target.assertIsDisplayed().assertContentDescriptionEquals(label)
             val bounds = target.getUnclippedBoundsInRoot()
@@ -117,14 +117,14 @@ class OrbinAdaptiveNavigationTest {
             assertTrue("$label has an accessible target height", (bounds.bottom - bounds.top) >= 48.dp)
         }
         compose
-            .onNode(isTab and hasContentDescription("Downloads"))
+            .onNode(isTab and hasContentDescription("Library"))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3 downloads in progress"))
 
         compose.onNode(isTab and hasContentDescription("Settings")).performClick().assertIsSelected()
         compose.onNode(isTab and hasContentDescription("Settings")).performClick()
-        compose.onNode(isTab and hasContentDescription("Downloads")).performClick().assertIsSelected()
+        compose.onNode(isTab and hasContentDescription("Library")).performClick().assertIsSelected()
         compose.runOnIdle {
-            assertEquals(listOf(NextDestination.SETTINGS, NextDestination.DOWNLOADS), selections)
+            assertEquals(listOf(NextDestination.SETTINGS, NextDestination.LIBRARY), selections)
         }
     }
 

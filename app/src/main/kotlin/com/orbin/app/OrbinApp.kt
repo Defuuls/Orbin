@@ -28,12 +28,14 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,12 +53,20 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.orbin.app.navigation.LibraryMemory
+import com.orbin.app.navigation.LocalLibraryMemory
 import com.orbin.app.navigation.OrbinNavHost
 import com.orbin.app.navigation.Route
-import com.orbin.app.navigation.navigateToTab
+import com.orbin.app.navigation.librarySection
+import com.orbin.app.navigation.openLibrary
+import com.orbin.app.navigation.openPendingRoute
 import com.orbin.app.navigation.openPrimaryDestination
+import com.orbin.app.navigation.primaryNavigationDestination
+import com.orbin.app.navigation.primaryWatchedBadge
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.feature.home.FeedDownloadBadgeViewModel
+import com.orbin.uinext.LibraryNavigation
+import com.orbin.uinext.LocalLibraryNavigation
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextSnackbarHost
 import com.orbin.uinext.OrbinAdaptiveNavigation
@@ -83,16 +93,10 @@ fun OrbinApp(
 ) {
     val initialStartDestination = remember { if (startWithOnboarding) Route.Onboarding else Route.NextFeed }
     val currentEntry by navController.currentBackStackEntryAsState()
-    val primaryDestination =
-        currentEntry?.destination?.let { destination ->
-            when {
-                destination.hasRoute(Route.NextFeed::class) -> NextDestination.FEED
-                destination.hasRoute(Route.BoardGallery::class) -> NextDestination.BOARDS
-                destination.hasRoute(Route.Downloads::class) -> NextDestination.DOWNLOADS
-                destination.hasRoute(Route.Settings::class) -> NextDestination.SETTINGS
-                else -> null
-            }
-        }
+    val primaryDestination = currentEntry?.destination?.primaryNavigationDestination()
+    val library = rememberSaveable(saver = LibraryMemory.Saver) { LibraryMemory() }
+    val shownSection = currentEntry?.destination?.librarySection()
+    LaunchedEffect(shownSection) { shownSection?.let { library.section = it } }
     val immersive =
         currentEntry?.destination?.let {
             it.hasRoute(Route.Gallery::class) ||
@@ -124,31 +128,46 @@ fun OrbinApp(
                     },
             ) {
                 // Each destination owns its insets via its own top bar / chrome.
-                OrbinAdaptiveNavigation(
-                    enabled = primaryDestination != null,
-                    navigation = {
-                        OrbinSideBar(
-                            selected = checkNotNull(primaryDestination),
-                            onSelect = navController::openPrimaryDestination,
-                            downloadBadge = adaptiveDownloadBadge(),
-                        )
-                    },
+                val openPrimary: (NextDestination) -> Unit = { navController.openPrimaryDestination(it, library) }
+                val downloadBadge = adaptiveDownloadBadge()
+                val watchedBadge = primaryWatchedBadge()
+                CompositionLocalProvider(
+                    LocalLibraryMemory provides library,
+                    LocalLibraryNavigation provides
+                        LibraryNavigation(
+                            onSelect = { navController.openLibrary(it, library) },
+                            onPrimary = openPrimary,
+                            watchedBadge = watchedBadge,
+                            downloadBadge = downloadBadge,
+                        ),
                 ) {
-                    OnboardingNavigation(
-                        navController = navController,
-                        startWithOnboarding = startWithOnboarding,
-                        pendingRoute = pendingRoute,
-                        onPendingRouteHandled = onPendingRouteHandled,
-                        onOnboardingCompleted = onOnboardingCompleted,
-                    ) { acknowledgeCompletion ->
-                        OrbinNavHost(
+                    OrbinAdaptiveNavigation(
+                        enabled = primaryDestination != null,
+                        navigation = {
+                            OrbinSideBar(
+                                selected = checkNotNull(primaryDestination),
+                                onSelect = openPrimary,
+                                downloadBadge = downloadBadge,
+                                watchedBadge = watchedBadge,
+                            )
+                        },
+                    ) {
+                        OnboardingNavigation(
                             navController = navController,
-                            modifier = Modifier.fillMaxSize(),
-                            startDestination = initialStartDestination,
-                            chromeHidesOnScroll = false,
-                            twoPaneBoardDetail = twoPaneBoardDetail,
-                            onOnboardingCompleted = acknowledgeCompletion,
-                        )
+                            startWithOnboarding = startWithOnboarding,
+                            pendingRoute = pendingRoute,
+                            onPendingRouteHandled = onPendingRouteHandled,
+                            onOnboardingCompleted = onOnboardingCompleted,
+                        ) { acknowledgeCompletion ->
+                            OrbinNavHost(
+                                navController = navController,
+                                modifier = Modifier.fillMaxSize(),
+                                startDestination = initialStartDestination,
+                                chromeHidesOnScroll = false,
+                                twoPaneBoardDetail = twoPaneBoardDetail,
+                                onOnboardingCompleted = acknowledgeCompletion,
+                            )
+                        }
                     }
                 }
             }
@@ -225,6 +244,7 @@ internal fun OnboardingNavigation(
     onOnboardingCompleted: () -> Unit,
     content: @Composable (onCompleted: () -> Unit) -> Unit,
 ) {
+    val library = LocalLibraryMemory.current
     // Deliberately not saved: a new process must validate its actual persisted board follows.
     var onboardingAcknowledged by remember { mutableStateOf(false) }
     val onCompleted by rememberUpdatedState(onOnboardingCompleted)
@@ -250,13 +270,7 @@ internal fun OnboardingNavigation(
             return@LaunchedEffect
         }
         val route = pendingRoute ?: return@LaunchedEffect
-        when (route) {
-            Route.NextFeed, Route.BoardGallery, Route.Watched, Route.Search, Route.Saved ->
-                navController.navigateToTab(
-                    route,
-                )
-            else -> navController.navigate(route)
-        }
+        navController.openPendingRoute(route, library)
         onPendingRouteHandled()
     }
     content(acknowledgeCompletion)

@@ -14,18 +14,19 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-CASES = ("startup", "catalogList", "catalogGrid", "thread", "files", "twoPane")
+CASES = ("startup", "catalogList", "catalogGrid", "thread", "files", "twoPane", "homeFeed", "catalogCard")
 CLASS = "com.orbin.benchmark.BaselineProfileGenerator"
 FIXTURE = "Lcom/orbin/app/benchmark/"
 READERS = (
     "Lcom/orbin/uinext/BoardCatalogKt;",
     "Lcom/orbin/uinext/ThreadKt;",
     "Lcom/orbin/uinext/ReaderTwoPaneKt;",
+    "Lcom/orbin/uinext/FeedScreenKt;",
     "Lcom/orbin/core/reader/ThreadPresentationKt;",
 )
 MAIN = "Lcom/orbin/app/MainActivity;"
 RAW_NAME = re.compile(
-    r"BaselineProfileGenerator_(startup|catalogList|catalogGrid|thread|files|twoPane)"
+    r"BaselineProfileGenerator_(startup|catalogList|catalogGrid|thread|files|twoPane|homeFeed|catalogCard)"
     r"-(startup|baseline)-prof-(\d{4}-\d\d-\d\d-\d\d-\d\d-\d\d)\.txt"
 )
 RULE = re.compile(r"([HSP]*)(L[^;\s\[\]().]+;)(?:->([^\s();]+)\(([^)]*)\)(.+))?")
@@ -273,7 +274,7 @@ def verify_generated(*, aggregate_manifest: Path, producer_dir: Path, generated_
     require(record.get("config") == config(35, "16428233"), "Invalid aggregate configuration")
     number(record.get("run_id"), "run ID")
     cases = record.get("cases", [])
-    require(len(cases) == 6 and {item.get("case") for item in cases} == set(CASES), "Missing or duplicate aggregate cases")
+    require(len(cases) == len(CASES) and {item.get("case") for item in cases} == set(CASES), "Missing or duplicate aggregate cases")
     inputs = []
     startup_inputs = []
     names = set()
@@ -339,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
     except (ValueError, OSError, KeyError, TypeError, ET.ParseError) as error:
         print(f"Profile artifact validation failed: {error}", file=sys.stderr)
         return 1
-    print(f"Validated {result['kind']}: {result.get('case', 'all six generator cases')}")
+    print(f"Validated {result['kind']}: {result.get('case', 'all generator cases')}")
     return 0
 
 

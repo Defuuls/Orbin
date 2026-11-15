@@ -54,6 +54,7 @@ import com.orbin.core.reader.preparePresentation
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
 import com.orbin.uinext.FeedRow
+import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderTwoPane
 import com.orbin.uinext.ThreadLayout
@@ -89,7 +90,7 @@ class ReaderBenchmarkActivity : ComponentActivity() {
     private companion object {
         const val JOURNEY_EXTRA = "readerJourney"
         const val CATALOG_LIST = "catalog-list"
-        val JOURNEYS = setOf(CATALOG_LIST, "catalog-grid", "thread", "files", "two-pane")
+        val JOURNEYS = setOf(CATALOG_LIST, "catalog-grid", "catalog-card", "home-feed", "thread", "files", "two-pane")
     }
 }
 
@@ -176,7 +177,12 @@ private fun ReaderBenchmarkFixture(
                 itemCount = data.rows.size,
                 rowAt = data.rows::getOrNull,
                 rowKey = { data.rows[it].id },
-                mode = if (journey == "catalog-grid") CatalogMode.GRID else CatalogMode.LIST,
+                mode =
+                    when (journey) {
+                        "catalog-grid" -> CatalogMode.GRID
+                        "catalog-card" -> CatalogMode.CARD
+                        else -> CatalogMode.LIST
+                    },
                 state = catalogState,
                 onOpenRow = { selected = it },
                 selectedRowId = selected?.id,
@@ -219,6 +225,15 @@ private fun ReaderBenchmarkFixture(
                     },
                 )
             "thread", "files" -> thread()
+            // The redesign's Home feed in card view: the real FeedScreen with the fixture rows.
+            "home-feed" ->
+                FeedScreen(
+                    rows = data.rows,
+                    modifier = Modifier.onSizeChanged { geometry.catalogWidthPx = it.width },
+                    mode = CatalogMode.CARD,
+                    wideWindow = wide,
+                    thumbnail = { _, modifier -> thumbnail(modifier) },
+                )
             else -> catalog()
         }
     }

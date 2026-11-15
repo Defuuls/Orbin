@@ -29,7 +29,7 @@ class OrbinBottomBarAccessibilityTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun downloadsHasOneLabelAnAccessibleLiveCountAndRealTabSelection() {
+    fun libraryHasOneLabelAnAccessibleLiveCountAndRealTabSelection() {
         var selected by mutableStateOf(NextDestination.FEED)
         var active by mutableIntStateOf(3)
         composeRule.setContent {
@@ -38,18 +38,18 @@ class OrbinBottomBarAccessibilityTest {
             }
         }
         composeRule
-            .onNodeWithContentDescription("Downloads")
-            .assertContentDescriptionEquals("Downloads")
+            .onNodeWithContentDescription("Library")
+            .assertContentDescriptionEquals("Library")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "3 downloads in progress"))
             .performClick()
             .assertIsSelected()
-        composeRule.onAllNodesWithText("Downloads", useUnmergedTree = true).assertCountEquals(0)
+        composeRule.onAllNodesWithText("Library", useUnmergedTree = true).assertCountEquals(0)
         composeRule.onAllNodesWithText("3", useUnmergedTree = true).assertCountEquals(0)
 
         composeRule.runOnIdle { active = 1 }
         composeRule
-            .onNodeWithContentDescription("Downloads")
+            .onNodeWithContentDescription("Library")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1 download in progress"))
     }
 }

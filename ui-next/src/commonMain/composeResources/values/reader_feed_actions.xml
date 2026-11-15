@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="reader_feed_home">Home</string>
+    <string name="reader_feed_home">Feed</string>
     <string name="reader_feed_all_boards">All boards</string>
     <string name="reader_feed_post_metadata">%1$s · No. %2$s · %3$s</string>
     <string name="reader_feed_poster_time">%1$s · %2$s</string>
