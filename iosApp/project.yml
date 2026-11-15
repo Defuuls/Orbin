@@ -73,6 +73,10 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         # Shown the first time the app lock asks for Face ID.
         NSFaceIDUsageDescription: Orbin uses Face ID to unlock when App lock is on.
+        # Orbin has no camera feature. The bundled FFmpeg links AVFoundation's capture classes (its
+        # avfoundation input device), and App Store Connect rejects a binary that references them
+        # without this string (ITMS-90683). scripts/prepare_ios_purpose_strings.py checks every archive.
+        NSCameraUsageDescription: Orbin does not use the camera. Its bundled video converter includes camera support that Orbin never turns on.
         # Asked the first time a photo or video is saved from a thread; add-only, never read.
         # A background refresh of watched threads, as Android's watch worker; the Kotlin side
         # registers REFRESH_TASK in BackgroundRefresh.kt.

@@ -30,6 +30,8 @@ on:
       - 'CHANGELOG.md'
       - 'scripts/prepare_ios_framework_metadata.py'
       - 'scripts/tests/test_prepare_ios_framework_metadata.py'
+      - 'scripts/prepare_ios_purpose_strings.py'
+      - 'scripts/tests/test_prepare_ios_purpose_strings.py'
       - '.github/actions/setup-jdk-gradle/**'
       - '.github/actions/setup-xcodegen/**'
       - '.github/workflows/ios.yml'
@@ -109,6 +111,11 @@ jobs:
         run: |
           python3 scripts/prepare_ios_framework_metadata.py "$RUNNER_TEMP/Orbin.xcarchive" \
             | tee "$RUNNER_TEMP/orbin-framework-metadata.json"
+
+      # No --spec: this archive is built from this commit's project.yml, so a missing string fails.
+      - name: Check archived privacy purpose strings
+        shell: bash
+        run: python3 scripts/prepare_ios_purpose_strings.py "$RUNNER_TEMP/Orbin.xcarchive"
 
       - name: Upload archived framework metadata
         if: always()

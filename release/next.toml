@@ -15,6 +15,7 @@ summary = [
 
 [changelog]
 Fixed = [
+  "Resolved iOS delivery validation for bundled media tools without enabling camera access.",
   "Show a clear connection error when first-run board loading fails instead of long platform networking details.",
   "Keep Retry and setup navigation reachable when an error or large text would otherwise push them off screen.",
 ]

@@ -9,12 +9,12 @@ All notable changes to Orbin are documented here. The format is based on
 ## [212-Albite] - 2026-11-15
 
 ### Fixed
+- Resolved iOS delivery validation for bundled media tools without enabling camera access.
 - Show a clear connection error when first-run board loading fails instead of long platform networking details.
 - Keep Retry and setup navigation reachable when an error or large text would otherwise push them off screen.
 
 ### Testing
 - Added regression coverage for failed first-run board loading and successful retry with long native error details and large text.
-
 
 ## [211-Alabaster] - 2026-11-15
 
