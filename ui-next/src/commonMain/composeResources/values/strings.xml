@@ -152,6 +152,7 @@
     <string name="next_onboarding_required_hint">Follow at least one board to continue</string>
     <string name="next_onboarding_saving">Saving your boards…</string>
     <string name="next_onboarding_empty">No boards available. Try loading them again.</string>
+    <string name="next_onboarding_load_error">Could not load boards. Try again.</string>
     <plurals name="next_onboarding_following_count">
         <item quantity="one">%1$d following</item>
         <item quantity="other">%1$d following</item>

@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -87,6 +89,9 @@ fun NextError(
             style = OrbinType.body,
             color = next.muted,
             textAlign = TextAlign.Center,
+            // Measure the recovery action first; long platform diagnostics can scroll without
+            // consuming its space or clipping its label out of the accessibility tree.
+            modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
         )
         if (onRetry != null) {
             InlineAction(

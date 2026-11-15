@@ -195,6 +195,11 @@ The archive step is bounded to 90 minutes and keeps release optimizations enable
 Before distribution export, the archive tooling fills missing FFmpeg framework deployment
 metadata from the device binary's Mach-O load commands, then validates it. It preserves the
 executable and existing compatible metadata, and rejects unsupported binaries or conflicts.
+It then scans the app executable and embedded frameworks for protected-API references that App
+Store Connect requires a purpose string for (ITMS-90683), and fails before upload when the app's
+`Info.plist` lacks one. Orbin has no camera feature; `NSCameraUsageDescription` exists only because
+the bundled FFmpeg links AVFoundation's capture classes. TestFlight alone may fill a missing string
+from the workflow commit's `iosApp/project.yml`, for a pinned release whose spec predates it.
 Release CI performs the same preparation. TestFlight loads this tooling from the workflow's
 commit separately from the pinned app source. Its unsigned archive is retained as a compressed
 tar with source/build metadata, so a later export failure has a recoverable build artifact.

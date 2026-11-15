@@ -104,7 +104,11 @@ jobs:
           # Keep release source pinned while using tooling from this workflow's commit.
           ref: ${{ github.workflow_sha }}
           path: .testflight-ci-tools
-          sparse-checkout: scripts/prepare_ios_framework_metadata.py
+          # project.yml supplies a purpose string that a pinned release's own spec predates.
+          sparse-checkout: |
+            scripts/prepare_ios_framework_metadata.py
+            scripts/prepare_ios_purpose_strings.py
+            iosApp/project.yml
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -201,6 +205,16 @@ jobs:
           python3 "$GITHUB_WORKSPACE/.testflight-ci-tools/scripts/prepare_ios_framework_metadata.py" \
             "$RUNNER_TEMP/Orbin.xcarchive" | tee "$RUNNER_TEMP/orbin-framework-metadata.json"
 
+      # App Store Connect rejects a binary that references a protected API without its purpose
+      # string (ITMS-90683), so this runs before anything is uploaded.
+      - name: Check archived privacy purpose strings
+        if: steps.config.outputs.configured == 'true'
+        shell: bash
+        run: |
+          python3 "$GITHUB_WORKSPACE/.testflight-ci-tools/scripts/prepare_ios_purpose_strings.py" \
+            --spec "$GITHUB_WORKSPACE/.testflight-ci-tools/iosApp/project.yml" \
+            "$RUNNER_TEMP/Orbin.xcarchive" | tee "$RUNNER_TEMP/orbin-purpose-strings.json"
+
       - name: Preserve the unsigned archive
         id: preserve_archive
         if: ${{ !cancelled() && steps.archive.outcome == 'success' }}
@@ -226,6 +240,7 @@ jobs:
             ${{ runner.temp }}/Orbin-tooling-sha.txt
             ${{ runner.temp }}/Orbin-build.txt
             ${{ runner.temp }}/orbin-framework-metadata.json
+            ${{ runner.temp }}/orbin-purpose-strings.json
           if-no-files-found: error
           retention-days: 3
 
@@ -267,18 +282,16 @@ jobs:
       # Installed before any step holds the key, so pip and package build scripts never see it.
       - name: Install the notes script's dependencies
         if: steps.config.outputs.configured == 'true'
-        continue-on-error: true
         run: |
           python3 -m venv "$RUNNER_TEMP/notes-venv"
           "$RUNNER_TEMP/notes-venv/bin/pip" install --quiet "pyjwt[crypto]==2.10.1"
 
-      # Testers read what changed in the TestFlight app: this release's changelog section, or
-      # what is unreleased for a manual build between releases. Apple takes a few minutes to
-      # register a new build, so this waits for it. A failure here leaves the build uploaded,
-      # only without notes, so it warns rather than failing the upload.
-      - name: Set What to Test from the changelog
+      # Confirm Apple processed this exact build and attach its testing notes. A failed or
+      # timed-out processing result must fail delivery verification even after upload succeeds.
+      # The preserved archive and receipts remain available for recovery.
+      - name: Verify Apple processing and set What to Test
         if: steps.config.outputs.configured == 'true'
-        continue-on-error: true
+        shell: bash
         timeout-minutes: 35
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
