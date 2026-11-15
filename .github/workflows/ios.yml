@@ -1,7 +1,7 @@
 name: iOS
 
-# Builds the iOS app on macOS: the native Kotlin tests on the iOS simulator, then the Xcode
-# project for the simulator. No signing, so it needs no secrets and runs on every PR or main
+# Builds the iOS app on macOS: native tests and the app on the simulator, plus a separate
+# Release archive for devices. No signing, so it needs no secrets and runs on every PR or main
 # push that can change what the iOS app compiles. Uploading to TestFlight is testflight.yml.
 on:
   push:
@@ -12,6 +12,7 @@ on:
       - 'ui-next/**'
       - 'core/designsystem/**'
       - 'core/ui/**'
+      - 'core/reader/**'
       - 'core/model/**'
       - 'core/common/**'
       - 'domain/**'
@@ -24,7 +25,14 @@ on:
       - 'gradle/**'
       - '*.gradle.kts'
       - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'CHANGELOG.md'
+      - '.github/actions/setup-jdk-gradle/**'
+      - '.github/actions/setup-xcodegen/**'
       - '.github/workflows/ios.yml'
+      - '.github/workflows/testflight.yml'
+      - '.github/workflows/testflight-notes.yml'
   pull_request:
     paths: *ios-paths
   workflow_dispatch:
@@ -37,6 +45,63 @@ permissions:
   contents: read
 
 jobs:
+  release-archive:
+    name: iOS app (Release archive)
+    # Match TestFlight's runner and memory budget for the optimized device framework link.
+    runs-on: macos-26-intel
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-jdk-gradle
+
+      - name: Set up XcodeGen
+        uses: ./.github/actions/setup-xcodegen
+
+      - name: Generate the Xcode project
+        run: xcodegen --spec iosApp/project.yml
+
+      - name: Configure Gradle for the Release archive
+        run: |
+          gradle_user_home="${GRADLE_USER_HOME:-$HOME/.gradle}"
+          mkdir -p "$gradle_user_home"
+          cat >> "$gradle_user_home/gradle.properties" <<'PROPERTIES'
+
+          org.gradle.jvmargs=-Xmx8g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8
+          org.gradle.workers.max=1
+          org.gradle.parallel=false
+          PROPERTIES
+          mkdir -p "$gradle_user_home/init.d"
+          cat > "$gradle_user_home/init.d/orbin-archive-diagnostics.gradle" <<'INIT'
+          gradle.settingsEvaluated {
+              println("Orbin archive Gradle: maxHeapMiB=" + (Runtime.runtime.maxMemory() / 1024 / 1024) +
+                  "; workers=" + gradle.startParameter.maxWorkerCount +
+                  "; parallel=" + gradle.startParameter.parallelProjectExecutionEnabled)
+          }
+          INIT
+          uname -m
+          sysctl -n hw.memsize
+          xcodebuild -version
+          java -version
+          printf '%s\n' \
+            'org.gradle.jvmargs=-Xmx8g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8' \
+            'org.gradle.workers.max=1' \
+            'org.gradle.parallel=false'
+
+      - name: Archive the app for devices
+        run: >-
+          xcodebuild archive
+          -project iosApp/Orbin.xcodeproj
+          -scheme Orbin
+          -configuration Release
+          -destination 'generic/platform=iOS'
+          -archivePath "$RUNNER_TEMP/Orbin.xcarchive"
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+
   build:
     name: iOS app (simulator)
     # Apple silicon, so the arm64 simulator tests run natively.

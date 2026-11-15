@@ -1,0 +1,25 @@
+name: Retry TestFlight 211
+
+# Temporary retry of the validated 211 release with the corrected TestFlight CI settings.
+# Remove this workflow after the App Store Connect upload is confirmed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/retry-testflight-211.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  testflight:
+    name: Upload the validated 211 release
+    uses: ./.github/workflows/testflight.yml
+    with:
+      # Immutable source commit of the published v211-Alabaster release.
+      ref: 44022ab54eff44fce5c335863f3fa1c4d0c282d9
+    secrets:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}

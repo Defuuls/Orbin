@@ -50,7 +50,11 @@ permissions:
 jobs:
   upload:
     name: Upload to TestFlight
-    runs-on: macos-26
+    # The optimized Kotlin/Native device link runs inside Gradle's JVM. The standard
+    # Intel runner has 14 GB RAM; macos-26's 7 GB ARM64 runner cannot fit an 8 GB heap.
+    # This host still builds the same iosArm64 device framework. Simulator CI stays ARM64.
+    runs-on: macos-26-intel
+    timeout-minutes: 150
     # The App Store Connect key has the Admin role, so it is handed only to the steps that talk to
     # App Store Connect, never to the job: the Gradle build, XcodeGen and the archive (which runs
     # Gradle again) cannot read it from their environment, and the .p8 file does not exist on disk
@@ -97,6 +101,33 @@ jobs:
         if: steps.config.outputs.configured == 'true'
         uses: ./.github/actions/setup-jdk-gradle
 
+      - name: Configure Gradle for the Release archive
+        if: steps.config.outputs.configured == 'true'
+        # Keep this budget aligned with the unsigned Release archive job in ios.yml.
+        # User-home properties override the checked-out release's 4 GB project default.
+        run: |
+          gradle_user_home="${GRADLE_USER_HOME:-$HOME/.gradle}"
+          mkdir -p "$gradle_user_home"
+          cat >> "$gradle_user_home/gradle.properties" <<'PROPERTIES'
+
+          org.gradle.jvmargs=-Xmx8g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8
+          org.gradle.workers.max=1
+          org.gradle.parallel=false
+          PROPERTIES
+          mkdir -p "$gradle_user_home/init.d"
+          cat > "$gradle_user_home/init.d/orbin-archive-diagnostics.gradle" <<'INIT'
+          gradle.settingsEvaluated {
+              println("Orbin archive Gradle: maxHeapMiB=" + (Runtime.runtime.maxMemory() / 1024 / 1024) +
+                  "; workers=" + gradle.startParameter.maxWorkerCount +
+                  "; parallel=" + gradle.startParameter.parallelProjectExecutionEnabled)
+          }
+          INIT
+          uname -m
+          sysctl -n hw.memsize
+          xcodebuild -version
+          java -version
+          printf '%s\n' 'Archive Gradle heap: 8 GB; workers: 1; parallel: false'
+
       - name: Set up XcodeGen
         if: steps.config.outputs.configured == 'true'
         uses: ./.github/actions/setup-xcodegen
@@ -128,6 +159,7 @@ jobs:
       # printed in every app the team ships.
       - name: Archive
         if: steps.config.outputs.configured == 'true'
+        timeout-minutes: 90
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
