@@ -192,6 +192,13 @@ The user-home Gradle settings also apply when TestFlight checks out an older rel
 Simulator tests remain on Apple silicon because the app's simulator frameworks are ARM64.
 The archive step is bounded to 90 minutes and keeps release optimizations enabled.
 
+Before distribution export, the archive tooling fills missing FFmpeg framework deployment
+metadata from the device binary's Mach-O load commands, then validates it. It preserves the
+executable and existing compatible metadata, and rejects unsupported binaries or conflicts.
+Release CI performs the same preparation. TestFlight loads this tooling from the workflow's
+commit separately from the pinned app source. Its unsigned archive is retained as a compressed
+tar with source/build metadata, so a later export failure has a recoverable build artifact.
+
 Release 211's initial TestFlight attempt exhausted its previous 4 GB heap during native release
 linking before upload. `retry-testflight-211.yml` temporarily retries the unchanged, validated
 release commit after the corrected workflow merges. Remove that retry wrapper after a confirmed

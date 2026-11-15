@@ -1,6 +1,6 @@
 name: Retry TestFlight 211
 
-# Temporary retry of the validated 211 release with the corrected TestFlight CI settings.
+# Temporary retry of the validated 211 release with corrected memory and framework metadata.
 # Remove this workflow after the App Store Connect upload is confirmed.
 on:
   push:
