@@ -19,8 +19,8 @@ CLASS = "com.orbin.benchmark.BaselineProfileGenerator"
 FIXTURE = "Lcom/orbin/app/benchmark/"
 READERS = (
     "Lcom/orbin/uinext/BoardCatalogKt;",
-    "Lcom/orbin/uinext/ThreadKt;",
-    "Lcom/orbin/uinext/ReaderTwoPaneKt;",
+    "Lcom/orbin/uinext/screens/ThreadKt;",
+    "Lcom/orbin/uinext/components/ReaderTwoPaneKt;",
     "Lcom/orbin/uinext/FeedScreenKt;",
     "Lcom/orbin/core/reader/ThreadPresentationKt;",
 )

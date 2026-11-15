@@ -1,6 +1,6 @@
 package com.orbin.ios
 
-import com.orbin.uinext.mediaPlaybackSpeed
+import com.orbin.uinext.components.mediaPlaybackSpeed
 
 /** Play is acknowledged only after WebKit fulfills it; a rejected current request can be retried. */
 internal data class WebMPlaybackRequest(

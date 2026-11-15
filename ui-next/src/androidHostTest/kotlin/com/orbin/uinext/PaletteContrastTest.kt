@@ -3,6 +3,14 @@ package com.orbin.uinext
 import androidx.compose.ui.graphics.Color
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.orbin.uinext.components.AmoledPalette
+import com.orbin.uinext.components.BoardHues
+import com.orbin.uinext.components.DarkPalette
+import com.orbin.uinext.components.LightPalette
+import com.orbin.uinext.components.NextPalette
+import com.orbin.uinext.components.boardHueIndex
+import com.orbin.uinext.components.materialColorScheme
+import com.orbin.uinext.components.primary
 import org.junit.Test
 import kotlin.math.pow
 

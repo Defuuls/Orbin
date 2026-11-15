@@ -11,6 +11,14 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OrbinAdaptiveNavigation
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.BoardsScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -6,6 +6,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

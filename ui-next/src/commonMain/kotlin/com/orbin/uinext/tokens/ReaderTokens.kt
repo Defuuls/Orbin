@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.NextAccentTheme
+import com.orbin.uinext.components.NextAccentTheme
 
 /*
  * The reader design's tokens, copied from docs/design-system/README.md.

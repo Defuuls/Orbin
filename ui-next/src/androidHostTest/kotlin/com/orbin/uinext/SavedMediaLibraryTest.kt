@@ -13,6 +13,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.SavedMediaItem
+import com.orbin.uinext.screens.SavedMediaKind
+import com.orbin.uinext.screens.SavedMediaLibraryScreen
+import com.orbin.uinext.screens.SavedMediaOrder
+import com.orbin.uinext.screens.visibleSavedMedia
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

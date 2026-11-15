@@ -6,7 +6,7 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.ThreadMemory
 import com.orbin.core.model.UserContentFilters
 import com.orbin.domain.thread.projectReplyRows
-import com.orbin.uinext.Post
+import com.orbin.uinext.screens.Post
 
 internal class ReaderReplyGraph(
     val nested: List<Post>,

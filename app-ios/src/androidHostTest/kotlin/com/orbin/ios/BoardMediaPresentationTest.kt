@@ -7,7 +7,7 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.media.AllMediaItem
-import com.orbin.uinext.MediaKind
+import com.orbin.uinext.components.MediaKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

@@ -15,9 +15,9 @@ import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.ReaderScaffold
-import com.orbin.uinext.ReaderTwoPane
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.components.ReaderTwoPane
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 

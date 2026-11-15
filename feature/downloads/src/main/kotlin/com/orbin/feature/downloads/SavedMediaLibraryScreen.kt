@@ -33,13 +33,13 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.media.image.OrbinAsyncImage
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
-import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.ReaderMediaClose
 import com.orbin.uinext.ReaderMediaTitle
 import com.orbin.uinext.ReaderMediaToolbar
-import com.orbin.uinext.SavedMediaItem
-import com.orbin.uinext.SavedMediaKind
-import com.orbin.uinext.SavedMediaLibraryScreen
+import com.orbin.uinext.components.NextConfirmDialog
+import com.orbin.uinext.screens.SavedMediaItem
+import com.orbin.uinext.screens.SavedMediaKind
+import com.orbin.uinext.screens.SavedMediaLibraryScreen
 import java.io.File
 
 /** Android's owned-file adapter. It never falls back to a saved record's remote source URL. */

@@ -25,6 +25,12 @@ import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextTextField
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.nextClickable
+import com.orbin.uinext.components.readerBackSwipe
+import com.orbin.uinext.components.readerKeyboardShortcuts
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

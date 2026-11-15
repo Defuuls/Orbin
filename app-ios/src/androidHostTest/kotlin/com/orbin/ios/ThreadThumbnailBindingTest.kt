@@ -29,9 +29,9 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.reader.preparePresentation
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderAlbumTags
-import com.orbin.uinext.ThreadTags
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.ReaderAlbumTags
+import com.orbin.uinext.screens.ThreadTags
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.runBlocking
 import org.junit.After

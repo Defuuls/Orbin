@@ -21,7 +21,7 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.AllMediaUiState
-import com.orbin.uinext.NextTheme
+import com.orbin.uinext.components.NextTheme
 import kotlinx.collections.immutable.toPersistentList
 import org.junit.After
 import org.junit.Before

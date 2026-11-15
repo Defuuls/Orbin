@@ -15,6 +15,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -21,7 +21,7 @@ SCANNED = [ROOT / "ui-next" / "src" / "commonMain" / "kotlin"]
 TOKEN_DIR = "ui-next/src/commonMain/kotlin/com/orbin/uinext/tokens/"
 # Artwork, not UI chrome: the brand mark's gradient stops are fixed by docs/brand.md.
 ALLOWLIST = {
-    "ui-next/src/commonMain/kotlin/com/orbin/uinext/OrbinLogoMark.kt",
+    "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/OrbinLogoMark.kt",
 }
 
 PATTERNS = {

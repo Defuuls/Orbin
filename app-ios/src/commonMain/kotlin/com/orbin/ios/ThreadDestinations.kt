@@ -64,21 +64,21 @@ import com.orbin.ios.resources.ios_saved_export_confirm
 import com.orbin.ios.resources.ios_saved_export_title
 import com.orbin.ios.resources.ios_thread_offline_copy
 import com.orbin.ios.resources.ios_thread_requested_post_unavailable
-import com.orbin.uinext.NextConfirmDialog
-import com.orbin.uinext.NextPullToRefresh
-import com.orbin.uinext.ReaderAppBar
-import com.orbin.uinext.ReaderErrorState
-import com.orbin.uinext.ReaderFailureCause
 import com.orbin.uinext.ReaderMediaClose
 import com.orbin.uinext.ReaderMediaTitle
 import com.orbin.uinext.ReaderMediaToolbar
-import com.orbin.uinext.ReaderNavigation
-import com.orbin.uinext.ReaderRefreshFailure
-import com.orbin.uinext.ReaderThreadSkeleton
-import com.orbin.uinext.ThreadLayout
-import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.reader
-import com.orbin.uinext.rememberThreadInlineMediaState
+import com.orbin.uinext.components.NextConfirmDialog
+import com.orbin.uinext.components.NextPullToRefresh
+import com.orbin.uinext.components.ReaderAppBar
+import com.orbin.uinext.components.ReaderNavigation
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.rememberThreadInlineMediaState
+import com.orbin.uinext.screens.ReaderErrorState
+import com.orbin.uinext.screens.ReaderFailureCause
+import com.orbin.uinext.screens.ReaderRefreshFailure
+import com.orbin.uinext.screens.ReaderThreadSkeleton
+import com.orbin.uinext.screens.ThreadLayout
+import com.orbin.uinext.screens.ThreadScreen
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -243,7 +243,7 @@ internal fun ThreadContent(
     preferences: AppSettings = AppSettings.Default,
     onAddFilter: ((PostFilterRule) -> Unit)? = null,
     onAllRead: () -> Unit = {},
-    onOpenFilteredFile: ((Int, com.orbin.uinext.MediaKindFilter) -> Unit)? = null,
+    onOpenFilteredFile: ((Int, com.orbin.uinext.components.MediaKindFilter) -> Unit)? = null,
     onDownloadFiles: ((List<Int>) -> Unit)? = null,
     initialPostId: String? = null,
     onInitialPostConsumed: () -> Unit = {},
@@ -259,7 +259,7 @@ internal fun ThreadContent(
     var initialMemory by remember(thread.key) { mutableStateOf<ThreadMemory?>(null) }
     var revealed by remember(thread.key) { mutableStateOf<Set<Long>>(emptySet()) }
     val scope = rememberCoroutineScope()
-    val posts by produceState<List<com.orbin.uinext.Post>>(
+    val posts by produceState<List<com.orbin.uinext.screens.Post>>(
         emptyList(),
         observedMemory != null,
         presentation,
@@ -285,7 +285,7 @@ internal fun ThreadContent(
                 )
             }
     }
-    val detailPosts by produceState<List<com.orbin.uinext.Post>>(
+    val detailPosts by produceState<List<com.orbin.uinext.screens.Post>>(
         emptyList(),
         observedMemory != null,
         presentation,
@@ -361,7 +361,7 @@ internal fun ThreadContent(
     var scrollTarget by remember(thread) { mutableStateOf<String?>(null) }
     // Posts / Files chrome and collapse state — same wiring as Android's NextThreadScreen.
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
-    var mediaFilter by rememberSaveable(thread.key) { mutableStateOf(com.orbin.uinext.MediaKindFilter.ALL) }
+    var mediaFilter by rememberSaveable(thread.key) { mutableStateOf(com.orbin.uinext.components.MediaKindFilter.ALL) }
     val downloadVisibleFiles = {
         if (onDownloadFiles == null) {
             onDownloadAll()
@@ -372,7 +372,7 @@ internal fun ThreadContent(
     }
 
     fun openFile(index: Int) {
-        val filter = if (layout == ThreadLayout.FILES) mediaFilter else com.orbin.uinext.MediaKindFilter.ALL
+        val filter = if (layout == ThreadLayout.FILES) mediaFilter else com.orbin.uinext.components.MediaKindFilter.ALL
         if (onOpenFilteredFile != null) onOpenFilteredFile(index, filter) else onOpenFile(index)
     }
     val listState = rememberLazyListState()
@@ -548,10 +548,10 @@ internal fun ThreadContent(
             onAddPostFilter = { post, target ->
                 val pattern =
                     when (target) {
-                        com.orbin.uinext.PostFilterTarget.TEXT -> post.body.take(80)
-                        com.orbin.uinext.PostFilterTarget.NAME -> post.posterName.orEmpty()
-                        com.orbin.uinext.PostFilterTarget.TRIPCODE -> post.posterTripcode.orEmpty()
-                        com.orbin.uinext.PostFilterTarget.COUNTRY -> post.posterCountry.orEmpty()
+                        com.orbin.uinext.screens.PostFilterTarget.TEXT -> post.body.take(80)
+                        com.orbin.uinext.screens.PostFilterTarget.NAME -> post.posterName.orEmpty()
+                        com.orbin.uinext.screens.PostFilterTarget.TRIPCODE -> post.posterTripcode.orEmpty()
+                        com.orbin.uinext.screens.PostFilterTarget.COUNTRY -> post.posterCountry.orEmpty()
                     }
                 if (pattern.isNotBlank()) {
                     onAddFilter?.invoke(

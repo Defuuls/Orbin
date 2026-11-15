@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.PreferencePopupPosition
+import com.orbin.uinext.components.ReaderSettingsSwitch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -25,8 +25,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.NextTheme
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

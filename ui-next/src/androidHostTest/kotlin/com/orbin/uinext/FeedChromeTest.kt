@@ -17,6 +17,9 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

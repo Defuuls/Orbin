@@ -16,12 +16,12 @@ import com.orbin.core.model.attachmentDetails
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.AllMediaUiState
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.MediaCell
-import com.orbin.uinext.MediaWallScreen
-import com.orbin.uinext.MessageScreen
-import com.orbin.uinext.NextPullToRefresh
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.mediaKindOf
+import com.orbin.uinext.components.MessageScreen
+import com.orbin.uinext.components.NextPullToRefresh
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.mediaKindOf
+import com.orbin.uinext.screens.MediaCell
+import com.orbin.uinext.screens.MediaWallScreen
 
 /**
  * The redesigned media wall, wired to the same [AllMediaViewModel] the current one uses.

@@ -1,0 +1,248 @@
+package com.orbin.uinext.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.orbin.uinext.tokens.NextSpace
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.OrbinType
+
+/**
+ * Modern Material 3 text field for forms.
+ */
+@Composable
+fun NextTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    placeholder: String? = null,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    singleLine: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    leading: @Composable (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+) {
+    val shape = RoundedCornerShape(OrbinRadius.control)
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier =
+            modifier
+                .readerTextEntry()
+                .fillMaxWidth()
+                .semantics {
+                    if (label != null) contentDescription = label
+                },
+        enabled = enabled,
+        readOnly = readOnly,
+        textStyle = OrbinType.body.copy(color = next.ink),
+        label = label?.let { { Text(it, style = OrbinType.sectionHeader) } },
+        placeholder = placeholder?.let { { Text(it, style = OrbinType.body, color = next.faint) } },
+        leadingIcon = leading,
+        trailingIcon = trailing,
+        singleLine = singleLine,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        shape = shape,
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = reader.surfaceVariant,
+                unfocusedContainerColor = reader.surfaceVariant,
+                disabledContainerColor = reader.surfaceVariant,
+                focusedBorderColor = next.accent,
+                unfocusedBorderColor = next.hairline,
+                focusedTextColor = next.ink,
+                unfocusedTextColor = next.ink,
+                cursorColor = next.accent,
+            ),
+    )
+}
+
+/**
+ * Label + [NextToggle] row for boolean form preferences.
+ *
+ * Prefer this over Material Checkbox so Search preference rows share the Settings On/Off
+ * word-toggle language.
+ */
+@Composable
+fun NextToggleRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = MIN_TOUCH_TARGET)
+                .clip(RoundedCornerShape(OrbinRadius.control))
+                .background(reader.surfaceVariant)
+                .border(1.dp, reader.hairline, RoundedCornerShape(OrbinRadius.control))
+                .nextClickable(role = Role.Switch, onClick = { onCheckedChange(!checked) })
+                .semantics { toggleableState = ToggleableState(checked) }
+                .padding(horizontal = NextSpace.rowX, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = label,
+            style = OrbinType.body.copy(fontSize = 15.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold),
+            color = next.ink,
+            modifier = Modifier.weight(1f),
+        )
+        androidx.compose.foundation.layout
+            .Box(Modifier.clearAndSetSemantics {}) { ReaderSettingsSwitch(checked) }
+    }
+}
+
+/**
+ * Single-select control in the Settings choice language.
+ *
+ * Tapping the value row expands options underneath as selectable rows — not Material
+ * ExposedDropdownMenu. Use for board pickers and similar short lists on Next screens.
+ */
+@Composable
+fun NextSelect(
+    label: String,
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val display =
+        options.getOrNull(selectedIndex)?.takeIf { selectedIndex >= 0 } ?: placeholder
+    val shape = RoundedCornerShape(OrbinRadius.control)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = label.uppercase(),
+            style =
+                OrbinType.sectionHeader.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.1.sp,
+                ),
+            color = next.muted,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 6.dp),
+        )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = MIN_TOUCH_TARGET)
+                    .clip(shape)
+                    .background(reader.surfaceVariant)
+                    .border(1.dp, reader.hairline, shape)
+                    .nextClickable(role = Role.Button, onClick = { expanded = !expanded })
+                    .padding(horizontal = NextSpace.rowX, vertical = 12.dp)
+                    .semantics { contentDescription = label },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = display.ifEmpty { placeholder },
+                style = OrbinType.body,
+                color = if (display.isEmpty()) next.faint else next.ink,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = if (expanded) "▴" else "▾",
+                style = OrbinType.footnote,
+                color = next.muted,
+            )
+        }
+        if (expanded) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(reader.surfaceVariant)
+                        .border(1.dp, reader.hairline, RoundedCornerShape(22.dp))
+                        .padding(6.dp)
+                        .selectableGroup(),
+            ) {
+                options.forEachIndexed { index, option ->
+                    NextSelectOptionRow(
+                        label = option,
+                        selected = index == selectedIndex,
+                        onClick = {
+                            onSelect(index)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NextSelectOptionRow(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .sizeIn(minHeight = MIN_TOUCH_TARGET)
+                .clip(RoundedCornerShape(15.dp))
+                .background(
+                    if (selected) reader.accent.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent,
+                ).selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+                .padding(horizontal = 10.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = OrbinType.body.copy(fontSize = 15.sp, lineHeight = 21.sp),
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) next.accent else next.ink,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(ReaderIcons.Check, contentDescription = null, tint = next.accent)
+        }
+    }
+}

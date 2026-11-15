@@ -12,12 +12,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.orbin.app.R
 import com.orbin.core.model.AppUpdateState
-import com.orbin.uinext.NextLinearProgress
-import com.orbin.uinext.OrbinDialog
-import com.orbin.uinext.OrbinDialogMessage
-import com.orbin.uinext.OrbinDialogTitle
-import com.orbin.uinext.OrbinFilledButton
-import com.orbin.uinext.OrbinTextButton
+import com.orbin.uinext.components.NextLinearProgress
+import com.orbin.uinext.components.OrbinDialog
+import com.orbin.uinext.components.OrbinDialogMessage
+import com.orbin.uinext.components.OrbinDialogTitle
+import com.orbin.uinext.components.OrbinFilledButton
+import com.orbin.uinext.components.OrbinTextButton
 import kotlin.math.roundToInt
 
 /** What each button in the update dialog does. */

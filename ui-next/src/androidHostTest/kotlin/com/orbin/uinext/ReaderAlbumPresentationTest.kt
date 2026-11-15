@@ -9,6 +9,10 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.MediaCell
+import com.orbin.uinext.screens.MediaWallScreen
+import com.orbin.uinext.screens.ReaderAlbumTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

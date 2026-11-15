@@ -25,9 +25,9 @@ import androidx.navigation.toRoute
 import com.orbin.core.model.ThreadPresentation
 import com.orbin.core.model.readerPaneWidths
 import com.orbin.feature.thread.NextThreadScreen
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.ReaderScaffold
-import com.orbin.uinext.ReaderTwoPane
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.components.ReaderTwoPane
 import kotlinx.serialization.Serializable
 import kotlin.math.roundToInt
 

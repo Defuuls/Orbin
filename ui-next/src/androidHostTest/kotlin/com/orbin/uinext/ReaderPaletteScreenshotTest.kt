@@ -9,6 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.canonicalNextPalette
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ThreadScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

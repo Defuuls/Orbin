@@ -16,6 +16,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.NextTitleTags
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.BoardsScreen
+import com.orbin.uinext.screens.BoardsTags
+import com.orbin.uinext.screens.MediaCell
+import com.orbin.uinext.screens.MediaWallScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

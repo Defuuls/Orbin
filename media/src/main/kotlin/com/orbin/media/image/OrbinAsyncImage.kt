@@ -42,7 +42,7 @@ import com.orbin.media.hasHttpStatus
 import com.orbin.media.video.InlineLoop
 import com.orbin.media.video.canAutoplayInFeed
 import com.orbin.network.interceptor.RetryAfter
-import com.orbin.uinext.ReaderSpoilerCover
+import com.orbin.uinext.components.ReaderSpoilerCover
 
 /**
  * Thin wrapper over Coil's [AsyncImage] with visible failure state and request diagnostics.

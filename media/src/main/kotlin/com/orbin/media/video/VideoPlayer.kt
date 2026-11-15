@@ -62,10 +62,10 @@ import com.orbin.media.di.VideoMediaEntryPoint
 import com.orbin.media.hasHttpStatus
 import com.orbin.network.interceptor.RetryAfter
 import com.orbin.network.interceptor.RetryAfterTracker
-import com.orbin.uinext.FeedPlaybackControls
-import com.orbin.uinext.InlineAction
-import com.orbin.uinext.NextCircularProgress
-import com.orbin.uinext.mediaPlaybackSpeed
+import com.orbin.uinext.components.FeedPlaybackControls
+import com.orbin.uinext.components.InlineAction
+import com.orbin.uinext.components.NextCircularProgress
+import com.orbin.uinext.components.mediaPlaybackSpeed
 import com.orbin.uinext.tokens.OrbinType
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.delay

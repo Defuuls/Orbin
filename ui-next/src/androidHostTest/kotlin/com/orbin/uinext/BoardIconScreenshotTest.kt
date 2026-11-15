@@ -17,6 +17,11 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.orbin.uinext.components.BoardIcon
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.next
+import com.orbin.uinext.components.registeredBoardIconIds
 import com.orbin.uinext.tokens.OrbinType
 import org.junit.Rule
 import org.junit.Test

@@ -20,7 +20,7 @@ import coil3.test.FakeImageLoaderEngine
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
-import com.orbin.uinext.NextTheme
+import com.orbin.uinext.components.NextTheme
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule

@@ -1,5 +1,8 @@
 package com.orbin.uinext
 
+import com.orbin.uinext.components.ThreadInlineMediaState
+import com.orbin.uinext.components.ThreadMediaVisibility
+import com.orbin.uinext.components.selectThreadInlineMedia
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

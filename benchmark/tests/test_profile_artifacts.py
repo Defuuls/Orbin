@@ -25,9 +25,9 @@ PROFILES = {
     "startup": STARTUP,
     "catalogList": "Lcom/orbin/uinext/BoardCatalogKt;\nSPLcom/orbin/uinext/BoardCatalogKt;->render()V\n",
     "catalogGrid": "HPLcom/orbin/uinext/BoardCatalogKt;->render()V\n",
-    "thread": "Lcom/orbin/uinext/ThreadKt;\nSPLcom/orbin/uinext/ThreadKt;->render([ILjava/lang/Object;)V\n",
+    "thread": "Lcom/orbin/uinext/screens/ThreadKt;\nSPLcom/orbin/uinext/screens/ThreadKt;->render([ILjava/lang/Object;)V\n",
     "files": "Lcom/orbin/core/reader/ThreadPresentationKt;\n",
-    "twoPane": "Lcom/orbin/uinext/ReaderTwoPaneKt;\n",
+    "twoPane": "Lcom/orbin/uinext/components/ReaderTwoPaneKt;\n",
     "homeFeed": "Lcom/orbin/uinext/FeedScreenKt;\n",
     "catalogCard": "Lcom/orbin/uinext/BoardCatalogKt;\n",
 }
@@ -35,10 +35,10 @@ PROFILES = {
 BASELINE = STARTUP + (
     "Lcom/orbin/uinext/BoardCatalogKt;\n"
     "HPLcom/orbin/uinext/BoardCatalogKt;->render()V\n"
-    "Lcom/orbin/uinext/ThreadKt;\n"
-    "SPLcom/orbin/uinext/ThreadKt;->render([ILjava/lang/Object;)V\n"
+    "Lcom/orbin/uinext/screens/ThreadKt;\n"
+    "SPLcom/orbin/uinext/screens/ThreadKt;->render([ILjava/lang/Object;)V\n"
     "Lcom/orbin/core/reader/ThreadPresentationKt;\n"
-    "Lcom/orbin/uinext/ReaderTwoPaneKt;\n"
+    "Lcom/orbin/uinext/components/ReaderTwoPaneKt;\n"
     "Lcom/orbin/uinext/FeedScreenKt;\n"
 )
 
@@ -271,7 +271,7 @@ class ProfileArtifactsTest(unittest.TestCase):
         self.export_all()
         self.aggregate()
         self.generate()
-        (self.generated / "startup-prof.txt").write_text(STARTUP + "Lcom/orbin/uinext/ThreadKt;\n")
+        (self.generated / "startup-prof.txt").write_text(STARTUP + "Lcom/orbin/uinext/screens/ThreadKt;\n")
         with self.assertRaisesRegex(ProfileError, "Official startup-prof"):
             self.verify()
 

@@ -2,7 +2,7 @@ package com.orbin.core.reader
 
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.ui.date.formatRelativeTime
-import com.orbin.uinext.FeedRow
+import com.orbin.uinext.components.FeedRow
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

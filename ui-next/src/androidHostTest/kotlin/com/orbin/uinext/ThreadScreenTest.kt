@@ -27,6 +27,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.sourceLabel
+import com.orbin.uinext.screens.MediaCell
+import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ThreadLayout
+import com.orbin.uinext.screens.ThreadScreen
+import com.orbin.uinext.screens.ThreadTags
 import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

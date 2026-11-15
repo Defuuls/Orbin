@@ -1,0 +1,312 @@
+package com.orbin.uinext.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import com.orbin.uinext.OrbinCard
+import com.orbin.uinext.OrbinLogo
+import com.orbin.uinext.components.CompactTitleBar
+import com.orbin.uinext.components.Gap
+import com.orbin.uinext.components.IMAGE_MIN_CELL
+import com.orbin.uinext.components.InlineAction
+import com.orbin.uinext.components.MEDIA_SIZE_MAX_DP
+import com.orbin.uinext.components.MEDIA_SIZE_MIN_DP
+import com.orbin.uinext.components.MEDIA_SIZE_STEPS
+import com.orbin.uinext.components.MediaKind
+import com.orbin.uinext.components.MediaTile
+import com.orbin.uinext.components.MetaLine
+import com.orbin.uinext.components.NextScaffold
+import com.orbin.uinext.components.NextSlider
+import com.orbin.uinext.components.ScreenTitle
+import com.orbin.uinext.components.contentInsets
+import com.orbin.uinext.components.fullWidthItem
+import com.orbin.uinext.components.next
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.scrollingUp
+import com.orbin.uinext.resources.Res
+import com.orbin.uinext.resources.next_all_media_subtitle
+import com.orbin.uinext.resources.next_all_media_title
+import com.orbin.uinext.resources.next_board_media_subtitle
+import com.orbin.uinext.resources.next_media_cell_description
+import com.orbin.uinext.resources.next_media_saved
+import com.orbin.uinext.resources.next_media_size_control
+import com.orbin.uinext.resources.next_media_size_large
+import com.orbin.uinext.resources.next_media_size_small
+import com.orbin.uinext.resources.next_sweep_progress
+import com.orbin.uinext.resources.next_sweep_reading
+import com.orbin.uinext.resources.next_sweep_unreachable
+import com.orbin.uinext.tokens.OrbinRadius
+import org.jetbrains.compose.resources.stringResource
+
+data class MediaCell(
+    val id: String,
+    val board: String,
+    val spoiler: Boolean = false,
+    /** Actual attachment format, dimensions and size, when supplied by the host. */
+    val details: String = "",
+    val kind: MediaKind = MediaKind.UNKNOWN,
+)
+
+@Composable
+fun MediaWallScreen(
+    scanned: Int,
+    total: Int,
+    failed: Int,
+    modifier: Modifier = Modifier,
+    cells: List<MediaCell> = emptyList(),
+    scanning: Boolean = false,
+    deepScanning: Boolean = false,
+    deepScanned: Int = 0,
+    deepTotal: Int = 0,
+    showRail: Boolean = true,
+    showSizeControl: Boolean = false,
+    onOpen: (MediaCell) -> Unit = {},
+    onLongPress: ((MediaCell) -> Unit)? = null,
+    // One board's wall instead of every board's: its name replaces "All media".
+    title: String? = null,
+    // What you saved from the wall and elsewhere: Downloads, reached from the media it came from.
+    onOpenSaved: (() -> Unit)? = null,
+    tile: (@Composable (MediaCell, Modifier) -> Unit)? = null,
+    hideRailOnScroll: Boolean = false,
+    onChromeVisibleChange: (Boolean) -> Unit = {},
+    showHeader: Boolean = true,
+) {
+    val gridState = rememberLazyGridState()
+    var imageCellSize by rememberSaveable { mutableFloatStateOf(IMAGE_MIN_CELL.value) }
+    val imageCellMinSize = imageCellSize.dp
+    val imageSizeDescription = stringResource(Res.string.next_media_size_control)
+    val hasScanStatus = scanning || deepScanning || failed > 0
+    val hasWallControls = onOpenSaved != null || showSizeControl || hasScanStatus
+    val railVisible =
+        if (hideRailOnScroll) {
+            scrollingUp({ gridState.firstVisibleItemIndex }, { gridState.firstVisibleItemScrollOffset })
+        } else {
+            true
+        }
+    LaunchedEffect(railVisible) { onChromeVisibleChange(railVisible) }
+    val mediaTitle = title ?: stringResource(Res.string.next_all_media_title)
+    val showCompactTitle by remember {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0 ||
+                gridState.firstVisibleItemScrollOffset > 64
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize().background(next.background)) {
+        NextScaffold(
+            where = mediaTitle.takeIf { showRail },
+            modifier = Modifier.fillMaxSize(),
+            railVisible = railVisible,
+        ) { bottomPad ->
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(imageCellMinSize),
+                state = gridState,
+                horizontalArrangement = Arrangement.spacedBy(MEDIA_WALL_GAP),
+                verticalArrangement = Arrangement.spacedBy(MEDIA_WALL_GAP),
+                modifier = Modifier.fillMaxSize().contentInsets(),
+                contentPadding =
+                    PaddingValues(
+                        start = MEDIA_WALL_GUTTER,
+                        end = MEDIA_WALL_GUTTER,
+                        top = MEDIA_WALL_GUTTER,
+                        bottom = bottomPad.calculateBottomPadding() + MEDIA_WALL_GUTTER,
+                    ),
+            ) {
+                if (showHeader || hasWallControls) {
+                    fullWidthItem {
+                        Column {
+                            if (showHeader) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    OrbinLogo(size = 32.dp, contentDescription = null)
+                                    Spacer(Modifier.width(12.dp))
+                                    Box(Modifier.weight(1f)) {
+                                        ScreenTitle(
+                                            text = mediaTitle,
+                                            subtitle =
+                                                stringResource(
+                                                    if (title ==
+                                                        null
+                                                    ) {
+                                                        Res.string.next_all_media_subtitle
+                                                    } else {
+                                                        Res.string.next_board_media_subtitle
+                                                    },
+                                                ),
+                                            inset = 0.dp,
+                                        )
+                                    }
+                                }
+                            }
+                            if (onOpenSaved != null) {
+                                Box(Modifier.padding(horizontal = 16.dp)) {
+                                    InlineAction(stringResource(Res.string.next_media_saved), onClick = onOpenSaved)
+                                }
+                                Gap(8)
+                            }
+                            if (showSizeControl || hasScanStatus) {
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(OrbinRadius.card))
+                                            .background(reader.surfaceVariant)
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                                ) {
+                                    if (showSizeControl) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            MetaLine(stringResource(Res.string.next_media_size_small))
+                                            NextSlider(
+                                                value = imageCellSize,
+                                                onValueChange = {
+                                                    imageCellSize =
+                                                        it.coerceIn(
+                                                            MEDIA_CELL_MIN_DP,
+                                                            MEDIA_CELL_MAX_DP,
+                                                        )
+                                                },
+                                                valueRange = MEDIA_CELL_MIN_DP..MEDIA_CELL_MAX_DP,
+                                                steps = MEDIA_CELL_STEPS,
+                                                modifier =
+                                                    Modifier
+                                                        .weight(1f)
+                                                        .padding(horizontal = 12.dp)
+                                                        .semantics { contentDescription = imageSizeDescription },
+                                            )
+                                            MetaLine(stringResource(Res.string.next_media_size_large))
+                                        }
+                                        Gap(8)
+                                    }
+                                    if (hasScanStatus) {
+                                        FlowRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            if (deepScanning) {
+                                                SweepBar(scanned = deepScanned, total = deepTotal)
+                                                MetaLine(
+                                                    stringResource(
+                                                        Res.string.next_sweep_reading,
+                                                        deepScanned,
+                                                        deepTotal,
+                                                    ),
+                                                    maxLines = 2,
+                                                )
+                                            } else if (scanning) {
+                                                SweepBar(scanned = scanned, total = total)
+                                                MetaLine(
+                                                    stringResource(Res.string.next_sweep_progress, scanned, total),
+                                                    maxLines = 2,
+                                                )
+                                            }
+                                            if (failed > 0) {
+                                                MetaLine(
+                                                    stringResource(Res.string.next_sweep_unreachable, failed),
+                                                    color = next.accent,
+                                                )
+                                            }
+                                        }
+                                        Gap(16)
+                                    }
+                                }
+                                Gap(12)
+                            }
+                        }
+                    }
+                }
+                itemsIndexed(cells, key = { _, cell -> cell.id }) { index, cell ->
+                    val description =
+                        stringResource(Res.string.next_media_cell_description, cell.board)
+                    OrbinCard(elevated = false, shape = RoundedCornerShape(8.dp)) {
+                        ReaderAlbumCell(
+                            cell = cell,
+                            coral = true,
+                            modifier =
+                                Modifier
+                                    .semantics { contentDescription = description },
+                            onOpen = onOpen,
+                            onLongPress = onLongPress,
+                            details = listOf(cell.board, cell.details).filter(String::isNotBlank).joinToString("\n"),
+                            tile = { item, shape ->
+                                if (tile != null) {
+                                    tile(item, shape)
+                                } else {
+                                    MediaTile(modifier = shape, seed = index, radius = 0.dp)
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        CompactTitleBar(
+            title = mediaTitle,
+            visible = showHeader && showCompactTitle,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
+    }
+}
+
+@Composable
+internal fun SweepBar(
+    scanned: Int,
+    total: Int,
+) {
+    val barShape = RoundedCornerShape(OrbinRadius.compact)
+    Box(
+        modifier =
+            Modifier
+                .width(96.dp)
+                .height(6.dp)
+                .clip(barShape)
+                .background(next.hairline),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth(scanned.toFloat() / total.coerceAtLeast(1))
+                    .height(6.dp)
+                    .clip(barShape)
+                    .background(next.accent),
+        )
+    }
+}
+
+private const val MEDIA_CELL_MIN_DP = MEDIA_SIZE_MIN_DP
+private const val MEDIA_CELL_MAX_DP = MEDIA_SIZE_MAX_DP
+private const val MEDIA_CELL_STEPS = MEDIA_SIZE_STEPS
+
+internal val MEDIA_WALL_GUTTER = 8.dp
+internal val MEDIA_WALL_GAP = 4.dp

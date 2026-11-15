@@ -15,8 +15,8 @@ import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.ThreadScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.runBlocking
 import org.junit.After

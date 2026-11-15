@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import com.orbin.uinext.components.rememberFeedPlaybackChoice
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

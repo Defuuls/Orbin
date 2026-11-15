@@ -20,6 +20,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.ReaderCatalogSkeleton
+import com.orbin.uinext.screens.ReaderStateTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

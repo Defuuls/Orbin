@@ -4,6 +4,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.OnboardingBoard
+import com.orbin.uinext.screens.OnboardingBoards
+import com.orbin.uinext.screens.OnboardingScreen
+import com.orbin.uinext.screens.OnboardingSetupConfig
+import com.orbin.uinext.screens.SetupThemeOption
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

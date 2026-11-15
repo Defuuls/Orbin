@@ -17,7 +17,7 @@ import coil3.request.ImageRequest
 import coil3.size.Precision
 import coil3.size.SizeResolver
 import com.orbin.core.model.MediaAttachment
-import com.orbin.uinext.ReaderSpoilerCover
+import com.orbin.uinext.components.ReaderSpoilerCover
 
 /**
  * A catalog preview never requests GIF playback or a video frame. The parent reserves the layout

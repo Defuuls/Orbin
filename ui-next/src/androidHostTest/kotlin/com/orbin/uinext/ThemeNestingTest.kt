@@ -5,6 +5,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.components.NextPalette
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.next
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import org.junit.Assert.assertEquals

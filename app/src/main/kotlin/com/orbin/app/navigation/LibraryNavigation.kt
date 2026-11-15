@@ -9,8 +9,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
-import com.orbin.uinext.LibrarySection
-import com.orbin.uinext.NextDestination
+import com.orbin.uinext.components.LibrarySection
+import com.orbin.uinext.components.NextDestination
 
 /** The route each Library section opens. */
 internal fun LibrarySection.route(): Route =

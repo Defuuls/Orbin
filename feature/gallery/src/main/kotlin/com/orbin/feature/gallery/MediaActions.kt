@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.uinext.ReaderMediaSpeedOptions
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.ReaderMediaSpeedOptions
+import com.orbin.uinext.components.reader
 import com.orbin.uinext.tokens.ReaderSize
 
 /** The viewer's Neko-style overflow menu retains Orbin's real file actions. */

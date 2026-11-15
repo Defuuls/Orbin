@@ -16,6 +16,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.SearchRow
+import com.orbin.uinext.screens.SearchScreen
+import com.orbin.uinext.screens.SearchState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

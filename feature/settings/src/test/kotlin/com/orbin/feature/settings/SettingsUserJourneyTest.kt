@@ -40,7 +40,7 @@ import com.orbin.core.testing.repository.FakeSearchRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.core.testing.repository.FakeUpdateRepository
 import com.orbin.domain.repository.ImageCacheRepository
-import com.orbin.uinext.NextSnackbarHostState
+import com.orbin.uinext.components.NextSnackbarHostState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule

@@ -30,7 +30,7 @@ import coil3.size.SizeResolver
 import coil3.test.FakeImageLoaderEngine
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.uinext.NextTheme
+import com.orbin.uinext.components.NextTheme
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals

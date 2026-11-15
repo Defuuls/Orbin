@@ -15,6 +15,10 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ThreadScreen
+import com.orbin.uinext.screens.ThreadTags
 import com.orbin.uinext.tokens.ReaderSize
 import com.orbin.uinext.tokens.ReaderSpace
 import org.junit.Assert.assertEquals

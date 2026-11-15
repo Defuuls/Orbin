@@ -26,9 +26,9 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.graph.orbinProviders
-import com.orbin.uinext.NextPlatform
-import com.orbin.uinext.NextTheme
 import com.orbin.uinext.ReaderFeedTags
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders

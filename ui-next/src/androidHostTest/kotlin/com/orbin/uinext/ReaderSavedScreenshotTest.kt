@@ -11,6 +11,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.ReaderSavedTags
+import com.orbin.uinext.screens.ReaderStateTags
+import com.orbin.uinext.screens.ThreadCollectionRow
+import com.orbin.uinext.screens.ThreadCollectionScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

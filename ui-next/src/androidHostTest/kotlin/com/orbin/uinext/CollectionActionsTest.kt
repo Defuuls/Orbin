@@ -7,6 +7,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.ReaderSavedTags
+import com.orbin.uinext.screens.ThreadCollectionRow
+import com.orbin.uinext.screens.ThreadCollectionScreen
+import com.orbin.uinext.screens.ThreadCollectionStatus
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

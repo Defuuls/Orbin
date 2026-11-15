@@ -10,6 +10,15 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.ReaderCollectionTags
+import com.orbin.uinext.screens.ReaderSavedTags
+import com.orbin.uinext.screens.SearchRow
+import com.orbin.uinext.screens.SearchScreen
+import com.orbin.uinext.screens.SearchState
+import com.orbin.uinext.screens.ThreadCollectionRow
+import com.orbin.uinext.screens.ThreadCollectionScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

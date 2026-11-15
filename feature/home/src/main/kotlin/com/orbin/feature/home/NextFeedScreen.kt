@@ -35,11 +35,11 @@ import com.orbin.core.reader.boardLabel
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
-import com.orbin.uinext.NextPullToRefresh
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.sourceLabel
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextPullToRefresh
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.sourceLabel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

@@ -6,6 +6,12 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.orbin.uinext.components.MIN_TOUCH_TARGET
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.BoardsScreen
+import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ThreadScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

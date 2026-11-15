@@ -19,8 +19,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
 import androidx.compose.ui.viewinterop.UIKitViewController
-import com.orbin.uinext.FeedPlaybackControls
-import com.orbin.uinext.mediaPlaybackSpeed
+import com.orbin.uinext.components.FeedPlaybackControls
+import com.orbin.uinext.components.mediaPlaybackSpeed
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents

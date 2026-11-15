@@ -19,6 +19,12 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeUp
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderFastScrollTags
+import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ThreadLayout
+import com.orbin.uinext.screens.ThreadScreen
+import com.orbin.uinext.screens.ThreadTags
 import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

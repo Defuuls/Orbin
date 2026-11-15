@@ -12,6 +12,10 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
+import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ThreadScreen
 import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test

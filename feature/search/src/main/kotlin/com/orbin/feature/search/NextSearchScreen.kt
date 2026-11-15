@@ -10,10 +10,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.SearchResult
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.SearchRow
-import com.orbin.uinext.SearchScreen
-import com.orbin.uinext.SearchState
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.SearchRow
+import com.orbin.uinext.screens.SearchScreen
+import com.orbin.uinext.screens.SearchState
 
 /** Search: one field, searched across the catalogs of the boards you follow. */
 @Composable

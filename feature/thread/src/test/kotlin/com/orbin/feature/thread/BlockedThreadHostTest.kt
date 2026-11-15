@@ -26,8 +26,8 @@ import com.orbin.core.testing.repository.FakeSavedThreadRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderAppBarTags
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
 import com.orbin.uinext.tokens.ReaderLightColors
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi

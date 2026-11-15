@@ -35,7 +35,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
-import com.orbin.uinext.NextTheme
+import com.orbin.uinext.components.NextTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Rule

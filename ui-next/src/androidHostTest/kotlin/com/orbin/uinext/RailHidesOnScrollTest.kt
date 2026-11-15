@@ -13,6 +13,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OrbinNavigationTags
+import com.orbin.uinext.screens.MediaCell
+import com.orbin.uinext.screens.MediaWallScreen
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

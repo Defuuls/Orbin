@@ -1,6 +1,6 @@
 package com.orbin.app
 
-import com.orbin.uinext.canonicalNextPalette
+import com.orbin.uinext.components.canonicalNextPalette
 import com.orbin.uinext.tokens.readerColors
 import org.junit.Assert.assertEquals
 import org.junit.Test

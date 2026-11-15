@@ -26,6 +26,9 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderTwoPane
+import com.orbin.uinext.components.ReaderTwoPaneTags
 import com.orbin.uinext.tokens.ReaderLightColors
 import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Assert.assertEquals

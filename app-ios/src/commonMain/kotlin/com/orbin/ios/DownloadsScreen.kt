@@ -46,17 +46,17 @@ import com.orbin.ios.resources.ios_downloads_title
 import com.orbin.ios.resources.ios_downloads_where
 import com.orbin.ios.resources.ios_saved_library_tab
 import com.orbin.ios.resources.ios_saved_transfers_tab
-import com.orbin.uinext.DownloadRow
-import com.orbin.uinext.DownloadTags
-import com.orbin.uinext.NextConfirmDialog
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.ReaderEmptyState
-import com.orbin.uinext.ReaderMenuItem
-import com.orbin.uinext.ReaderScaffold
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.DownloadRow
+import com.orbin.uinext.components.DownloadTags
+import com.orbin.uinext.components.NextConfirmDialog
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.ReaderMenuItem
+import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.withReaderFont
+import com.orbin.uinext.screens.ReaderEmptyState
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSpace
-import com.orbin.uinext.withReaderFont
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 

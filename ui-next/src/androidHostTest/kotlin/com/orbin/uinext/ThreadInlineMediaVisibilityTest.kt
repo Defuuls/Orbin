@@ -19,6 +19,8 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.ThreadInlineMediaFrame
+import com.orbin.uinext.components.rememberThreadInlineMediaState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

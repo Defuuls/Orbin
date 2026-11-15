@@ -53,12 +53,12 @@ import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.FeedRow
 import com.orbin.uinext.FeedScreen
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderTwoPane
-import com.orbin.uinext.ThreadLayout
-import com.orbin.uinext.ThreadScreen
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderTwoPane
+import com.orbin.uinext.screens.ThreadLayout
+import com.orbin.uinext.screens.ThreadScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers

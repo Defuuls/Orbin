@@ -25,6 +25,13 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.MIN_TOUCH_TARGET
+import com.orbin.uinext.components.NextError
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.OnboardingBoard
+import com.orbin.uinext.screens.OnboardingBoards
+import com.orbin.uinext.screens.OnboardingScreen
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

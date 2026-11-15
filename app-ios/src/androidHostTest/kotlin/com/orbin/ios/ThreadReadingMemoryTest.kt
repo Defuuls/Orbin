@@ -23,8 +23,8 @@ import com.orbin.core.model.ThreadStats
 import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
 import com.orbin.domain.repository.InMemoryThreadMemoryRepository
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderAppBarTags
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals

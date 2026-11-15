@@ -12,8 +12,8 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.domain.filter.ContentPolicy
 import com.orbin.graph.orbinProviders
-import com.orbin.uinext.LibrarySection
-import com.orbin.uinext.NextDestination
+import com.orbin.uinext.components.LibrarySection
+import com.orbin.uinext.components.NextDestination
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond

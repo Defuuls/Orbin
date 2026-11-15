@@ -8,6 +8,10 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import com.orbin.uinext.components.InlineAction
+import com.orbin.uinext.components.MIN_TOUCH_TARGET
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

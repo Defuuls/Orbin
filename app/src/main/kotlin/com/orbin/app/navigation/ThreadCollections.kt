@@ -23,10 +23,10 @@ import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.provider.api.ProviderRegistry
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.ThreadCollectionRow
-import com.orbin.uinext.ThreadCollectionScreen
-import com.orbin.uinext.ThreadCollectionStatus
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.screens.ThreadCollectionRow
+import com.orbin.uinext.screens.ThreadCollectionScreen
+import com.orbin.uinext.screens.ThreadCollectionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted

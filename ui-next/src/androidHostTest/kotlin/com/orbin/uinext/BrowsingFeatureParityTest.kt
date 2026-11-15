@@ -16,6 +16,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OpenThreadLinkDialog
+import com.orbin.uinext.screens.SearchScreen
+import com.orbin.uinext.screens.SearchState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

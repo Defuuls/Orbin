@@ -18,11 +18,11 @@ import com.orbin.ios.resources.ios_safe_mode_save_crash_details
 import com.orbin.ios.resources.ios_safe_mode_save_first
 import com.orbin.ios.resources.ios_safe_mode_title
 import com.orbin.ios.resources.ios_safe_mode_try_normally
-import com.orbin.uinext.NextPlatform
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.SafeModeScreen
-import com.orbin.uinext.SafeModeText
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.SafeModeScreen
+import com.orbin.uinext.screens.SafeModeText
 import org.jetbrains.compose.resources.stringResource
 
 /**

@@ -18,11 +18,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.UpdateStatus
-import com.orbin.uinext.NextSnackbarHostState
-import com.orbin.uinext.NextTheme
 import com.orbin.uinext.SettingItem
 import com.orbin.uinext.SettingKind
 import com.orbin.uinext.SettingsScreen
+import com.orbin.uinext.components.NextSnackbarHostState
+import com.orbin.uinext.components.NextTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

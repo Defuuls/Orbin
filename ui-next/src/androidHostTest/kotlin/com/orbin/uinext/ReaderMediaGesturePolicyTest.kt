@@ -1,5 +1,7 @@
 package com.orbin.uinext
 
+import com.orbin.uinext.components.mediaCloseSwipe
+import com.orbin.uinext.components.mediaPlaybackSpeed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

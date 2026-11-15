@@ -4,7 +4,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.UserContentFilters
-import com.orbin.uinext.FeedRow
+import com.orbin.uinext.components.FeedRow
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
