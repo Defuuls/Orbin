@@ -1,25 +1,24 @@
-# Orbin 211 - Alabaster
+# Orbin 212 - Albite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 211
-codename = "Alabaster"
-version_code = 229
+number = 212
+codename = "Albite"
+version_code = 230
 
-highlight = "More reliable iOS video replacement, preserved playback state and stronger native media validation."
+highlight = "Clearer first-run connection errors and reachable Retry controls, including at large text sizes."
 
 summary = [
-  "bump Orbin to 211-Alabaster / versionCode 229",
-  "keep successor videos attached while the previous native player retires",
-  "complete native media regression validation with protected files and bounded waits",
+  "bump Orbin to 212-Albite / versionCode 230",
+  "replace first-run board-loading error details with clear connection guidance",
+  "keep Retry and setup navigation reachable at large text sizes",
 ]
 
 [changelog]
 Fixed = [
-  "Prevented disposal of a previous iOS player from clearing the display controller after its replacement video had attached.",
+  "Resolved iOS delivery validation for bundled media tools without enabling camera access.",
+  "Show a clear connection error when first-run board loading fails instead of long platform networking details.",
+  "Keep Retry and setup navigation reachable when an error or large text would otherwise push them off screen.",
 ]
 Testing = [
-  "Exercised WebM replacement and reopening with real protected app-owned files while retaining local-file privacy restrictions.",
-  "Bounded nested native-player polling and frame-cache cleanup, and made foreground polling tests use one deterministic test clock.",
-  "Enabled independent Swift build, conversion and startup diagnostics after a native-test failure while preserving failed validation gates.",
-  "Added native crash-report collection to support diagnosis of platform failures.",
+  "Added regression coverage for failed first-run board loading and successful retry with long native error details and large text.",
 ]

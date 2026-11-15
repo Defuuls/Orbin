@@ -9,8 +9,8 @@ section for a manual build made between releases, as plain text.
         --bundle-id io.github.defuuls.orbin
 
 It signs its App Store Connect requests with the upload's API key: KEY_ID, ISSUER_ID and the .p8
-file at API_KEY_PATH, from the environment. A new build takes Apple a few minutes to register, so
-it waits for the build to appear before writing its notes.
+file at API_KEY_PATH, from the environment. A new build takes Apple a few minutes to register and
+process, so it waits for processing state VALID before writing its notes.
 
 `--print` only prints the notes it would write, with no network and no key, for checking locally.
 """
@@ -35,7 +35,7 @@ API = "https://api.appstoreconnect.apple.com/v1"
 
 # App Store Connect's limit for "What to Test".
 MAX_NOTES = 4000
-# How long to wait for an uploaded build to show up in App Store Connect.
+# How long to wait for an uploaded build to register and finish processing in App Store Connect.
 BUILD_WAIT_SECONDS = 30 * 60
 BUILD_POLL_SECONDS = 30
 TOKEN_REFRESH_SECONDS = 15 * 60
@@ -141,7 +141,7 @@ def find_build(
     issuer_id: str | None = None,
     key_path: str | None = None,
 ) -> str:
-    """The App Store Connect id of the build just uploaded, waiting for it to register."""
+    """The uploaded build's App Store Connect id, after Apple reports processing state VALID."""
     if callable(bearer_or_factory):
         make_token: Callable[[], str] | None = bearer_or_factory
         bearer = make_token()
@@ -163,18 +163,36 @@ def find_build(
             "filter[app]": app_id,
             "filter[version]": build,
             "filter[preReleaseVersion.version]": marketing,
+            "fields[builds]": "version,processingState",
             "limit": 1,
         }
     )
     deadline = time.monotonic() + BUILD_WAIT_SECONDS
+    last_processing_state: str | None = None
     while True:
         if make_token is not None and (time.monotonic() - token_issued_at) >= TOKEN_REFRESH_SECONDS:
             bearer = make_token()
             token_issued_at = time.monotonic()
         builds = request("GET", f"/builds?{query}", bearer)["data"]
         if builds:
-            return builds[0]["id"]
+            state = (builds[0].get("attributes") or {}).get("processingState")
+            # Only enum labels enter the log; unexpected API values may contain arbitrary text.
+            safe_state = state if state in ("PROCESSING", "VALID", "FAILED", "INVALID") else (
+                "MISSING" if state is None else "UNKNOWN"
+            )
+            if safe_state != last_processing_state:
+                print(f"Build {build} processing state: {safe_state}.", flush=True)
+                last_processing_state = safe_state
+            if state == "VALID":
+                return builds[0]["id"]
+            if state in ("FAILED", "INVALID"):
+                raise SystemExit(f"Build {build} processing failed in App Store Connect ({safe_state}).")
         if time.monotonic() > deadline:
+            if last_processing_state is not None:
+                raise SystemExit(
+                    f"Build {build} did not reach processing state VALID in App Store Connect in time "
+                    f"(last state: {last_processing_state})."
+                )
             raise SystemExit(f"Build {build} did not appear in App Store Connect in time.")
         time.sleep(BUILD_POLL_SECONDS)
 

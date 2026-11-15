@@ -282,18 +282,16 @@ jobs:
       # Installed before any step holds the key, so pip and package build scripts never see it.
       - name: Install the notes script's dependencies
         if: steps.config.outputs.configured == 'true'
-        continue-on-error: true
         run: |
           python3 -m venv "$RUNNER_TEMP/notes-venv"
           "$RUNNER_TEMP/notes-venv/bin/pip" install --quiet "pyjwt[crypto]==2.10.1"
 
-      # Testers read what changed in the TestFlight app: this release's changelog section, or
-      # what is unreleased for a manual build between releases. Apple takes a few minutes to
-      # register a new build, so this waits for it. A failure here leaves the build uploaded,
-      # only without notes, so it warns rather than failing the upload.
-      - name: Set What to Test from the changelog
+      # Confirm Apple processed this exact build and attach its testing notes. A failed or
+      # timed-out processing result must fail delivery verification even after upload succeeds.
+      # The preserved archive and receipts remain available for recovery.
+      - name: Verify Apple processing and set What to Test
         if: steps.config.outputs.configured == 'true'
-        continue-on-error: true
+        shell: bash
         timeout-minutes: 35
         env:
           KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}

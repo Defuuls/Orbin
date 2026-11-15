@@ -6,8 +6,15 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [212-Albite] - 2026-11-15
+
 ### Fixed
-- Declared the camera purpose string App Store Connect requires for the bundled FFmpeg library, which Orbin never uses to access the camera, and checked every iOS archive for missing purpose strings before upload.
+- Resolved iOS delivery validation for bundled media tools without enabling camera access.
+- Show a clear connection error when first-run board loading fails instead of long platform networking details.
+- Keep Retry and setup navigation reachable when an error or large text would otherwise push them off screen.
+
+### Testing
+- Added regression coverage for failed first-run board loading and successful retry with long native error details and large text.
 
 ## [211-Alabaster] - 2026-11-15
 
@@ -3222,7 +3229,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v211-Alabaster...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v212-Albite...HEAD
+[212-Albite]: https://github.com/Defuuls/Orbin/compare/v211-Alabaster...v212-Albite
 [211-Alabaster]: https://github.com/Defuuls/Orbin/compare/v210-Agate...v211-Alabaster
 [210-Agate]: https://github.com/Defuuls/Orbin/compare/v209-Aegirine...v210-Agate
 [209-Aegirine]: https://github.com/Defuuls/Orbin/compare/v208-Adamite...v209-Aegirine
