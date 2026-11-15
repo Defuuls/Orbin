@@ -20,6 +20,7 @@ import com.orbin.domain.thread.replyDepths
 import com.orbin.provider.api.UriParts
 import com.orbin.uinext.LocalReaderPostBodyStyle
 import com.orbin.uinext.MediaCell
+import com.orbin.uinext.MediaKind
 import com.orbin.uinext.next
 import com.orbin.uinext.reader
 import com.orbin.uinext.tokens.ReaderAmoledColors
@@ -66,6 +67,10 @@ class ThreadPresentationIndex(
     val mediaIndex: Map<String, Int> get() = media.mediaIndex
     val fileCells: List<MediaCell> get() = media.fileCells
 
+    // The conversation structure belongs to this immutable snapshot. Reading a post or changing
+    // a user filter only projects it; neither operation rebuilds every quote edge and subtree.
+    internal val replyGraph: ReaderReplyGraph by lazy { buildReaderReplyGraph() }
+
     fun postIdForMediaIndex(index: Int): PostId? = media.owners.getOrNull(index)
 
     fun firstMediaIndex(postId: String): Int? = media.firstByPost[postId]
@@ -74,7 +79,7 @@ class ThreadPresentationIndex(
 /** All model walking, date formatting and rich text preparation happens on [dispatcher]. */
 suspend fun Thread.preparePresentation(
     nowMillis: Long = Clock.System.now().toEpochMilliseconds(),
-    fromSavedCopy: Boolean = false,
+    fromSavedCopy: Boolean = isOfflineCopy,
     dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ThreadPresentationIndex = withContext(dispatcher) { mapThreadPresentation(nowMillis, fromSavedCopy) }
 
@@ -85,7 +90,7 @@ class ThreadPresentationCache {
 
     suspend fun prepare(
         thread: Thread,
-        fromSavedCopy: Boolean = false,
+        fromSavedCopy: Boolean = thread.isOfflineCopy,
         dispatcher: CoroutineDispatcher = Dispatchers.Default,
     ): ThreadPresentationIndex {
         val previous = prepared
@@ -105,7 +110,7 @@ class ThreadPresentationCache {
     /** Filters and formats the actual host load together, caching even a blocked result. */
     suspend fun prepareVisible(
         thread: Thread,
-        fromSavedCopy: Boolean = false,
+        fromSavedCopy: Boolean = thread.isOfflineCopy,
         dispatcher: CoroutineDispatcher = Dispatchers.Default,
     ): ThreadPresentationIndex? {
         val previous = visiblePrepared
@@ -161,6 +166,15 @@ private fun Thread.mapThreadPresentation(
                     board = "/${key.board.value}/",
                     spoiler = attachment.isSpoiler,
                     details = attachment.attachmentDetails(),
+                    kind =
+                        when (attachment.type) {
+                            com.orbin.core.model.MediaType.IMAGE,
+                            com.orbin.core.model.MediaType.ANIMATED_IMAGE,
+                            -> MediaKind.IMAGE
+                            com.orbin.core.model.MediaType.VIDEO -> MediaKind.VIDEO
+                            com.orbin.core.model.MediaType.AUDIO -> MediaKind.AUDIO
+                            else -> MediaKind.UNKNOWN
+                        },
                 ),
             )
             owners.add(post.id)
@@ -209,6 +223,11 @@ private fun Thread.mapRows(posts: List<Post>): List<ThreadRow> {
                             .orEmpty(),
                     replies = counts[post.id] ?: 0,
                     replyNumbers = replies[post.id].orEmpty(),
+                    posterId = post.poster.posterId,
+                    posterName = post.poster.name,
+                    posterTripcode = post.poster.tripcode,
+                    posterCountry = post.poster.countryName ?: post.poster.countryCode,
+                    posterCapcode = post.poster.capcode,
                 ),
             comment = preparePostComment(post.comment, commentPalettes, isolateQuoteLinks = true),
         )

@@ -186,6 +186,34 @@ class HomeBoardFollowingTest {
             model.viewModelScope.cancel()
         }
 
+    @Test
+    fun `favoriting never follows a board and remains qualified by source`() =
+        runTest {
+            val fourchan = ProviderId("fourchan")
+            val bbwchan = ProviderId("bbwchan")
+            val preferences = Preferences()
+            val model = createModel(preferences, FakeSettingsRepository())
+            backgroundScope.launch { model.favoriteBoards.collect {} }
+            backgroundScope.launch { model.followedBoards.collect {} }
+            runCurrent()
+            model.setFavorite("g", true, "fourchan")
+            runCurrent()
+            assertThat(model.favoriteBoards.value.contains("fourchan", "g")).isTrue()
+            assertThat(model.followedBoards.value.boardIds).isEmpty()
+            assertThat(preferences.subscribed.value).isEmpty()
+            model.selectSite("bbwchan")
+            runCurrent()
+            assertThat(model.favoriteBoards.value.contains("bbwchan", "g")).isFalse()
+            model.setFavorite("g", true, "bbwchan")
+            runCurrent()
+            model.setFavorite("g", false, "fourchan")
+            runCurrent()
+            assertThat(preferences.favorites.value[fourchan]).isEmpty()
+            assertThat(preferences.favorites.value[bbwchan]).containsExactly(BoardId("g"))
+            assertThat(preferences.subscribed.value).isEmpty()
+            model.viewModelScope.cancel()
+        }
+
     private fun createModel(
         preferences: BoardPreferencesRepository,
         settings: FakeSettingsRepository,

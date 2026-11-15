@@ -254,14 +254,46 @@ class SearchViewModelTest {
             assertThat(queries).hasSize(1)
         }
 
+    @Test
+    fun `site search session retains a loaded reply and pagination while local results change`() =
+        runTest {
+            val provider =
+                object : ImageBoardProvider by com.orbin.core.testing.repository
+                    .FakeImageBoardProvider() {
+                    override val metadata =
+                        ProviderMetadata(ProviderId("fourchan"), "4chan", "https://boards.4chan.org")
+                }
+            val model = createViewModel(FakeSearchRepository(listOf(result)), registry = FakeProviderRegistry(provider))
+            model.webSearchBoards!!.first { it.isNotEmpty() }
+            val session = checkNotNull(model.webSearchSession)
+            session.submit("cats")
+            val request = session.state.value
+            session.page(
+                request.requestUrl,
+                """{"recognized":true,"hits":[{"url":"https://boards.4chan.org/g/thread/7#p8","subject":"Cats","comment":"Reply match","name":"Anonymous"}],"next":25}""",
+                request.requestId,
+            )
+            model.search("local query")
+            model.state.first { it is SearchUiState.Results }
+            assertThat(model.webSearchSession).isSameInstanceAs(session)
+            assertThat(session.state.value.requestId).isEqualTo(request.requestId)
+            assertThat(
+                session.state.value.hits
+                    .single()
+                    .link.post
+                    ?.value,
+            ).isEqualTo(8L)
+            assertThat(session.state.value.nextOffset).isEqualTo(25)
+        }
+
     private fun createViewModel(
         repository: SearchRepository,
         settings: AppSettings = AppSettings.Default,
         boards: List<Board> = listOf(Board(BoardId("g"), "Technology")),
         subscribed: Set<BoardId> = setOf(BoardId("g")),
         favorites: Set<BoardId> = emptySet(),
+        registry: ProviderRegistry = FakeProviderRegistry(),
     ): SearchViewModel {
-        val registry = FakeProviderRegistry()
         val settingsRepository = FakeSettingsRepository(settings)
         return SearchViewModel(
             searchRepository = repository,

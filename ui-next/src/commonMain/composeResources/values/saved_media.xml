@@ -1,0 +1,28 @@
+<resources>
+    <string name="saved_media_title">Saved media</string>
+    <string name="saved_media_transfers">Transfers</string>
+    <string name="saved_media_search">Search saved files</string>
+    <string name="saved_media_all">All</string>
+    <string name="saved_media_images">Images</string>
+    <string name="saved_media_videos">Videos</string>
+    <string name="saved_media_newest">Newest first</string>
+    <string name="saved_media_oldest">Oldest first</string>
+    <string name="saved_media_name">File name</string>
+    <string name="saved_media_largest">Largest first</string>
+    <string name="saved_media_select">Select files</string>
+    <string name="saved_media_select_all">Select visible</string>
+    <string name="saved_media_done">Done</string>
+    <string name="saved_media_selected">%1$d selected</string>
+    <string name="saved_media_share">Share</string>
+    <string name="saved_media_export">Save to device</string>
+    <string name="saved_media_delete">Delete</string>
+    <string name="saved_media_delete_title">Delete saved files?</string>
+    <string name="saved_media_delete_message">Delete %1$d files from Orbin? Copies already saved to your device remain available.</string>
+    <string name="saved_media_empty">No saved media</string>
+    <string name="saved_media_empty_hint">Save images and videos from a thread to keep an offline copy in Orbin.</string>
+    <string name="saved_media_no_matches">No matching files</string>
+    <string name="saved_media_no_matches_hint">Try a different name, board, or media filter.</string>
+    <string name="saved_media_open">Open saved file</string>
+    <string name="saved_media_progress">%1$d of %2$d</string>
+    <string name="saved_media_other">File</string>
+</resources>

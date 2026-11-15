@@ -12,4 +12,9 @@
     <string name="downloads_status_completed">Completed</string>
     <string name="downloads_status_failed">Failed</string>
     <string name="downloads_empty_hint">Downloaded files will appear here.</string>
+    <string name="downloads_library">Saved media</string>
+    <string name="downloads_transfers">Transfers</string>
+    <string name="downloads_export_title">Save to device?</string>
+    <string name="downloads_export_confirmation">Save these files outside Orbin to your selected download folder? They will be accessible to other apps.</string>
+    <string name="downloads_export_confirm">Save</string>
 </resources>

@@ -67,7 +67,7 @@ data class ScanSettings(
 ) {
     // Reader tags are gone, so only the permanent filter applies on top of the NSFW choice.
     constructor(settings: AppSettings) : this(
-        hideNsfwBoards = settings.hideNsfwBoards,
+        hideNsfwBoards = settings.nsfwContentHidden,
         hiddenTokens = emptySet(),
         coverViolentMedia = settings.coverViolentMedia,
     )

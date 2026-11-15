@@ -106,10 +106,37 @@ object OrbinSchemaMigrations {
                 endVersion = 8,
                 statements =
                     listOf(
-                        "CREATE INDEX IF NOT EXISTS `index_bookmarks_createdAtMillis` ON `bookmarks` (`createdAtMillis`)",
+                        "CREATE INDEX IF NOT EXISTS `index_bookmarks_createdAtMillis` " +
+                            "ON `bookmarks` (`createdAtMillis`)",
                         "CREATE INDEX IF NOT EXISTS `index_bookmarks_isWatched` ON `bookmarks` (`isWatched`)",
-                        "CREATE INDEX IF NOT EXISTS `index_history_lastVisitedMillis` ON `history` (`lastVisitedMillis`)",
-                        "CREATE INDEX IF NOT EXISTS `index_downloads_createdAtMillis` ON `downloads` (`createdAtMillis`)",
+                        "CREATE INDEX IF NOT EXISTS `index_history_lastVisitedMillis` " +
+                            "ON `history` (`lastVisitedMillis`)",
+                        "CREATE INDEX IF NOT EXISTS `index_downloads_createdAtMillis` " +
+                            "ON `downloads` (`createdAtMillis`)",
+                    ),
+            ),
+            OrbinSchemaMigration(
+                startVersion = 8,
+                endVersion = 9,
+                statements =
+                    listOf(
+                        "CREATE TABLE IF NOT EXISTS `offline_thread_copies` (" +
+                            "`provider` TEXT NOT NULL, `board` TEXT NOT NULL, `thread` INTEGER NOT NULL, " +
+                            "`payload` TEXT NOT NULL, `updatedAtMillis` INTEGER NOT NULL, " +
+                            "`sizeBytes` INTEGER NOT NULL, " +
+                            "PRIMARY KEY(`provider`, `board`, `thread`))",
+                        "CREATE TABLE IF NOT EXISTS `thread_memory` (" +
+                            "`provider` TEXT NOT NULL, `board` TEXT NOT NULL, `thread` INTEGER NOT NULL, " +
+                            "`updatedAtMillis` INTEGER NOT NULL, `payload` TEXT NOT NULL, " +
+                            "PRIMARY KEY(`provider`, `board`, `thread`))",
+                        "CREATE TABLE IF NOT EXISTS `media_library` (" +
+                            "`id` TEXT NOT NULL, `provider` TEXT NOT NULL, `storageKey` TEXT NOT NULL, " +
+                            "`fileName` TEXT NOT NULL, `savedAtMillis` INTEGER NOT NULL, `payload` TEXT NOT NULL, " +
+                            "PRIMARY KEY(`id`))",
+                        "ALTER TABLE `downloads` ADD COLUMN `mediaContextJson` TEXT",
+                        "ALTER TABLE `downloads` ADD COLUMN `privateTarget` INTEGER NOT NULL DEFAULT 0",
+                        "ALTER TABLE `bookmarks` ADD COLUMN `availability` TEXT NOT NULL DEFAULT 'UNKNOWN'",
+                        "ALTER TABLE `bookmarks` ADD COLUMN `statusCheckedAtMillis` INTEGER NOT NULL DEFAULT 0",
                     ),
             ),
         )

@@ -5,12 +5,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -25,6 +27,7 @@ import com.orbin.uinext.DownloadTags
 import com.orbin.uinext.NextConfirmDialog
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.PlatformSegments
 import com.orbin.uinext.ReaderEmptyState
 import com.orbin.uinext.ReaderMenuItem
 import com.orbin.uinext.ReaderScaffold
@@ -46,6 +49,7 @@ fun DownloadsScreen(
 ) {
     val downloads by viewModel.downloads.collectAsStateWithLifecycle()
     var showClearDialog by remember { mutableStateOf(false) }
+    var librarySelected by rememberSaveable { mutableStateOf(false) }
     val clearLabel = stringResource(R.string.downloads_clear_action)
     val title = stringResource(R.string.downloads_title)
 
@@ -58,7 +62,7 @@ fun DownloadsScreen(
                 onDestination = onDestination,
                 onBack = onBack,
                 overflow =
-                    if (downloads.isEmpty()) {
+                    if (librarySelected || downloads.isEmpty()) {
                         emptyList()
                     } else {
                         listOf(
@@ -66,12 +70,28 @@ fun DownloadsScreen(
                         )
                     },
             ) { bottomPad ->
-                DownloadsContent(
-                    downloads = downloads,
-                    // A supplied navigation bar consumes its own system-bottom safe inset.
-                    bottomPad = if (bottomBar == null) bottomPad else PaddingValues(),
-                    onRetry = { viewModel.retry(it) },
-                )
+                Column(Modifier.fillMaxSize()) {
+                    PlatformSegments(
+                        labels =
+                            listOf(
+                                stringResource(R.string.downloads_library),
+                                stringResource(R.string.downloads_transfers),
+                            ),
+                        selected = if (librarySelected) 0 else 1,
+                        onSelect = { librarySelected = it == 0 },
+                        modifier = Modifier.padding(horizontal = ReaderSpace.gutter, vertical = 8.dp),
+                    )
+                    if (librarySelected) {
+                        SavedMediaLibraryContent()
+                    } else {
+                        DownloadsContent(
+                            downloads = downloads,
+                            // A supplied navigation bar consumes its own system-bottom safe inset.
+                            bottomPad = if (bottomBar == null) bottomPad else PaddingValues(),
+                            onRetry = { viewModel.retry(it) },
+                        )
+                    }
+                }
             }
             bottomBar?.invoke()
         }

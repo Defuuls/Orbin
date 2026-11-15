@@ -98,6 +98,14 @@ data class SettingItem(
     val copyable: Boolean = false,
     /** Boolean state stays independent of the displayed, possibly localized value. */
     val checked: Boolean? = null,
+    val filterRules: List<SettingFilterRule>? = null,
+)
+
+/** Plain presentation data; platform adapters map these rules to their persisted domain models. */
+data class SettingFilterRule(
+    val kind: String = "TEXT",
+    val pattern: String,
+    val regex: Boolean = false,
 )
 
 enum class SettingKind {
@@ -119,6 +127,7 @@ fun SettingsScreen(
     onActivate: (SettingItem) -> Unit = {},
     onSelectOption: (SettingItem, Int) -> Unit = { _, _ -> },
     onCommitText: (SettingItem, String) -> Unit = { _, _ -> },
+    onCommitFilters: (SettingItem, List<SettingFilterRule>) -> Unit = { _, _ -> },
     onBack: (() -> Unit)? = null,
     onNavigate: ((String) -> Unit)? = null,
     enabledSiteCount: Int? = null,
@@ -190,8 +199,28 @@ fun SettingsScreen(
     val contact = allRows.firstOrNull { it.id == "contact" && it.kind == SettingKind.ACTION }
     val colors = settingsStyle
     val currentState = if (searchVisible) searchState else rootState
+    val searchFocus = remember { FocusRequester() }
     val title = fullPageChoice?.label ?: stringResource(Res.string.reader_settings_title)
-    Column(modifier.fillMaxSize().background(colors.background).testTag("reader-settings-root")) {
+    Column(
+        modifier
+            .readerKeyboardShortcuts(
+                onBack = if (localBack) closeLocal else onBack,
+                onSearch =
+                    if (fullPageChoice ==
+                        null
+                    ) {
+                        {
+                            searchState.requestScrollToItem(0)
+                            searchVisible = true
+                        }
+                    } else {
+                        null
+                    },
+            ).readerBackSwipe(if (localBack) closeLocal else onBack)
+            .fillMaxSize()
+            .background(colors.background)
+            .testTag("reader-settings-root"),
+    ) {
         SettingsNavigationBar(
             title = title,
             onBack = if (localBack) closeLocal else onBack,
@@ -231,6 +260,7 @@ fun SettingsScreen(
                 ) {
                     if (searchVisible) {
                         item(key = "search") {
+                            LaunchedEffect(Unit) { searchFocus.requestFocus() }
                             val searchLabel = stringResource(Res.string.next_settings_search)
                             SchematicSearch(
                                 value = query,
@@ -238,9 +268,13 @@ fun SettingsScreen(
                                 placeholder = searchLabel,
                                 shape = RoundedCornerShape(22.dp),
                                 modifier =
-                                    Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics {
-                                        contentDescription = searchLabel
-                                    },
+                                    Modifier
+                                        .focusRequester(
+                                            searchFocus,
+                                        ).padding(horizontal = 16.dp, vertical = 8.dp)
+                                        .semantics {
+                                            contentDescription = searchLabel
+                                        },
                             )
                         }
                     } else {
@@ -297,6 +331,7 @@ fun SettingsScreen(
                                         divider = index < rows.lastIndex,
                                         onActivate = activate,
                                         onCommitText = onCommitText,
+                                        onCommitFilters = onCommitFilters,
                                         choiceVisible = item.id == choiceId,
                                         onSelectOption = { selected ->
                                             onSelectOption(item, selected)
@@ -595,6 +630,7 @@ private fun SettingRow(
     divider: Boolean,
     onActivate: (SettingItem) -> Unit,
     onCommitText: (SettingItem, String) -> Unit,
+    onCommitFilters: (SettingItem, List<SettingFilterRule>) -> Unit,
     choiceVisible: Boolean = false,
     onSelectOption: (Int) -> Unit = {},
     onDismissChoice: () -> Unit = {},
@@ -725,7 +761,11 @@ private fun SettingRow(
                         modifier = Modifier.padding(start = 58.dp, end = 14.dp, bottom = 10.dp),
                     )
                 }
-                SettingTextEditor(item, onCommitText)
+                if (item.filterRules != null) {
+                    SettingsFilterEditor(item, onCommitFilters)
+                } else {
+                    SettingTextEditor(item, onCommitText)
+                }
             }
             if (divider) SettingsRowDivider()
         }
@@ -813,7 +853,7 @@ private fun SettingTextEditor(
                     visualTransformation =
                         if (item.secret) PasswordVisualTransformation() else VisualTransformation.None,
                     keyboardActions = KeyboardActions(onDone = { commit() }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                    modifier = Modifier.readerTextEntry().fillMaxWidth().focusRequester(focus),
                 )
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))

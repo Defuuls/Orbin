@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
@@ -68,8 +71,23 @@ internal fun ReaderSearchScreen(
     onOpenRow: (SearchRow) -> Unit,
     modifier: Modifier,
     onBack: (() -> Unit)?,
+    webSearch: (@Composable (String) -> Unit)? = null,
+    onWebSearch: ((String) -> Unit)? = null,
 ) {
+    var global by rememberSaveable { mutableStateOf(false) }
+    var submitted by rememberSaveable { mutableStateOf("") }
+    var submission by rememberSaveable { mutableStateOf(0) }
     var selectedSource by rememberSaveable { mutableStateOf<String?>(null) }
+    val searchFocus = remember { FocusRequester() }
+    val submitSearch: () -> Unit = {
+        if (global) {
+            submitted = query.trim()
+            submission++
+            onWebSearch?.invoke(submitted)
+        } else {
+            onSearch()
+        }
+    }
     val rows = (state as? SearchState.Results)?.rows.orEmpty()
     val sources =
         remember(rows) {
@@ -83,6 +101,11 @@ internal fun ReaderSearchScreen(
     Column(
         modifier =
             modifier
+                .readerKeyboardShortcuts(
+                    onBack = onBack,
+                    onRefresh = submitSearch,
+                    onSearch = { searchFocus.requestFocus() },
+                ).readerBackSwipe(onBack)
                 .fillMaxSize()
                 .background(next.background)
                 .windowInsetsPadding(
@@ -97,16 +120,27 @@ internal fun ReaderSearchScreen(
                 ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        SearchNavigationBar(query, onQueryChange, onSearch, onBack)
-        if (state is SearchState.Results && sources.isNotEmpty()) {
+        if (webSearch != null) {
+            PlatformSegments(
+                labels = listOf("Followed boards", "All of 4chan"),
+                selected = if (global) 1 else 0,
+                onSelect = { global = it == 1 },
+            )
+        }
+        SearchNavigationBar(query, onQueryChange, submitSearch, onBack, searchFocus)
+        if (!global && state is SearchState.Results && sources.isNotEmpty()) {
             SearchSourceTabs(sources, selectedSource) { selectedSource = it }
         }
         Box(Modifier.weight(1f)) {
-            SearchResults(
-                state = if (state is SearchState.Results) SearchState.Results(visibleRows) else state,
-                onOpenRow = onOpenRow,
-                onRetry = onSearch,
-            )
+            if (global && webSearch != null) {
+                key(if (onWebSearch == null) submission else 0) { webSearch(submitted) }
+            } else {
+                ReaderSearchResults(
+                    state = if (state is SearchState.Results) SearchState.Results(visibleRows) else state,
+                    onOpenRow = onOpenRow,
+                    onRetry = onSearch,
+                )
+            }
         }
     }
 }
@@ -117,6 +151,7 @@ private fun SearchNavigationBar(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onBack: (() -> Unit)?,
+    searchFocus: FocusRequester,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val submit = {
@@ -142,7 +177,7 @@ private fun SearchNavigationBar(
                     onValueChange = onQueryChange,
                     placeholder = stringResource(Res.string.next_search_query_label),
                     onSearch = submit,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).focusRequester(searchFocus),
                     shape = RoundedCornerShape(12.dp),
                 )
                 if (!stackAction) SearchSubmit(submit)
@@ -230,7 +265,7 @@ private fun SearchSourceTabs(
 }
 
 @Composable
-private fun SearchResults(
+internal fun ReaderSearchResults(
     state: SearchState,
     onOpenRow: (SearchRow) -> Unit,
     onRetry: () -> Unit,

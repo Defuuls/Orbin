@@ -102,12 +102,14 @@ internal fun AppContent(
         canonicalNextPalette(
             settings.themeMode.isDark(),
             settings.amoled,
+            settings.accentTheme.name,
         )
     NextTheme(
         darkTheme = nextPalette.dark,
         amoled = nextPalette.amoled,
         palette = nextPalette,
         platform = NextPlatform.ANDROID,
+        showSavedMediaTab = settings.showSavedMediaTab,
     ) {
         // Exactly one appearance owner: a skipped parent must not compete with Home's
         // white icons or leave them behind when a light lock/loading surface replaces it.

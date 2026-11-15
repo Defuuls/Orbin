@@ -1,0 +1,17 @@
+<resources>
+    <string name="collection_manage">Manage threads</string>
+    <string name="collection_refresh">Refresh thread status</string>
+    <string name="collection_refreshing">Refreshing thread status…</string>
+    <string name="collection_newest">Newest first</string>
+    <string name="collection_oldest">Oldest first</string>
+    <string name="collection_mark_read">Mark as read</string>
+    <string name="collection_mark_all_read">Mark all as read</string>
+    <string name="collection_remove">Remove</string>
+    <string name="collection_clear">Clear this collection</string>
+    <string name="collection_clear_question">Remove all threads from this collection?</string>
+    <string name="collection_remove_deleted">Remove deleted threads</string>
+    <string name="collection_cancel">Cancel</string>
+    <string name="collection_live">Live</string>
+    <string name="collection_archived">Archived</string>
+    <string name="collection_deleted">Deleted</string>
+</resources>

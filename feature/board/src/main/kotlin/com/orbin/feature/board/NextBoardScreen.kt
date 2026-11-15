@@ -43,6 +43,7 @@ import com.orbin.uinext.ReaderNavigation
 import com.orbin.uinext.ReaderRefreshFailure
 import com.orbin.uinext.ReaderScaffold
 import com.orbin.uinext.catalogSortTabs
+import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 /** A paged catalog keeps its frame and loaded rows through refresh failures. */
 @Composable
@@ -103,7 +104,12 @@ fun NextBoardScreen(
         if (sourceIndex in 0 until threads.itemCount) threads[sourceIndex]
         rows.getOrNull(sourceIndex)
     }
-    val mode = CatalogMode.CARD
+    val mode =
+        when (settings.catalogMode) {
+            StoredCatalogMode.LIST -> CatalogMode.LIST
+            StoredCatalogMode.GRID -> CatalogMode.GRID
+            StoredCatalogMode.CARD -> CatalogMode.CARD
+        }
     val wide =
         with(density) {
             isWideWindow(
@@ -177,7 +183,15 @@ fun NextBoardScreen(
                             }
                         },
                         mode = mode,
-                        onModeChange = null,
+                        onModeChange = { selected ->
+                            viewModel.setCatalogMode(
+                                when (selected) {
+                                    CatalogMode.LIST -> StoredCatalogMode.LIST
+                                    CatalogMode.GRID -> StoredCatalogMode.GRID
+                                    CatalogMode.CARD -> StoredCatalogMode.CARD
+                                },
+                            )
+                        },
                         onReload = threads::refresh,
                         reloading = load.isRefreshing,
                         wideWindow = wide,

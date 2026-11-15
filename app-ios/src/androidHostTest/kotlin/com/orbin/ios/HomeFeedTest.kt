@@ -134,6 +134,65 @@ class HomeFeedTest {
         }
 
     @Test
+    fun favoritesFeedUsesIndependentProviderQualifiedStarsAndAnEmptySetNeverFallsBackToFollows() =
+        runTest {
+            val fixture = Fixture(backgroundScope, sources = listOf("one", "two"), count = 3)
+            fixture.followed.value = setOf(fixture.key("one", 0))
+            fixture.preferences.setFavoriteBoard(ProviderId("two"), fixture.key("two", 1).board, true)
+            fixture.favoritesOnly.value = true
+            val home = fixture.start()
+            runCurrent()
+            assertEquals(setOf(fixture.key("two", 1)), fixture.requested.toSet())
+            assertEquals(
+                setOf(fixture.key("two", 1)),
+                home.rows().mapTo(mutableSetOf()) {
+                    FollowedBoard(it.provider, it.thread.key.board)
+                },
+            )
+            assertEquals(setOf(fixture.key("one", 0)), fixture.followed.value)
+            fixture.preferences.setFavoriteBoard(ProviderId("two"), fixture.key("two", 1).board, false)
+            runCurrent()
+            assertTrue(home.rows().isEmpty(), "empty favorites cannot substitute followed boards")
+            fixture.favoritesOnly.value = false
+            runCurrent()
+            assertEquals(
+                setOf(fixture.key("one", 0)),
+                home.rows().mapTo(mutableSetOf()) {
+                    FollowedBoard(it.provider, it.thread.key.board)
+                },
+            )
+        }
+
+    @Test
+    fun regexAndPinnedPreferencesRefilterCachedHomeWithoutAnotherCatalogRequest() =
+        runTest {
+            val fixture = Fixture(backgroundScope, count = 1)
+            fixture.catalog = { key ->
+                listOf(
+                    video(key, 1).let { it.copy(stats = it.stats.copy(isSticky = true)) },
+                    video(key, 2).let { it.copy(originalPost = it.originalPost.copy(subject = "Garden conversation")) },
+                    video(key, 3),
+                )
+            }
+            val home = fixture.start()
+            runCurrent()
+            assertEquals(setOf(1L, 2L, 3L), home.rows().map { it.thread.key.thread.value }.toSet())
+            fixture.settings.value =
+                fixture.settings.value.copy(
+                    hiddenThreadPatterns = listOf("garden.*conversation"),
+                    showStickyThreads = false,
+                )
+            runCurrent()
+            assertEquals(listOf(3L), home.rows().map { it.thread.key.thread.value })
+            assertEquals(1, fixture.requested.size)
+            fixture.settings.value =
+                fixture.settings.value.copy(hiddenThreadPatterns = emptyList(), showStickyThreads = true)
+            runCurrent()
+            assertEquals(setOf(1L, 2L, 3L), home.rows().map { it.thread.key.thread.value }.toSet())
+            assertEquals(1, fixture.requested.size)
+        }
+
+    @Test
     fun homeLoadsEverySubscribedBoardBeyondTheFormerDiscoveryPageWithoutFetchingOutsiders() =
         runTest {
             val fixture = Fixture(backgroundScope, count = 16)
@@ -512,6 +571,7 @@ class HomeFeedTest {
                 sources.flatMap { id -> (0 until count).map { key(id, it) } }.toSet(),
             )
         val source = MutableStateFlow<ProviderId?>(null)
+        val favoritesOnly = MutableStateFlow(false)
         val firstRun = MutableStateFlow(FirstRunState(initialized = true, needed = false))
         val directory =
             MutableStateFlow(
@@ -585,6 +645,7 @@ class HomeFeedTest {
             firstRun,
             scope,
             catalogDispatcher,
+            favoritesOnly = favoritesOnly,
         ) {
             true
         }

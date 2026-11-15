@@ -1,0 +1,5 @@
+<resources>
+    <string name="feed_favorites">Favorites</string>
+    <string name="feed_favorites_empty_title">No favorite threads</string>
+    <string name="feed_favorites_empty_message">Star boards in Boards to see their threads here. Favorites do not change the boards you follow.</string>
+</resources>

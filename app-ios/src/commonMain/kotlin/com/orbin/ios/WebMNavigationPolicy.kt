@@ -8,8 +8,14 @@ package com.orbin.ios
  * null or empty URL for `loadHTMLString` with a null base URL). Everything else — http(s), file,
  * javascript, data, blob, and other about: pages — is refused.
  */
-internal fun shouldAllowWebMNavigation(url: String?): Boolean {
+internal fun shouldAllowWebMNavigation(
+    url: String?,
+    localDocumentUrl: String? = null,
+): Boolean {
     if (url.isNullOrBlank()) return true
+    // This exact app-created document is supplied only after staging an owned file. Giving a
+    // WKWebView directory access must never become permission to navigate to arbitrary files.
+    if (localDocumentUrl != null && url == localDocumentUrl) return true
     val lower = url.trim().lowercase()
     return lower == "about:blank" ||
         lower == "about:srcdoc" ||

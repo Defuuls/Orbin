@@ -9,12 +9,16 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterKind
+import com.orbin.core.model.PostFilterRule
+import com.orbin.core.model.ThreadLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -38,6 +42,31 @@ class SettingsStoreTest {
                 ),
             scope = this,
         )
+
+    @Test
+    fun featurePreferencesRoundTripWithoutRevivingLegacyThemeKeys() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit { it[LegacyThemeMigration.COLOR_THEME] = "PURPLE" }
+            val store = SettingsStore(dataStore)
+            val rules = listOf(PostFilterRule(PostFilterKind.COUNTRY, "Example"))
+            store.setAccentTheme(AccentTheme.TEAL)
+            store.setThreadLayout(ThreadLayout.FLAT)
+            store.setHistorySessionOnly(true)
+            store.setPrivateSavedFiles(true)
+            store.setFullscreenAutoAdvance(true)
+            store.setHiddenThreadPatterns(listOf("example.*"))
+            store.setPostFilterRules(rules)
+            val restored = SettingsStore(dataStore).settings.first()
+            assertEquals(AccentTheme.TEAL, restored.accentTheme)
+            assertEquals(ThreadLayout.FLAT, restored.threadLayout)
+            assertTrue(restored.historySessionOnly)
+            assertTrue(restored.privateSavedFiles)
+            assertTrue(restored.fullscreenAutoAdvance)
+            assertEquals(listOf("example.*"), restored.hiddenThreadPatterns)
+            assertEquals(rules, restored.postFilterRules)
+            assertTrue(LegacyThemeMigration.COLOR_THEME !in dataStore.data.first())
+        }
 
     @Test
     fun scopedPlaybackPersistsAndResetResumesInheritance() =
@@ -153,9 +182,28 @@ class SettingsStoreTest {
         }
 
     @Test
-    fun aNewStoreReadsAsTheDefaults() =
+    fun aNewStoreStartsWithSfwBoardsWhileOtherDefaultsAreUnchanged() =
         runTest {
-            assertEquals(AppSettings.Default, SettingsStore(backgroundScope.dataStore()).settings.first())
+            assertEquals(
+                AppSettings.Default.copy(hideNsfwBoards = true),
+                SettingsStore(backgroundScope.dataStore()).settings.first(),
+            )
+        }
+
+    @Test
+    fun privacyDefaultsPreserveLegacyImplicitAndExplicitChoices() =
+        runTest {
+            val legacy = backgroundScope.dataStore()
+            legacy.edit { it[stringPreferencesKey("theme_mode")] = "DARK" }
+            assertEquals(false, SettingsStore(legacy).settings.first().hideNsfwBoards)
+            val explicit = backgroundScope.dataStore()
+            explicit.edit { it[booleanPreferencesKey("hide_nsfw_boards")] = false }
+            assertEquals(false, SettingsStore(explicit).settings.first().hideNsfwBoards)
+            val fresh = backgroundScope.dataStore()
+            val settings = SettingsStore(fresh)
+            assertTrue(settings.settings.first().hideNsfwBoards)
+            settings.setHideNsfwBoards(false)
+            assertEquals(false, SettingsStore(fresh).settings.first().hideNsfwBoards)
         }
 
     @Test

@@ -6,15 +6,23 @@ import com.orbin.core.model.BackupBookmark
 import com.orbin.core.model.BackupDocument
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
-import com.orbin.core.model.FormFactor
-import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.decodeBackupDocument
+import com.orbin.core.model.portableExport
+import com.orbin.core.model.toBackupHistory
+import com.orbin.core.model.toHistoryEntry
+import com.orbin.data.backup.PortableBackupArchive
+import com.orbin.data.util.defaultFileSystem
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
+import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.ManagedMediaFiles
+import com.orbin.domain.repository.MediaLibraryRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
+import com.orbin.domain.repository.restorePortableSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -26,6 +34,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import okio.Path.Companion.toPath
+import kotlin.random.Random
 import kotlin.time.Clock
 
 /**
@@ -41,6 +51,16 @@ interface BackupFiles {
 
     /** The text of a backup file the reader picked, or null when they cancelled. */
     suspend fun pick(): String?
+
+    val supportsArchives: Boolean get() = false
+
+    /** The caller owns and deletes these local files after the system sheet completes. */
+    suspend fun shareFile(
+        fileName: String,
+        sourcePath: String,
+    ): Boolean = error("Archive sharing is unavailable")
+
+    suspend fun pickFile(): String? = error("Archive picking is unavailable")
 }
 
 /** What the settings rows say about the last export or import. */
@@ -54,6 +74,7 @@ sealed interface BackupState {
     data class Imported(
         val boards: Int,
         val bookmarks: Int,
+        val mediaFiles: Int = 0,
     ) : BackupState
 
     data class Failed(
@@ -85,6 +106,11 @@ class IosBackup(
      * dropping every imported thumbnail.
      */
     private val isOwnMediaUrl: (ProviderId, String) -> Boolean = { _, _ -> false },
+    private val history: HistoryRepository? = null,
+    private val threadMemory: ThreadMemoryRepository? = null,
+    private val mediaLibrary: MediaLibraryRepository? = null,
+    private val managedMediaFiles: ManagedMediaFiles? = null,
+    private val temporaryDirectory: String? = null,
 ) {
     private val _state = MutableStateFlow<BackupState>(BackupState.Idle)
     val state: StateFlow<BackupState> = _state.asStateFlow()
@@ -94,14 +120,46 @@ class IosBackup(
     /** Writes a backup and opens the share sheet for it. */
     fun export() =
         perform {
-            val contents = exportToJson()
-            requireAuthorization()
-            if (files.share(fileName(), contents)) BackupState.Exported else BackupState.Idle
+            if (files.supportsArchives) {
+                val suffix = Random.nextLong().toString(RANDOM_NAME_RADIX)
+                val directory = checkNotNull(temporaryDirectory).toPath() / "backup-$suffix"
+                val path = directory / fileName().removeSuffix(".json").plus(".zip")
+                try {
+                    archive().export(path, exportDocument(), ::requireAuthorization)
+                    requireAuthorization()
+                    if (files.shareFile(path.name, path.toString())) BackupState.Exported else BackupState.Idle
+                } finally {
+                    defaultFileSystem.deleteRecursively(directory, mustExist = false)
+                }
+            } else {
+                val contents = exportToJson()
+                requireAuthorization()
+                if (files.share(fileName(), contents)) BackupState.Exported else BackupState.Idle
+            }
         }
 
     /** Asks for a backup file and restores it. */
     fun import() =
         perform {
+            if (files.supportsArchives) {
+                val path = files.pickFile()?.toPath() ?: return@perform BackupState.Idle
+                try {
+                    val restored =
+                        archive().restore(
+                            path,
+                            acceptsProvider = { it in providers.map { provider -> provider.value } },
+                            restoreMetadata = { importDocument(it).getOrThrow() },
+                            authorize = ::requireAuthorization,
+                        )
+                    return@perform BackupState.Imported(
+                        restored.metadata.first,
+                        restored.metadata.second,
+                        restored.mediaFiles,
+                    )
+                } finally {
+                    defaultFileSystem.delete(path, mustExist = false)
+                }
+            }
             val text = files.pick() ?: return@perform BackupState.Idle
             requireAuthorization()
             importFromJson(text).fold(
@@ -110,17 +168,27 @@ class IosBackup(
             )
         }
 
-    suspend fun exportToJson(): String {
+    suspend fun exportToJson(): String = json.encodeToString(BackupDocument.serializer(), exportDocument())
+
+    suspend fun exportDocument(): BackupDocument {
         val document =
             BackupDocument(
                 exportedAt = now(),
                 exportedByAppVersion = appVersion,
-                settings = settings.settings.first(),
+                settings = settings.settings.first().portableExport(),
                 subscribedBoards = providers.flatMap { it.refs(subscribed = true) },
                 favoriteBoards = providers.flatMap { it.refs(subscribed = false) },
                 bookmarks = bookmarks.observeBookmarks().first().map { it.toBackup() },
+                history =
+                    history
+                        ?.observeAllEntries()
+                        ?.first()
+                        .orEmpty()
+                        .map { it.toBackupHistory() },
+                threadMemory = threadMemory?.observeAll()?.first().orEmpty(),
+                savedMedia = mediaLibrary?.observeAll()?.first().orEmpty(),
             )
-        return json.encodeToString(BackupDocument.serializer(), document)
+        return document
     }
 
     /** Restores [backupJson]; the result counts the boards and bookmarks restored. */
@@ -134,7 +202,28 @@ class IosBackup(
             require(document.formatVersion <= BackupDocument.CURRENT_FORMAT_VERSION) {
                 "This backup was written by a newer version of Orbin (format ${document.formatVersion})."
             }
-            restoreSettings(document.settings)
+            importDocument(document).getOrThrow()
+        }.onFailure { if (it is CancellationException) throw it }
+
+    suspend fun importDocument(document: BackupDocument): Result<Pair<Int, Int>> =
+        runCatching {
+            requireAuthorization()
+            require(document.formatVersion in 1..BackupDocument.CURRENT_FORMAT_VERSION) { "Unsupported backup version" }
+            require(
+                document.history.size <= MAX_READING_RECORDS && document.threadMemory.size <= MAX_READING_RECORDS,
+            ) { "Too many backup records" }
+            restoreSettings(
+                document.settings.copy(
+                    activeProviderId =
+                        document.settings.activeProviderId
+                            .takeIf { value ->
+                                providers.any {
+                                    it.value ==
+                                        value
+                                }
+                            }.orEmpty(),
+                ),
+            )
             val known = providers.map { it.value }.toSet()
             val subscribed =
                 document.subscribedBoards.filter {
@@ -168,8 +257,41 @@ class IosBackup(
                 requireAuthorization()
                 bookmarks.addBookmark(it.toBookmark(isOwnMediaUrl))
             }
+            document.history
+                .filter {
+                    it.key.provider.value in known &&
+                        isValidBoardSlug(it.key.board.value) &&
+                        it.key.thread.value > 0
+                }.forEach { row ->
+                    requireAuthorization()
+                    history?.record(
+                        row
+                            .copy(
+                                thumbnailUrl =
+                                    row.thumbnailUrl?.takeIf {
+                                        isOwnMediaUrl(row.key.provider, it)
+                                    },
+                            ).toHistoryEntry(),
+                    )
+                }
+            document.threadMemory
+                .filter {
+                    it.key.provider.value in known &&
+                        isValidBoardSlug(it.key.board.value) &&
+                        it.key.thread.value > 0
+                }.forEach { memory ->
+                    requireAuthorization()
+                    threadMemory?.update(memory.key) { memory }
+                }
             subscribed.size to restored.size
         }.onFailure { if (it is CancellationException) throw it }
+
+    private fun archive(): PortableBackupArchive =
+        PortableBackupArchive(
+            checkNotNull(mediaLibrary) { "Saved media storage is unavailable" },
+            checkNotNull(managedMediaFiles) { "Saved files are unavailable" },
+            checkNotNull(temporaryDirectory) { "Backup storage is unavailable" }.toPath() / "backup-work",
+        )
 
     private fun perform(block: suspend () -> BackupState) {
         if (_state.value == BackupState.Working) return
@@ -216,49 +338,17 @@ class IosBackup(
         return boards.first().map { BackupBoardRef(providerId = value, boardId = it.value) }
     }
 
-    // The same fields Android's BackupService restores, less the app lock.
-    private suspend fun restoreSettings(restored: AppSettings) =
-        with(settings) {
-            requireAuthorization()
-            val existing = settings.first().playbackPreferences
-            existing.overrides.forEach {
-                requireAuthorization()
-                setPlaybackSettings(it.scope, null)
-            }
-            requireAuthorization()
-            setPlaybackSettings(PlaybackScope(), restored.playbackPreferences.defaults)
-            restored.playbackPreferences.overrides.forEach {
-                requireAuthorization()
-                setPlaybackSettings(it.scope, it.settings)
-            }
-            requireAuthorization()
-            setHideNsfwBoards(restored.hideNsfwBoards)
-            requireAuthorization()
-            setCoverViolentMedia(restored.coverViolentMedia)
-            requireAuthorization()
-            setOpenThreadComments(restored.openThreadComments)
-            requireAuthorization()
-            setDeepMediaScan(restored.deepMediaScan)
-            requireAuthorization()
-            setThemeMode(restored.themeMode)
-            requireAuthorization()
-            setAmoled(restored.amoled)
-            requireAuthorization()
-            setFeedColumns(FormFactor.FOLDABLE, restored.unfoldedFeedColumns)
-            requireAuthorization()
-            setFeedColumns(FormFactor.TABLET, restored.tabletFeedColumns)
-            requireAuthorization()
-            setCatalogMode(restored.catalogMode)
-            requireAuthorization()
-            if (restored.activeProviderId.isNotBlank()) setActiveProviderId(ProviderId(restored.activeProviderId))
-            requireAuthorization()
-            // Restoring data completes setup on this install.
-            setOnboardingCompleted(true)
-        }
+    private suspend fun restoreSettings(restored: AppSettings) {
+        settings.restorePortableSettings(restored, beforeEach = ::requireAuthorization)
+        requireAuthorization()
+        settings.setOnboardingCompleted(true)
+    }
 
     private fun fileName(): String = "orbin-backup-${now().take(DATE_LENGTH)}.json"
 
     private companion object {
+        const val RANDOM_NAME_RADIX = 16
+        const val MAX_READING_RECORDS = 100_000
         const val DATE_LENGTH = 10 // yyyy-MM-dd
         const val MAX_BACKUP_JSON_CHARS = 5 * 1024 * 1024
         const val MAX_BOARD_SLUG_LENGTH = 32
@@ -285,6 +375,10 @@ private fun Bookmark.toBackup(): BackupBookmark =
         createdAtMillis = createdAtMillis,
         isWatched = isWatched,
         lastSeenReplyCount = lastSeenReplyCount,
+        latestReplyCount = latestReplyCount,
+        isThreadDead = isThreadDead,
+        availability = availability,
+        statusCheckedAtMillis = statusCheckedAtMillis,
     )
 
 private fun BackupBookmark.toBookmark(isOwnMediaUrl: (ProviderId, String) -> Boolean): Bookmark =
@@ -295,4 +389,8 @@ private fun BackupBookmark.toBookmark(isOwnMediaUrl: (ProviderId, String) -> Boo
         createdAtMillis = createdAtMillis,
         isWatched = isWatched,
         lastSeenReplyCount = lastSeenReplyCount,
+        latestReplyCount = latestReplyCount,
+        isThreadDead = isThreadDead,
+        availability = availability,
+        statusCheckedAtMillis = statusCheckedAtMillis,
     )

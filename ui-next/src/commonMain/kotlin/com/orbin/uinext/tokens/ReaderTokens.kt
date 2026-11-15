@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.NextAccentTheme
 
 /*
  * The reader design's tokens, copied from docs/design-system/README.md.
@@ -119,12 +120,16 @@ val ReaderAmoledColors =
 fun readerColors(
     dark: Boolean,
     amoled: Boolean,
-): ReaderColors =
-    when {
-        dark && amoled -> ReaderAmoledColors
-        dark -> ReaderDarkColors
-        else -> ReaderLightColors
-    }
+    accentTheme: NextAccentTheme = NextAccentTheme.ORBIN,
+): ReaderColors {
+    val base =
+        when {
+            dark && amoled -> ReaderAmoledColors
+            dark -> ReaderDarkColors
+            else -> ReaderLightColors
+        }
+    return accentedReaderColors(base, dark, dark && amoled, accentTheme)
+}
 
 object ReaderSpace {
     /** Left and right screen edge inset. */

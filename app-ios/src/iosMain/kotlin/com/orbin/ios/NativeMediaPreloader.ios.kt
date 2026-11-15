@@ -42,6 +42,8 @@ import platform.WebKit.WKWebView
 /** Only the upcoming clip is retained; promoted resources become the visible player's responsibility. */
 internal actual fun createNativeMediaPreloader(): NativeMediaPreloader = IosMediaPreloader()
 
+internal actual fun prepareNativeMediaHandoff(url: String) = NativePlaybackContinuity.request(url)
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal actual fun NativeMediaPreloadHost(preloader: NativeMediaPreloader) {
@@ -80,6 +82,11 @@ private class IosMediaPreloader : NativeMediaPreloader {
     private val upcoming = SingleUpcomingMedia<PreparedClip>(create = ::create, release = PreparedClip::close)
     private var warmHost: MediaPreloadHostView? = null
     private var closed = false
+    private val clearCached = { upcoming.clear() }
+
+    init {
+        NativeVideoCaches.register(clearCached)
+    }
 
     fun attachHost(host: MediaPreloadHostView) {
         if (closed) return
@@ -126,6 +133,7 @@ private class IosMediaPreloader : NativeMediaPreloader {
     }
 
     override fun close() {
+        NativeVideoCaches.unregister(clearCached)
         closed = true
         upcoming.clear()
         warmHost = null

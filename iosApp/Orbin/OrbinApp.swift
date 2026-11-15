@@ -12,6 +12,8 @@ final class OrbinAppDelegate: UIResponder, UIApplicationDelegate {
         // AppGraph later updates both when settings load. registerBackgroundRefresh can itself
         // initialize AppGraph, so it comes last.
         installEncryptedDns()
+        OrbinCloudSync.shared.install()
+        OrbinMediaConverter.shared.install()
         BackgroundRefreshKt.registerBackgroundRefresh()
     }
 

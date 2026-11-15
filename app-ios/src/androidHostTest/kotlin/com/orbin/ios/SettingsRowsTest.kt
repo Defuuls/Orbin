@@ -15,6 +15,17 @@ import kotlin.test.assertTrue
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class SettingsRowsTest {
     @Test
+    fun combinedCacheRowReportsMeasuredImageAndVideoBytesWithoutActivityDeletion() {
+        val row =
+            settingsGroups(AppSettings.Default, false, false, mediaCacheLabel = "4 MiB · 4194304 B")
+                .flatMap { it.second }
+                .single { it.id == SettingIds.CLEAR_MEDIA_CACHE }
+        assertEquals("Clear cache", row.label)
+        assertEquals("4 MiB · 4194304 B", row.value)
+        assertTrue(row.hint.orEmpty().contains("Keeps browsing history"))
+    }
+
+    @Test
     fun sectionsKeepEverySettingReachableExactlyOnce() {
         val groups = settingsGroups(AppSettings.Default, false, false)
         assertEquals(listOf("Appearance", "Privacy and safety", "Data and storage", "About"), groups.map { it.first })

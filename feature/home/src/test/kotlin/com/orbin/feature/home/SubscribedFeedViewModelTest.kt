@@ -169,6 +169,47 @@ class SubscribedFeedViewModelTest {
             }
         }
 
+    @Test
+    fun `explicit favorites feed uses stars without creating follows and empty stars stay empty`() =
+        runTest {
+            val provider = catalogProvider(listOf(catalogThread(1L)))
+            val registry = FakeProviderRegistry(provider)
+            val settings = FakeSettingsRepository()
+            val preferences = FakeBoardPreferencesRepository(subscribed = emptySet(), favorites = setOf(healthyBoard))
+            val model =
+                SubscribedFeedViewModel(
+                    registry,
+                    ObserveActiveProviderUseCase(registry, settings),
+                    FakeBoardRepository(),
+                    preferences,
+                    settings,
+                    FakeHistoryRepository(),
+                    AppLockController(),
+                    mockk(relaxed = true),
+                    workDispatcher = mainDispatcherRule.testDispatcher,
+                )
+            model.uiState.test {
+                var state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success || state.isLoadingMore) state = awaitItem()
+                assertThat(state.boards).isEmpty()
+                model.setFavoritesOnly(true)
+                state = awaitItem()
+                while (state !is SubscribedFeedUiState.Success ||
+                    !state.favoritesOnly ||
+                    state.isLoadingMore
+                ) {
+                    state = awaitItem()
+                }
+                assertThat(state.boards.map { it.board.id }).containsExactly(healthyBoard)
+                assertThat(preferences.observeSubscribedBoards(provider.metadata.id).first()).isEmpty()
+                preferences.setFavoriteBoard(provider.metadata.id, healthyBoard, false)
+                state = awaitItem()
+                while (!state.isCompletedEmptyFavorites()) state = awaitItem()
+                assertThat((state as SubscribedFeedUiState.Success).boards).isEmpty()
+                assertThat(preferences.observeSubscribedBoards(provider.metadata.id).first()).isEmpty()
+            }
+        }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `returning to the feed reuses it and only a refresh fetches the catalogs again`() =
@@ -392,4 +433,9 @@ class SubscribedFeedViewModelTest {
         /** Longer than the view model's stop timeout, so its shared state really stops. */
         const val LEAVE_FEED_MS = 10_000L
     }
+}
+
+private fun SubscribedFeedUiState.isCompletedEmptyFavorites(): Boolean {
+    if (this !is SubscribedFeedUiState.Success) return false
+    return favoritesOnly && !isLoadingMore && boards.isEmpty()
 }

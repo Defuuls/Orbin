@@ -44,8 +44,9 @@ internal fun rememberMediaViewerSelection(
     files: List<MediaAttachment>,
     startIndex: Int,
     onPageChanged: (Int) -> Unit,
+    pageKeys: List<String>? = null,
 ): MediaViewerSelection {
-    val keys = remember(files) { mediaViewerKeys(files) }
+    val keys = remember(files, pageKeys) { pageKeys ?: mediaViewerKeys(files) }
     val requestedIndex = startIndex.coerceIn(keys.indices)
     var selectedKey by rememberSaveable { mutableStateOf(keys[requestedIndex]) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(requestedIndex) }

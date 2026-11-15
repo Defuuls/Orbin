@@ -31,6 +31,7 @@ class PlayerCompletionHostTest {
         val visible = mutableStateOf(true)
         val autoplay = mutableStateOf(true)
         val reportedIntents = mutableListOf<Boolean>()
+        var completedEvents = 0
         val root =
             ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
                 if (visible.value) {
@@ -42,6 +43,7 @@ class PlayerCompletionHostTest {
                         loop = false,
                         feedMode = false,
                         onPlayIntentChange = { reportedIntents += it },
+                        onPlaybackEnded = { completedEvents++ },
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -67,6 +69,7 @@ class PlayerCompletionHostTest {
             assertTrue(completed.paused && completed.ended, "Foregrounding must leave a completed gallery clip ended")
             assertTrue(completed.position >= completed.duration - 0.05)
             assertEquals(listOf(false), reportedIntents, "Completion should report the stopped intent only once")
+            assertEquals(1, completedEvents, "An ended clip emits one auto-advance event, with no foreground replay")
 
             // A fresh playback request still replays the ended element from its beginning.
             autoplay.value = false
@@ -79,6 +82,8 @@ class PlayerCompletionHostTest {
                     !it.paused && !it.ended && it.position > 0.05 && it.position < it.duration - 0.5
                 } == true
             }
+            await { completedEvents == 2 }
+            assertEquals(2, completedEvents, "Explicit replay may emit a fresh completion event")
         } finally {
             try {
                 visible.value = false

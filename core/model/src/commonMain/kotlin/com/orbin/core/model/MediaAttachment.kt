@@ -1,6 +1,9 @@
 package com.orbin.core.model
 
+import kotlinx.serialization.Serializable
+
 /** Broad classification of an attachment, used to pick the right renderer/player. */
+@Serializable
 enum class MediaType {
     IMAGE,
     ANIMATED_IMAGE, // gif / apng
@@ -34,6 +37,10 @@ data class MediaAttachment(
     val isSpoiler: Boolean = false,
     /** Duration in milliseconds for audio/video, when known. */
     val durationMs: Long? = null,
+    /** Original provider spoiler state, recorded before an app-generated privacy cover is added. */
+    val sourceIsSpoiler: Boolean? = null,
+    /** Independent presentation cover reasons; removing one must not clear another or a source spoiler. */
+    val appCoverReasons: Set<String> = emptySet(),
 ) {
     val isPlayable: Boolean get() = type == MediaType.VIDEO || type == MediaType.AUDIO
 

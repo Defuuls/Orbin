@@ -1,5 +1,6 @@
 package com.orbin.domain.repository
 
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -7,13 +8,43 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadLayout
 import kotlinx.coroutines.flow.Flow
 
 /** Reads and updates persisted [AppSettings]. Implemented in :data over DataStore. */
 @Suppress("TooManyFunctions")
 interface SettingsRepository {
     val settings: Flow<AppSettings>
+
+    suspend fun setAccentTheme(value: AccentTheme)
+
+    suspend fun setThreadLayout(value: ThreadLayout)
+
+    suspend fun setAutoScrollToLastSeen(value: Boolean)
+
+    suspend fun setCollectionNewestFirst(value: Boolean)
+
+    suspend fun setShowStickyThreads(value: Boolean)
+
+    suspend fun setNsfwEachSession(value: Boolean)
+
+    suspend fun setCoverNsfwMedia(value: Boolean)
+
+    suspend fun setHistorySessionOnly(value: Boolean)
+
+    suspend fun setPrivateSavedFiles(value: Boolean)
+
+    suspend fun setAskBeforePhotos(value: Boolean)
+
+    suspend fun setShowSavedMediaTab(value: Boolean)
+
+    suspend fun setFullscreenAutoAdvance(value: Boolean)
+
+    suspend fun setHiddenThreadPatterns(value: List<String>)
+
+    suspend fun setPostFilterRules(value: List<PostFilterRule>)
 
     /** Saves a scoped playback snapshot, or removes its override to resume inheritance. */
     suspend fun setPlaybackSettings(

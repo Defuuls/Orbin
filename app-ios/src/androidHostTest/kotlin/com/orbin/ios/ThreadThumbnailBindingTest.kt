@@ -100,7 +100,6 @@ class ThreadThumbnailBindingTest {
                         refreshing = false,
                         refreshFailure = null,
                         watching = false,
-                        firstUnreadPostId = null,
                         onWatch = {},
                         onOpenFile = {},
                     )

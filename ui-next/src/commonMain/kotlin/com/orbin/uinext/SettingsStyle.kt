@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.tokens.accentSecondary
 
 /** Settings roles use the same quiet surfaces and Orbin accents as the rest of the app. */
 @Immutable
@@ -49,7 +50,7 @@ internal val settingsStyle: SettingsColors
             accent = colors.accent,
             accentInk = colors.accent,
             onAccent = colors.onAccent,
-            secondary = Color(0xFFA78BFA),
+            secondary = accentSecondary(next.accentTheme),
             danger = colors.error,
         )
     }

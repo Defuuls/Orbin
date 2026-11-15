@@ -22,6 +22,19 @@ class FeedSiteSwitcherViewModelTest {
     }
 
     @Test
+    fun `favorites scope restores independently and selecting a site returns to follows`() {
+        val state = SavedStateHandle()
+        val model = FeedSiteSwitcherViewModel(FakeProviderRegistry(), state)
+        model.selectFavorites()
+        assertThat(model.favoritesOnly.value).isTrue()
+        assertThat(model.activeProviderId.value).isNull()
+        val restored = FeedSiteSwitcherViewModel(FakeProviderRegistry(), state)
+        assertThat(restored.favoritesOnly.value).isTrue()
+        restored.selectSite(restored.sites.single().id)
+        assertThat(restored.favoritesOnly.value).isFalse()
+    }
+
+    @Test
     fun `unregistered site filters are ignored`() {
         val model = FeedSiteSwitcherViewModel(FakeProviderRegistry(), SavedStateHandle())
         model.selectSite("missing")

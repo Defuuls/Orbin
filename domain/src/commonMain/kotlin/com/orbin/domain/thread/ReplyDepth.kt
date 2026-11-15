@@ -58,3 +58,115 @@ fun replyCounts(posts: List<Post>): Map<PostId, Int> {
     }
     return counts
 }
+
+/** A place in a conversation. A multiply quoted post keeps one full place and other previews. */
+data class ReplyRow(
+    val postId: PostId,
+    val path: String,
+    val primaryPath: String,
+    val depth: Int,
+    val ancestorPaths: List<String>,
+    val descendants: Set<PostId>,
+    val collapsed: Boolean = false,
+    val hiddenReason: String? = null,
+    val preview: Boolean = false,
+)
+
+/**
+ * A deterministic reader projection over earlier, known quote targets. The immutable post list
+ * remains chronological for media and storage; only these rows acquire a conversation order.
+ * [source] must include provider, board and thread, so row state cannot cross site boundaries.
+ */
+fun projectReplyRows(
+    posts: List<Post>,
+    source: String,
+    nested: Boolean = true,
+    foldedPaths: Set<String> = emptySet(),
+    hiddenReasons: Map<PostId, String> = emptyMap(),
+): List<ReplyRow> {
+    if (posts.isEmpty()) return emptyList()
+    val unique = posts.distinctBy { it.id }
+    val op = unique.first().id
+    val order = unique.mapIndexed { index, post -> post.id to index }.toMap()
+    val ancestors = mutableMapOf<PostId, Set<PostId>>()
+    val children = mutableMapOf<PostId, MutableList<PostId>>()
+    val roots = mutableListOf(op)
+    unique.forEachIndexed { index, post ->
+        val quoted = post.repliesTo.filter { (order[it] ?: Int.MAX_VALUE) < index }.toSet()
+        ancestors[post.id] = quoted + quoted.flatMap { ancestors[it].orEmpty() }
+        // A quote of both a parent and its ancestor belongs below the parent just once.
+        val parents = quoted.filter { parent -> quoted.none { other -> parent in ancestors[other].orEmpty() } }
+        parents.forEach { parent -> children.getOrPut(parent) { mutableListOf() }.add(post.id) }
+        if (post.id != op && (op in quoted || parents.none { it != op })) roots.add(post.id)
+    }
+    val descendants = mutableMapOf<PostId, Set<PostId>>()
+    unique.asReversed().forEach { post ->
+        descendants[post.id] = children[post.id].orEmpty().flatMap { listOf(it) + descendants[it].orEmpty() }.toSet()
+    }
+    if (!nested) {
+        return unique.map { post ->
+            val path = "$source/${post.id.value}"
+            ReplyRow(
+                post.id,
+                path,
+                path,
+                0,
+                emptyList(),
+                descendants[post.id].orEmpty(),
+                collapsed = post.id != op && path in foldedPaths,
+                hiddenReason = hiddenReasons[post.id].takeUnless { post.id == op },
+            )
+        }
+    }
+
+    data class Visit(
+        val id: PostId,
+        val path: String,
+        val ancestors: List<String>,
+    )
+
+    fun rootVisits() = roots.asReversed().map { Visit(it, "$source/${it.value}", emptyList()) }
+
+    fun addChildren(
+        stack: ArrayDeque<Visit>,
+        visit: Visit,
+    ) {
+        if (visit.id == op) return
+        children[visit.id].orEmpty().asReversed().forEach { child ->
+            stack.addLast(Visit(child, "${visit.path}/${child.value}", visit.ancestors + visit.path))
+        }
+    }
+    // Find primary places before folding, so folding never moves a post into another branch.
+    val primary = mutableMapOf<PostId, String>()
+    val firstPass = ArrayDeque(rootVisits())
+    while (firstPass.isNotEmpty()) {
+        val visit = firstPass.removeLast()
+        if (visit.id !in primary) {
+            primary[visit.id] = visit.path
+            addChildren(firstPass, visit)
+        }
+    }
+    val rows = mutableListOf<ReplyRow>()
+    val stack = ArrayDeque(rootVisits())
+    while (stack.isNotEmpty()) {
+        val visit = stack.removeLast()
+        val preview = primary[visit.id] != visit.path
+        val hidden = hiddenReasons[visit.id].takeUnless { visit.id == op }
+        val folded = visit.id != op && visit.path in foldedPaths
+        rows.add(
+            ReplyRow(
+                visit.id,
+                visit.path,
+                primary.getValue(visit.id),
+                visit.ancestors.size,
+                visit.ancestors,
+                descendants[visit.id].orEmpty(),
+                folded,
+                hidden,
+                preview,
+            ),
+        )
+        if (!preview && hidden == null && !folded) addChildren(stack, visit)
+    }
+    return rows
+}

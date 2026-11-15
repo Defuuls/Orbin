@@ -3,6 +3,7 @@ package com.orbin.core.testing.repository
 import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppUpdateState
+import com.orbin.core.model.DownloadMediaContext
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.HistoryEntry
 import com.orbin.core.model.PostId
@@ -44,6 +45,8 @@ class FakeDownloadRepository(
         boardId: String?,
         threadId: Long?,
         threadTitle: String?,
+        mediaContext: DownloadMediaContext?,
+        privateTarget: Boolean,
     ): Long {
         enqueued += url
         return 0L
@@ -95,6 +98,10 @@ class FakeHistoryRepository(
             state.value.map {
                 if (it.key == key) it.copy(lastReadPostId = postId, lastReadOffsetPx = offsetPx) else it
             }
+    }
+
+    override suspend fun remove(key: ThreadKey) {
+        state.value = state.value.filterNot { it.key == key }
     }
 
     override suspend fun clear() {

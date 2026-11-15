@@ -1,5 +1,6 @@
 package com.orbin.feature.search
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.DataError
@@ -16,6 +17,7 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.search.searchEachBoard
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ProviderRegistry
+import com.orbin.provider.api.isVisibleInOrbin
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -51,6 +53,46 @@ class SearchViewModel
     ) : ViewModel() {
         private val providers = registry.all()
 
+        internal val webSearchProvider =
+            com.orbin.provider.api
+                .fourchanWebSearchProvider(providers.map { it.metadata })
+        internal val webSearchSettings =
+            settingsRepository.settings
+                .stateIn(viewModelScope, SharingStarted.Eagerly, com.orbin.core.model.AppSettings.Default)
+        internal val webSearchBoards =
+            webSearchProvider?.let { provider ->
+                boardRepository
+                    .observeBoards(provider.id)
+                    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+            }
+
+        internal val webSearchSession =
+            webSearchProvider?.let { provider ->
+                com.orbin.provider.api
+                    .FourchanSearchSession(provider) { hit ->
+                        hit.isVisibleInOrbin(webSearchSettings.value, webSearchBoards?.value.orEmpty())
+                    }.also { session ->
+                        viewModelScope.launch {
+                            combine(
+                                webSearchSettings,
+                                checkNotNull(webSearchBoards),
+                            ) { _, _ -> Unit }.collect { session.refilter() }
+                        }
+                    }
+            }
+        private var retainedSearchBrowser: RetainedSearchBrowser? = null
+
+        internal fun webSearchBrowser(context: Context): RetainedSearchBrowser? {
+            val session = webSearchSession ?: return null
+            return retainedSearchBrowser ?: RetainedSearchBrowser(context.applicationContext, session, viewModelScope)
+                .also { retainedSearchBrowser = it }
+        }
+
+        override fun onCleared() {
+            retainedSearchBrowser?.close()
+            super.onCleared()
+        }
+
         // A board code alone is ambiguous: both sites can have /g/. Keep the provider attached
         // until the request is issued, independent of the source selected in the Boards tab.
         private val searchBoards: StateFlow<List<SearchBoard>> =
@@ -63,7 +105,7 @@ class SearchViewModel
                     ) { boards, subscribed, settings ->
                         boards
                             .filter { it.id in subscribed }
-                            .filterNot { settings.hideNsfwBoards && it.isNsfw }
+                            .filterNot { settings.nsfwContentHidden && it.isNsfw }
                             .filterNot { it.isPermanentlyFiltered() }
                             .sortedBy { it.id.value }
                             .map { SearchBoard(provider.metadata.id, it) }

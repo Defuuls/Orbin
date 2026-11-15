@@ -37,6 +37,7 @@ class SettingsIndexTest {
                 ),
                 listOf(
                     "clearActivity",
+                    "clearMediaCache",
                     "clearImageCache",
                     "videoCacheLimit",
                     "clearVideoCache",

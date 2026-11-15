@@ -13,6 +13,9 @@ interface HistoryDao {
     @Query("SELECT * FROM history ORDER BY lastVisitedMillis DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<HistoryEntity>>
 
+    @Query("SELECT * FROM history ORDER BY lastVisitedMillis DESC")
+    fun observeAllEntries(): Flow<List<HistoryEntity>>
+
     @Query(
         "SELECT * FROM history WHERE provider = :provider AND board = :board AND thread = :thread",
     )
@@ -49,6 +52,7 @@ interface HistoryDao {
                 entry
             }
         upsert(merged)
+        prune(MAX_RETAINED_HISTORY)
     }
 
     @Query(
@@ -63,6 +67,12 @@ interface HistoryDao {
         offsetPx: Int,
     )
 
+    @Query(
+        "DELETE FROM history WHERE (provider, board, thread) NOT IN " +
+            "(SELECT provider, board, thread FROM history ORDER BY lastVisitedMillis DESC LIMIT :limit)",
+    )
+    suspend fun prune(limit: Int)
+
     @Query("DELETE FROM history")
     suspend fun clear()
 
@@ -73,3 +83,5 @@ interface HistoryDao {
         thread: Long,
     )
 }
+
+private const val MAX_RETAINED_HISTORY = 200

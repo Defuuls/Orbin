@@ -108,7 +108,8 @@ class MediaDownloadsTest {
         assertEquals(SaveTarget.PHOTO, saveTargetOf("a.JPG"))
         assertEquals(SaveTarget.PHOTO, saveTargetOf("a.gif"))
         assertEquals(SaveTarget.VIDEO, saveTargetOf("a.mp4"))
-        assertEquals(SaveTarget.FILE, saveTargetOf("a.webm"))
+        assertEquals(SaveTarget.VIDEO, saveTargetOf("a.webm"))
+        assertEquals(SaveTarget.VIDEO, saveTargetOf("a.WEBM"))
         assertEquals(SaveTarget.FILE, saveTargetOf("noextension"))
     }
 

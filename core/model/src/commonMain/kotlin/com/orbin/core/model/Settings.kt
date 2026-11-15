@@ -100,6 +100,21 @@ enum class CatalogMode(
  */
 @Serializable
 data class AppSettings(
+    val accentTheme: AccentTheme = AccentTheme.ORBIN,
+    val threadLayout: ThreadLayout = ThreadLayout.NESTED,
+    val autoScrollToLastSeen: Boolean = true,
+    val showStickyThreads: Boolean = true,
+    val collectionNewestFirst: Boolean = true,
+    val nsfwEachSession: Boolean = false,
+    val coverNsfwMedia: Boolean = false,
+    val historySessionOnly: Boolean = false,
+    val privateSavedFiles: Boolean = false,
+    val askBeforePhotos: Boolean = false,
+    val showSavedMediaTab: Boolean = true,
+    val fullscreenAutoAdvance: Boolean = false,
+    val hiddenThreadPatterns: List<String> = emptyList(),
+    val postFilterRules: List<PostFilterRule> = emptyList(),
+    @kotlinx.serialization.Transient val nsfwSessionRevealed: Boolean = false,
     val hideNsfwBoards: Boolean = false,
     /** Spoiler-covers the media of posts labelled as violent; see [ViolentMediaCover]. On by default. */
     val coverViolentMedia: Boolean = true,
@@ -135,6 +150,9 @@ data class AppSettings(
     /** On-disk streaming video cache limit in megabytes. */
     val videoCacheMegabytes: Int = DEFAULT_VIDEO_CACHE_MEGABYTES,
 ) {
+    val nsfwContentHidden: Boolean
+        get() = hideNsfwBoards || (nsfwEachSession && !nsfwSessionRevealed)
+
     companion object {
         val Default = AppSettings()
     }

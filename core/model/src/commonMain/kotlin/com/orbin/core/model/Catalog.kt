@@ -13,6 +13,9 @@ enum class CatalogSort {
 
     /** Subject A–Z, then thread number. */
     SUBJECT,
+
+    /** Oldest opening post first; appended to retain existing stored enum order. */
+    OLDEST,
     ;
 
     /** Short label for the catalog sort chip. */
@@ -20,11 +23,12 @@ enum class CatalogSort {
         get() =
             when (this) {
                 BUMP_ORDER -> "Bump"
-                CREATION_DATE -> "Created"
+                CREATION_DATE -> "Newest"
                 REPLY_COUNT -> "Replies"
                 IMAGE_COUNT -> "Images"
                 LAST_REPLY -> "Latest"
                 SUBJECT -> "A-Z"
+                OLDEST -> "Oldest"
             }
 
     /** The order after this one, wrapping round: what the catalog's sort chip steps to. */
@@ -62,6 +66,8 @@ fun CatalogSort.comparator(): Comparator<CatalogThread> =
     when (this) {
         CatalogSort.CREATION_DATE ->
             compareByDescending<CatalogThread> { it.originalPost.createdAtMillis }
+        CatalogSort.OLDEST ->
+            compareBy<CatalogThread> { it.originalPost.createdAtMillis }
         CatalogSort.REPLY_COUNT ->
             compareByDescending<CatalogThread> { it.stats.replyCount }
         CatalogSort.IMAGE_COUNT ->

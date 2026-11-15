@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_inline_fullscreen">Open fullscreen</string>
+    <string name="media_filter_all">All (%1$d)</string>
+    <string name="media_filter_images">Images (%1$d)</string>
+    <string name="media_filter_videos">Videos (%1$d)</string>
+    <string name="media_filter_title">Show media</string>
+    <string name="media_file_information">File information</string>
+    <string name="media_file_format">Format: %1$s</string>
+    <string name="media_file_dimensions">Resolution: %1$d × %2$d</string>
+    <string name="media_file_bytes">Size: %1$d bytes</string>
+    <string name="media_file_duration">Duration: %1$d seconds</string>
+    <string name="media_file_unknown">Not supplied by the source</string>
+    <string name="media_reverse_search">Search image</string>
+    <string name="media_reverse_search_title">Search image with</string>
+    <string name="media_features_done">Done</string>
+    <string name="media_auto_advance_on">Play next video when this ends</string>
+    <string name="media_auto_advance_off">Keep this video when it ends</string>
+</resources>

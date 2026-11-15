@@ -30,12 +30,28 @@ internal fun ReaderRecordRow(
     metadata: String = "",
     detail: String = "",
     unread: String = "",
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
 ) {
     val bodyStyle = if (wideWindow) OrbinType.postBodyWide.withReaderFont() else OrbinType.readerBody.withReaderFont()
     val detailStyle = OrbinType.meta.withReaderFont()
     OrbinCard(
-        modifier = modifier.fillMaxWidth().heightIn(min = ReaderSize.touchTarget).semantics(mergeDescendants = true) {},
-        onClick = onOpen,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .heightIn(min = ReaderSize.touchTarget)
+                .then(
+                    if (onLongClick != null) {
+                        Modifier.nextClickable(
+                            onLongClick = onLongClick,
+                            onLongClickLabel = onLongClickLabel,
+                            onClick = onOpen,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ).semantics(mergeDescendants = true) {},
+        onClick = onOpen.takeIf { onLongClick == null },
     ) {
         Column(Modifier.padding(RECORD_INSET), verticalArrangement = Arrangement.spacedBy(RECORD_GAP)) {
             Text(

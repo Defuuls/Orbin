@@ -10,6 +10,8 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
 import com.orbin.domain.notification.ThreadNotifier
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -38,6 +40,57 @@ class WatchedThreadsTest {
             originalPost = Post(id = PostId(7), board = key.board, threadId = key.thread, isOriginalPost = true),
             stats = ThreadStats(replyCount = replies),
         )
+
+    @Test
+    fun loadingAThreadKeepsUnreadUntilTheReaderActuallySeesItsPosts() =
+        runTest {
+            val bookmarks = FakeBookmarks()
+            bookmarks.addBookmark(
+                Bookmark(
+                    key,
+                    "Weekly",
+                    createdAtMillis = 0,
+                    isWatched = true,
+                    lastSeenReplyCount = 2,
+                    latestReplyCount = 2,
+                ),
+            )
+            val loaded =
+                thread(5).copy(
+                    replies =
+                        (101L..105L)
+                            .map {
+                                Post(id = PostId(it), board = key.board, threadId = key.thread, isOriginalPost = false)
+                            }.toImmutableList(),
+                )
+            val watched = WatchedThreads(bookmarks, backgroundScope, { 0 }) { loaded }
+
+            assertEquals("103", watched.read(loaded))
+            assertEquals(5, bookmarks.getBookmark(key)?.latestReplyCount)
+            assertEquals(2, bookmarks.getBookmark(key)?.lastSeenReplyCount)
+        }
+
+    @Test
+    fun catalogUnreadUsesQualifiedVisibleReadMemoryWithoutChangingStoredBookmarkCount() =
+        runTest {
+            val bookmarks = FakeBookmarks()
+            bookmarks.addBookmark(Bookmark(key, "Weekly", createdAtMillis = 0, latestReplyCount = 3))
+            val memories = InMemoryThreadMemoryRepository()
+            memories.update(key) { it.copy(knownPostIds = setOf(7, 8, 9, 10), seenPostIds = setOf(7, 8)) }
+            val otherSite = key.copy(provider = ProviderId("other"))
+            memories.update(otherSite) { it.copy(knownPostIds = setOf(7, 8, 9, 10), seenPostIds = setOf(7, 8, 9, 10)) }
+            val watched = WatchedThreads(bookmarks, backgroundScope, { 0 }, threadMemory = memories) { thread(3) }
+            val board =
+                SiteBoard(
+                    key.provider,
+                    "Site",
+                    com.orbin.core.model
+                        .Board(key.board, "Technology"),
+                )
+
+            assertEquals(mapOf(7L to 2), watched.unread(board).first())
+            assertEquals(0, bookmarks.getBookmark(key)?.lastSeenReplyCount)
+        }
 
     @Test
     fun aRefreshStoresNewRepliesAndPostsTheOnesNotYetSeen() =

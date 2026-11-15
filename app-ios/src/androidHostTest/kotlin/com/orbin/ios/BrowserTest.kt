@@ -30,6 +30,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -764,7 +765,22 @@ class BrowserTest {
         runTest {
             // 4chan's /g/ says it is work-safe and its /b/ that it is not.
             val boardsJson =
-                """{"boards":[{"board":"g","title":"Technology","ws_board":1},{"board":"b","title":"Random","ws_board":0}]}"""
+                """
+                {
+                  "boards": [
+                    {
+                      "board": "g",
+                      "title": "Technology",
+                      "ws_board": 1
+                    },
+                    {
+                      "board": "b",
+                      "title": "Random",
+                      "ws_board": 0
+                    }
+                  ]
+                }
+                """.trimIndent()
             val routes =
                 BOTH_SITES +
                     ("a.4cdn.org/boards.json" to boardsJson) +
@@ -800,11 +816,53 @@ class BrowserTest {
                     ) +
                     (
                         "a.4cdn.org/g/catalog.json" to
-                            """[{"page":1,"threads":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"},{"no":8,"sub":"gore video","time":2}]}]"""
+                            """
+                            [
+                              {
+                                "page": 1,
+                                "threads": [
+                                  {
+                                    "no": 7,
+                                    "sub": "Hi",
+                                    "time": 1,
+                                    "tim": 7,
+                                    "ext": ".mp4"
+                                  },
+                                  {
+                                    "no": 8,
+                                    "sub": "gore video",
+                                    "time": 2
+                                  }
+                                ]
+                              }
+                            ]
+                            """.trimIndent()
                     ) +
                     (
                         "a.4cdn.org/g/thread/7.json" to
-                            """{"posts":[{"no":7,"sub":"Hi","time":1,"tim":7,"ext":".mp4"},{"no":8,"com":"gore","time":2},{"no":9,"com":"ok","time":3}]}"""
+                            """
+                            {
+                              "posts": [
+                                {
+                                  "no": 7,
+                                  "sub": "Hi",
+                                  "time": 1,
+                                  "tim": 7,
+                                  "ext": ".mp4"
+                                },
+                                {
+                                  "no": 8,
+                                  "com": "gore",
+                                  "time": 2
+                                },
+                                {
+                                  "no": 9,
+                                  "com": "ok",
+                                  "time": 3
+                                }
+                              ]
+                            }
+                            """.trimIndent()
                     ) +
                     ("a.4cdn.org/g/thread/8.json" to """{"posts":[{"no":8,"sub":"gore video","time":2}]}""")
             val browser = browser(backgroundScope, routes)
@@ -880,6 +938,60 @@ class BrowserTest {
             lastSeenReplyCount = seen,
             latestReplyCount = seen,
         )
+
+    @Test
+    fun siteSearchRetainsReplyIdentityPaginationAndVerificationAcrossThreadBack() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(1)))
+            browser.boardDirectory.first { ProviderId("fourchan") in it.completed }
+            browser.openTab(Route.Search)
+            val session = checkNotNull(browser.webSearchSession)
+            val transport = checkNotNull(browser.webSearchTransport)
+            session.submit("cats")
+            val request = session.state.value
+            session.page(
+                request.requestUrl,
+                """{
+                    "recognized":true,
+                    "hits":[{"url":"https://boards.4chan.org/g/thread/7#p8",
+                        "subject":"Cats","comment":"Reply match","name":"Anonymous"}],
+                    "next":25
+                }""",
+                request.requestId,
+            )
+            val hit =
+                session.state.value.hits
+                    .single()
+            browser.openThread(hit.link.key, hit.link.post)
+            val focus = assertNotNull(browser.pendingThreadPost.value)
+            assertEquals(hit.link.key, focus.first)
+            assertEquals(hit.link.post?.value, focus.second.value)
+            assertTrue(browser.back())
+            assertEquals(Route.Search, browser.backStack.value.last())
+            assertSame(session, browser.webSearchSession)
+            assertSame(transport, browser.webSearchTransport)
+            assertEquals(
+                request.requestId,
+                session.state.value.requestId,
+                "Back must not trigger another browser request",
+            )
+            assertEquals(25, session.state.value.nextOffset)
+            assertEquals(
+                8L,
+                session.state.value.hits
+                    .single()
+                    .link.post
+                    ?.value,
+            )
+            session.submit("cats")
+            session.page(session.state.value.requestUrl, """{"challenge":true}""", session.state.value.requestId)
+            val challengeRequest = session.state.value.requestId
+            browser.openThread(hit.link.key)
+            assertTrue(browser.back())
+            assertTrue(session.state.value.verifying)
+            assertEquals(challengeRequest, session.state.value.requestId)
+            assertSame(transport, browser.webSearchTransport)
+        }
 
     private companion object {
         val LYNXCHAN_CATALOG = "bbw-chan.link/b/catalog.json" to """[{"threadId":5,"subject":"Hi"}]"""

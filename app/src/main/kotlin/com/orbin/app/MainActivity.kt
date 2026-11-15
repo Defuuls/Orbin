@@ -317,6 +317,10 @@ class MainActivity : FragmentActivity() {
     override fun onStop() {
         cancelActiveAuthentication()
         super.onStop()
+        if (!isChangingConfigurations) {
+            com.orbin.domain.privacy.PrivacySession
+                .forgetSession()
+        }
         if (biometricLockActive && !isChangingConfigurations) {
             unlocked = false
             // Cancel defensively rather than relying on the system to always deliver a

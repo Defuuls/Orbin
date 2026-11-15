@@ -27,6 +27,7 @@ import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 import platform.UIKit.popoverPresentationController
 import platform.UniformTypeIdentifiers.UTTypeJSON
+import platform.UniformTypeIdentifiers.UTTypeZIP
 import platform.darwin.NSObject
 import kotlin.coroutines.resume
 
@@ -36,38 +37,51 @@ import kotlin.coroutines.resume
  */
 @OptIn(ExperimentalForeignApi::class)
 class DeviceBackupFiles : BackupFiles {
-    // Held while the picker is up: the picker keeps only a weak reference to its delegate.
     private var pickerDelegate: PickerDelegate? = null
+    override val supportsArchives: Boolean = true
 
     override suspend fun share(
         fileName: String,
         contents: String,
     ): Boolean {
-        val presenter = topViewController() ?: return false
         val safeName =
-            fileName
-                .substringAfterLast('/')
-                .substringAfterLast('\\')
-                .replace("..", "_")
-                .ifBlank { "orbin-backup.json" }
+            fileName.substringAfterLast('/').substringAfterLast('\\').replace("..", "_").ifBlank {
+                "orbin-backup.json"
+            }
         val file = NSURL.fileURLWithPath(NSTemporaryDirectory() + safeName)
         if (!contents.encodeToByteArray().toNSData().writeToURL(file, atomically = true)) return false
+        return shareUrl(file, deleteAfter = true)
+    }
+
+    override suspend fun shareFile(
+        fileName: String,
+        sourcePath: String,
+    ): Boolean = shareUrl(NSURL.fileURLWithPath(sourcePath), deleteAfter = false)
+
+    private suspend fun shareUrl(
+        file: NSURL,
+        deleteAfter: Boolean,
+    ): Boolean {
+        val presenter =
+            topViewController() ?: run {
+                if (deleteAfter) NSFileManager.defaultManager.removeItemAtURL(file, error = null)
+                return false
+            }
         return suspendCancellableCoroutine { continuation ->
             val sheet = UIActivityViewController(activityItems = listOf(file), applicationActivities = null)
             sheet.completionWithItemsHandler = { _, completed, _, _ ->
-                NSFileManager.defaultManager.removeItemAtURL(file, error = null)
+                if (deleteAfter) NSFileManager.defaultManager.removeItemAtURL(file, error = null)
                 if (continuation.isActive) continuation.resume(completed)
             }
             continuation.invokeOnCancellation {
-                // Backup operations and lifecycle cancellation both run on the main scope.
                 sheet.completionWithItemsHandler = null
-                NSFileManager.defaultManager.removeItemAtURL(file, error = null)
-                if (presenter.presentedViewController === sheet) {
+                if (deleteAfter) NSFileManager.defaultManager.removeItemAtURL(file, error = null)
+                if (presenter.presentedViewController ===
+                    sheet
+                ) {
                     presenter.dismissViewControllerAnimated(false, completion = null)
                 }
             }
-            // iPad shows the sheet as a popover, which must be anchored or presenting it crashes:
-            // the middle of the screen, with no arrow, as there is no button to point at.
             sheet.popoverPresentationController?.let { popover ->
                 popover.sourceView = presenter.view
                 popover.sourceRect =
@@ -79,40 +93,45 @@ class DeviceBackupFiles : BackupFiles {
     }
 
     override suspend fun pick(): String? {
-        val presenter = topViewController() ?: return null
-        val selected =
-            suspendCancellableCoroutine<NSURL?> { continuation ->
-                val picker = UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypeJSON), asCopy = true)
-                val delegate =
-                    PickerDelegate { url ->
-                        if (!continuation.isActive) {
-                            url?.let { NSFileManager.defaultManager.removeItemAtURL(it, error = null) }
-                            return@PickerDelegate
-                        }
-                        pickerDelegate = null
-                        continuation.resume(url)
-                    }
-                pickerDelegate = delegate
-                picker.delegate = delegate
-                picker.allowsMultipleSelection = false
-                continuation.invokeOnCancellation {
-                    picker.delegate = null
-                    if (pickerDelegate === delegate) pickerDelegate = null
-                    if (presenter.presentedViewController === picker) {
-                        presenter.dismissViewControllerAnimated(false, completion = null)
-                    }
-                }
-                if (continuation.isActive) presenter.presentViewController(picker, animated = true, completion = null)
-            } ?: return null
+        val path = pickFile() ?: return null
         return withContext(Dispatchers.IO) {
             try {
-                val path = checkNotNull(selected.path) { "Could not read the selected backup" }.toPath()
-                FileSystem.SYSTEM.source(path).buffer().use {
+                FileSystem.SYSTEM.source(path.toPath()).buffer().use {
                     it.readBoundedBytes(MAX_BACKUP_INPUT_BYTES).decodeToString(throwOnInvalidSequence = true)
                 }
             } finally {
-                NSFileManager.defaultManager.removeItemAtURL(selected, error = null)
+                FileSystem.SYSTEM.delete(path.toPath(), mustExist = false)
             }
+        }
+    }
+
+    override suspend fun pickFile(): String? {
+        val presenter = topViewController() ?: return null
+        return suspendCancellableCoroutine { continuation ->
+            val picker =
+                UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypeZIP, UTTypeJSON), asCopy = true)
+            val delegate =
+                PickerDelegate { url ->
+                    if (!continuation.isActive) {
+                        url?.let { NSFileManager.defaultManager.removeItemAtURL(it, error = null) }
+                        return@PickerDelegate
+                    }
+                    pickerDelegate = null
+                    continuation.resume(url?.path)
+                }
+            pickerDelegate = delegate
+            picker.delegate = delegate
+            picker.allowsMultipleSelection = false
+            continuation.invokeOnCancellation {
+                picker.delegate = null
+                if (pickerDelegate === delegate) pickerDelegate = null
+                if (presenter.presentedViewController ===
+                    picker
+                ) {
+                    presenter.dismissViewControllerAnimated(false, completion = null)
+                }
+            }
+            if (continuation.isActive) presenter.presentViewController(picker, animated = true, completion = null)
         }
     }
 }

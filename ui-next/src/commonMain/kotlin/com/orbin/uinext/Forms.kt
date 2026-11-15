@@ -63,6 +63,7 @@ fun NextTextField(
         onValueChange = onValueChange,
         modifier =
             modifier
+                .readerTextEntry()
                 .fillMaxWidth()
                 .semantics {
                     if (label != null) contentDescription = label

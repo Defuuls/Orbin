@@ -9,6 +9,8 @@ import com.orbin.data.repository.BoardRepositoryImpl
 import com.orbin.data.repository.BookmarkRepositoryImpl
 import com.orbin.data.repository.CatalogRepositoryImpl
 import com.orbin.data.repository.HistoryRepositoryImpl
+import com.orbin.data.repository.RoomMediaLibraryRepository
+import com.orbin.data.repository.RoomThreadMemoryRepository
 import com.orbin.data.repository.SavedThreadRepositoryImpl
 import com.orbin.data.repository.SearchRepositoryImpl
 import com.orbin.data.repository.ThreadRepositoryImpl
@@ -22,9 +24,13 @@ import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.MediaLibraryRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SearchRepository
+import com.orbin.domain.repository.SessionHistoryRepository
+import com.orbin.domain.repository.SessionThreadMemoryRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.ThreadRepository
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.domain.usecase.BuildReplyGraphUseCase
@@ -39,13 +45,22 @@ import com.orbin.provider.vichan.VichanProvider
 import com.orbin.provider.vichan.VichanSite
 import com.orbin.provider.vichan.api.KtorVichanApi
 import io.ktor.client.HttpClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.KmpComponentCreate
 import me.tatarka.inject.annotations.Provides
 import me.tatarka.inject.annotations.Scope
+import okio.Path.Companion.toPath
 
 /** One instance per [SharedGraph], which each platform makes once per process. */
 @Scope
@@ -79,6 +94,7 @@ abstract class SharedGraph(
     @get:Provides protected val database: OrbinDatabase,
     @get:Provides protected val preferences: DataStore<Preferences>,
     @get:Provides protected val dispatcher: CoroutineDispatcher,
+    @get:Provides protected val offlineDirectory: String? = null,
 ) {
     abstract val json: Json
     abstract val settingsStore: SettingsStore
@@ -91,6 +107,8 @@ abstract class SharedGraph(
     abstract val boards: BoardRepository
     abstract val catalog: CatalogRepository
     abstract val threads: ThreadRepository
+    abstract val threadMemory: ThreadMemoryRepository
+    abstract val mediaLibrary: MediaLibraryRepository
     abstract val savedThreads: SavedThreadRepository
     abstract val search: SearchRepository
     abstract val settings: SettingsRepository
@@ -120,7 +138,10 @@ abstract class SharedGraph(
 
     @AppScope
     @Provides
-    protected fun history(database: OrbinDatabase): HistoryRepository = HistoryRepositoryImpl(database.historyDao())
+    protected fun history(
+        database: OrbinDatabase,
+        settings: SettingsRepository,
+    ): HistoryRepository = SessionHistoryRepository(HistoryRepositoryImpl(database.historyDao()), settings.settings)
 
     @AppScope
     @Provides
@@ -164,14 +185,67 @@ abstract class SharedGraph(
     protected fun threadRepository(
         registry: ProviderRegistry,
         dispatcher: CoroutineDispatcher,
-    ): ThreadRepository = ThreadRepositoryImpl(registry, BuildReplyGraphUseCase(), dispatcher)
+        savedThreads: SavedThreadRepository,
+    ): ThreadRepository = ThreadRepositoryImpl(registry, BuildReplyGraphUseCase(), dispatcher, savedThreads)
 
     @AppScope
     @Provides
+    @Suppress("TooGenericExceptionCaught") // Optional cache pruning tolerates platform database failures.
     protected fun savedThreadRepository(
         database: OrbinDatabase,
         dispatcher: CoroutineDispatcher,
-    ): SavedThreadRepository = SavedThreadRepositoryImpl(database.savedThreadDao(), dispatcher)
+        offlineDirectory: String?,
+        bookmarks: BookmarkRepository,
+        history: HistoryRepository,
+        settings: SettingsRepository,
+    ): SavedThreadRepository {
+        val repository =
+            SavedThreadRepositoryImpl(
+                database.savedThreadDao(),
+                dispatcher,
+                offlineDirectory?.toPath(),
+                automaticCopyDao = database.offlineThreadCopyDao(),
+                canRetainAutomaticCopy = { key ->
+                    bookmarks.getBookmark(key) != null ||
+                        (!settings.settings.first().historySessionOnly && history.getEntry(key) != null)
+                },
+            )
+        run {
+            CoroutineScope(SupervisorJob() + dispatcher).launch {
+                combine(
+                    bookmarks.observeBookmarks(),
+                    history.observeVisitedKeys(),
+                    settings.settings,
+                ) { saved, visited, options ->
+                    saved.mapTo(mutableSetOf()) { it.key }.apply {
+                        if (!options.historySessionOnly) addAll(visited)
+                    }
+                }.distinctUntilChanged().collect { retained ->
+                    try {
+                        repository.pruneAutomaticCopies(retained)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        // The next collection update retries cleanup; foreground repositories remain available.
+                    }
+                }
+            }
+        }
+        return repository
+    }
+
+    @AppScope
+    @Provides
+    protected fun threadMemory(
+        database: OrbinDatabase,
+        settings: SettingsRepository,
+    ): ThreadMemoryRepository =
+        SessionThreadMemoryRepository(RoomThreadMemoryRepository(database.threadMemoryDao()), settings.settings)
+
+    @AppScope
+    @Provides
+    protected fun mediaLibrary(database: OrbinDatabase): MediaLibraryRepository =
+        RoomMediaLibraryRepository(database.mediaLibraryDao())
 
     @AppScope
     @Provides
@@ -234,4 +308,5 @@ expect fun createSharedGraph(
     database: OrbinDatabase,
     preferences: DataStore<Preferences>,
     dispatcher: CoroutineDispatcher,
+    offlineDirectory: String? = null,
 ): SharedGraph

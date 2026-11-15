@@ -1,25 +1,32 @@
 package com.orbin.ios
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
@@ -37,6 +44,8 @@ import com.orbin.ios.resources.ios_downloads_status_queued
 import com.orbin.ios.resources.ios_downloads_status_running
 import com.orbin.ios.resources.ios_downloads_title
 import com.orbin.ios.resources.ios_downloads_where
+import com.orbin.ios.resources.ios_saved_library_tab
+import com.orbin.ios.resources.ios_saved_transfers_tab
 import com.orbin.uinext.DownloadRow
 import com.orbin.uinext.DownloadTags
 import com.orbin.uinext.NextConfirmDialog
@@ -65,9 +74,11 @@ internal fun DownloadsScreen(
     onDestination: (NextDestination) -> Unit,
     onBack: (() -> Unit)? = null,
     bottomBar: (@Composable () -> Unit)? = null,
+    libraryContent: (@Composable () -> Unit)? = null,
 ) {
     val title = stringResource(Res.string.ios_downloads_title)
     var confirmClear by remember { mutableStateOf(false) }
+    var librarySelected by rememberSaveable { mutableStateOf(libraryContent != null) }
     val clearLabel = stringResource(Res.string.ios_downloads_clear)
     Column(Modifier.fillMaxSize()) {
         ReaderScaffold(
@@ -77,44 +88,77 @@ internal fun DownloadsScreen(
             onDestination = onDestination,
             onBack = onBack,
             overflow =
-                if (records.isNotEmpty()) {
+                if (records.isNotEmpty() && !(librarySelected && libraryContent != null)) {
                     listOf(ReaderMenuItem(clearLabel) { confirmClear = true })
                 } else {
                     emptyList()
                 },
         ) { bottomPad ->
-            if (records.isEmpty()) {
-                ReaderEmptyState(
-                    title = stringResource(Res.string.ios_downloads_empty_title),
-                    message = stringResource(Res.string.ios_downloads_empty),
-                )
-            } else {
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                            .testTag(DownloadTags.LIST),
-                    contentPadding =
-                        PaddingValues(
-                            start = ReaderSpace.gutter,
-                            end = ReaderSpace.gutter,
-                            top = 8.dp,
-                            bottom =
-                                LIST_END_SPACE + if (bottomBar == null) bottomPad.calculateBottomPadding() else 0.dp,
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    item(key = "downloads-summary", contentType = "summary") {
-                        Text(
-                            stringResource(Res.string.ios_downloads_where),
-                            style = OrbinType.stateBody.withReaderFont(),
-                            color = reader.inkMuted,
-                            modifier = Modifier.padding(vertical = 8.dp),
-                        )
+            Column(Modifier.fillMaxSize()) {
+                if (libraryContent != null) {
+                    Row(Modifier.fillMaxWidth().selectableGroup()) {
+                        listOf(
+                            true to stringResource(Res.string.ios_saved_library_tab),
+                            false to stringResource(Res.string.ios_saved_transfers_tab),
+                        ).forEach { (library, label) ->
+                            Text(
+                                label,
+                                style = OrbinType.label.withReaderFont(),
+                                color = if (librarySelected == library) reader.accent else reader.inkMuted,
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .selectable(librarySelected == library, role = Role.Tab, onClick = {
+                                            librarySelected =
+                                                library
+                                        })
+                                        .padding(14.dp),
+                            )
+                        }
                     }
-                    items(records, key = { it.id }, contentType = { "download" }) { record ->
-                        DownloadRow(record, onRetry = { onRetry(record.id) })
+                }
+                if (librarySelected && libraryContent != null) {
+                    Box(Modifier.weight(1f)) { libraryContent() }
+                } else if (records.isEmpty()) {
+                    ReaderEmptyState(
+                        title = stringResource(Res.string.ios_downloads_empty_title),
+                        message = stringResource(Res.string.ios_downloads_empty),
+                    )
+                } else {
+                    LazyColumn(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                                .testTag(DownloadTags.LIST),
+                        contentPadding =
+                            PaddingValues(
+                                start = ReaderSpace.gutter,
+                                end = ReaderSpace.gutter,
+                                top = 8.dp,
+                                bottom =
+                                    LIST_END_SPACE +
+                                        if (bottomBar ==
+                                            null
+                                        ) {
+                                            bottomPad.calculateBottomPadding()
+                                        } else {
+                                            0.dp
+                                        },
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        item(key = "downloads-summary", contentType = "summary") {
+                            Text(
+                                stringResource(Res.string.ios_downloads_where),
+                                style = OrbinType.stateBody.withReaderFont(),
+                                color = reader.inkMuted,
+                                modifier = Modifier.padding(vertical = 8.dp),
+                            )
+                        }
+                        items(records, key = { it.id }, contentType = { "download" }) { record ->
+                            DownloadRow(record, onRetry = { onRetry(record.id) })
+                        }
                     }
                 }
             }

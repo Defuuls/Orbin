@@ -32,3 +32,5 @@ internal val MIGRATION_4_5 = androidMigration(4, 5)
 internal val MIGRATION_5_6 = androidMigration(5, 6)
 internal val MIGRATION_6_7 = androidMigration(6, 7)
 internal val MIGRATION_7_8 = androidMigration(7, 8)
+
+internal val MIGRATION_8_9 = androidMigration(8, 9)

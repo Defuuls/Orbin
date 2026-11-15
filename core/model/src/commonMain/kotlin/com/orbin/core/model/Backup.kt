@@ -29,6 +29,9 @@ data class BackupDocument(
     val favoriteBoards: List<BackupBoardRef> = emptyList(),
     val bookmarks: List<BackupBookmark> = emptyList(),
     val savedSearches: List<BackupSavedSearch> = emptyList(),
+    val history: List<BackupHistoryEntry> = emptyList(),
+    val threadMemory: List<ThreadMemory> = emptyList(),
+    val savedMedia: List<MediaLibraryRecord> = emptyList(),
 ) {
     companion object {
         /** Bump only for a change old builds cannot safely read; additive fields do not need it. */
@@ -60,9 +63,7 @@ data class BackupBoardRef(
  * defaulted fields would drift, a bookmark is small enough to map explicitly — and that keeps the
  * file format from being pinned to the internal key type, which is free to be refactored.
  *
- * Reply counters are intentionally partial: [lastSeenReplyCount] is what unread math needs, while
- * the latest count and liveness are re-fetched on the next refresh. Restoring a stale "latest"
- * would show invented unread badges until the thread was opened.
+ * Reply counts and status retain their last observed values; refreshing checks the live source.
  */
 @Serializable
 data class BackupBookmark(
@@ -74,6 +75,10 @@ data class BackupBookmark(
     val createdAtMillis: Long = 0,
     val isWatched: Boolean = false,
     val lastSeenReplyCount: Int = 0,
+    val latestReplyCount: Int = 0,
+    val isThreadDead: Boolean = false,
+    val availability: ThreadAvailability = ThreadAvailability.UNKNOWN,
+    val statusCheckedAtMillis: Long = 0,
 )
 
 /**
@@ -91,4 +96,49 @@ data class BackupSavedSearch(
     val includeNsfw: Boolean = true,
     val contentTypes: List<String> = emptyList(),
     val createdAtMillis: Long = 0,
+)
+
+/** Persistent history only; session-only visits never enter exports or cloud records. */
+@Serializable
+data class BackupHistoryEntry(
+    val key: ThreadKey,
+    val title: String = "",
+    val thumbnailUrl: String? = null,
+    val lastVisitedMillis: Long = 0,
+    val lastReadPostId: Long? = null,
+    val lastReadOffsetPx: Int = 0,
+)
+
+fun HistoryEntry.toBackupHistory(): BackupHistoryEntry =
+    BackupHistoryEntry(
+        key,
+        title,
+        thumbnailUrl,
+        lastVisitedMillis,
+        lastReadPostId?.value,
+        lastReadOffsetPx,
+    )
+
+fun BackupHistoryEntry.toHistoryEntry(): HistoryEntry =
+    HistoryEntry(
+        key,
+        title,
+        thumbnailUrl,
+        lastVisitedMillis,
+        lastReadPostId?.let(::PostId),
+        lastReadOffsetPx,
+    )
+
+/** SHA-256 and byte counts cover every archive entry except this manifest itself. */
+@Serializable
+data class BackupArchiveManifest(
+    val formatVersion: Int = 1,
+    val entries: List<BackupArchiveEntry>,
+)
+
+@Serializable
+data class BackupArchiveEntry(
+    val path: String,
+    val size: Long,
+    val sha256: String,
 )

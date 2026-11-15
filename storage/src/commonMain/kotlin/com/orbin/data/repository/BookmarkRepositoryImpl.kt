@@ -3,6 +3,7 @@ package com.orbin.data.repository
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Bookmark
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadAvailability
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.data.database.dao.BookmarkDao
@@ -60,6 +61,19 @@ class BookmarkRepositoryImpl(
 
     override suspend fun watchedBookmarks(): List<Bookmark> =
         dao.watchedBookmarks().map { it.toDomain() }.filterNot { it.isPermanentlyFiltered() }
+
+    override suspend fun updateAvailability(
+        key: ThreadKey,
+        availability: ThreadAvailability,
+        checkedAtMillis: Long,
+    ) = dao.updateAvailability(
+        key.provider.value,
+        key.board.value,
+        key.thread.value,
+        availability.name,
+        checkedAtMillis,
+        availability == ThreadAvailability.ARCHIVED || availability == ThreadAvailability.DELETED,
+    )
 
     override suspend fun updateLatest(
         key: ThreadKey,

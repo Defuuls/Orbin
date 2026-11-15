@@ -103,8 +103,8 @@ internal fun CatalogDestination(
         }
     val byRow = remember(threads) { threads.associateBy { it.key.catalogRowId } }
     val availableBoards =
-        remember(boards, settings.hideNsfwBoards) {
-            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.hideNsfwBoards && it.board.isNsfw }
+        remember(boards, settings.nsfwContentHidden) {
+            (boards as? Load.Ready)?.value.orEmpty().filterNot { settings.nsfwContentHidden && it.board.isNsfw }
         }
     val boardOptions =
         remember(availableBoards) {

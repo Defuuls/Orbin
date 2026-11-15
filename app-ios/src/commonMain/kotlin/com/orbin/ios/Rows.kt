@@ -30,7 +30,10 @@ import com.orbin.uinext.Post as NextPost
 internal fun MediaAttachment.cardImageUrl(): String =
     if (type == MediaType.IMAGE && sourceUrl.isNotBlank()) sourceUrl else thumbnailUrl
 
-internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
+internal fun SiteBoard.toTile(
+    followed: Boolean = false,
+    favorite: Boolean = false,
+): BoardTile =
     BoardTile(
         id = tileId,
         path = "/${board.id.value}/",
@@ -38,6 +41,7 @@ internal fun SiteBoard.toTile(followed: Boolean = false): BoardTile =
         title = board.title,
         nsfw = board.isNsfw,
         followed = followed,
+        favorite = favorite,
         site = provider.value,
     )
 

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -17,12 +18,15 @@ import com.orbin.core.model.FormFactor
 import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
+import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.ThreadLayout
+import com.orbin.domain.privacy.PrivacySession
 import com.orbin.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -38,9 +42,70 @@ class SettingsStore(
     override val settings: Flow<AppSettings> =
         flow {
             // The first emission used by NextTheme must already have the leftover skin key gone.
+            initializePrivacyDefaults()
             LegacyThemeMigration.clear(dataStore)
-            emitAll(dataStore.data.map { it.toAppSettings() })
+            emitAll(
+                combine(dataStore.data, PrivacySession.nsfwRevealed) { prefs, revealed ->
+                    prefs.toAppSettings().copy(nsfwSessionRevealed = revealed)
+                },
+            )
         }
+
+    override suspend fun setAccentTheme(value: AccentTheme) {
+        edit { it[Keys.accentTheme] = value.name }
+    }
+
+    override suspend fun setThreadLayout(value: ThreadLayout) {
+        edit { it[Keys.threadLayout] = value.name }
+    }
+
+    override suspend fun setAutoScrollToLastSeen(value: Boolean) {
+        edit { it[Keys.autoScrollToLastSeen] = value }
+    }
+
+    override suspend fun setCollectionNewestFirst(value: Boolean) {
+        edit { it[Keys.collectionNewestFirst] = value }
+    }
+
+    override suspend fun setShowStickyThreads(value: Boolean) {
+        edit { it[Keys.showStickyThreads] = value }
+    }
+
+    override suspend fun setNsfwEachSession(value: Boolean) {
+        edit { it[Keys.nsfwEachSession] = value }
+    }
+
+    override suspend fun setCoverNsfwMedia(value: Boolean) {
+        edit { it[Keys.coverNsfwMedia] = value }
+    }
+
+    override suspend fun setHistorySessionOnly(value: Boolean) {
+        edit { it[Keys.historySessionOnly] = value }
+    }
+
+    override suspend fun setPrivateSavedFiles(value: Boolean) {
+        edit { it[Keys.privateSavedFiles] = value }
+    }
+
+    override suspend fun setAskBeforePhotos(value: Boolean) {
+        edit { it[Keys.askBeforePhotos] = value }
+    }
+
+    override suspend fun setShowSavedMediaTab(value: Boolean) {
+        edit { it[Keys.showSavedMediaTab] = value }
+    }
+
+    override suspend fun setFullscreenAutoAdvance(value: Boolean) {
+        edit { it[Keys.fullscreenAutoAdvance] = value }
+    }
+
+    override suspend fun setHiddenThreadPatterns(value: List<String>) {
+        edit { it[Keys.hiddenThreadPatterns] = playbackJson.encodeToString(value.distinct()) }
+    }
+
+    override suspend fun setPostFilterRules(value: List<PostFilterRule>) {
+        edit { it[Keys.postFilterRules] = playbackJson.encodeToString(value.distinct()) }
+    }
 
     override suspend fun setPlaybackSettings(
         scope: PlaybackScope,
@@ -129,13 +194,55 @@ class SettingsStore(
         edit { it[Keys.videoCacheMegabytes] = megabytes.coerceAtLeast(0) }
     }
 
+    private suspend fun initializePrivacyDefaults() {
+        dataStore.edit { prefs ->
+            if (PRIVACY_DEFAULTS_MIGRATED !in prefs) {
+                // Existing stores keep the former implicit false; a fresh install starts SFW.
+                if (prefs.asMap().isEmpty()) prefs[Keys.hideNsfwBoards] = true
+                prefs[PRIVACY_DEFAULTS_MIGRATED] = true
+            }
+        }
+    }
+
     private suspend fun edit(block: (MutablePreferences) -> Unit) {
+        initializePrivacyDefaults()
         dataStore.edit { block(it) }
     }
 
     @Suppress("ComplexMethod")
     private fun Preferences.toAppSettings(): AppSettings =
         AppSettings(
+            accentTheme = AccentTheme.entries.firstOrNull { it.name == this[Keys.accentTheme] } ?: AccentTheme.ORBIN,
+            threadLayout =
+                ThreadLayout.entries.firstOrNull { it.name == this[Keys.threadLayout] } ?: ThreadLayout.NESTED,
+            autoScrollToLastSeen = this[Keys.autoScrollToLastSeen] ?: true,
+            showStickyThreads = this[Keys.showStickyThreads] ?: true,
+            collectionNewestFirst = this[Keys.collectionNewestFirst] ?: true,
+            nsfwEachSession = this[Keys.nsfwEachSession] ?: false,
+            coverNsfwMedia = this[Keys.coverNsfwMedia] ?: false,
+            historySessionOnly = this[Keys.historySessionOnly] ?: false,
+            privateSavedFiles = this[Keys.privateSavedFiles] ?: false,
+            askBeforePhotos = this[Keys.askBeforePhotos] ?: false,
+            showSavedMediaTab = this[Keys.showSavedMediaTab] ?: true,
+            fullscreenAutoAdvance = this[Keys.fullscreenAutoAdvance] ?: false,
+            hiddenThreadPatterns =
+                this[Keys.hiddenThreadPatterns]?.let {
+                    runCatching {
+                        playbackJson.decodeFromString<List<String>>(
+                            it,
+                        )
+                    }.getOrNull()
+                }
+                    ?: emptyList(),
+            postFilterRules =
+                this[Keys.postFilterRules]?.let {
+                    runCatching {
+                        playbackJson.decodeFromString<List<PostFilterRule>>(
+                            it,
+                        )
+                    }.getOrNull()
+                }
+                    ?: emptyList(),
             playbackPreferences = playbackPreferences(),
             hideNsfwBoards = this[Keys.hideNsfwBoards] ?: false,
             coverViolentMedia = this[Keys.coverViolentMedia] ?: true,
@@ -167,6 +274,20 @@ class SettingsStore(
     private val playbackJson = Json { ignoreUnknownKeys = true }
 
     private object Keys {
+        val accentTheme = stringPreferencesKey("accent_theme")
+        val threadLayout = stringPreferencesKey("thread_layout")
+        val autoScrollToLastSeen = booleanPreferencesKey("auto_scroll_to_last_seen")
+        val collectionNewestFirst = booleanPreferencesKey("collection_newest_first")
+        val showStickyThreads = booleanPreferencesKey("show_sticky_threads")
+        val nsfwEachSession = booleanPreferencesKey("nsfw_each_session")
+        val coverNsfwMedia = booleanPreferencesKey("cover_nsfw_media")
+        val historySessionOnly = booleanPreferencesKey("history_session_only")
+        val privateSavedFiles = booleanPreferencesKey("private_saved_files")
+        val askBeforePhotos = booleanPreferencesKey("ask_before_photos")
+        val showSavedMediaTab = booleanPreferencesKey("show_saved_media_tab")
+        val fullscreenAutoAdvance = booleanPreferencesKey("fullscreen_auto_advance")
+        val hiddenThreadPatterns = stringPreferencesKey("hidden_thread_patterns")
+        val postFilterRules = stringPreferencesKey("post_filter_rules")
         val playback = stringPreferencesKey("playback_preferences")
         val hideNsfwBoards = booleanPreferencesKey("hide_nsfw_boards")
         val coverViolentMedia = booleanPreferencesKey("cover_violent_media")
@@ -188,3 +309,5 @@ class SettingsStore(
         val videoCacheMegabytes = intPreferencesKey("video_cache_megabytes")
     }
 }
+
+private val PRIVACY_DEFAULTS_MIGRATED = booleanPreferencesKey("privacy_defaults_migrated")

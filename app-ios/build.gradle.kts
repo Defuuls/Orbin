@@ -6,6 +6,10 @@ plugins {
 // the Xcode project in `iosApp/` as the static `OrbinKit` framework. It is to iOS what `:app` is to
 // Android — a composition root that nothing else depends on.
 kotlin {
+    compilerOptions {
+        // This module deliberately retains a platform-owned search transport behind an expect class.
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
     android {
         // Never packaged into the Android app; the Android target exists so the shared logic here
         // is unit-tested on every `./gradlew test` run, without needing a Mac.

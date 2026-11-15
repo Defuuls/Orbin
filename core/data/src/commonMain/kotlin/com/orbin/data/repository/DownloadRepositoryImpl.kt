@@ -1,5 +1,6 @@
 package com.orbin.data.repository
 
+import com.orbin.core.model.DownloadMediaContext
 import com.orbin.core.model.DownloadOrganization
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
@@ -17,12 +18,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import kotlin.time.Clock
 
 interface DownloadPlatformQueue {
     suspend fun enqueue(id: Long)
 
     suspend fun cancelAll() = Unit
+
+    suspend fun privateFileExists(id: Long): Boolean = false
 
     fun writeTextFile(
         fileName: String,
@@ -70,6 +74,8 @@ class DownloadRepositoryImpl(
         boardId: String?,
         threadId: Long?,
         threadTitle: String?,
+        mediaContext: DownloadMediaContext?,
+        privateTarget: Boolean,
     ): Long =
         withContext(ioDispatcher) {
             val uri = runCatching { Url(url) }.getOrNull()
@@ -80,17 +86,29 @@ class DownloadRepositoryImpl(
             val safeName = sanitizeFileName(fileName)
             val relativeDir =
                 buildRelativeDir(DownloadOrganization.BY_BOARD_THEN_THREAD, boardId, threadId, threadTitle)
-            enqueueExistingOrNew(url, safeName, relativeDir)
+            enqueueExistingOrNew(url, safeName, relativeDir, mediaContext, privateTarget)
         }
 
     private suspend fun enqueueExistingOrNew(
         url: String,
         safeName: String,
         relativeDir: String,
+        mediaContext: DownloadMediaContext?,
+        privateTarget: Boolean,
     ): Long =
         idMutex.withLock {
-            val existing = dao.findByTarget(url, safeName, relativeDir)
-            val filePresent = queue?.downloadedFileExists(safeName, relativeDir) != false
+            val existing =
+                dao.findByTarget(url, safeName, relativeDir).filter {
+                    it.privateTarget == privateTarget &&
+                        it.mediaContextJson == mediaContext?.let { context -> Json.encodeToString(context) }
+                }
+            val filePresent =
+                if (privateTarget) {
+                    val completed = existing.firstOrNull { it.status == DownloadStatus.COMPLETED.name }
+                    completed != null && queue?.privateFileExists(completed.id) == true
+                } else {
+                    queue?.downloadedFileExists(safeName, relativeDir) != false
+                }
             when (val decision = decideEnqueue(existing, filePresent)) {
                 is EnqueueDecision.ReturnExisting -> decision.id
                 is EnqueueDecision.Requeue -> {
@@ -98,7 +116,7 @@ class DownloadRepositoryImpl(
                     queue?.enqueue(decision.id)
                     decision.id
                 }
-                is EnqueueDecision.InsertNew -> insertNew(url, safeName, relativeDir)
+                is EnqueueDecision.InsertNew -> insertNew(url, safeName, relativeDir, mediaContext, privateTarget)
             }
         }
 
@@ -106,6 +124,8 @@ class DownloadRepositoryImpl(
         url: String,
         safeName: String,
         relativeDir: String,
+        mediaContext: DownloadMediaContext?,
+        privateTarget: Boolean,
     ): Long {
         val id = nextIdLocked()
         dao.upsert(
@@ -116,6 +136,8 @@ class DownloadRepositoryImpl(
                 status = DownloadStatus.QUEUED.name,
                 createdAtMillis = id,
                 relativeDir = relativeDir,
+                mediaContextJson = mediaContext?.let { Json.encodeToString(it) },
+                privateTarget = privateTarget,
             ),
         )
         queue?.enqueue(id)

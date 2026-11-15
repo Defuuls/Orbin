@@ -1,0 +1,5 @@
+<resources>
+    <string name="reader_favorite_boards">Favorite boards</string>
+    <string name="reader_board_favorite">Favorite %1$s</string>
+    <string name="reader_board_unfavorite">Remove %1$s from favorites</string>
+</resources>

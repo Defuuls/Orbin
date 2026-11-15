@@ -58,6 +58,26 @@
     <string name="settings_check_failed_message">Could not check for updates: %1$s</string>
     <string name="settings_up_to_date_message">Orbin is up to date</string>
     <string name="settings_backup_saved">Backup saved</string>
+    <string name="settings_backup_restored_media">; %1$d saved media files</string>
     <string name="settings_backup_restored">Restored %1$d boards, %2$d bookmarks and %3$d saved searches</string>
     <string name="settings_backup_restored_skipped">Restored %1$d boards, %2$d bookmarks and %3$d saved searches (skipped %4$d from a provider this build doesn\'t support)</string>
+    <string name="settings_accent_theme">Accent color</string>
+    <string name="settings_nsfw_session">Reveal NSFW each session</string>
+    <string name="settings_nsfw_session_hint">Require another reveal after leaving Orbin. Permanent hiding still applies.</string>
+    <string name="settings_reveal_nsfw">Show NSFW for this session</string>
+    <string name="settings_reveal_nsfw_action">Reveal</string>
+    <string name="settings_cover_nsfw">Cover NSFW media until opened</string>
+    <string name="settings_private_files">Keep new saved files in Orbin</string>
+    <string name="settings_private_files_hint">New saves stay in private app storage. Existing public files stay where they are.</string>
+    <string name="settings_ask_photos">Ask before public media saves</string>
+    <string name="settings_ask_photos_hint">Confirm before exporting media outside Orbin’s private library.</string>
+    <string name="settings_saved_tab">Show the Downloads tab</string>
+    <string name="settings_session_history">Only keep history this session</string>
+    <string name="settings_session_history_hint">Never stored or backed up; forgotten when you leave Orbin.</string>
+    <string name="settings_auto_advance">Play the next item when a video ends</string>
+    <string name="settings_thread_layout">Thread layout</string>
+    <string name="settings_last_seen">Open threads where you left them</string>
+    <string name="settings_sticky">Show pinned threads</string>
+    <string name="settings_hidden_threads">Hidden thread filters</string>
+    <string name="settings_hidden_posts">Hidden post filters</string>
 </resources>

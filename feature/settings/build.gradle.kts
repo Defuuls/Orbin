@@ -12,6 +12,8 @@ android {
 
 dependencies {
     implementation(project(":ui-next"))
+    implementation(project(":core:data"))
+    implementation(libs.okio)
     testImplementation(project(":core:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)

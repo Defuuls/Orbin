@@ -53,6 +53,7 @@ data class MediaCell(
     val spoiler: Boolean = false,
     /** Actual attachment format, dimensions and size, when supplied by the host. */
     val details: String = "",
+    val kind: MediaKind = MediaKind.UNKNOWN,
 )
 
 @Composable

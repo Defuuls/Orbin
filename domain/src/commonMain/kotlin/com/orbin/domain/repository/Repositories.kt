@@ -15,6 +15,7 @@ import com.orbin.core.model.SavedSearch
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchResult
 import com.orbin.core.model.Thread
+import com.orbin.core.model.ThreadAvailability
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import kotlinx.coroutines.flow.Flow
@@ -186,6 +187,23 @@ interface BookmarkRepository {
     /** All bookmarks the user is watching (for the background update worker). */
     suspend fun watchedBookmarks(): List<Bookmark>
 
+    suspend fun updateAvailability(
+        key: ThreadKey,
+        availability: ThreadAvailability,
+        checkedAtMillis: Long,
+    ) {
+        getBookmark(key)?.let { bookmark ->
+            addBookmark(
+                bookmark.copy(
+                    availability = availability,
+                    statusCheckedAtMillis = checkedAtMillis,
+                    isThreadDead =
+                        availability == ThreadAvailability.ARCHIVED || availability == ThreadAvailability.DELETED,
+                ),
+            )
+        }
+    }
+
     /** Updates the latest known reply count and dead flag from a background refresh. */
     suspend fun updateLatest(
         key: ThreadKey,
@@ -196,6 +214,15 @@ interface BookmarkRepository {
 
 interface HistoryRepository {
     fun observeHistory(): Flow<List<HistoryEntry>>
+
+    /** Portable persisted history; session-only visits must never enter a backup or sync. */
+    fun observeAllEntries(): Flow<List<HistoryEntry>> = observeHistory()
+
+    suspend fun forgetSession() = Unit
+
+    suspend fun remove(key: ThreadKey) {
+        error("This history store does not support removing one entry")
+    }
 
     /** Every visited thread key, for read-state styling across multiple boards. */
     fun observeVisitedKeys(): Flow<Set<ThreadKey>>

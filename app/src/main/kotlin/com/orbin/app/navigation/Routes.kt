@@ -55,6 +55,16 @@ sealed interface Route {
         val attachmentId: String? = null,
     ) : Route
 
+    /** A thread gallery scope without changing the persisted identity of the original Gallery. */
+    @Serializable
+    data class FilteredMedia(
+        val provider: String,
+        val board: String,
+        val thread: Long,
+        val startIndex: Int = 0,
+        val mediaFilter: String = "ALL",
+    ) : Route
+
     /** Catalog/feed selection needs extra identity without changing Gallery's persisted destination ID. */
     @Serializable
     data class SelectedMedia(

@@ -5,7 +5,6 @@ import com.orbin.core.model.CatalogRequest
 import com.orbin.core.model.FeedSort
 import com.orbin.core.model.FeedThreadLimit
 import com.orbin.core.model.HomeFeedMode
-import com.orbin.core.model.MediaType
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isPermanentlyFiltered
@@ -24,11 +23,13 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
@@ -47,6 +48,7 @@ internal data class HomeFeedDirectory(
 data class HomeFeedContentPolicy(
     val hideNsfw: Boolean,
     val coverViolent: Boolean,
+    val coverNsfw: Boolean = false,
 )
 
 /** Explicit platform-state wiring keeps catalog scheduling and cache behavior independently testable. */
@@ -61,8 +63,22 @@ internal class HomeFeed(
     private val firstRun: StateFlow<FirstRunState>,
     private val scope: CoroutineScope,
     private val catalogDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val favoritesOnly: StateFlow<Boolean> = MutableStateFlow(false),
     private val isActive: () -> Boolean,
 ) {
+    private val favoriteBoards =
+        combine(
+            providers.map { provider ->
+                preferences.observeFavoriteBoards(provider.metadata.id).map { boards ->
+                    boards.mapTo(mutableSetOf()) { FollowedBoard(provider.metadata.id, it) }
+                }
+            },
+        ) { perSite -> perSite.flatMapTo(mutableSetOf()) { it } }
+            .stateIn(scope, SharingStarted.Eagerly, emptySet())
+
+    private fun selectedMembership(): Set<FollowedBoard> =
+        if (favoritesOnly.value) favoriteBoards.value else followed.value
+
     private val _mode = MutableStateFlow(HomeFeedMode.FOLLOWING)
     val mode: StateFlow<HomeFeedMode> = _mode.asStateFlow()
     private val _content = MutableStateFlow<Load<List<FeedThread>>>(Load.Loading)
@@ -85,6 +101,8 @@ internal class HomeFeed(
     private var limitObservation: Job? = null
     private var request: HomeFeedRequest? = null
     private var work: Job? = null
+    private var presentationWork: Job? = null
+    private var presentationGeneration = 0L
     private var discoveryLimit = DISCOVERY_PAGE_SIZE
     private var selectedSource: ProviderId? = null
     private var catalogLoading = false
@@ -96,11 +114,25 @@ internal class HomeFeed(
                 val previous = actualSettings
                 actualSettings = current
                 val policyChanged = previous != null && previous.contentPolicy() != current.contentPolicy()
+                val rulesChanged =
+                    previous != null &&
+                        (
+                            previous.hiddenThreadPatterns != current.hiddenThreadPatterns ||
+                                previous.showStickyThreads != current.showStickyThreads
+                        )
                 if (policyChanged) invalidate()
-                if (isActive() && (previous == null || policyChanged)) load()
+                if (rulesChanged) {
+                    presentationWork?.cancel()
+                    presentationGeneration++
+                    _content.value = Load.Loading
+                }
+                val needsLoad = previous == null || policyChanged || rulesChanged
+                if (isActive() && needsLoad) load()
             }
         }
-        scope.launch { followed.collect { if (isActive()) load() } }
+        scope.launch { followed.collect { if (!favoritesOnly.value && isActive()) load() } }
+        scope.launch { favoriteBoards.collect { if (favoritesOnly.value && isActive()) load() } }
+        scope.launch { favoritesOnly.collect { if (isActive()) load() } }
         scope.launch {
             firstRun.map { it.initialized && !it.needed }.distinctUntilChanged().collect {
                 if (it && isActive()) load()
@@ -132,6 +164,8 @@ internal class HomeFeed(
     /** A changed content/privacy preference cannot revive an older cached media presentation. */
     fun invalidate() {
         work?.cancel()
+        presentationWork?.cancel()
+        presentationGeneration++
         request = null
         cache.clear()
         _content.value = Load.Loading
@@ -159,11 +193,14 @@ internal class HomeFeed(
     private fun startRequest(next: HomeFeedRequest) {
         if (next == request && (_content.value is Load.Ready || work?.isActive == true)) {
             val cached = available(next)
-            if (cached.isNotEmpty()) _content.value = present(cached, next.boards.size)
+            if (cached.isNotEmpty()) publishPresentation(cached, next.boards.size)
             updateProgress()
             return
         }
         work?.cancel()
+        presentationWork?.cancel()
+        presentationGeneration++
+        _content.value = Load.Loading
         request = next
         if (next.boards.isEmpty()) {
             _contentPolicy.value = next.policy
@@ -173,7 +210,7 @@ internal class HomeFeed(
             return
         }
         val cached = available(next)
-        _content.value = if (cached.isEmpty()) Load.Loading else present(cached, next.boards.size)
+        if (cached.isEmpty()) _content.value = Load.Loading else publishPresentation(cached, next.boards.size)
         if (cached.isNotEmpty()) _contentPolicy.value = next.policy
         catalogLoading = true
         updateProgress()
@@ -201,7 +238,7 @@ internal class HomeFeed(
             _completedDiscoveryCount.value = 0
         }
         val currentSettings = actualSettings ?: return null
-        val candidates = candidates(_mode.value, selected, currentSettings.hideNsfwBoards)
+        val candidates = candidates(_mode.value, selected, currentSettings.nsfwContentHidden)
         val index = directory.value
         val relevant = relevantSources()
         if (candidates.isEmpty() && relevant.any { it in index.loading || it in index.failures }) {
@@ -253,7 +290,7 @@ internal class HomeFeed(
             cache[key] =
                 CachedHomeBoard(kept, selection.limits[key], selection.epochs[key.provider] ?: 0, selection.policy)
             _contentPolicy.value = selection.policy
-            _content.value = present(available(selection), selection.boards.size)
+            publishPresentation(available(selection), selection.boards.size)
             updateProgress()
         }
     }
@@ -276,7 +313,7 @@ internal class HomeFeed(
             }
         if (mode == HomeFeedMode.FOLLOWING) {
             return eligible
-                .filter { it.key in followed.value }
+                .filter { it.key in selectedMembership() }
                 .sortedWith(compareBy({ it.provider.value }, { it.board.id.value }))
         }
         val perSite =
@@ -297,15 +334,51 @@ internal class HomeFeed(
         }
     }
 
+    /** User rules refilter retained catalogs on the worker; they never restart the network cache. */
+    private fun publishPresentation(
+        feeds: List<BoardFeed>,
+        expected: Int,
+    ) {
+        val options = actualSettings ?: return
+        val generation = ++presentationGeneration
+        presentationWork?.cancel()
+        if (options.hiddenThreadPatterns.isEmpty() && options.showStickyThreads) {
+            _content.value = present(feeds, expected)
+            return
+        }
+        presentationWork =
+            scope.launch {
+                val visible =
+                    withContext(catalogDispatcher) {
+                        val filters =
+                            com.orbin.core.model
+                                .UserContentFilters(threadPatterns = options.hiddenThreadPatterns)
+                        val filtered =
+                            feeds.map { feed ->
+                                feed.copy(
+                                    threads =
+                                        feed.threads.filter { thread ->
+                                            currentCoroutineContext().ensureActive()
+                                            (options.showStickyThreads || !thread.stats.isSticky) &&
+                                                (options.hiddenThreadPatterns.isEmpty() || !filters.hidesThread(thread))
+                                        },
+                                )
+                            }
+                        present(filtered, expected)
+                    }
+                if (generation == presentationGeneration) _content.value = visible
+            }
+    }
+
     private fun present(
         feeds: List<BoardFeed>,
         expected: Int,
     ): Load<List<FeedThread>> {
-        val hasVideo = feeds.any { feed -> feed.threads.any { it.hasFeedVideo() } }
+        val hasContent = feeds.any { feed -> feed.threads.isNotEmpty() }
         val failed = feeds.any { it.failed } || relevantSources().any { it in directory.value.failures }
         val completedBatch = feeds.isNotEmpty() && feeds.size == expected
-        val unavailableVideos = failed && !hasVideo
-        if (completedBatch && unavailableVideos) {
+        val unavailableContent = failed && !hasContent
+        if (completedBatch && unavailableContent) {
             return Load.Failed("Couldn't load the feed. Try again.")
         }
         return Load.Ready(
@@ -317,7 +390,7 @@ internal class HomeFeed(
 
     private fun relevantSources(): Set<ProviderId> =
         if (_mode.value == HomeFeedMode.FOLLOWING) {
-            followed.value.filter { source.value == null || it.provider == source.value }.mapTo(
+            selectedMembership().filter { source.value == null || it.provider == source.value }.mapTo(
                 mutableSetOf(),
             ) { it.provider }
         } else {
@@ -327,13 +400,9 @@ internal class HomeFeed(
         }
 
     private fun updateProgress() {
-        val hasVideo =
-            (_content.value as? Load.Ready)?.value.orEmpty().any { entry ->
-                entry.thread.originalPost.attachments
-                    .any { it.type == MediaType.VIDEO && it.sourceUrl.isNotBlank() }
-            }
+        val hasContent = (_content.value as? Load.Ready)?.value.orEmpty().isNotEmpty()
         val waitingForDirectory =
-            !hasVideo && !_canLoadMore.value && relevantSources().any { it in directory.value.loading }
+            !hasContent && !_canLoadMore.value && relevantSources().any { it in directory.value.loading }
         _isLoadingMore.value = catalogLoading || waitingForDirectory
     }
 
@@ -368,10 +437,7 @@ internal class HomeFeed(
 
 private val SiteBoard.key: FollowedBoard get() = FollowedBoard(provider, board.id)
 
-private fun AppSettings.contentPolicy() = HomeFeedContentPolicy(hideNsfwBoards, coverViolentMedia)
-
-private fun com.orbin.core.model.CatalogThread.hasFeedVideo() =
-    originalPost.attachments.any { it.type == MediaType.VIDEO && it.sourceUrl.isNotBlank() }
+private fun AppSettings.contentPolicy() = HomeFeedContentPolicy(nsfwContentHidden, coverViolentMedia, coverNsfwMedia)
 
 private data class HomeFeedRequest(
     val mode: HomeFeedMode,

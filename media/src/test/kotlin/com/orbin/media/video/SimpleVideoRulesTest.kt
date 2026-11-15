@@ -5,6 +5,23 @@ import org.junit.After
 import org.junit.Test
 
 class SimpleVideoRulesTest {
+    @Test
+    fun `explicit inline fullscreen handoff preserves even a short looping clip`() {
+        val url = "https://x/inline.webm"
+        val capture = { 4_000L to 10_000L }
+        PlaybackPositions.register(url, capture)
+        try {
+            prepareVideoPlaybackHandoff(url)
+            assertThat(PlaybackPositions.resumeAt(url)).isEqualTo(4_000L)
+            PlaybackPositions.remember(url, positionMs = 4_100L, durationMs = 10_000L)
+            assertThat(PlaybackPositions.resumeAt(url)).isEqualTo(4_100L)
+            PlaybackPositions.remember(url, positionMs = 5_000L, durationMs = 10_000L)
+            assertThat(PlaybackPositions.resumeAt(url)).isEqualTo(0L)
+        } finally {
+            PlaybackPositions.unregister(url, capture)
+        }
+    }
+
     @After
     fun reset() = PlaybackPositions.clear()
 

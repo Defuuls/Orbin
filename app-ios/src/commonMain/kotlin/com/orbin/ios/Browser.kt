@@ -7,10 +7,10 @@ import com.orbin.core.model.CatalogSort
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.HomeFeedMode
 import com.orbin.core.model.MediaAttachment
+import com.orbin.core.model.PostId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadKey
-import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
 import com.orbin.data.database.dao.DownloadDao
@@ -23,6 +23,7 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.EngineKind
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
+import com.orbin.provider.api.isVisibleInOrbin
 import com.orbin.uinext.FeedRow
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CancellationException
@@ -135,6 +136,7 @@ sealed interface Route {
         val thumbnailUrl: String? = null,
         /** The exact tapped file can start before its thread's remaining files arrive. */
         val initialAttachment: MediaAttachment? = null,
+        val mediaFilter: com.orbin.uinext.MediaKindFilter = com.orbin.uinext.MediaKindFilter.ALL,
     ) : Route
 }
 
@@ -174,11 +176,15 @@ class Browser(
     onWatch: () -> Unit = {},
     downloadDao: DownloadDao? = null,
     private val readerDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    val threadMemory: com.orbin.domain.repository.ThreadMemoryRepository =
+        com.orbin.domain.repository
+            .InMemoryThreadMemoryRepository(),
+    private val threadCopies: com.orbin.domain.repository.SavedThreadRepository? = null,
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 
     /** The reader's settings; hiding NSFW boards shapes the boards list, the feed and search. */
-    val settings = ReaderSettings(settings, history, scope, downloadDao)
+    val settings = ReaderSettings(settings, history, scope, downloadDao, threadMemory = threadMemory)
 
     private val followedBoards: Flow<Set<FollowedBoard>> =
         combine(
@@ -204,6 +210,42 @@ class Browser(
 
     /** Every site, in the order the app registers them: the site switcher's segments. */
     val sites: List<Site> = providers.map { Site(it.metadata.id, it.metadata.displayName) }
+    val webSearchProviders = providers.map { it.metadata }
+
+    /** Search results and verification outlive a covered Search screen. */
+    internal val webSearchSession by lazy {
+        com.orbin.provider.api.fourchanWebSearchProvider(webSearchProviders)?.let { provider ->
+            com.orbin.provider.api
+                .FourchanSearchSession(provider) { hit ->
+                    hit.isVisibleInOrbin(
+                        this.settings.current.value,
+                        boardDirectory.value.boards
+                            .filter { it.provider == provider.id }
+                            .map { it.board },
+                    )
+                }.also { session ->
+                    scope.launch {
+                        combine(
+                            this@Browser.settings.current,
+                            boardDirectory,
+                        ) { _, _ -> Unit }.collect { session.refilter() }
+                    }
+                }
+        }
+    }
+    internal val webSearchTransport by lazy {
+        webSearchSession?.let { session ->
+            NativeSearchTransport(session, scope).also { transport ->
+                scope.coroutineContext[Job]?.invokeOnCompletion { transport.close() }
+            }
+        }
+    }
+
+    /** Resolve known site identities; arbitrary pasted URLs never reach the HTTP client. */
+    fun parseThreadLink(text: String): ThreadKey? =
+        com.orbin.provider.api
+            .parseThreadLink(text, providers.map { it.metadata })
+            ?.key
 
     /**
      * The board directory's saved source. Home has an independent filter, initially All sites.
@@ -222,9 +264,17 @@ class Browser(
     /** Home's source filter is independent of the board directory's selected site. */
     private val _feedSite = MutableStateFlow<ProviderId?>(null)
     val feedSite: StateFlow<ProviderId?> = _feedSite.asStateFlow()
+    private val _feedFavoritesOnly = MutableStateFlow(false)
+    val feedFavoritesOnly: StateFlow<Boolean> = _feedFavoritesOnly.asStateFlow()
+
+    fun selectFeedFavoritesOnly(value: Boolean) {
+        if (value) _feedSite.value = null
+        _feedFavoritesOnly.value = value
+    }
 
     fun selectFeedSite(site: ProviderId?) {
         require(site == null || site in byId) { "Unknown site: $site" }
+        _feedFavoritesOnly.value = false
         if (_feedSite.value == site) return
         _feedSite.value = site
         loadFeed()
@@ -240,9 +290,30 @@ class Browser(
 
     fun loadMoreFeed() = homeFeed.loadMore()
 
-    internal val collections = LocalThreadCollections(bookmarks, scope, now, onWatch)
+    internal val collections =
+        LocalThreadCollections(
+            bookmarks,
+            scope,
+            now,
+            onWatch,
+            providers,
+            history,
+            threadMemory,
+            preferences = { this.settings.current.value },
+        )
     val savedThreads = bookmarks.observeBookmarks()
     val readingHistory = history.observeHistory()
+
+    /** Reader visibility, rather than merely loading a response, clears watched unread counts. */
+    fun markThreadRead(key: ThreadKey) {
+        scope.launch {
+            val latestReplies = bookmarks.getBookmark(key)?.latestReplyCount ?: 0
+            threadMemory.update(key) {
+                it.copy(acknowledgedReplyCount = maxOf(it.acknowledgedReplyCount, latestReplies))
+            }
+            if (!settings.current.value.historySessionOnly) bookmarks.markRead(key)
+        }
+    }
 
     /** Searching the followed boards' catalogs. */
     val search =
@@ -252,12 +323,18 @@ class Browser(
 
     /** Watching threads, their unread counts, and keeping those counts current. */
     val watched =
-        WatchedThreads(bookmarks, scope, now, notifier, onWatch) { key ->
+        WatchedThreads(bookmarks, scope, now, notifier, onWatch, threadMemory = threadMemory) { key ->
             provider(key.provider).getThread(key.board, key.thread)
         }
 
     private val _backStack = MutableStateFlow<List<Route>>(listOf(Route.Feed))
     val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()
+    private val _pendingThreadPost = MutableStateFlow<Pair<ThreadKey, PostId>?>(null)
+    val pendingThreadPost: StateFlow<Pair<ThreadKey, PostId>?> = _pendingThreadPost.asStateFlow()
+
+    fun clearPendingThreadPost(expected: Pair<ThreadKey, PostId>) {
+        _pendingThreadPost.compareAndSet(expected, null)
+    }
 
     private val _boards = MutableStateFlow<Load<List<SiteBoard>>>(Load.Loading)
     val boards: StateFlow<Load<List<SiteBoard>>> = _boards.asStateFlow()
@@ -279,7 +356,9 @@ class Browser(
     val unreachableSites: StateFlow<List<String>> = _unreachableSites.asStateFlow()
 
     private val _catalog = MutableStateFlow<Load<List<CatalogThread>>>(Load.Loading)
-    val catalog: StateFlow<Load<List<CatalogThread>>> = _catalog.asStateFlow()
+    val catalog: StateFlow<Load<List<CatalogThread>>> =
+        filterReaderCatalog(_catalog, this.settings.current, readerDispatcher)
+            .stateIn(scope, SharingStarted.Eagerly, Load.Loading)
     private val _catalogRefreshing = MutableStateFlow(false)
     val catalogRefreshing: StateFlow<Boolean> = _catalogRefreshing.asStateFlow()
     private val _catalogRefreshFailure = MutableStateFlow<Load.Failed?>(null)
@@ -324,6 +403,7 @@ class Browser(
             followed = followed,
             directory = feedDirectory,
             source = feedSite,
+            favoritesOnly = feedFavoritesOnly,
             firstRun = firstRun.state,
             scope = scope,
             isActive = { _backStack.value.last() == Route.Feed },
@@ -356,6 +436,7 @@ class Browser(
         scope.launch { boardPreferences.setFavoriteBoard(board.provider, board.board.id, favorite) }
     }
 
+    private val pageLoader = BrowserPageLoader(scope)
     private val catalogLoad = PageLoad()
     private val threadLoad = PageLoad()
     private var readerLayoutWide = false
@@ -369,7 +450,7 @@ class Browser(
         scope.launch {
             this@Browser
                 .settings.current
-                .distinctUntilChangedBy { it.hideNsfwBoards to it.coverViolentMedia }
+                .distinctUntilChangedBy { Triple(it.nsfwContentHidden, it.coverViolentMedia, it.coverNsfwMedia) }
                 .drop(1)
                 .collect {
                     catalogShown = null
@@ -414,7 +495,12 @@ class Browser(
     fun completeFirstRun(): Job =
         scope.launch {
             val savedFollows = followedBoards.first()
-            if (feedDirectory.value.eligibleFollowing(savedFollows, settings.current.value.hideNsfwBoards).isEmpty()) {
+            if (feedDirectory.value
+                    .eligibleFollowing(
+                        savedFollows,
+                        settings.current.value.nsfwContentHidden,
+                    ).isEmpty()
+            ) {
                 return@launch
             }
             firstRun
@@ -478,11 +564,19 @@ class Browser(
         loadCurrent()
     }
 
-    fun openThread(key: ThreadKey) {
+    fun openThread(key: ThreadKey) = openThread(key, null)
+
+    fun openThread(
+        key: ThreadKey,
+        postId: PostId?,
+    ) {
+        _pendingThreadPost.value = postId?.let { key to it }
         mediaScroll.clear()
         _backStack.update { stack ->
             val previous = stack.getOrNull(stack.lastIndex - 1)
-            if (stack.lastOrNull() is Route.ThreadPage && previous is Route.Catalog) {
+            if (stack.lastOrNull() is Route.ThreadPage &&
+                (previous is Route.Catalog || previous?.isThreadReaderSource == true)
+            ) {
                 stack.dropLast(1) + Route.ThreadPage(key)
             } else {
                 stack + Route.ThreadPage(key)
@@ -503,10 +597,20 @@ class Browser(
         history.observeVisitedThreadIds(board.provider, board.board.id)
 
     /** Opens the viewer on the open thread's file number [index], counted across all its posts. */
-    fun openMedia(index: Int) {
+    fun openMedia(index: Int) = openMedia(index, com.orbin.uinext.MediaKindFilter.ALL)
+
+    fun openMedia(
+        index: Int,
+        mediaFilter: com.orbin.uinext.MediaKindFilter,
+    ) {
         val thread = (_backStack.value.last() as? Route.ThreadPage)?.key ?: return
+        preparedThread.value
+            ?.attachments
+            ?.getOrNull(index)
+            ?.sourceUrl
+            ?.let(::prepareNativeMediaHandoff)
         mediaScroll.clear()
-        _backStack.update { it + Route.Media(thread, index) }
+        _backStack.update { it + Route.Media(thread, index, mediaFilter = mediaFilter) }
         cancelHiddenPages()
     }
 
@@ -526,6 +630,7 @@ class Browser(
         key: ThreadKey,
         attachment: MediaAttachment,
     ) {
+        prepareNativeMediaHandoff(attachment.sourceUrl)
         mediaScroll.clear()
         _backStack.update {
             it +
@@ -749,7 +854,7 @@ class Browser(
         val sameBoard = catalogShown == board
         catalogShown = board
         if (!sameBoard) _preparedCatalogRows.value = emptyMap()
-        load(
+        pageLoader.load(
             catalogLoad,
             _catalog,
             _catalogRefreshing,
@@ -771,7 +876,7 @@ class Browser(
             _preparedThread.value = null
             _firstUnreadPostId.value = null
         }
-        load(
+        pageLoader.load(
             threadLoad,
             _thread,
             _threadRefreshing,
@@ -789,58 +894,6 @@ class Browser(
         ) { threadOf(key) }
     }
 
-    private class PageLoad {
-        var job: Job? = null
-        var generation = 0
-    }
-
-    private fun <T> load(
-        page: PageLoad,
-        target: MutableStateFlow<Load<T>>,
-        refreshing: MutableStateFlow<Boolean>,
-        refreshFailure: MutableStateFlow<Load.Failed?>,
-        retainContent: Boolean,
-        preparePublication: suspend (T) -> (() -> Unit) = { {} },
-        fetch: suspend () -> T,
-    ) {
-        page.job?.cancel()
-        val generation = ++page.generation
-        val retained = target.value.takeIf { retainContent && it is Load.Ready }
-        refreshFailure.value = null
-        refreshing.value = retained != null
-        if (retained == null) target.value = Load.Loading
-        page.job =
-            scope.launch {
-                suspend fun publishFailure(
-                    error: Exception,
-                    contentBlocked: Boolean = false,
-                ) {
-                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
-                    if (generation != page.generation) return
-                    val failure = Load.Failed(error.readable(), error.browserFailureCause(), contentBlocked)
-                    if (retained == null) target.value = failure else refreshFailure.value = failure
-                }
-                try {
-                    val value = fetch()
-                    val publishPrepared = preparePublication(value)
-                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
-                    if (generation != page.generation) return@launch
-                    publishPrepared()
-                    target.value = Load.Ready(value)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (blocked: ContentBlocked) {
-                    publishFailure(blocked, contentBlocked = true)
-                } catch (
-                    @Suppress("TooGenericExceptionCaught") error: Exception,
-                ) {
-                    publishFailure(error)
-                } finally {
-                    if (generation == page.generation) refreshing.value = false
-                }
-            }
-    }
-
     /** Home owns its source/mode cache and publishes each bounded discovery batch incrementally. */
     private fun loadFeed(force: Boolean = false) = homeFeed.load(force)
 
@@ -849,46 +902,35 @@ class Browser(
      * catches by title and, when Settings hides them, NSFW ones, as on Android. What a board is
      * comes from the boards list once it has loaded.
      */
-    private fun searchableBoards(boards: Set<FollowedBoard> = followed.value): List<FollowedBoard> {
-        val boardInfo =
-            (_boards.value as? Load.Ready)?.value.orEmpty().associateBy { FollowedBoard(it.provider, it.board.id) }
-        val hideNsfw = settings.current.value.hideNsfwBoards
-        return boards.filterNot { followedBoard ->
-            val board = boardInfo[followedBoard]?.board
-            board != null && (board.isPermanentlyFiltered() || (hideNsfw && board.isNsfw))
-        }
+    private fun searchableBoards(boards: Set<FollowedBoard> = followed.value): List<FollowedBoard> =
+        filterSearchableBoards(
+            boards,
+            (_boards.value as? Load.Ready)?.value.orEmpty(),
+            settings.current.value.nsfwContentHidden,
+        )
+
+    private val threadReader by lazy {
+        BrowserThreadReader(
+            settings = { settings.current.value },
+            board = { key ->
+                (_boards.value as? Load.Ready)
+                    ?.value
+                    ?.firstOrNull { it.provider == key.provider && it.board.id == key.board }
+                    ?.board
+            },
+            fetch = { key -> provider(key.provider).getThread(key.board, key.thread) },
+            copies = threadCopies,
+            history = history,
+            dispatcher = readerDispatcher,
+            now = now,
+        )
     }
 
-    private suspend fun threadOf(key: ThreadKey): Thread {
-        val loaded = provider(key.provider).getThread(key.board, key.thread)
-        // A thread the content filter catches is not shown, as on Android; otherwise its caught
-        // replies are hidden. Neither is recorded as read.
-        val visible =
-            withContext(readerDispatcher) {
-                ContentPolicy.visibleThread(loaded) ?: throw ContentBlocked()
-            }
-        kotlinx.coroutines.currentCoroutineContext().ensureActive()
-        recordVisit(visible)
-        return visible
-    }
-
-    // Android records a visit when a thread loads and skips the permanently filtered ones; so does
-    // this. A failed write only loses the read mark, so it never fails the load.
-    private suspend fun recordVisit(thread: Thread) {
-        if (!settings.current.value.saveBrowsingHistory) return
-        val timestamp = now()
-        runCatching {
-            val entry = withContext(readerDispatcher) { thread.toHistoryEntry(timestamp) }
-            history.record(entry)
-        }
-    }
+    private suspend fun threadOf(key: ThreadKey): Thread = threadReader.load(key)
 
     private fun provider(id: ProviderId): ImageBoardProvider =
         byId[id] ?: throw ProviderException.NotFound("No site ${id.value}")
 }
-
-/** A thread the content filter catches, shown as an error with the filter's explanation. */
-private class ContentBlocked : Exception(ContentPolicy.BLOCKED_THREAD_MESSAGE)
 
 /** A one-line reason for the error view. Provider failures already carry a readable message. */
 internal fun Throwable.readable(): String = message?.takeIf { it.isNotBlank() } ?: (this::class.simpleName ?: "Error")

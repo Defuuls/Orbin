@@ -17,15 +17,18 @@ import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaFilter
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.UserContentFilters
 import com.orbin.core.model.filteredBy
 import com.orbin.core.model.matchesFilterTokens
-import com.orbin.core.model.unreadByThread
 import com.orbin.core.reader.PreparedCatalogThread
 import com.orbin.core.reader.prepareCatalogThread
+import com.orbin.domain.bookmarks.collectionUnread
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.CatalogRepository
 import com.orbin.domain.repository.HistoryRepository
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +41,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -59,6 +61,7 @@ class BoardViewModel
         private val bookmarkRepository: BookmarkRepository,
         historyRepository: HistoryRepository,
         private val settingsRepository: SettingsRepository,
+        threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
     ) : ViewModel() {
         val providerId: String = savedStateHandle.get<String>("provider").orEmpty()
         val boardId: String = savedStateHandle.get<String>("board").orEmpty()
@@ -67,17 +70,19 @@ class BoardViewModel
         private val provider = ProviderId(providerId)
         private val board = BoardId(boardId)
 
-        // Nothing about how a catalog is presented is configurable: no reader tags, every kind of
-        // media, and the OP's first attachment only. The permanent filter still applies.
+        // Presentation rules refilter Paging's retained raw snapshot without another catalog fetch.
         private val presentationSettings: Flow<CatalogPresentationSettings> =
-            flowOf(
-                CatalogPresentationSettings(
-                    hiddenTokens = emptySet(),
-                    includeHarsh = false,
-                    mediaFilter = MediaFilter.ALL,
-                    mediaScroll = false,
-                ),
-            )
+            settingsRepository.settings
+                .map {
+                    CatalogPresentationSettings(
+                        hiddenTokens = emptySet(),
+                        includeHarsh = false,
+                        mediaFilter = MediaFilter.ALL,
+                        mediaScroll = false,
+                        hiddenThreadPatterns = it.hiddenThreadPatterns,
+                        showStickyThreads = it.showStickyThreads,
+                    )
+                }.distinctUntilChanged()
 
         /** Device-wide catalog presentation, shared by settings and the catalog overflow. */
         val settings: StateFlow<AppSettings> =
@@ -108,13 +113,13 @@ class BoardViewModel
             catalogVisible.value = visible
         }
 
-        private val coverViolentMedia: Flow<Boolean> =
+        private val mediaCoverPolicy: Flow<Pair<Boolean, Boolean>> =
             settingsRepository.settings
-                .map { it.coverViolentMedia }
+                .map { it.coverViolentMedia to it.coverNsfwMedia }
                 .distinctUntilChanged()
 
         val catalog: Flow<PagingData<CatalogThread>> =
-            combine(catalogSort, coverViolentMedia) { sort, _ -> sort }
+            combine(catalogSort, mediaCoverPolicy) { sort, _ -> sort }
                 .flatMapLatest { current ->
                     _catalogRefreshFailure.value = null
                     catalogRepository.catalogStreamWhileVisible(provider, board, current, catalogVisible) {
@@ -132,14 +137,24 @@ class BoardViewModel
                 }.cachedIn(viewModelScope)
 
         private val bookmarkState: StateFlow<BoardBookmarkState> =
-            bookmarkRepository
-                .observeBookmarks(provider, board)
-                .map(List<Bookmark>::toBoardState)
-                .stateIn(
-                    viewModelScope,
-                    SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-                    BoardBookmarkState(),
+            combine(
+                bookmarkRepository.observeBookmarks(provider, board),
+                threadMemoryRepository.observeCurrent(),
+            ) { saved, memory ->
+                val watched = saved.filter { it.isWatched }
+                val byKey = memory.associateBy { it.key }
+                BoardBookmarkState(
+                    watchedIds = watched.mapTo(mutableSetOf()) { it.key.thread.value },
+                    unreadByThread =
+                        watched
+                            .mapNotNull { item ->
+                                item.collectionUnread(byKey[item.key]).takeIf { it > 0 }?.let {
+                                    item.key.thread.value to
+                                        it
+                                }
+                            }.toMap(),
                 )
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), BoardBookmarkState())
 
         val watchedThreadIds: StateFlow<Set<Long>> =
             bookmarkState
@@ -196,6 +211,8 @@ internal data class CatalogPresentationSettings(
     val includeHarsh: Boolean,
     val mediaFilter: MediaFilter,
     val mediaScroll: Boolean,
+    val hiddenThreadPatterns: List<String> = emptyList(),
+    val showStickyThreads: Boolean = true,
 )
 
 /** The visible catalog state is derived from Paging's retained snapshot, never a second cache. */
@@ -229,17 +246,17 @@ private data class BoardBookmarkState(
     val unreadByThread: Map<Long, Int> = emptyMap(),
 )
 
-private fun List<Bookmark>.toBoardState(): BoardBookmarkState =
-    BoardBookmarkState(watchedIds = mapTo(mutableSetOf()) { it.key.thread.value }, unreadByThread = unreadByThread())
-
 internal fun Flow<PagingData<CatalogThread>>.presentedBy(
     settings: Flow<CatalogPresentationSettings>,
 ): Flow<PagingData<CatalogThread>> =
     kotlinx.coroutines.flow.combine(this, settings) { pagingData, presentation ->
+        val filters = UserContentFilters(threadPatterns = presentation.hiddenThreadPatterns)
         pagingData
             .filter { thread ->
                 withContext(Dispatchers.Default) {
-                    !thread.matchesFilterTokens(presentation.hiddenTokens, presentation.includeHarsh)
+                    (presentation.showStickyThreads || !thread.stats.isSticky) &&
+                        !thread.matchesFilterTokens(presentation.hiddenTokens, presentation.includeHarsh) &&
+                        (presentation.hiddenThreadPatterns.isEmpty() || !filters.hidesThread(thread))
                 }
             }.map { thread ->
                 if (presentation.mediaFilter.isActive) thread.filteredBy(presentation.mediaFilter) else thread

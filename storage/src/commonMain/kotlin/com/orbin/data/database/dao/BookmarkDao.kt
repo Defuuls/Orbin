@@ -98,6 +98,19 @@ interface BookmarkDao {
         dead: Boolean,
     )
 
+    @Query(
+        "UPDATE bookmarks SET availability = :availability, statusCheckedAtMillis = :checkedAtMillis, " +
+            "isThreadDead = :dead WHERE provider = :provider AND board = :board AND thread = :thread",
+    )
+    suspend fun updateAvailability(
+        provider: String,
+        board: String,
+        thread: Long,
+        availability: String,
+        checkedAtMillis: Long,
+        dead: Boolean,
+    )
+
     @Query("SELECT * FROM bookmarks WHERE isWatched = 1 AND isThreadDead = 0")
     suspend fun watchedBookmarks(): List<BookmarkEntity>
 }

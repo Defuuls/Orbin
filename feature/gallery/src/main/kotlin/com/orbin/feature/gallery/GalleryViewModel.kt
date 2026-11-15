@@ -14,16 +14,21 @@ import com.orbin.core.model.ProviderId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.ThreadMemory
+import com.orbin.core.model.downloadContext
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.core.model.withViolentMediaCovered
 import com.orbin.domain.repository.DownloadRepository
+import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.SavedThreadRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.usecase.ObserveThreadUseCase
 import com.orbin.media.ImagePreloader
 import com.orbin.media.image.ImageClipboard
 import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.video.VideoPreloader
+import com.orbin.uinext.MediaKindFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -37,6 +42,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -67,6 +73,8 @@ sealed interface GalleryContentState {
         val pageKeys: ImmutableList<String> =
             threadMediaIndices.mapIndexed { page, index -> "thread:$index:${media[page].id}" }.toImmutableList(),
         val isThreadResolved: Boolean = true,
+        val sourceThread: Thread? = null,
+        val downloadableThreadMediaIndices: Set<Int>? = null,
     ) : GalleryContentState {
         /** Engines can reuse an attachment id/URL on different posts in the same thread. */
         fun pageKey(page: Int): String = pageKeys[page]
@@ -98,11 +106,12 @@ class GalleryViewModel
         savedStateHandle: SavedStateHandle,
         private val observeThread: ObserveThreadUseCase,
         private val downloadRepository: DownloadRepository,
-        settingsRepository: SettingsRepository,
+        private val settingsRepository: SettingsRepository,
         private val savedThreadRepository: SavedThreadRepository,
         private val imageClipboard: ImageClipboard,
         private val imagePreloader: ImagePreloader,
         private val videoPreloader: VideoPreloader,
+        private val threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
     ) : ViewModel() {
         /**
          * Copies the image on screen. Routed through the ViewModel so the fetch uses the app's
@@ -113,6 +122,17 @@ class GalleryViewModel
 
         private val startIndex: Int = savedStateHandle.get<Int>("startIndex") ?: 0
         val videosOnly: Boolean = savedStateHandle.get<Boolean>("videosOnly") ?: false
+        private val initialFilter =
+            savedStateHandle.get<String>("mediaFilter")?.let { name ->
+                MediaKindFilter.entries.find { it.name == name }
+            }
+                ?: if (videosOnly) MediaKindFilter.VIDEOS else MediaKindFilter.ALL
+        private val selectedFilter = MutableStateFlow(initialFilter)
+        val mediaFilter: StateFlow<MediaKindFilter> = selectedFilter.asStateFlow()
+
+        fun setMediaFilter(filter: MediaKindFilter) {
+            selectedFilter.value = filter
+        }
 
         /**
          * The file to open at, when the caller knew which attachment it wanted but not where that
@@ -150,6 +170,10 @@ class GalleryViewModel
         private val board = BoardId(savedStateHandle.get<String>("board").orEmpty())
         private val threadId = ThreadId(savedStateHandle.get<Long>("thread") ?: 0L)
         private val threadKey = ThreadKey(provider, board, threadId)
+        private val threadMemory =
+            threadMemoryRepository
+                .observe(threadKey)
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ThreadMemory(threadKey))
         private val selectedSeed =
             decodeGalleryMediaSeed(savedStateHandle.get<String>("encodedMediaSeed"), threadKey, attachmentId)
                 ?.takeIf { !videosOnly || it.type == MediaType.VIDEO }
@@ -168,6 +192,10 @@ class GalleryViewModel
 
         fun playbackSettings() = settings.value.playbackPreferences.resolve(provider, board)
 
+        fun setAutoAdvance(value: Boolean) {
+            viewModelScope.launch { settingsRepository.setFullscreenAutoAdvance(value) }
+        }
+
         private val _downloadState = MutableStateFlow(GalleryDownloadUiState())
         val downloadState: StateFlow<GalleryDownloadUiState> = _downloadState.asStateFlow()
         private val downloadMutex = Mutex()
@@ -181,7 +209,7 @@ class GalleryViewModel
         private val reload = MutableStateFlow(0)
 
         @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-        val content: StateFlow<GalleryContentState> =
+        private val unfilteredContent: StateFlow<GalleryContentState> =
             reload
                 .flatMapLatest { attempt ->
                     observeThread(provider, board, threadId, forceRefresh = attempt > 0)
@@ -200,6 +228,22 @@ class GalleryViewModel
                     SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
                     initialContent ?: GalleryContentState.Loading,
                 )
+
+        val content: StateFlow<GalleryContentState> =
+            combine(unfilteredContent, selectedFilter, settings, threadMemory) { source, filter, options, memory ->
+                if (source is GalleryContentState.Ready) {
+                    withContext(Dispatchers.Default) {
+                        val requested = source.threadMediaIndexAt(initialPageIn(source.media))
+                        source.withPostVisibility(options, memory, requested).withMediaFilter(filter)
+                    }
+                } else {
+                    source
+                }
+            }.stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+                initialContent?.withMediaFilter(initialFilter) ?: GalleryContentState.Loading,
+            )
 
         val media: StateFlow<ImmutableList<MediaAttachment>> =
             content
@@ -271,9 +315,8 @@ class GalleryViewModel
             val allMedia = canonicalFiles.map { it.first }.toImmutableList()
             var visibleIndices =
                 allMedia.indices
-                    .filter { index -> !videosOnly || allMedia[index].type == MediaType.VIDEO }
                     .toImmutableList()
-            var visibleMedia = if (videosOnly) visibleIndices.map(allMedia::get).toImmutableList() else allMedia
+            var visibleMedia = allMedia
             var selectedPage = initialPageIn(visibleMedia)
             if (selectedPage < 0 && seed != null) {
                 // A partial/stale thread response cannot take away an already known original.
@@ -290,7 +333,7 @@ class GalleryViewModel
                     .mapIndexed { page, index ->
                         selectedPageKey?.takeIf { page == selectedPage } ?: canonicalFiles[index].second
                     }.toImmutableList()
-            return GalleryContentState.Ready(visibleMedia, allMedia, visibleIndices, pageKeys)
+            return GalleryContentState.Ready(visibleMedia, allMedia, visibleIndices, pageKeys, sourceThread = thread)
         }
 
         fun retry() {
@@ -384,6 +427,8 @@ class GalleryViewModel
                                         fileName = attachment.originalFileName,
                                         boardId = board.value,
                                         threadId = threadId.value,
+                                        mediaContext = attachment.downloadContext(threadKey),
+                                        privateTarget = settings.value.privateSavedFiles,
                                     )
                                 }.onFailure { failedCount++ }
                             }
@@ -412,9 +457,10 @@ internal fun galleryRemainingMedia(
     visiblePage: Int,
 ): List<MediaAttachment> {
     val current = ready.threadMediaIndices.getOrNull(visiblePage) ?: return emptyList()
-    if (current == -1) return ready.threadMedia
-    if (current !in ready.threadMedia.indices) return emptyList()
-    return ready.threadMedia.filterIndexed { index, _ -> index != current }
+    if (current != -1 && current !in ready.threadMedia.indices) return emptyList()
+    return ready.threadMedia.filterIndexed { index, _ ->
+        index != current && ready.downloadableThreadMediaIndices?.contains(index) != false
+    }
 }
 
 /** Explicit anchors never fall through to an unrelated first file; index-only thread entries retain their index. */

@@ -143,6 +143,42 @@ class BoardViewModelTest {
         }
 
     @Test
+    fun `thread regex and pinned preferences refilter retained catalogs without refetching`() =
+        runTest {
+            val rows =
+                listOf(
+                    catalogThread(BOARD, 1).let { it.copy(stats = it.stats.copy(isSticky = true)) },
+                    catalogThread(
+                        BOARD,
+                        2,
+                    ).let { it.copy(originalPost = it.originalPost.copy(subject = "Garden conversation")) },
+                    catalogThread(BOARD, 3),
+                )
+            var requests = 0
+            val repository =
+                object : CatalogRepository {
+                    override fun catalogStream(
+                        provider: ProviderId,
+                        board: BoardId,
+                        sort: CatalogSort,
+                    ): Flow<PagingData<CatalogThread>> {
+                        requests++
+                        return flowOf(PagingData.from(rows))
+                    }
+                }
+            val settings = FakeSettingsRepository()
+            val model = createViewModel(catalogRepository = repository, settingsRepository = settings)
+            assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(1L, 2L, 3L)
+            settings.setHiddenThreadPatterns(listOf("garden.*conversation"))
+            settings.setShowStickyThreads(false)
+            assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(3L)
+            settings.setHiddenThreadPatterns(emptyList())
+            settings.setShowStickyThreads(true)
+            assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(1L, 2L, 3L)
+            assertThat(requests).isEqualTo(1)
+        }
+
+    @Test
     fun `catalog sort survives view model recreation`() =
         runTest {
             val handle = SavedStateHandle(mapOf("provider" to PROVIDER, "board" to BOARD, "title" to "Title"))

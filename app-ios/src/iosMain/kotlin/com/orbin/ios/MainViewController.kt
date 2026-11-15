@@ -72,6 +72,7 @@ fun MainViewController(): UIViewController {
                     app.graph.whatsNew,
                     app.graph.pages,
                     onStatusBarAppearance = appearance::setLightIcons,
+                    cloudSync = app.cloudSync,
                 )
             }
         }
@@ -89,6 +90,7 @@ private class StartedApp(
     val lock: AppLock,
     val downloads: MediaDownloads,
     val backup: IosBackup,
+    val cloudSync: CloudSyncController,
 )
 
 /**
@@ -109,15 +111,27 @@ private fun startApp(): StartedApp {
             notifier = graph.notifier,
             downloadDao = graph.downloadDao,
             onWatch = graph.notifier::requestPermission,
+            threadMemory = graph.threadMemory,
+            threadCopies = graph.savedThreads,
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
+    val managedMedia = IosManagedMediaFiles()
     val downloads =
         MediaDownloads(
             graph.downloadDao,
-            DeviceMediaStore(),
+            DeviceMediaStore(managedMedia),
             ktorMediaFetch(graph.client),
             graph.scope,
             durableFetch = IosBackgroundMediaFetch,
+            mediaLibrary = graph.mediaLibrary,
+            managedMediaFiles = managedMedia,
+            mediaSettings = graph.settingsStore.settings,
+            resolveSavedBoard = { provider, board ->
+                browser.boardDirectory.value.boards
+                    .firstOrNull {
+                        it.provider.value == provider && it.board.id.value == board
+                    }?.board
+            },
         )
     val lock =
         AppLock(
@@ -126,24 +140,8 @@ private fun startApp(): StartedApp {
             DeviceOwnerAuthenticator(),
             graph.scope,
         )
-    // Export and import in Android's backup format, through the system share sheet and file picker.
-    val backup =
-        IosBackup(
-            settings = graph.settingsStore,
-            boardPreferences = graph.boardPreferences,
-            bookmarks = graph.bookmarks,
-            providers = graph.providers.map { it.metadata.id },
-            files = DeviceBackupFiles(),
-            scope = graph.scope,
-            appVersion = graph.appVersion,
-            isAuthorized = { !lock.state.value.locked && !lock.state.value.obscured },
-            isOwnMediaUrl = { id, url ->
-                graph.providers
-                    .firstOrNull { it.metadata.id == id }
-                    ?.metadata
-                    ?.isOwnMediaUrl(url) == true
-            },
-        )
+    val backup = createDeviceBackup(graph, lock, managedMedia)
+    val cloudSync = createDeviceCloudSync(graph, lock, backup, managedMedia)
     var pendingNotificationJob: Job? = null
     graph.notifier.attachNavigation { key ->
         pendingNotificationJob?.cancel()
@@ -162,14 +160,17 @@ private fun startApp(): StartedApp {
     }
     observe(UIApplicationWillResignActiveNotification) {
         lock.onResignActive()
+        cloudSync.onLocked()
     }
     observe(UIApplicationDidEnterBackgroundNotification) {
+        com.orbin.domain.privacy.PrivacySession
+            .forgetSession()
         lock.onBackground()
         if (lock.state.value.locked) backup.cancelPending()
         // Leaving the app is when a background refresh is worth asking for.
         scheduleBackgroundRefresh()
     }
-    return StartedApp(graph, browser, lock, downloads, backup)
+    return StartedApp(graph, browser, lock, downloads, backup, cloudSync)
 }
 
 /** Coil over the app's Ktor client, with memory-only caching. */

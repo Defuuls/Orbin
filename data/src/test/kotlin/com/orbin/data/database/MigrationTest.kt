@@ -2,6 +2,7 @@ package com.orbin.data.database
 
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
@@ -77,15 +78,42 @@ class MigrationTest {
         migrationTestHelper.runMigrationsAndValidate(8, listOf(MIGRATION_7_8)).close()
     }
 
+    @Test
+    fun migrate8To9PreservesExistingBookmarks() {
+        val previous = migrationTestHelper.createDatabase(8)
+        previous.execSQL(
+            "INSERT INTO bookmarks(provider, board, thread, title, thumbnailUrl, createdAtMillis, " +
+                "isWatched, lastSeenReplyCount, latestReplyCount, isThreadDead) " +
+                "VALUES('fourchan', 'g', 42, 'Retained thread', NULL, 1, 0, 2, 3, 0)",
+        )
+        previous.close()
+        val migrated = migrationTestHelper.runMigrationsAndValidate(9, listOf(MIGRATION_8_9))
+        migrated.prepare("SELECT title, availability, statusCheckedAtMillis FROM bookmarks").use { row ->
+            org.junit.Assert.assertTrue(row.step())
+            org.junit.Assert.assertEquals("Retained thread", row.getText(0))
+            org.junit.Assert.assertEquals("UNKNOWN", row.getText(1))
+            org.junit.Assert.assertEquals(0L, row.getLong(2))
+        }
+        migrated.close()
+    }
+
     /** The full chain a v2 install actually walks through when it upgrades straight to current. */
     @Test
-    fun migrateAllTheWayFrom2To8() {
+    fun migrateAllTheWayFrom2To9() {
         migrationTestHelper.createDatabase(2).close()
 
         migrationTestHelper
             .runMigrationsAndValidate(
-                8,
-                listOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8),
+                9,
+                listOf(
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                    MIGRATION_6_7,
+                    MIGRATION_7_8,
+                    MIGRATION_8_9,
+                ),
             ).close()
     }
 }

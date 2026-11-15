@@ -1,9 +1,13 @@
 package com.orbin.ios
 
+import com.orbin.domain.repository.ManagedMediaFiles
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import platform.Foundation.NSData
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -33,7 +37,49 @@ import kotlin.coroutines.suspendCoroutine
  * Documents folder, which the Files app shows under On My iPhone › Orbin.
  */
 @OptIn(ExperimentalForeignApi::class)
-class DeviceMediaStore : MediaStore {
+class DeviceMediaStore(
+    private val ownedFiles: ManagedMediaFiles = IosManagedMediaFiles(),
+) : MediaStore {
+    /** Exports an owned original without buffering a whole saved video in memory. */
+    suspend fun exportLocalFile(
+        path: String,
+        fileName: String,
+        target: SaveTarget,
+    ) {
+        val safeName =
+            fileName
+                .substringAfterLast(
+                    '/',
+                ).substringAfterLast('\\')
+                .replace("..", "_")
+                .ifBlank { "download" }
+        if (target != SaveTarget.FILE && saveLocalToPhotos(path, safeName, target)) return
+        val manager = NSFileManager.defaultManager
+        val documents = manager.URLForDirectory(NSDocumentDirectory, NSUserDomainMask, null, true, null)
+        val directory = NSURL.fileURLWithPath(checkNotNull(documents?.path) + "/Orbin", true)
+        val protection = mapOf<Any?, Any?>(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication)
+        check(manager.createDirectoryAtURL(directory, true, protection, null)) { "Could not create export folder" }
+        val destination = checkNotNull(freeName(directory, safeName))
+        check(manager.copyItemAtPath(path, checkNotNull(destination.path), null)) { "Could not export saved media" }
+        manager.setAttributes(protection, checkNotNull(destination.path), null)
+    }
+
+    override suspend fun ownedFileExists(storageKey: String): Boolean = ownedFiles.contains(storageKey)
+
+    override suspend fun saveOwned(
+        bytes: ByteArray,
+        storageKey: String,
+    ): Boolean {
+        val temporary = NSURL.fileURLWithPath(NSTemporaryDirectory() + NSUUID().UUIDString + ".media")
+        return try {
+            check(bytes.toNSData().writeToURL(temporary, atomically = true)) { "Could not stage saved media" }
+            ownedFiles.importFile(storageKey, checkNotNull(temporary.path))
+            true
+        } finally {
+            NSFileManager.defaultManager.removeItemAtURL(temporary, error = null)
+        }
+    }
+
     override suspend fun save(
         bytes: ByteArray,
         fileName: String,
@@ -56,26 +102,47 @@ class DeviceMediaStore : MediaStore {
         fileName: String,
         target: SaveTarget,
     ): Boolean {
-        if (!photosAccess()) return false
-        // Photos imports from a file, which keeps a GIF animated and a video's original encoding.
+        // Photos imports from a file, preserving GIF animation and avoiding a second video buffer.
         val temporary = NSURL.fileURLWithPath(NSTemporaryDirectory() + NSUUID().UUIDString + "-" + fileName)
         if (!bytes.toNSData().writeToURL(temporary, atomically = true)) return false
         return try {
+            saveLocalToPhotos(checkNotNull(temporary.path), fileName, target)
+        } finally {
+            NSFileManager.defaultManager.removeItemAtURL(temporary, error = null)
+        }
+    }
+
+    private suspend fun saveLocalToPhotos(
+        path: String,
+        fileName: String,
+        target: SaveTarget,
+    ): Boolean {
+        if (!photosAccess()) return false
+        var converted: String? = null
+        return try {
+            val webM = fileName.substringAfterLast('.', "").equals("webm", ignoreCase = true)
+            if (webM) converted = convertWebMForPhotos(path)
+            val importedName = if (webM) fileName.substringBeforeLast('.') + ".mp4" else fileName
             suspendCoroutine { continuation ->
                 PHPhotoLibrary.sharedPhotoLibrary().performChanges(
                     {
-                        val options = PHAssetResourceCreationOptions().apply { originalFilename = fileName }
+                        val options = PHAssetResourceCreationOptions().apply { originalFilename = importedName }
                         PHAssetCreationRequest.creationRequestForAsset().addResourceWithType(
                             if (target == SaveTarget.VIDEO) PHAssetResourceTypeVideo else PHAssetResourceTypePhoto,
-                            fileURL = temporary,
+                            fileURL = NSURL.fileURLWithPath(converted ?: path),
                             options = options,
                         )
                     },
                     completionHandler = { success, _ -> continuation.resume(success) },
                 )
             }
+        } catch (failure: CancellationException) {
+            throw failure
+        } catch (_: Exception) {
+            // A failed codec or denied Photos import still exports the original to Files.
+            false
         } finally {
-            NSFileManager.defaultManager.removeItemAtURL(temporary, error = null)
+            withContext(NonCancellable) { converted?.let { releaseSavedMedia(it) } }
         }
     }
 

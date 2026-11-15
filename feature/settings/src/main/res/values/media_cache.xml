@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_clear_media_cache">Clear cache</string>
+    <string name="settings_clear_media_cache_hint">Images and streaming video. Keeps browsing history, transfers and saved media.</string>
+    <string name="settings_clear_media_cache_done">Image and video caches cleared.</string>
+    <string name="settings_clear_media_cache_failed">Some cached files could not be removed.</string>
+</resources>

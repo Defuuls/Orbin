@@ -55,6 +55,8 @@ class LynxChanProvider(
             supportedSortOptions =
                 setOf(
                     CatalogSort.BUMP_ORDER,
+                    CatalogSort.OLDEST,
+                    CatalogSort.CREATION_DATE,
                     CatalogSort.REPLY_COUNT,
                     CatalogSort.IMAGE_COUNT,
                     CatalogSort.LAST_REPLY,

@@ -57,6 +57,8 @@ jobs:
     # until the archive is finished. Each step that needs the file writes it and removes it again.
     env:
       BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'io.github.defuuls.orbin' }}
+      # Requires the matching Apple container and deployed Production schema; see docs/ios.md.
+      ICLOUD_ENABLED: ${{ vars.IOS_ICLOUD_ENABLED || 'false' }}
     steps:
       # Until the secrets exist, a release skips this quietly; a manual run says what is missing.
       - name: Check signing configuration
@@ -121,7 +123,7 @@ jobs:
       # Unsigned: signing here takes an Apple Development certificate, and each fresh runner asked
       # the account for a new one until Apple's limit refused the next build. The upload step signs
       # the archive with the team's cloud-managed distribution certificate instead, which lives
-      # with Apple and is reused. The app has no entitlements file, so nothing is lost unsigned.
+      # with Apple and is reused. Configured iCloud entitlements are applied at distribution signing.
       # The team id is the only signing value the archive needs, and it is not a credential: it is
       # printed in every app the team ships.
       - name: Archive
@@ -129,6 +131,10 @@ jobs:
         env:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          cloud_entitlements=""
+          if [ "$ICLOUD_ENABLED" = "true" ]; then
+            cloud_entitlements="Orbin/CloudSync.entitlements"
+          fi
           xcodebuild archive \
             -project iosApp/Orbin.xcodeproj \
             -scheme Orbin \
@@ -139,6 +145,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             ORBIN_TEAM_ID="$TEAM_ID" \
             ORBIN_BUNDLE_ID="$BUNDLE_ID" \
+            ORBIN_CLOUD_ENTITLEMENTS="$cloud_entitlements" \
             MARKETING_VERSION="${{ steps.version.outputs.marketing }}" \
             ORBIN_VERSION_NAME="${{ steps.version.outputs.name }}" \
             CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build }}"
