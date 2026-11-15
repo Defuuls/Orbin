@@ -3,6 +3,7 @@ package com.orbin.uinext
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,9 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,6 +50,7 @@ import com.orbin.uinext.resources.next_onboarding_adult_board
 import com.orbin.uinext.resources.next_onboarding_catalog
 import com.orbin.uinext.resources.next_onboarding_empty
 import com.orbin.uinext.resources.next_onboarding_following_count
+import com.orbin.uinext.resources.next_onboarding_load_error
 import com.orbin.uinext.resources.next_onboarding_required_hint
 import com.orbin.uinext.resources.next_onboarding_saving
 import com.orbin.uinext.resources.next_onboarding_start
@@ -185,102 +189,114 @@ private fun OnboardingBoardsStep(
     showStepIndicator: Boolean,
     onBack: (() -> Unit)?,
 ) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .background(reader.background)
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                ),
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        // A short window still needs a usable board pane below the source selector. Keep the
+        // introductory copy readable by scrolling it independently of the board list.
+        val headerModifier =
+            if (maxHeight < COMPACT_ONBOARDING_HEIGHT) {
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxHeight * COMPACT_ONBOARDING_HEADER_FRACTION)
+                    .verticalScroll(rememberScrollState())
+            } else {
+                Modifier.fillMaxWidth()
+            }
         Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = NextSpace.gutter, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OrbinWordmark(logoSize = 32.dp)
-            if (showStepIndicator) {
-                SetupStepIndicator(step = 4, total = 4)
-            }
-            Text(
-                text = stringResource(Res.string.next_onboarding_title),
-                style =
-                    OrbinType.stateTitle.withReaderFont().copy(
-                        fontSize = 20.sp,
-                        lineHeight = 26.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                    .fillMaxSize()
+                    .background(reader.background)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     ),
-                color = reader.ink,
-                modifier = Modifier.semantics { heading() },
-            )
-            Text(
-                text = stringResource(Res.string.next_onboarding_subtitle),
-                style = OrbinType.stateBody.withReaderFont(),
-                color = reader.inkMuted,
-            )
-        }
-        if (sites.size > 1) {
-            SiteSelector(sites, selectedSite, enabled = !isSaving, onSelectSite)
-        }
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            BoardsList(boards, following, sites.getOrNull(selectedSite).orEmpty(), !isSaving, onFollow, onRetry)
-        }
-        if (errorMessage != null) {
-            Text(
-                text = errorMessage,
-                style = OrbinType.meta.withReaderFont(),
-                color = reader.error,
+        ) {
+            Column(
+                modifier =
+                    headerModifier
+                        .padding(horizontal = NextSpace.gutter, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OrbinWordmark(logoSize = 32.dp)
+                if (showStepIndicator) {
+                    SetupStepIndicator(step = 4, total = 4)
+                }
+                Text(
+                    text = stringResource(Res.string.next_onboarding_title),
+                    style =
+                        OrbinType.stateTitle.withReaderFont().copy(
+                            fontSize = 20.sp,
+                            lineHeight = 26.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                        ),
+                    color = reader.ink,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(
+                    text = stringResource(Res.string.next_onboarding_subtitle),
+                    style = OrbinType.stateBody.withReaderFont(),
+                    color = reader.inkMuted,
+                )
+            }
+            if (sites.size > 1) {
+                SiteSelector(sites, selectedSite, enabled = !isSaving, onSelectSite)
+            }
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                BoardsList(boards, following, sites.getOrNull(selectedSite).orEmpty(), !isSaving, onFollow, onRetry)
+            }
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = OrbinType.meta.withReaderFont(),
+                    color = reader.error,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = NextSpace.gutter, vertical = 4.dp)
+                            .semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
+            ReaderHairline()
+            Column(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = NextSpace.gutter, vertical = 4.dp)
-                        .semantics { liveRegion = LiveRegionMode.Polite },
-            )
-        }
-        ReaderHairline()
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(reader.background)
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
-                    .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text =
-                    when {
-                        isSaving -> stringResource(Res.string.next_onboarding_saving)
-                        totalFollowing == 0 -> stringResource(Res.string.next_onboarding_required_hint)
-                        else ->
-                            pluralStringResource(
-                                Res.plurals.next_onboarding_following_count,
-                                totalFollowing,
-                                totalFollowing,
-                            )
-                    },
-                style = OrbinType.meta.withReaderFont(),
-                color = reader.inkMuted,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (onBack != null) {
-                    OrbinTextButton(
-                        label = "Back",
-                        enabled = !isSaving,
-                        onClick = onBack,
+                        .background(reader.background)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom))
+                        .padding(horizontal = NextSpace.gutter, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text =
+                        when {
+                            isSaving -> stringResource(Res.string.next_onboarding_saving)
+                            totalFollowing == 0 -> stringResource(Res.string.next_onboarding_required_hint)
+                            else ->
+                                pluralStringResource(
+                                    Res.plurals.next_onboarding_following_count,
+                                    totalFollowing,
+                                    totalFollowing,
+                                )
+                        },
+                    style = OrbinType.meta.withReaderFont(),
+                    color = reader.inkMuted,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (onBack != null) {
+                        OrbinTextButton(
+                            label = "Back",
+                            enabled = !isSaving,
+                            onClick = onBack,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    OrbinFilledButton(
+                        label = stringResource(Res.string.next_onboarding_start),
+                        enabled = canStart && totalFollowing > 0 && !isSaving,
+                        onClick = { if (canStart && totalFollowing > 0 && !isSaving) onStart() },
                         modifier = Modifier.weight(1f),
                     )
                 }
-                OrbinFilledButton(
-                    label = stringResource(Res.string.next_onboarding_start),
-                    enabled = canStart && totalFollowing > 0 && !isSaving,
-                    onClick = { if (canStart && totalFollowing > 0 && !isSaving) onStart() },
-                    modifier = Modifier.weight(1f),
-                )
             }
         }
     }
@@ -350,7 +366,8 @@ private fun BoardsList(
 ) {
     when (state) {
         OnboardingBoards.Loading -> NextLoading()
-        is OnboardingBoards.Failed -> NextError(state.message, onRetry = onRetry)
+        is OnboardingBoards.Failed ->
+            NextError(stringResource(Res.string.next_onboarding_load_error), onRetry = onRetry)
         is OnboardingBoards.Ready ->
             if (state.boards.isEmpty()) {
                 NextError(stringResource(Res.string.next_onboarding_empty), onRetry = onRetry)
@@ -440,3 +457,6 @@ private fun BoardRow(
         }
     }
 }
+
+private val COMPACT_ONBOARDING_HEIGHT = 480.dp
+private const val COMPACT_ONBOARDING_HEADER_FRACTION = 0.25f
