@@ -120,7 +120,9 @@ final class OrbinCloudSync {
                         return
                     }
                     let task = Task { @MainActor in
-                        await self.perform(operation, request: envelope, completion: completion)
+                        await self.perform(operation, request: envelope, completion: { value in
+                            _ = completion(value)
+                        })
                     }
                     self.requests[envelope.requestId] = RunningRequest(
                         operation: operation, sessionID: envelope.sessionId, task: task)
@@ -135,8 +137,9 @@ final class OrbinCloudSync {
         let reply: Reply
         do {
             try Task.checkCancellation()
-            reply = try await handle(operation, request: request)
+            let handledReply = try await handle(operation, request: request)
             try Task.checkCancellation()
+            reply = handledReply
         } catch is CancellationError {
             closeSession(request.sessionId, excluding: request.requestId)
             reply = Self.cancelledReply()

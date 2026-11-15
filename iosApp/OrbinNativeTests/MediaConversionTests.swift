@@ -8,14 +8,28 @@ import XCTest
 /// These tests decode actual VP8/VP9 + Opus WebM bytes with the linked native dependency.
 /// AVFoundation is used to validate/decode the resulting MP4, never to assume WebM support.
 final class MediaConversionTests: XCTestCase {
+    func testPinnedArgumentContractRejectsQuotesAndControlsWithoutInventedEscapes() {
+        XCTAssertTrue(OrbinMediaConverter.supportsPinnedArgument("/Library/Application Support/Orbin/input.webm"))
+        XCTAssertTrue(OrbinMediaConverter.supportsPinnedArgument("/private/input 'apostrophe'.webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument("/private/input \"quoted\".webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument("/private/input \\\"quoted\\\".webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument("/private/input\tname.webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument("/private/input\nname.webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument("/private/input\rname.webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument("/private/input\u{0}name.webm"))
+        XCTAssertFalse(OrbinMediaConverter.supportsPinnedArgument(""))
+    }
+
     func testVP8AndVP9OddDimensionsBecomePlayableH264AACMP4() throws {
         for name in ["odd-vp8-opus", "odd-vp9-opus"] {
             let fixture = try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: "webm"))
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            // Spaces and quotes exercise native argv handling rather than shell quoting.
+            // Caller paths keep their spaces and quotes; only the private job copy has a fixed name.
             let input = directory.appendingPathComponent("input \"\(name)\".webm")
             try FileManager.default.copyItem(at: fixture, to: input)
+            let originalBytes = try Data(contentsOf: input)
+            let originalProtection = try FileManager.default.attributesOfItem(atPath: input.path)[.protectionKey] as? String
             defer { try? FileManager.default.removeItem(at: directory) }
             let done = expectation(description: "Real \(name) transcoding")
             var result: Result<URL, Error>?
@@ -26,6 +40,11 @@ final class MediaConversionTests: XCTestCase {
             XCTAssertEqual(output.pathExtension, "mp4")
             XCTAssertTrue(output.path.contains("/Orbin/MediaExport/"))
             XCTAssertTrue(FileManager.default.fileExists(atPath: input.path), "The owned original remains intact")
+            XCTAssertEqual(try Data(contentsOf: input), originalBytes, "Staging must not modify the caller's original")
+            XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: input.path)[.protectionKey] as? String,
+                           originalProtection, "Protecting the job copy must not mutate the original's protection")
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: output.deletingLastPathComponent().path),
+                           ["converted.mp4"], "A successful job must retain only its converted output")
             let asset = AVURLAsset(url: output)
             XCTAssertTrue(asset.isPlayable)
             let video = try XCTUnwrap(asset.tracks(withMediaType: .video).first)

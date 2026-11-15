@@ -98,6 +98,7 @@ jobs:
         run: xcrun simctl bootstatus "$ORBIN_IOS_TEST_DEVICE" -b
 
       - name: Shared tests on the iOS simulator
+        id: native_tests
         # Native suites only: iosTest (UIKit/AVKit) and the shared database over the
         # driver the app opens it with. Shared app-ios logic runs in CI unit tests.
         # The booted UDID is passed as ORBIN_IOS_TEST_DEVICE so it is not a
@@ -108,12 +109,20 @@ jobs:
         run: ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
 
       - name: Set up XcodeGen
+        id: setup_xcodegen
+        # Collect independent Swift failures after native-test failures; the failed native step
+        # still fails this job and blocks merging.
+        if: ${{ !cancelled() && (steps.native_tests.outcome == 'success' || steps.native_tests.outcome == 'failure') }}
         uses: ./.github/actions/setup-xcodegen
 
       - name: Generate the Xcode project
+        id: generate_project
+        if: ${{ !cancelled() && steps.setup_xcodegen.outcome == 'success' }}
         run: xcodegen --spec iosApp/project.yml
 
       - name: Build the app for the simulator
+        id: simulator_build
+        if: ${{ !cancelled() && steps.generate_project.outcome == 'success' }}
         run: >-
           xcodebuild build
           -project iosApp/Orbin.xcodeproj
@@ -129,6 +138,7 @@ jobs:
       # Follow a SFW board, finish mandatory setup, and verify cold-launch persistence.
       # Explicit screenshots contain only onboarding metadata, before opening the live feed.
       - name: Launch the installed app and capture native startup screens
+        if: ${{ !cancelled() && steps.simulator_build.outcome == 'success' }}
         timeout-minutes: 15
         run: >-
           xcodebuild test
@@ -144,6 +154,43 @@ jobs:
           CODE_SIGNING_ALLOWED=NO
           COMPILER_INDEX_STORE_ENABLE=NO
           ONLY_ACTIVE_ARCH=YES
+
+      - name: Collect native crash reports
+        if: failure()
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import os
+          import shutil
+          from pathlib import Path
+
+          diagnostic_home = Path.home()
+          roots = [diagnostic_home / "Library/Logs/DiagnosticReports"]
+          device = os.environ.get("ORBIN_IOS_TEST_DEVICE")
+          if device:
+              roots.append(diagnostic_home / "Library/Developer/CoreSimulator/Devices" / device /
+                           "data/Library/Logs/CrashReporter")
+          output = Path(os.environ["RUNNER_TEMP"]) / "orbin-native-crashes"
+          output.mkdir(exist_ok=True)
+          reports = {
+              path for root in roots if root.exists() for path in root.rglob("*")
+              if path.is_file() and path.suffix.lower() in {".ips", ".crash"}
+              and any(name in path.name.lower() for name in ("orbin", "test", "kotlin"))
+          }
+          for index, path in enumerate(sorted(reports, key=lambda p: p.stat().st_mtime, reverse=True)[:25]):
+              if path.stat().st_size <= 10 * 1024 * 1024:
+                  shutil.copy2(path, output / f"{index:02d}-{path.name}")
+          print(f"Collected {len(list(output.iterdir()))} native crash reports")
+          PY
+
+      - name: Upload native crash reports
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-native-crashes
+          path: ${{ runner.temp }}/orbin-native-crashes/
+          if-no-files-found: ignore
 
       - name: Export native startup screenshots
         if: always()

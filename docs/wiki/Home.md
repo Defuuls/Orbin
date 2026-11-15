@@ -14,7 +14,7 @@ catalogs, threads, links, and media but does not post, reply, or create threads.
 
 | | |
 | --- | --- |
-| Current release | **v210 — Agate** (2026-11-15) |
+| Current release | **v211 — Alabaster** (2026-11-15) |
 | Platform | Android 12+ (`minSdk` 31) and iOS 16+ |
 | Providers | 4chan/Vichan-compatible reference provider; BBW Chan/LynxChan |
 | UI | Adaptive grid-first Compose interface for phones, tablets and foldables |

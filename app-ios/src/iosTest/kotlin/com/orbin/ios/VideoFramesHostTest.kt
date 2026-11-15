@@ -8,9 +8,12 @@ import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import platform.Foundation.NSData
@@ -33,24 +36,37 @@ class VideoFramesHostTest {
     fun clearingFramesReportsOwnedBytesAndPreventsInFlightRepopulation() =
         runBlocking {
             VideoFrames.clear()
-            val cached = ControlledExtraction()
-            val cachedLoad = async(Dispatchers.Default) { VideoFrames.load("cache-count-test") { cached } }
-            cached.started.await()
-            cached.finish(ImageBitmap(3, 2))
-            cachedLoad.await()
-            assertEquals(24L, VideoFrames.usageBytes())
-            val pending = ControlledExtraction()
-            val pendingLoad = async(Dispatchers.Default) { VideoFrames.load("cache-pending-test") { pending } }
-            pending.started.await()
-            VideoFrames.clear()
-            pending.finish(ImageBitmap(4, 4))
-            pendingLoad.await()
-            assertEquals(0L, VideoFrames.usageBytes())
-            assertNull(VideoFrames.cached("cache-count-test"))
-            assertNull(
-                VideoFrames.cached("cache-pending-test"),
-                "A clear action invalidates older extraction generations",
-            )
+            val loads = mutableListOf<Job>()
+            try {
+                withTimeout(FRAME_CACHE_TEST_TIMEOUT_MILLIS) {
+                    val cached = ControlledExtraction()
+                    val cachedLoad = async(Dispatchers.Default) { VideoFrames.load("cache-count-test") { cached } }
+                    loads += cachedLoad
+                    cached.started.await()
+                    cached.finish(ImageBitmap(3, 2))
+                    cachedLoad.await()
+                    assertEquals(24L, VideoFrames.usageBytes())
+                    val pending = ControlledExtraction()
+                    val pendingLoad = async(Dispatchers.Default) { VideoFrames.load("cache-pending-test") { pending } }
+                    loads += pendingLoad
+                    pending.started.await()
+                    VideoFrames.clear()
+                    pending.finish(ImageBitmap(4, 4))
+                    pendingLoad.await()
+                    assertEquals(0L, VideoFrames.usageBytes())
+                    assertNull(VideoFrames.cached("cache-count-test"))
+                    assertNull(
+                        VideoFrames.cached("cache-pending-test"),
+                        "A clear action invalidates older extraction generations",
+                    )
+                }
+            } finally {
+                loads.forEach { it.cancel() }
+                VideoFrames.clear()
+                withContext(NonCancellable) {
+                    withTimeout(FRAME_CACHE_CLEANUP_TIMEOUT_MILLIS) { loads.joinAll() }
+                }
+            }
         }
 
     @Test
@@ -140,3 +156,6 @@ class VideoFramesHostTest {
         }
     }
 }
+
+private const val FRAME_CACHE_TEST_TIMEOUT_MILLIS = 20_000L
+private const val FRAME_CACHE_CLEANUP_TIMEOUT_MILLIS = 5_000L
