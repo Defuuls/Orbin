@@ -175,13 +175,28 @@ The shared tests also run on the iOS simulator:
 ## CI
 
 - **iOS** (`.github/workflows/ios.yml`) runs on macOS for every PR or push to main that can
-  change what the iOS app compiles: the native tests on the simulator, then an unsigned
-  simulator build of the app. Shared `:app-ios` logic tests run in the CI unit-test job.
+  change what the iOS app compiles: the native tests on the ARM64 simulator, then an unsigned
+  simulator build of the app. An independent unsigned Release/device archive exercises the
+  optimized Kotlin/Native linker and Swift release build. Shared `:app-ios` logic tests run
+  in the CI unit-test job.
 - **Shared code (iOS targets)** in `ci.yml` cross-compiles every multiplatform module for iOS on
   Linux, which catches JVM-only APIs in shared code quickly.
 - **TestFlight** (`.github/workflows/testflight.yml`) archives, signs and uploads a build. It runs
   when you start it from the Actions tab, and after every release. Until the secrets below exist,
   releases skip it with a notice.
+
+Device Release archives use the standard `macos-26-intel` runner (14 GB RAM), an archive-only
+8 GB Gradle heap, one worker and disabled parallel execution. Kotlin/Native 2.4.21 links in
+the Gradle JVM by default; `kotlin.native.jvmArgs` alone does not enlarge that in-process heap.
+The user-home Gradle settings also apply when TestFlight checks out an older release tag.
+Simulator tests remain on Apple silicon because the app's simulator frameworks are ARM64.
+The archive step is bounded to 90 minutes and keeps release optimizations enabled.
+
+Release 211's initial TestFlight attempt exhausted its previous 4 GB heap during native release
+linking before upload. `retry-testflight-211.yml` temporarily retries the unchanged, validated
+release commit after the corrected workflow merges. Remove that retry wrapper after a confirmed
+upload. A successful Debug simulator build does not establish that the optimized device archive
+fits its compiler memory budget; the separate Release archive check must actually pass.
 
 ## Setting up TestFlight
 
