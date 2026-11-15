@@ -21,7 +21,7 @@ coreKtx = "1.19.1"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
 splashscreen = "1.2.0"
-biometric = "1.4.0-alpha07"
+biometric = "1.4.0-beta01"
 browser = "1.10.0"
 
 # Compose
@@ -78,7 +78,7 @@ robolectric = "4.17"
 # The newest stable (1.4.1) predates AGP 9; the 1.5.0 line is the first that supports it, so this
 # tracks its prereleases until 1.5.0 goes stable.
 benchmark = "1.5.0"
-uiautomator = "2.4.0"
+uiautomator = "2.4.1"
 profileinstaller = "1.4.1"
 roborazzi = "1.77.0"
 
