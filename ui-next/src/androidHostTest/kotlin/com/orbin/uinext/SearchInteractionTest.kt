@@ -27,7 +27,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
-class TikTokSearchInteractionTest {
+class SearchInteractionTest {
     @get:Rule
     val composeRule = createComposeRule()
 

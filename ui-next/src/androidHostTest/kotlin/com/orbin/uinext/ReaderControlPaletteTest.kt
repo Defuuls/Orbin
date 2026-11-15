@@ -72,7 +72,7 @@ class ReaderControlPaletteTest(
         compose.onNodeWithContentDescription("Search settings").performClick()
         compose.onNode(hasSetTextAction()).performTextInput("lock")
         val painted = compose.onNodeWithText("App lock").assertIsOn().paintedColors()
-        val settingsAccent = if (mode == "light") Color(0xFF4338CA) else Color(0xFF00D4FF)
+        val settingsAccent = if (mode == "light") Color(0xFF4338CA) else Color(0xFFA5B4FC)
         val settingsCard =
             when (mode) {
                 "dark" -> Color(0xFF141520)

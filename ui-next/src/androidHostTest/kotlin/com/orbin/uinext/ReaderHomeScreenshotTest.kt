@@ -96,8 +96,8 @@ class ReaderHomeScreenshotTest(
         composeRule.waitForIdle()
         // A themed frame around the old pager must never satisfy the Home visual contract.
         composeRule.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
-        composeRule.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
-        composeRule.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
+        composeRule.onNodeWithTag(FeedPagerTags.PAGER).assertDoesNotExist()
+        composeRule.onNodeWithTag(FeedPagerTags.ACTIONS).assertDoesNotExist()
         composeRule.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertDoesNotExist()
         composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
         composeRule.onRoot().captureRoboImage("src/androidHostTest/screenshots/reader_home_${theme}_$name.png")

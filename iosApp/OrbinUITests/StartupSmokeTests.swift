@@ -100,7 +100,7 @@ final class StartupSmokeTests: XCTestCase {
         XCTAssertGreaterThan(readerGrid.frame.width, 0)
         XCTAssertGreaterThan(readerGrid.frame.height, 0)
         let legacyFeed = app.descendants(matching: .any).matching(
-            NSPredicate(format: "identifier == %@ OR identifier == %@", "tiktok_feed_pager", "tiktok_feed_actions")
+            NSPredicate(format: "identifier == %@ OR identifier == %@", "feed_pager_pager", "feed_pager_actions")
         )
         XCTAssertEqual(legacyFeed.count, 0, "Home must not render the old full-screen video pager or action column")
 

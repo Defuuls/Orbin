@@ -403,53 +403,6 @@ fun InlineAction(
     }
 }
 
-/** A small tinted label: the kind of a search result, the board on a media tile. */
-@Composable
-fun Pill(
-    text: String,
-    modifier: Modifier = Modifier,
-    tint: Color? = null,
-) {
-    val hue = tint ?: next.accent
-    Text(
-        text = text,
-        style = OrbinType.caption2,
-        color = hue,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(OrbinRadius.compact))
-                .background(hue.copy(alpha = if (next.dark) 0.18f else 0.12f))
-                .padding(horizontal = 7.dp, vertical = 3.dp),
-    )
-}
-
-/**
- * A board label drawn over media: white on a dark scrim, so it reads on any image, the way the
- * play button does. [Pill] is for labels on the app's own surfaces.
- */
-@Composable
-fun MediaBadge(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = text,
-        style = OrbinType.caption2,
-        color = Color.White,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier =
-            modifier
-                .clip(RoundedCornerShape(OrbinRadius.compact))
-                .background(Color.Black.copy(alpha = MEDIA_BADGE_SCRIM))
-                .padding(horizontal = 7.dp, vertical = 3.dp),
-    )
-}
-
-private const val MEDIA_BADGE_SCRIM = 0.55f
-
 /** Where a thumbnail will load: rounded, filled with stand-in artwork rather than flat grey. */
 @Composable
 fun MediaTile(
@@ -466,7 +419,7 @@ fun MediaTile(
         contentAlignment = Alignment.BottomStart,
     ) {
         if (badge != null) {
-            MediaBadge(text = badge, modifier = Modifier.padding(7.dp))
+            OrbinPill(badge, Modifier.padding(7.dp), PillVariant.Media, maxLines = 1)
         }
     }
 }

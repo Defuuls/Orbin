@@ -20,29 +20,27 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w390dp-h844dp-mdpi")
-class TikTokAdaptiveScreenshotTest {
+class AdaptiveScreensScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
     @Test
-    fun darkSettings() = capture("tiktok_settings_dark", 390.dp, 844.dp, dark = true) { SettingsFixture() }
+    fun darkSettings() = capture("settings_dark_phone", 390.dp, 844.dp, dark = true) { SettingsFixture() }
 
     @Test
-    fun fourchanOnboarding() =
-        capture("tiktok_onboarding_fourchan", 390.dp, 844.dp) { OnboardingFixture(selectedSite = 0) }
+    fun fourchanOnboarding() = capture("onboarding_fourchan", 390.dp, 844.dp) { OnboardingFixture(selectedSite = 0) }
 
     @Test
-    fun bbwchanOnboarding() =
-        capture("tiktok_onboarding_bbwchan", 390.dp, 844.dp) { OnboardingFixture(selectedSite = 1) }
+    fun bbwchanOnboarding() = capture("onboarding_bbwchan", 390.dp, 844.dp) { OnboardingFixture(selectedSite = 1) }
 
     @Test
     @Config(qualifiers = "w960dp-h720dp-mdpi")
-    fun wideSettings() = capture("tiktok_settings_wide", 960.dp, 720.dp) { SettingsFixture() }
+    fun wideSettings() = capture("settings_light_wide", 960.dp, 720.dp) { SettingsFixture() }
 
     @Test
     @Config(qualifiers = "w248dp-h600dp-mdpi")
     fun narrowPlaybackAtMaximumText() =
-        capture("tiktok_playback_narrow_max_text", 248.dp, 600.dp, fontScale = 2f) {
+        capture("playback_narrow_max_text", 248.dp, 600.dp, fontScale = 2f) {
             SettingsFixture(playback = true)
         }
 

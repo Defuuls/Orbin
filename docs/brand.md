@@ -2,7 +2,7 @@
 
 Orbin's identity is **Midnight Electric**: high-contrast, calm, and night-mode native for imageboard reading on Android and iOS.
 
-Production launcher, splash, notification, and in-app assets use the **Midnight Electric** mark (`>>` quote chevrons + interlocking play spark on `#0B1021` midnight navy) in [`docs/assets/orbin-icon-mark.svg`](assets/orbin-icon-mark.svg) and [`docs/assets/orbin-icon-mark-small.svg`](assets/orbin-icon-mark-small.svg). In-app UI color tokens are the Midnight Electric `ReaderTokens` palette (`#4338CA` light accent, `#00D4FF` dark accent, `#000000` monochrome AMOLED mode).
+Production launcher, splash, notification, and in-app assets use the **Midnight Electric** mark (`>>` quote chevrons + interlocking play spark on `#0B1021` midnight navy) in [`docs/assets/orbin-icon-mark.svg`](assets/orbin-icon-mark.svg) and [`docs/assets/orbin-icon-mark-small.svg`](assets/orbin-icon-mark-small.svg). In-app UI color tokens are the Midnight Electric `ReaderTokens` palette (`#4338CA` light accent, `#A5B4FC` dark and AMOLED accent, `#000000` monochrome AMOLED mode).
 
 ## Core idea
 
@@ -26,8 +26,8 @@ Orbin is a privacy-focused, read-only Android & iOS imageboard browser built wit
 | Mode | Ground | Surface | Primary Text | Accent |
 | --- | --- | --- | --- | --- |
 | **Light** | `#FFFFFF` | `#FFFFFF` / `#F5F7FB` | `#1A1A1A` | `#4338CA` |
-| **Dark** | `#0B1021` | `#141B33` / `#10162E` | `#FFFFFF` | `#00D4FF` |
-| **AMOLED** | `#000000` | `#0B0B0B` / `#141414` | `#FFFFFF` | `#FFFFFF` |
+| **Dark** | `#0B1021` | `#141B33` / `#10162E` | `#FFFFFF` | `#A5B4FC` |
+| **AMOLED** | `#000000` | `#0B0B0B` / `#141414` | `#FFFFFF` | `#A5B4FC` |
 
 ## Lockups
 

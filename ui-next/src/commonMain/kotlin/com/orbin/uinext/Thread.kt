@@ -58,7 +58,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -757,35 +756,12 @@ private fun ThreadJumpPills(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (backLabel != null && onBackTo != null) {
-            ThreadPill(label = backLabel, tag = ThreadTags.BACK_PILL, onClick = onBackTo)
+            OrbinPill(backLabel, Modifier.testTag(ThreadTags.BACK_PILL), PillVariant.Filled, onClick = onBackTo)
         }
         if (newLabel != null && onNew != null) {
-            ThreadPill(label = newLabel, tag = ThreadTags.NEW_PILL, onClick = onNew)
+            OrbinPill(newLabel, Modifier.testTag(ThreadTags.NEW_PILL), PillVariant.Filled, onClick = onNew)
         }
     }
-}
-
-@Composable
-private fun ThreadPill(
-    label: String,
-    tag: String,
-    onClick: () -> Unit,
-) {
-    Text(
-        label,
-        style = OrbinType.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-        color = reader.onAccent,
-        maxLines = 1,
-        modifier =
-            Modifier
-                .testTag(tag)
-                .heightIn(min = MIN_TOUCH_TARGET)
-                .clip(RoundedCornerShape(OrbinRadius.pill))
-                .background(reader.accent)
-                .nextClickable(role = Role.Button, onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .semantics { contentDescription = label },
-    )
 }
 
 const val MAX_REPLY_DEPTH = 3
@@ -1155,7 +1131,7 @@ private fun PostThumbnail(
     Box(
         modifier
             .testTag(ThreadTags.THUMBNAIL)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(OrbinRadius.compactCard))
             .background(colors.surfaceVariant),
     ) {
         if (covered) {

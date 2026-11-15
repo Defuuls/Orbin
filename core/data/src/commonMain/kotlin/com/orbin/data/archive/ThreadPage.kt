@@ -237,9 +237,9 @@ internal const val ARCHIVE_CSS = """:root {
 @media (prefers-color-scheme: dark) {
   :root { --bg: #0b0d11; --raised: #141520; --placeholder: #102b33;
     --ink: #e8eaf0; --muted: #8a8fa8; --line: rgba(255, 255, 255, 0.07);
-    --accent: #00d4ff; --link: #6dd4ec; --author: #6dd4ec; --subject: #e8eaf0;
+    --accent: #a5b4fc; --link: #6dd4ec; --author: #6dd4ec; --subject: #e8eaf0;
     --green: #34d399; --error: #ff5d6c; --spoiler: #e8eaf0; --on-spoiler: #141520;
-    --hero-start: rgba(0, 212, 255, 0.22); --hero-end: rgba(167, 139, 250, 0.12);
+    --hero-start: rgba(165, 180, 252, 0.22); --hero-end: rgba(167, 139, 250, 0.12);
     --shadow: none; }
 }
 * { box-sizing: border-box; }

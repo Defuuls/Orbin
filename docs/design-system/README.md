@@ -2,7 +2,7 @@
 
 This is the normative design for Orbin's Home, board catalog and thread reader. **Android and iOS share this implementation.** Implementation links, automated checks, screenshot and profile status, and the device checklist are tracked in [Implementation and verification](IMPLEMENTATION.md). That record distinguishes code being present from a passing check or a shipped release.
 
-The current visual reference is [NekoSurf](https://github.com/NekoSurf/NekoSurf/tree/6e8593d3e94b6d1e0077b7c48777ac795f8a537a): quiet page surfaces, rounded cards, compact headers and controls, and a continuous grouped Settings page. Orbin retains its name, Midnight Electric mark, indigo/cyan accents and functional destinations. The adaptation covers the whole app, including Home, Boards, catalogs, threads, stored collections, Search, Downloads, media and setup. It does not replace Orbin's subscriptions, source identities, saved/watch tools or playback behavior.
+The current visual reference is [NekoSurf](https://github.com/NekoSurf/NekoSurf/tree/6e8593d3e94b6d1e0077b7c48777ac795f8a537a): quiet page surfaces, rounded cards, compact headers and controls, and a continuous grouped Settings page. Orbin retains its name, Midnight Electric mark, indigo accent and functional destinations. The adaptation covers the whole app, including Home, Boards, catalogs, threads, stored collections, Search, Downloads, media and setup. It does not replace Orbin's subscriptions, source identities, saved/watch tools or playback behavior.
 
 Clover 3.0.2 and Orbin Coral are historical design stages. The compact reader metrics and reference diagrams below retain that provenance; the drawings are measurements of the earlier structure, not screenshots of the current app. [Source record](#source-record) separates the current NekoSurf source reference from the supplied APK and earlier evidence.
 
@@ -46,15 +46,15 @@ App-bar titles and icons use `color.onAppBar` over `color.appBar`; the status-ba
 | `color.inkSecondary` | `#696F83` | `#8A8FA8` | `#8C8C93` | Generic secondary UI text |
 | `color.inkMuted` | `#696F83` | `#8A8FA8` | `#8C8C93` | Post numbers, dates and attachment details |
 | `color.hairline` | `#0F000000` | `#12FFFFFF` | `#14FFFFFF` | Decorative row and post dividers |
-| `color.accent` | `#4338CA` | `#00D4FF` | `#00D4FF` | Orbin progress and actions |
-| `color.onAccent` | `#FFFFFF` | `#06131F` | `#06131F` | Text on an accent-filled control |
+| `color.accent` | `#4338CA` | `#A5B4FC` | `#A5B4FC` | Orbin progress and actions |
+| `color.onAccent` | `#FFFFFF` | `#1E1B4B` | `#1E1B4B` | Text on an accent-filled control |
 | `color.quote` | `#2E7D32` | `#34D399` | `#34D399` | Quoted lines |
 | `color.author` | `#14161F` | `#6DD4EC` | `#6DD4EC` | Post author name |
 | `color.subject` | `#14161F` | `#E8EAF0` | `#ECECEF` | Post and catalog subjects |
 | `color.quoteLink` | `#0369A1` | `#6DD4EC` | `#6DD4EC` | Post references and backlinks |
 | `color.error` | `#B91C35` | `#FF5D6C` | `#FF5D6C` | Error titles |
 
-The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin indigo `#4338CA`; Dark and AMOLED keep cyan `#00D4FF`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
+The page and toolbar share NekoSurf-inspired neutral grounds: Light `#F4F5F7`, Dark `#0B0D11`, and AMOLED black. Cards use color.surfaceVariant: white, `#141520`, or `#0E0E10`. Light keeps Orbin indigo `#4338CA`; Dark and AMOLED use its indigo tint `#A5B4FC`. Text, selection, subjects, quotes, links and errors use the semantic roles above. Light muted ink is slightly darker than the reference to retain contrast on selected rows. color.inkSecondary and color.inkMuted remain separate roles even where their values agree. The historical Clover palette is documented under Source record.
 
 ### Contrast
 
@@ -200,7 +200,7 @@ Thread posts and compact List-mode content retain ReaderPostLayout's leading thu
 
 The subject uses type.postBody (15sp), or type.postBodyWide (16sp), regular weight, in color.subject; catalog list titles use at most two lines. Source/thread/date metadata uses type.postDetails (11sp) or type.postDetailsWide (12sp), color.inkMuted. The opening excerpt uses the body style, up to two lines; quotes use color.quote and normal text color.ink.
 
-Reply and file totals are plain text below the excerpt, using the body style in color.inkMuted, such as “23 replies, 4 files”. There is no trailing badge and no reserved badge column. Watched unread counts remain a separate color.accent label. The row opens its thread; optional media and context actions retain their callbacks and accessible labels.
+Reply and file totals are plain text below the excerpt, using the body style in color.inkMuted, such as “23 replies, 4 files”. There is no trailing badge and no reserved badge column. Watched unread counts use the shared unread label: a pill filled with color.accent and lettered in color.onAccent, the same on every surface. The row opens its thread; optional media and context actions retain their callbacks and accessible labels.
 
 ### Post
 
@@ -213,7 +213,7 @@ A thread ends with size.threadStatus (88dp minimum), space.postInset (8dp) paddi
 ### Reading state in the catalog
 
 - A thread the reader has opened shows its title in `color.inkMuted`.
-- A watched thread retains reply/file totals and adds the unread count as plain color.accent text.
+- A watched thread retains reply/file totals and adds the unread count as the shared unread label (color.accent pill, color.onAccent text).
 - A muted thread shows the word "Muted" as its title in `color.inkMuted`, with no thumbnail and no preview.
 
 ### Reply nesting
@@ -395,7 +395,7 @@ Archive pages use the same light/dark color roles, including distinct links, aut
 
 ## Settings
 
-Settings is one continuous page, following NekoSurf's grouped layout while retaining Orbin's name, icon, indigo/cyan accents and persisted behavior:
+Settings is one continuous page, following NekoSurf's grouped layout while retaining Orbin's name, icon, indigo accent and persisted behavior:
 
 | Setting | Choices | Default |
 | --- | --- | --- |

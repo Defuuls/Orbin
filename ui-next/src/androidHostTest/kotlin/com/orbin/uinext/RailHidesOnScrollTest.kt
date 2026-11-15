@@ -27,13 +27,13 @@ class RailHidesOnScrollTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    /** Replaces `TikTok navigation remains reachable while paging even with legacy hide preference`. */
+    /** Replaces `Navigation remains reachable while paging even with legacy hide preference`. */
     @Test
     fun `the bar opens Library after scrolling with the legacy hide preference enabled`() {
         assertLibraryReachableAfterPaging(hidePreference = true)
     }
 
-    /** Replaces `TikTok navigation remains reachable when the legacy hide preference is off`. */
+    /** Replaces `Navigation remains reachable when the legacy hide preference is off`. */
     @Test
     fun `the bar opens Library after scrolling with the legacy hide preference disabled`() {
         assertLibraryReachableAfterPaging(hidePreference = false)

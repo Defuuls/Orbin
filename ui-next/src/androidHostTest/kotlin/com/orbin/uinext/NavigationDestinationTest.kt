@@ -28,7 +28,7 @@ import org.robolectric.annotation.GraphicsMode
 /** The bottom bar is the only primary navigation: Boards, Feed, Library and Settings. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class SocialNavigationTest {
+class NavigationDestinationTest {
     @get:Rule
     val composeRule = createComposeRule()
 

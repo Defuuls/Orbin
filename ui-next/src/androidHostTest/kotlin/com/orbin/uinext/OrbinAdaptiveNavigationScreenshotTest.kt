@@ -28,11 +28,11 @@ class OrbinAdaptiveNavigationScreenshotTest {
 
     @Test
     fun wideFeedWithLeftNavigation() =
-        capture("neko_shell_wide_feed_light", 960.dp, 720.dp, NextDestination.FEED) { ShellFeed() }
+        capture("navigation_wide_feed_light", 960.dp, 720.dp, NextDestination.FEED) { ShellFeed() }
 
     @Test
     fun wideBoardsWithLeftNavigation() =
-        capture("neko_shell_wide_boards_dark", 960.dp, 720.dp, NextDestination.BOARDS, dark = true) {
+        capture("navigation_wide_boards_dark", 960.dp, 720.dp, NextDestination.BOARDS, dark = true) {
             BoardsScreen(
                 boards =
                     listOf(
@@ -57,7 +57,7 @@ class OrbinAdaptiveNavigationScreenshotTest {
     @Test
     @Config(qualifiers = "en-rUS-w390dp-h844dp-mdpi")
     fun phoneFeedWithBottomNavigation() =
-        capture("neko_shell_phone_feed_light", 390.dp, 844.dp, NextDestination.FEED) { ShellFeed() }
+        capture("navigation_phone_feed_light", 390.dp, 844.dp, NextDestination.FEED) { ShellFeed() }
 
     private fun capture(
         name: String,

@@ -29,7 +29,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /** Source filtering, five-tab navigation and local collections across both providers. */
-class BrowserSocialTest {
+class BrowserScreensTest {
     private val requested = mutableListOf<String>()
     private val recording = Mutex()
     private val bookmarks = FakeBookmarks()

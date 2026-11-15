@@ -69,7 +69,7 @@ class ReaderTwoPaneTest {
     }
 
     @Test
-    fun `the Coral empty card is centered below its detail app bar and disappears when a thread opens`() {
+    fun `the empty card is centered below its detail app bar and disappears when a thread opens`() {
         var threadOpen by mutableStateOf(false)
         showPanes(threadOpen = { threadOpen })
 

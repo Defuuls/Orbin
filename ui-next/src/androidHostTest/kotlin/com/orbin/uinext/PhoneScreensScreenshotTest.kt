@@ -30,13 +30,13 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class SocialReaderScreenshotTest {
+class PhoneScreensScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
     @Test
     fun homeAcrossBothSites() =
-        capture("social_ios_home") {
+        capture("phone_home") {
             FeedScreen(
                 rows =
                     listOf(
@@ -84,7 +84,7 @@ class SocialReaderScreenshotTest {
 
     @Test
     fun boardDirectory() =
-        capture("social_ios_boards") {
+        capture("phone_boards") {
             BoardsScreen(
                 boards =
                     listOf(
@@ -107,7 +107,7 @@ class SocialReaderScreenshotTest {
 
     @Test
     fun settingsDirectory() =
-        capture("social_ios_settings") {
+        capture("phone_settings") {
             SettingsScreen(
                 groups = settingsFixtures(),
                 enabledSiteCount = 2,
@@ -118,7 +118,7 @@ class SocialReaderScreenshotTest {
 
     @Test
     fun boardPlaybackOverrides() =
-        capture("social_ios_playback") {
+        capture("phone_playback") {
             SettingsScreen(
                 groups = settingsFixtures(),
                 enabledSiteCount = 2,
@@ -132,7 +132,7 @@ class SocialReaderScreenshotTest {
 
     @Test
     fun textLedThread() =
-        capture("social_ios_thread") {
+        capture("phone_thread") {
             ThreadScreen(
                 subject = "Weekly discussion",
                 siteName = "BBWChan",
@@ -173,7 +173,7 @@ class SocialReaderScreenshotTest {
 
     @Test
     fun searchAcrossSites() =
-        capture("social_ios_search") {
+        capture("phone_search") {
             NextScaffold(where = "Search", destination = NextDestination.SEARCH, onDestination = {}) { padding ->
                 Box(Modifier.padding(bottom = padding.calculateBottomPadding())) {
                     SearchScreen(
@@ -205,7 +205,7 @@ class SocialReaderScreenshotTest {
 
     @Test
     fun watchedThreads() =
-        capture("social_ios_watched") {
+        capture("phone_watched") {
             ThreadCollectionScreen(
                 title = "Watched threads",
                 rows =

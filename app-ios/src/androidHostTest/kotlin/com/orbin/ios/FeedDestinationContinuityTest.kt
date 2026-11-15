@@ -193,8 +193,8 @@ class FeedDestinationContinuityTest {
             NextTheme(platform = NextPlatform.IOS) { FeedDestination(browser) }
         }
         composeRule.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
-        composeRule.onNodeWithTag("tiktok_feed_pager").assertDoesNotExist()
-        composeRule.onNodeWithTag("tiktok_feed_actions").assertDoesNotExist()
+        composeRule.onNodeWithTag("feed_pager_pager").assertDoesNotExist()
+        composeRule.onNodeWithTag("feed_pager_actions").assertDoesNotExist()
     }
 
     private suspend fun loadedBrowser(

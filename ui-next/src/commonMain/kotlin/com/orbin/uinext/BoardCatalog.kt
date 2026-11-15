@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -632,9 +631,16 @@ internal fun CatalogRow(
                             } else {
                                 thumbnail(row, Modifier.fillMaxSize())
                                 if (row.mediaLabel.isNotBlank()) {
-                                    CatalogThumbnailCornerBadge(
-                                        label = row.mediaLabel,
-                                        modifier = Modifier.align(Alignment.BottomEnd),
+                                    OrbinPill(
+                                        text = row.mediaLabel,
+                                        variant = PillVariant.Media,
+                                        maxLines = 1,
+                                        modifier =
+                                            Modifier
+                                                .align(
+                                                    Alignment.BottomEnd,
+                                                ).padding(6.dp)
+                                                .clearAndSetSemantics {},
                                     )
                                 }
                             }
@@ -696,14 +702,7 @@ private fun CatalogCounts(
             style = style.withReaderFont(),
             color = colors.inkMuted,
         )
-        if (row.unread > 0) {
-            Text(
-                pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
-                modifier = Modifier.fillMaxWidth(),
-                style = OrbinType.meta.withReaderFont(),
-                color = colors.accent,
-            )
-        }
+        UnreadLabel(row.unread)
     }
 }
 
@@ -822,14 +821,13 @@ internal fun CatalogCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     if (row.threadNumber.isNotBlank()) {
-                        NekoTintedPill(
+                        OrbinPill(
                             stringResource(Res.string.reader_post_number, row.threadNumber),
-                            Color.Black.copy(alpha = 0.4f),
-                            Color.White,
+                            variant = PillVariant.Media,
                         )
                     }
                     if (metadata != null && row.board.isNotBlank()) {
-                        NekoTintedPill(row.board, colors.accent.copy(alpha = 0.8f), Color.White)
+                        OrbinPill(row.board, variant = PillVariant.Filled)
                     }
                 }
                 if (row.watched || row.bookmarked) {
@@ -866,27 +864,19 @@ internal fun CatalogCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        NekoCountPill(
-                            ReaderIcons.Chat,
+                        OrbinPill(
                             pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
-                            Color.Black.copy(alpha = 0.4f),
-                            Color.White,
+                            variant = PillVariant.Media,
+                            icon = ReaderIcons.Chat,
                         )
-                        NekoCountPill(
-                            ReaderIcons.Album,
+                        OrbinPill(
                             pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
-                            Color.Black.copy(alpha = 0.4f),
-                            Color.White,
+                            variant = PillVariant.Media,
+                            icon = ReaderIcons.Album,
                         )
-                        if (row.unread > 0) {
-                            NekoTintedPill(
-                                pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
-                                colors.accent,
-                                colors.onAccent,
-                            )
-                        }
+                        UnreadLabel(row.unread)
                         if (row.mediaLabel.isNotBlank() && !covered) {
-                            NekoTintedPill(row.mediaLabel, Color.Black.copy(alpha = 0.4f), Color.White)
+                            OrbinPill(row.mediaLabel, variant = PillVariant.Media)
                         }
                     }
                 }
@@ -940,11 +930,7 @@ internal fun CatalogCard(
                             )
                         }
                         if (metadata != null && row.board.isNotBlank()) {
-                            NekoTintedPill(
-                                text = row.board,
-                                containerColor = colors.accent.copy(alpha = 0.14f),
-                                contentColor = colors.accent,
-                            )
+                            OrbinPill(text = row.board)
                         }
                     }
                     val subtitleLine = metadata?.takeIf { it.isNotBlank() } ?: row.activity.takeIf { it.isNotBlank() }
@@ -988,7 +974,7 @@ internal fun CatalogCard(
                     Modifier
                         .fillMaxWidth()
                         .height(imageHeight)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(OrbinRadius.compactCard))
                         .background(colors.surfaceVariant)
                         .testTag(thumbnailTag ?: CatalogTags.THUMBNAIL)
                         .clearAndSetSemantics {}
@@ -1013,9 +999,11 @@ internal fun CatalogCard(
                     } else {
                         thumbnail(row, Modifier.fillMaxSize())
                         if (row.mediaLabel.isNotBlank()) {
-                            CatalogThumbnailCornerBadge(
-                                label = row.mediaLabel,
-                                modifier = Modifier.align(Alignment.BottomEnd),
+                            OrbinPill(
+                                text = row.mediaLabel,
+                                variant = PillVariant.Media,
+                                maxLines = 1,
+                                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).clearAndSetSemantics {},
                             )
                         }
                     }
@@ -1023,33 +1011,6 @@ internal fun CatalogCard(
             }
             CatalogIconCounts(row, style = bodyStyle, compactGrid = compactGrid)
         }
-    }
-}
-
-/** Chance-style bottom-right attachment corner badge showing media format (e.g. WEBM, MP4, GIF). */
-@Composable
-private fun CatalogThumbnailCornerBadge(
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    val colors = reader
-    val cornerShape = RoundedCornerShape(topStart = 6.dp)
-    Box(
-        modifier =
-            modifier
-                .clearAndSetSemantics {}
-                .clip(cornerShape)
-                .background(colors.background.copy(alpha = 0.88f))
-                .border(ReaderSize.hairline, colors.hairline, cornerShape)
-                .padding(horizontal = 5.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = OrbinType.caption2.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-            color = colors.ink,
-            maxLines = 1,
-        )
     }
 }
 
@@ -1100,14 +1061,7 @@ private fun CatalogIconCounts(
                     color = colors.inkMuted,
                 )
             }
-            if (row.unread > 0) {
-                Text(
-                    pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
-                    modifier = Modifier.fillMaxWidth(),
-                    style = OrbinType.meta.withReaderFont(),
-                    color = colors.accent,
-                )
-            }
+            UnreadLabel(row.unread)
         }
         return
     }
@@ -1117,89 +1071,22 @@ private fun CatalogIconCounts(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        NekoCountPill(
+        OrbinPill(
+            pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
             icon = ReaderIcons.Chat,
-            count = pluralStringResource(Res.plurals.next_row_replies, row.replies, row.replies),
-            containerColor = colors.accent.copy(alpha = 0.14f),
-            contentColor = colors.accent,
         )
-        NekoCountPill(
+        OrbinPill(
+            pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
+            tint = colors.subject,
             icon = ReaderIcons.Album,
-            count = pluralStringResource(Res.plurals.next_row_files, row.media, row.media),
-            containerColor = colors.subject.copy(alpha = 0.14f),
-            contentColor = colors.subject,
         )
-        if (row.unread > 0) {
-            NekoTintedPill(
-                text = pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread),
-                containerColor = colors.accent,
-                contentColor = colors.onAccent,
-            )
-        }
+        UnreadLabel(row.unread)
         if (row.threadNumber.isNotEmpty()) {
-            NekoTintedPill(
-                text = stringResource(Res.string.reader_post_number, row.threadNumber),
-                containerColor = colors.inkMuted.copy(alpha = 0.12f),
-                contentColor = colors.inkMuted,
+            OrbinPill(
+                stringResource(Res.string.reader_post_number, row.threadNumber),
+                tint = colors.inkMuted,
             )
         }
-    }
-}
-
-@Composable
-private fun NekoCountPill(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    count: String,
-    containerColor: Color,
-    contentColor: Color,
-) {
-    val pillShape = RoundedCornerShape(OrbinRadius.pill)
-    Row(
-        modifier =
-            Modifier
-                .width(IntrinsicSize.Max)
-                .clip(pillShape)
-                .background(containerColor)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = contentColor,
-            modifier = Modifier.size(13.dp),
-        )
-        Text(
-            text = count,
-            modifier = Modifier.weight(1f),
-            style = OrbinType.meta.withReaderFont(),
-            color = contentColor,
-        )
-    }
-}
-
-@Composable
-private fun NekoTintedPill(
-    text: String,
-    containerColor: Color,
-    contentColor: Color,
-) {
-    val pillShape = RoundedCornerShape(OrbinRadius.pill)
-    Box(
-        modifier =
-            Modifier
-                .clip(pillShape)
-                .background(containerColor)
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.width(IntrinsicSize.Max),
-            style = OrbinType.caption2.withReaderFont().copy(fontWeight = FontWeight.SemiBold),
-            color = contentColor,
-        )
     }
 }
 
@@ -1343,7 +1230,7 @@ private fun CatalogSortTabRow(
                     Modifier
                         .widthIn(min = 64.dp)
                         .heightIn(min = MIN_TOUCH_TARGET)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(OrbinRadius.compactCard))
                         .background(if (selected) reader.accent.copy(alpha = 0.14f) else Color.Transparent)
                         .selectable(
                             selected = selected,
