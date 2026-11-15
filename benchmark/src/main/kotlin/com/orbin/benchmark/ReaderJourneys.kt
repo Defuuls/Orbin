@@ -53,7 +53,6 @@ internal enum class ReaderJourney(
 private fun ReaderJourney.itemSelector() =
     if (itemTag.endsWith(":")) By.res(Pattern.compile(Pattern.quote(itemTag) + ".+")) else By.res(itemTag)
 
-
 internal fun resetReaderWindow() {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val device = UiDevice.getInstance(instrumentation)
