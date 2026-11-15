@@ -44,6 +44,12 @@ class BaselineProfileGenerator {
     @Test
     fun twoPane() = collectReader(ReaderJourney.TWO_PANE)
 
+    @Test
+    fun homeFeed() = collectReader(ReaderJourney.HOME_FEED)
+
+    @Test
+    fun catalogCard() = collectReader(ReaderJourney.CARD)
+
     private fun collectReader(journey: ReaderJourney) {
         rule.collect(
             packageName = READER_PACKAGE,

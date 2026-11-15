@@ -1,4 +1,4 @@
-"""Bind six real collector results to immutable source before official profile merging."""
+"""Bind every real collector result to immutable source before official profile merging."""
 
 import copy
 from contextlib import redirect_stderr, redirect_stdout
@@ -28,6 +28,8 @@ PROFILES = {
     "thread": "Lcom/orbin/uinext/ThreadKt;\nSPLcom/orbin/uinext/ThreadKt;->render([ILjava/lang/Object;)V\n",
     "files": "Lcom/orbin/core/reader/ThreadPresentationKt;\n",
     "twoPane": "Lcom/orbin/uinext/ReaderTwoPaneKt;\n",
+    "homeFeed": "Lcom/orbin/uinext/FeedScreenKt;\n",
+    "catalogCard": "Lcom/orbin/uinext/BoardCatalogKt;\n",
 }
 # Explicitly expected official selection: HP is lexically first; flags are not unioned into HSP.
 BASELINE = STARTUP + (
@@ -37,6 +39,7 @@ BASELINE = STARTUP + (
     "SPLcom/orbin/uinext/ThreadKt;->render([ILjava/lang/Object;)V\n"
     "Lcom/orbin/core/reader/ThreadPresentationKt;\n"
     "Lcom/orbin/uinext/ReaderTwoPaneKt;\n"
+    "Lcom/orbin/uinext/FeedScreenKt;\n"
 )
 
 
@@ -110,7 +113,7 @@ class ProfileArtifactsTest(unittest.TestCase):
         edit(record)
         path.write_text(json.dumps(record))
 
-    def test_six_original_profiles_are_copied_verbatim_and_official_outputs_verified(self):
+    def test_all_original_profiles_are_copied_verbatim_and_official_outputs_verified(self):
         self.export_all()
         result = self.aggregate()
         self.assertEqual(set(CASES), {item["case"] for item in result["cases"]})

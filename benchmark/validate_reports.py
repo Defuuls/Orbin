@@ -19,6 +19,8 @@ FRAME_CASES = {
     "threadScrollFrames",
     "filesScrollFrames",
     "twoPaneScrollRetentionFrames",
+    "homeFeedScrollFrames",
+    "catalogCardScrollFrames",
 }
 REQUIRED_CASES = STARTUP_CASES | FRAME_CASES
 STARTUP_ITERATIONS = 10

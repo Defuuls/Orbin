@@ -63,13 +63,13 @@ class ValidateReportsTest(unittest.TestCase):
             ET.SubElement(suite, "testcase", name=name, classname=BENCHMARK_CLASS)
             ET.ElementTree(suite).write(directory / "TEST-reader.xml")
 
-    def test_accepts_all_seven_measured_cases_and_signed_frame_overruns(self):
-        self.assertEqual(7, validate_reports(self.root)["required_cases"])
+    def test_accepts_all_measured_cases_and_signed_frame_overruns(self):
+        self.assertEqual(9, validate_reports(self.root)["required_cases"])
 
-    def test_accepts_seven_original_case_directories_with_matching_report_basenames(self):
+    def test_accepts_original_case_directories_with_matching_report_basenames(self):
         self.write_distributed_reports()
         self.assertEqual(
-            {"required_cases": 7, "json_reports": 7, "xml_reports": 7},
+            {"required_cases": 9, "json_reports": 9, "xml_reports": 9},
             validate_reports(self.root),
         )
 

@@ -14,7 +14,7 @@ release builds do not contain this Activity or fixture. The launcher and product
 are unchanged.
 
 The fixture prepares 200 catalog rows, posts, and files once per Activity on `Dispatchers.Default`
-before publishing content. It uses the real shared `BoardScreen`, `ThreadScreen`, `ReaderTwoPane`,
+before publishing content. It uses the real shared `BoardScreen` (list, grid and card), the Home `FeedScreen` in card view, `ThreadScreen`, `ReaderTwoPane`,
 and prepared `ReaderPostComment` renderer, including links, greentext, hidden spoilers, and the
 selection container. It retains production lazy states and stable keys and a local thumbnail
 painter. It performs no provider request, post parsing, database load, or remote image decode in a
@@ -75,11 +75,11 @@ profile came from that attempt. These failures do not establish a renderer asser
 the cause of the ADB-session loss; the reviewed 0bc shipping files and unsigned packaging proof
 remain unchanged.
 
-CI now runs each of the seven metric methods and each of the six profile collectors on a fresh
+CI now runs each of the nine metric methods and each of the eight profile collectors on a fresh
 emulator. Cases, measured iterations, collection limits, API 35, emulator build, flags and journey
 guards are unchanged. All matrix cells must succeed before their stable aggregate gate can pass.
 The metrics aggregate downloads the current run's original case reports into separate directories
-and applies the existing seven-case sample validator without synthesizing JSON or XML. Profile
+and applies the existing nine-case sample validator without synthesizing JSON or XML. Profile
 workers clear old generated output; [their helper](profile_artifacts.py) verifies the exact successful case, fresh raw
 files, source/run/configuration identity and file hashes before the aggregate invokes the official
 AndroidX merge. Only the startup collector supplies startup rules. This is an isolation mitigation
@@ -104,7 +104,7 @@ For emulator runs, the workflow supplies the existing `EMULATOR,DEBUGGABLE,NOT-P
 environment suppressions. The assertions and measured journeys are identical. Frame timings from
 a hosted emulator are useful for comparing the same runner configuration, not absolute device
 performance claims. Reports and traces are uploaded by `.github/workflows/performance.yml`.
-The report validator requires successful XML cases for all seven CI journeys, ten startup samples,
+The report validator requires successful XML cases for all nine CI journeys, ten startup samples,
 and five frame iterations with nonempty finite CPU-duration and overrun samples. It fails on
 missing reports, skipped/failed cases, zero CPU duration, nonfinite values, or an empty iteration.
 It sets no absolute timing threshold. Run this check on downloaded results with:
