@@ -411,7 +411,7 @@ private fun ReaderCenteredState(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    if (error) ReaderIcons.Refresh else ReaderIcons.Search,
+                    if (error) ErrorIcon else ReaderIcons.Search,
                     contentDescription = null,
                     tint = if (error) colors.error else colors.accent,
                     modifier = Modifier.size(28.dp),

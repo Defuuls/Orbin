@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -51,6 +53,8 @@ data class PillColors(
 
 /** Wash strength of a [PillVariant.Tinted] pill. */
 const val PILL_TINT_ALPHA = 0.14f
+private const val PILL_INK_DEEPEN = 0.2f
+private const val LIGHT_GROUND = 0.5f
 
 /** Scrim strength of a [PillVariant.Media] pill. */
 const val PILL_MEDIA_SCRIM_ALPHA = 0.55f
@@ -64,7 +68,9 @@ fun pillColors(
         PillVariant.Filled -> PillColors(tint ?: colors.accent, colors.onAccent)
         PillVariant.Tinted -> {
             val hue = tint ?: colors.accent
-            PillColors(hue.copy(alpha = PILL_TINT_ALPHA), hue)
+            // On light grounds a deeper tone of the hue keeps the text at AA over its own tint.
+            val ink = if (colors.background.luminance() > LIGHT_GROUND) lerp(hue, Color.Black, PILL_INK_DEEPEN) else hue
+            PillColors(hue.copy(alpha = PILL_TINT_ALPHA), ink)
         }
         PillVariant.Media -> PillColors(Color.Black.copy(alpha = PILL_MEDIA_SCRIM_ALPHA), Color.White)
     }

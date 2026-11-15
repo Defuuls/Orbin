@@ -145,15 +145,15 @@ class ReaderPostCommentStyleTest {
             val secret = text.text.indexOf("secret")
             assertEquals(colors.ink, layout.layoutInput.style.color)
             assertTrue(text.spanStyles.any { it.start == green && it.item.color == colors.quote })
-            assertEquals(
-                colors.quoteLink,
+            val quoteLinkStyle =
                 text
                     .getLinkAnnotations(0, text.length)
                     .first()
                     .item.styles
                     ?.style
-                    ?.color,
-            )
+            assertEquals(colors.quoteLink, quoteLinkStyle?.color)
+            // A >>quote stays tappable-looking without relying on color: underlined in every palette.
+            assertEquals(TextDecoration.Underline, quoteLinkStyle?.textDecoration)
             assertTrue(
                 text.spanStyles.any {
                     it.start == secret &&

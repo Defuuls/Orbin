@@ -782,8 +782,9 @@ private fun threadActions(
                     ThreadLayout.FILES -> ThreadLayout.CARDS
                     ThreadLayout.CARDS -> ThreadLayout.POSTS
                 }
+            // The icon shows the layout on screen now; the spoken action names the one a tap switches to.
             val icon =
-                when (target) {
+                when (layout) {
                     ThreadLayout.FILES -> ReaderIcons.Album
                     ThreadLayout.CARDS -> Icons.Filled.ViewAgenda
                     ThreadLayout.POSTS -> Icons.AutoMirrored.Filled.ViewList
@@ -793,6 +794,7 @@ private fun threadActions(
                     icon = icon,
                     label = stringResource(threadLayoutLabel(target)),
                     onClick = { onLayoutChange(target) },
+                    state = stringResource(threadLayoutLabel(layout)),
                 ),
             )
         }

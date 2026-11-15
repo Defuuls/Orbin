@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +21,6 @@ import com.orbin.uinext.resources.reader_thread_link_hint
 import com.orbin.uinext.resources.reader_thread_link_invalid
 import com.orbin.uinext.resources.reader_thread_link_label
 import com.orbin.uinext.resources.reader_thread_link_open
-import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
 /** Explicit paste input; a host validates its registered sources before navigating. */
@@ -56,11 +54,7 @@ fun OpenThreadLinkDialog(
             keyboardActions = KeyboardActions(onGo = { submit() }),
         )
         if (invalid) {
-            Text(
-                stringResource(Res.string.reader_thread_link_invalid),
-                style = OrbinType.body,
-                color = reader.error,
-            )
+            ErrorNote(stringResource(Res.string.reader_thread_link_invalid))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             OrbinTextButton(stringResource(Res.string.next_confirm_cancel), onDismiss)

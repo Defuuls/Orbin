@@ -66,12 +66,17 @@ fun LockScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.semantics { heading() },
                 )
-                Text(
-                    text = message ?: stringResource(Res.string.next_lock_hint),
-                    color = if (failed) reader.error else reader.inkMuted,
-                    style = OrbinType.stateBody.withReaderFont(),
-                    textAlign = TextAlign.Center,
-                )
+                val hint = message ?: stringResource(Res.string.next_lock_hint)
+                if (failed) {
+                    ErrorNote(hint, style = OrbinType.stateBody.withReaderFont(), textAlign = TextAlign.Center)
+                } else {
+                    Text(
+                        text = hint,
+                        color = reader.inkMuted,
+                        style = OrbinType.stateBody.withReaderFont(),
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 if (!unlocking) {
                     OrbinFilledButton(
                         label = stringResource(Res.string.next_lock_unlock),

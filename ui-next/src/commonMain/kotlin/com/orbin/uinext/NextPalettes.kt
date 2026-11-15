@@ -42,7 +42,7 @@ fun canonicalNextPalette(
  * destructive is error, with background as its filled-control foreground. The app bar,
  * placeholder, quote, author and reference roles retain their reader names explicitly.
  *
- * AMOLED page grounds are black, with lifted near-black cards and the Orbin indigo accent.
+ * AMOLED page grounds are black, with lifted near-black cards and the Orbin orange accent.
  */
 private fun ReaderColors.asNextPalette(
     dark: Boolean,

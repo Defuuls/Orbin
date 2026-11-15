@@ -106,7 +106,6 @@ class SettingsIndexTest {
                 "Pink",
                 "Rose",
                 "Red",
-                "Orange",
                 "Amber",
                 "Lime",
                 "Green",

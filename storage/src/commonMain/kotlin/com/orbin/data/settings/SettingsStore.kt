@@ -217,7 +217,7 @@ class SettingsStore(
     @Suppress("ComplexMethod")
     private fun Preferences.toAppSettings(): AppSettings =
         AppSettings(
-            accentTheme = AccentTheme.entries.firstOrNull { it.name == this[Keys.accentTheme] } ?: AccentTheme.ORBIN,
+            accentTheme = storedAccentTheme(this[Keys.accentTheme]),
             threadLayout =
                 ThreadLayout.entries.firstOrNull { it.name == this[Keys.threadLayout] } ?: ThreadLayout.NESTED,
             autoScrollToLastSeen = this[Keys.autoScrollToLastSeen] ?: true,
@@ -320,3 +320,10 @@ class SettingsStore(
 }
 
 private val PRIVACY_DEFAULTS_MIGRATED = booleanPreferencesKey("privacy_defaults_migrated")
+
+/**
+ * The saved accent by its stable name. The picker's separate Orange became Orbin's default accent, so a
+ * saved `ORANGE` (and anything unknown) reads as [AccentTheme.ORBIN].
+ */
+internal fun storedAccentTheme(name: String?): AccentTheme =
+    AccentTheme.entries.firstOrNull { it.name == name } ?: AccentTheme.ORBIN

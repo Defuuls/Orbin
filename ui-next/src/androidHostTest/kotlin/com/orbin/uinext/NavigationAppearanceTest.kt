@@ -79,8 +79,8 @@ class NavigationAppearanceTest {
                     onNavigation = {},
                     actions =
                         listOf(
-                            ReaderAction(ReaderIcons.Refresh, "Reload", {}),
-                            ReaderAction(ReaderIcons.Search, "Search", {}),
+                            ReaderAction(ReaderIcons.Refresh, "Reload", onClick = {}),
+                            ReaderAction(ReaderIcons.Search, "Search", onClick = {}),
                         ),
                     overflow = listOf(ReaderMenuItem("View as grid", onClick = {})),
                 )

@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.orbin.uinext.NextAccentTheme
 
-/** Stable user-selected hues; Orbin's default remains the indigo identity. */
+/** Stable user-selected hues; Orbin's default is the orange identity, so the picker has no separate Orange. */
 private data class AccentSpec(
     val hue: Float,
     val accent: Color,
@@ -13,7 +13,7 @@ private data class AccentSpec(
 
 private val namedAccentSwatches =
     mapOf(
-        NextAccentTheme.ORBIN to AccentSpec(230f, Color(0xFFA5B4FC), Color(0xFFA78BFA)),
+        NextAccentTheme.ORBIN to AccentSpec(27f, Color(0xFFFB923C), Color(0xFFF472B6)),
         NextAccentTheme.CYAN to AccentSpec(191f, Color(0xFF6DD4EC), Color(0xFFA78BFA)),
         NextAccentTheme.BLUE to AccentSpec(213f, Color(0xFF60A5FA), Color(0xFFC084FC)),
         NextAccentTheme.INDIGO to AccentSpec(239f, Color(0xFF818CF8), Color(0xFFE879F9)),
@@ -23,7 +23,6 @@ private val namedAccentSwatches =
         NextAccentTheme.PINK to AccentSpec(329f, Color(0xFFF472B6), Color(0xFFA78BFA)),
         NextAccentTheme.ROSE to AccentSpec(351f, Color(0xFFFB7185), Color(0xFFC084FC)),
         NextAccentTheme.RED to AccentSpec(0f, Color(0xFFF87171), Color(0xFFFB923C)),
-        NextAccentTheme.ORANGE to AccentSpec(27f, Color(0xFFFB923C), Color(0xFFF472B6)),
         NextAccentTheme.AMBER to AccentSpec(45f, Color(0xFFFBBF24), Color(0xFFFB7185)),
         NextAccentTheme.LIME to AccentSpec(83f, Color(0xFFA3E635), Color(0xFF2DD4BF)),
         NextAccentTheme.GREEN to AccentSpec(142f, Color(0xFF4ADE80), Color(0xFF60A5FA)),

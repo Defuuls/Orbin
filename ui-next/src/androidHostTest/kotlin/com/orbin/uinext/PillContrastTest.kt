@@ -20,20 +20,20 @@ class PillContrastTest {
         )
 
     @Test
-    fun oneAccentIndigoInLightAndItsTintInDarkThemes() {
-        assertEquals(Color(0xFF4338CA), ReaderLightColors.accent)
+    fun oneOrangeAccentInLightAndItsLighterToneInDarkThemes() {
+        assertEquals(Color(0xFFC2410C), ReaderLightColors.accent)
         assertEquals(Color(0xFFFFFFFF), ReaderLightColors.onAccent)
         for (colors in listOf(ReaderDarkColors, ReaderAmoledColors)) {
-            assertEquals(Color(0xFFA5B4FC), colors.accent)
-            assertEquals(Color(0xFF1E1B4B), colors.onAccent)
+            assertEquals(Color(0xFFFB923C), colors.accent)
+            assertEquals(Color(0xFF431407), colors.onAccent)
         }
     }
 
     @Test
     fun whiteOnTheDarkThemeTintWouldFailSoItsTextIsDark() {
-        assertTrue(contrast(Color.White, Color(0xFFA5B4FC)) < MIN_TEXT_CONTRAST)
-        assertTrue(contrast(Color(0xFF1E1B4B), Color(0xFFA5B4FC)) >= MIN_TEXT_CONTRAST)
-        assertTrue(contrast(Color.White, Color(0xFF4338CA)) >= MIN_TEXT_CONTRAST)
+        assertTrue(contrast(Color.White, Color(0xFFFB923C)) < MIN_TEXT_CONTRAST)
+        assertTrue(contrast(Color(0xFF431407), Color(0xFFFB923C)) >= MIN_TEXT_CONTRAST)
+        assertTrue(contrast(Color.White, Color(0xFFC2410C)) >= MIN_TEXT_CONTRAST)
     }
 
     @Test

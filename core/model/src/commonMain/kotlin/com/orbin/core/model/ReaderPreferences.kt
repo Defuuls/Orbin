@@ -15,7 +15,6 @@ enum class AccentTheme {
     PINK,
     ROSE,
     RED,
-    ORANGE,
     AMBER,
     LIME,
     GREEN,
