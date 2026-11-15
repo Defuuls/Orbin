@@ -28,6 +28,8 @@ on:
       - 'gradlew'
       - 'gradlew.bat'
       - 'CHANGELOG.md'
+      - 'scripts/prepare_ios_framework_metadata.py'
+      - 'scripts/tests/test_prepare_ios_framework_metadata.py'
       - '.github/actions/setup-jdk-gradle/**'
       - '.github/actions/setup-xcodegen/**'
       - '.github/workflows/ios.yml'
@@ -101,6 +103,20 @@ jobs:
           -archivePath "$RUNNER_TEMP/Orbin.xcarchive"
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
+
+      - name: Prepare and validate archived framework metadata
+        shell: bash
+        run: |
+          python3 scripts/prepare_ios_framework_metadata.py "$RUNNER_TEMP/Orbin.xcarchive" \
+            | tee "$RUNNER_TEMP/orbin-framework-metadata.json"
+
+      - name: Upload archived framework metadata
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-release-framework-metadata
+          path: ${{ runner.temp }}/orbin-framework-metadata.json
+          if-no-files-found: ignore
 
   build:
     name: iOS app (simulator)
