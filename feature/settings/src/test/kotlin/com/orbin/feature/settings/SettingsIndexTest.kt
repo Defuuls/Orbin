@@ -24,7 +24,7 @@ class SettingsIndexTest {
     fun `settings groups keep every preference editable in place`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
-                listOf("themeMode", "amoled", "catalogMode"),
+                listOf("themeMode", "amoled", "catalogMode", "accentTheme"),
                 listOf(
                     "hideNsfw",
                     "coverViolent",
@@ -33,6 +33,18 @@ class SettingsIndexTest {
                     "dohProvider",
                     "saveSearchHistory",
                     "saveBrowsingHistory",
+                    "nsfwEachSession",
+                    "coverNsfwMedia",
+                    "privateSavedFiles",
+                    "askBeforePhotos",
+                    "showSavedMediaTab",
+                    "historySessionOnly",
+                    "fullscreenAutoAdvance",
+                    "threadLayout",
+                    "autoScrollToLastSeen",
+                    "showStickyThreads",
+                    "hiddenThreadPatterns",
+                    "postFilterRules",
                     "strictDns",
                 ),
                 listOf(
@@ -70,10 +82,39 @@ class SettingsIndexTest {
     }
 
     @Test
-    fun `appearance has only brightness AMOLED and catalog view`() {
+    fun `appearance includes brightness AMOLED catalog view and stable accent choices`() {
         val appearance = buildModel().groups.single { it.first == "Appearance" }.second
-        assertThat(appearance.map { it.label }).containsExactly("Theme", "AMOLED black", "Catalog view").inOrder()
-        assertThat(appearance.map { it.id }).containsExactly("themeMode", "amoled", "catalogMode").inOrder()
+        assertThat(appearance.map { it.label })
+            .containsExactly("Theme", "AMOLED black", "Catalog view", "Accent color")
+            .inOrder()
+        assertThat(appearance.map { it.id })
+            .containsExactly("themeMode", "amoled", "catalogMode", "accentTheme")
+            .inOrder()
+        val accent = appearance.single { it.id == "accentTheme" }
+        assertThat(accent.kind).isEqualTo(SettingKind.CHOICE)
+        assertThat(accent.value).isEqualTo("Orbin")
+        assertThat(accent.selected).isEqualTo(0)
+        assertThat(accent.options)
+            .containsExactly(
+                "Orbin",
+                "Cyan",
+                "Blue",
+                "Indigo",
+                "Violet",
+                "Purple",
+                "Fuchsia",
+                "Pink",
+                "Rose",
+                "Red",
+                "Orange",
+                "Amber",
+                "Lime",
+                "Green",
+                "Emerald",
+                "Teal",
+            ).inOrder()
+        assertThat(allRows().map { it.id }).doesNotContain("colorTheme")
+        assertThat(allRows().map { it.id }).doesNotContain("color_theme")
     }
 
     @Test

@@ -62,6 +62,9 @@ class OrbinAppTest {
      * and asking the platform to grant it would throw.
      */
     @get:Rule(order = 1)
+    val graphResources = GraphResourcesRule()
+
+    @get:Rule(order = 2)
     val notificationPermissionRule: TestRule =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
@@ -69,7 +72,7 @@ class OrbinAppTest {
             TestRule { base, _ -> base }
         }
 
-    @get:Rule(order = 2)
+    @get:Rule(order = 3)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test

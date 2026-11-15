@@ -5,6 +5,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.orbin.data.cache.SqliteMediaResponseCache
 import com.orbin.data.crypto.DatabasePassphrase
+import com.orbin.data.crypto.prepareDatabase
 import com.orbin.network.MediaResponseCache
 import dagger.Module
 import dagger.Provides
@@ -25,7 +26,7 @@ object MediaResponseCacheModule {
         val helper by lazy {
             System.loadLibrary("sqlcipher")
             val resolved = DatabasePassphrase(context).resolve()
-            if (resolved.wipeDatabase) context.deleteDatabase(SqliteMediaResponseCache.NAME)
+            resolved.prepareDatabase(context, SqliteMediaResponseCache.NAME)
             val configuration =
                 SupportSQLiteOpenHelper.Configuration
                     .builder(context)

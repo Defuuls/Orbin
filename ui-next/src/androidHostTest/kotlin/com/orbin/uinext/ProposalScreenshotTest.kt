@@ -483,6 +483,10 @@ class ProposalScreenshotTest {
 
     private fun mediaCells() =
         List(15) { index ->
-            MediaCell(id = "cell-$index", board = listOf("/g/", "/ck/", "/p/", "/lit/")[index % 4])
+            MediaCell(
+                id = "cell-$index",
+                board = listOf("/g/", "/ck/", "/p/", "/lit/")[index % 4],
+                kind = if (index % 4 == 1) MediaKind.VIDEO else MediaKind.IMAGE,
+            )
         }
 }

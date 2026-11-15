@@ -21,6 +21,7 @@ import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.MessageScreen
 import com.orbin.uinext.NextPullToRefresh
 import com.orbin.uinext.NextTheme
+import com.orbin.uinext.mediaKindOf
 
 /**
  * The redesigned media wall, wired to the same [AllMediaViewModel] the current one uses.
@@ -165,4 +166,5 @@ internal fun AllMediaItem.toCell() =
         board = "${key.provider.value} /${key.board.value}/",
         spoiler = attachment.isSpoiler,
         details = attachment.attachmentDetails(),
+        kind = mediaKindOf(attachment.type.name),
     )

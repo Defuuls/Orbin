@@ -357,6 +357,7 @@ class Browser(
     private val _catalogRefreshFailure = MutableStateFlow<Load.Failed?>(null)
     val catalogRefreshFailure: StateFlow<Load.Failed?> = _catalogRefreshFailure.asStateFlow()
     private val _preparedCatalogRows = MutableStateFlow<Map<ThreadKey, FeedRow>>(emptyMap())
+    private val preparedCatalogSource = MutableStateFlow<List<CatalogThread>?>(null)
     val preparedCatalogRows: StateFlow<Map<ThreadKey, FeedRow>> = _preparedCatalogRows.asStateFlow()
 
     private val _catalogSort = MutableStateFlow(CatalogSort.BUMP_ORDER)
@@ -439,6 +440,7 @@ class Browser(
     private var threadShown: ThreadKey? = null
 
     init {
+        observeCatalogRowRetention(scope, _catalog, catalog, preparedCatalogSource, _preparedCatalogRows)
         loadBoards()
         scope.launch {
             this@Browser
@@ -783,7 +785,11 @@ class Browser(
             preparePublication = { threads ->
                 val timestamp = now()
                 val rows = withContext(readerDispatcher) { threads.associate { it.key to it.toRow(timestamp) } }
-                val publish: () -> Unit = { _preparedCatalogRows.value = rows }
+                val publish: () -> Unit = {
+                    preparedCatalogSource.value = threads
+                    val visible = (catalog.value as? Load.Ready)?.value.orEmpty()
+                    _preparedCatalogRows.value = retainVisibleCatalogRows(visible, _preparedCatalogRows.value, rows)
+                }
                 publish
             },
         ) { provider(board.provider).catalogOf(board.board.id, readerDispatcher) }

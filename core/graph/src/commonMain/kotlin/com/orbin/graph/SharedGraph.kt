@@ -49,7 +49,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -96,6 +95,14 @@ abstract class SharedGraph(
     @get:Provides protected val dispatcher: CoroutineDispatcher,
     @get:Provides protected val offlineDirectory: String? = null,
 ) {
+    private val repositoryLifetime = RepositoryLifetime(dispatcher)
+
+    /** Stop and await this graph's repository jobs before its caller closes the database. */
+    suspend fun shutdown() = repositoryLifetime.shutdown()
+
+    @Provides
+    protected fun repositoryScope(): CoroutineScope = repositoryLifetime.scope
+
     abstract val json: Json
     abstract val settingsStore: SettingsStore
     abstract val boardPreferences: BoardPreferencesStore
@@ -141,7 +148,9 @@ abstract class SharedGraph(
     protected fun history(
         database: OrbinDatabase,
         settings: SettingsRepository,
-    ): HistoryRepository = SessionHistoryRepository(HistoryRepositoryImpl(database.historyDao()), settings.settings)
+        scope: CoroutineScope,
+    ): HistoryRepository =
+        SessionHistoryRepository(HistoryRepositoryImpl(database.historyDao()), settings.settings, scope)
 
     @AppScope
     @Provides
@@ -198,6 +207,7 @@ abstract class SharedGraph(
         bookmarks: BookmarkRepository,
         history: HistoryRepository,
         settings: SettingsRepository,
+        scope: CoroutineScope,
     ): SavedThreadRepository {
         val repository =
             SavedThreadRepositoryImpl(
@@ -211,7 +221,7 @@ abstract class SharedGraph(
                 },
             )
         run {
-            CoroutineScope(SupervisorJob() + dispatcher).launch {
+            scope.launch {
                 combine(
                     bookmarks.observeBookmarks(),
                     history.observeVisitedKeys(),

@@ -243,4 +243,4 @@ internal fun SourceReaderDestination(
 }
 
 @Serializable
-private data object SourceReaderEmpty
+internal data object SourceReaderEmpty

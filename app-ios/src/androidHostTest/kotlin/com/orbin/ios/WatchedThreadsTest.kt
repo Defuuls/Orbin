@@ -74,10 +74,13 @@ class WatchedThreadsTest {
     fun catalogUnreadUsesQualifiedVisibleReadMemoryWithoutChangingStoredBookmarkCount() =
         runTest {
             val bookmarks = FakeBookmarks()
-            bookmarks.addBookmark(Bookmark(key, "Weekly", createdAtMillis = 0, latestReplyCount = 3))
+            bookmarks.addBookmark(Bookmark(key, "Weekly", createdAtMillis = 0, isWatched = true, latestReplyCount = 3))
             val memories = InMemoryThreadMemoryRepository()
             memories.update(key) { it.copy(knownPostIds = setOf(7, 8, 9, 10), seenPostIds = setOf(7, 8)) }
             val otherSite = key.copy(provider = ProviderId("other"))
+            bookmarks.addBookmark(
+                Bookmark(otherSite, "Other site", createdAtMillis = 0, isWatched = true, latestReplyCount = 3),
+            )
             memories.update(otherSite) { it.copy(knownPostIds = setOf(7, 8, 9, 10), seenPostIds = setOf(7, 8, 9, 10)) }
             val watched = WatchedThreads(bookmarks, backgroundScope, { 0 }, threadMemory = memories) { thread(3) }
             val board =
@@ -89,7 +92,9 @@ class WatchedThreadsTest {
                 )
 
             assertEquals(mapOf(7L to 2), watched.unread(board).first())
+            assertEquals(emptyMap(), watched.unread(board.copy(provider = otherSite.provider)).first())
             assertEquals(0, bookmarks.getBookmark(key)?.lastSeenReplyCount)
+            assertEquals(0, bookmarks.getBookmark(otherSite)?.lastSeenReplyCount)
         }
 
     @Test

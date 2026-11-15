@@ -644,7 +644,7 @@ class BrowserTest {
         }
 
     @Test
-    fun openingAWatchedThreadReadsItAndPointsAtTheFirstNewReply() =
+    fun openingKeepsWatchedUnreadUntilTheReaderAcknowledgesIt() =
         runTest {
             bookmarks.addBookmark(watchedBookmark(seen = 1))
             val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(3)))
@@ -654,7 +654,18 @@ class BrowserTest {
             browser.thread.settled()
 
             assertEquals("9", browser.firstUnreadPostId.value, "replies 8, 9 and 10, of which 8 was seen")
-            assertEquals(emptyMap(), browser.watched.unread(g).first { it.isEmpty() })
+            assertEquals(mapOf(7L to 2), browser.watched.unread(g).first())
+            assertEquals(
+                1,
+                bookmarks.saved.value
+                    .getValue(WATCHED_KEY)
+                    .lastSeenReplyCount,
+            )
+
+            browser.markThreadRead(WATCHED_KEY)
+            bookmarks.observeBookmark(WATCHED_KEY).first { it?.lastSeenReplyCount == 3 }
+            assertEquals(emptyMap(), browser.watched.unread(g).first())
+            assertEquals(3, browser.threadMemory.get(WATCHED_KEY).acknowledgedReplyCount)
             assertEquals(
                 3,
                 bookmarks.saved.value

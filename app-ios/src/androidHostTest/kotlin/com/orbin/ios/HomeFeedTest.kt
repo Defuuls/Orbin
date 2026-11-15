@@ -516,9 +516,11 @@ class HomeFeedTest {
         }
 
     @Test
-    fun healthyImageOnlyCatalogsCannotHideAnotherSourcesOutage() =
+    fun healthyImageCatalogsRemainUsableWhileAnotherSourcesDirectoryWarningPersists() =
         runTest {
             val fixture = Fixture(backgroundScope, sources = listOf("one", "two"), count = 12)
+            val outage = mapOf(ProviderId("one") to "Directory unavailable")
+            fixture.directory.value = fixture.directory.value.copy(failures = outage)
             fixture.catalog = { key ->
                 if (key.provider.value == "one") error("offline")
                 val loaded = video(key)
@@ -530,7 +532,21 @@ class HomeFeedTest {
             }
             val home = fixture.start()
             runCurrent()
-            assertIs<Load.Failed>(home.content.value)
+            val ready = assertIs<Load.Ready<List<FeedThread>>>(home.content.value)
+            assertEquals(12, ready.value.size)
+            assertTrue(ready.value.all { it.provider == ProviderId("two") })
+            assertTrue(
+                ready.value.all {
+                    it.thread.originalPost.attachments
+                        .single()
+                        .type == MediaType.IMAGE
+                },
+            )
+            assertEquals(
+                outage,
+                fixture.directory.value.failures,
+                "Healthy images must not clear another source's warning",
+            )
             assertEquals(24, fixture.requested.size)
         }
 

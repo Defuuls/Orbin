@@ -79,7 +79,7 @@ class ThreadFeatureInteractionTest {
         }
         compose.onNodeWithText("ID:abc").performClick()
         restoration.emulateSavedInstanceStateRestore()
-        compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("ID:abc")
+        compose.onNodeWithTag(ReaderAppBarTags.TITLE, useUnmergedTree = true).assertTextEquals("ID:abc")
         compose.onNodeWithText("Alice reply").assertExists()
         compose.onNodeWithText("Other poster").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -113,12 +113,12 @@ class ThreadFeatureInteractionTest {
         }
         compose.onNodeWithText("Hidden Alice reply").assertDoesNotExist()
         compose.onAllNodesWithText("ID:abc")[0].performClick()
-        compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("ID:abc")
+        compose.onNodeWithTag(ReaderAppBarTags.TITLE, useUnmergedTree = true).assertTextEquals("ID:abc")
         compose.onNodeWithText("Hidden Alice reply").assertExists()
         compose.onNodeWithText("Visible Alice reply").assertExists()
         compose.onNodeWithText("Other poster").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithTag(ReaderAppBarTags.TITLE).assertTextEquals("Thread")
+        compose.onNodeWithTag(ReaderAppBarTags.TITLE, useUnmergedTree = true).assertTextEquals("Thread")
         compose.onNodeWithText("Hidden Alice reply").assertDoesNotExist()
         compose.onNodeWithText("Other poster").assertExists()
     }

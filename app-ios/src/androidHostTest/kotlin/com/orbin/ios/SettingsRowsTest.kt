@@ -32,7 +32,45 @@ class SettingsRowsTest {
         assertTrue(groups.all { it.second.isNotEmpty() })
         val ids = groups.flatMap { it.second }.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
-        assertEquals(17, ids.size)
+        assertEquals(31, ids.size)
+        assertEquals(
+            setOf(
+                "themeMode",
+                "amoled",
+                "catalogMode",
+                "accentTheme",
+                "hideNsfw",
+                "coverViolent",
+                "biometric",
+                "screenPrivacy",
+                "dohProvider",
+                "strictDns",
+                "saveSearchHistory",
+                "saveBrowsingHistory",
+                "nsfwEachSession",
+                "coverNsfwMedia",
+                "historySessionOnly",
+                "privateSavedFiles",
+                "askBeforePhotos",
+                "showSavedMediaTab",
+                "fullscreenAutoAdvance",
+                "threadLayout",
+                "autoScrollToLastSeen",
+                "showStickyThreads",
+                "hiddenThreadPatterns",
+                "postFilterRules",
+                "clearActivity",
+                "clearMediaCache",
+                "clearImageCache",
+                "exportBackup",
+                "importBackup",
+                "privacy",
+                "contact",
+            ),
+            ids.toSet(),
+        )
+        assertTrue("colorTheme" !in ids)
+        assertTrue("color_theme" !in ids)
     }
 
     @Test

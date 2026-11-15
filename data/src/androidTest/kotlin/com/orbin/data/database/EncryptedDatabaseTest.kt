@@ -4,7 +4,9 @@ import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.orbin.data.crypto.DatabasePassphrase
 import com.orbin.data.database.entity.HistoryEntity
+import com.orbin.data.di.DatabaseModule
 import kotlinx.coroutines.runBlocking
 import net.zetetic.database.sqlcipher.SQLiteDatabase
 import net.zetetic.database.sqlcipher.SQLiteNotADatabaseException
@@ -103,6 +105,56 @@ class EncryptedDatabaseTest {
             assertThat(reads.filterNotNull()).hasSize(8)
         } finally {
             database.close()
+        }
+    }
+
+    @Test
+    fun repeatedProviderInitializationWithTheSameFirstRunResolutionKeepsBothConnectionsUsable() {
+        val key = DatabasePassphrase.Resolved(passphrase(), wipeDatabase = true)
+        val first = DatabaseModule.createDatabase(context, key, TEST_DB)
+        try {
+            first.writeEntry(1)
+            val second = DatabaseModule.createDatabase(context, key, TEST_DB)
+            try {
+                assertThat(second.readEntry(1)).isNotNull()
+                second.writeEntry(2)
+                assertThat(first.readEntry(2)).isNotNull()
+            } finally {
+                second.close()
+            }
+        } finally {
+            first.close()
+        }
+    }
+
+    @Test
+    fun genuineKeyLossResetsOnceAndFurtherProvidersKeepNewData() {
+        val original =
+            DatabaseModule.createDatabase(
+                context,
+                DatabasePassphrase.Resolved(passphrase(), wipeDatabase = false),
+                TEST_DB,
+            )
+        try {
+            original.writeEntry(1)
+        } finally {
+            original.close()
+        }
+        val replacement = ByteArray(PASSPHRASE_BYTES) { (it + 2).toByte() }
+        val key = DatabasePassphrase.Resolved(replacement, wipeDatabase = true)
+        val recovered = DatabaseModule.createDatabase(context, key, TEST_DB)
+        try {
+            assertThat(recovered.readEntry(1)).isNull()
+            recovered.writeEntry(42)
+            val reopened = DatabaseModule.createDatabase(context, key, TEST_DB)
+            try {
+                assertThat(reopened.readEntry(42)).isNotNull()
+                assertThat(recovered.readEntry(42)).isNotNull()
+            } finally {
+                reopened.close()
+            }
+        } finally {
+            recovered.close()
         }
     }
 
