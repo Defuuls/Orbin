@@ -107,14 +107,9 @@ internal class ThreadCollectionsViewModel
                         .map { bookmark ->
                             CollectionEntry(
                                 bookmark.key,
-                                ThreadCollectionRow(
-                                    id = bookmark.key.toString(),
+                                bookmark.key.toCollectionRow(
                                     title = bookmark.title,
-                                    source = bookmark.key.collectionSource(),
                                     time = formatPostDateTime(bookmark.createdAtMillis).orEmpty(),
-                                    threadNumber =
-                                        bookmark.key.thread.value
-                                            .toString(),
                                     unread = bookmark.collectionUnread(memoryByKey[bookmark.key]),
                                     availability = ThreadCollectionStatus.valueOf(bookmark.availability.name),
                                 ),
@@ -131,14 +126,9 @@ internal class ThreadCollectionsViewModel
                             }.map { entry ->
                                 CollectionEntry(
                                     entry.key,
-                                    ThreadCollectionRow(
-                                        id = entry.key.toString(),
+                                    entry.key.toCollectionRow(
                                         title = entry.title,
-                                        source = entry.key.collectionSource(),
                                         time = formatPostDateTime(entry.lastVisitedMillis).orEmpty(),
-                                        threadNumber =
-                                            entry.key.thread.value
-                                                .toString(),
                                         unread =
                                             saved.firstOrNull { it.key == entry.key }?.collectionUnread(
                                                 memoryByKey[entry.key],
@@ -274,3 +264,19 @@ private fun ThreadKey.collectionSource(): String {
         }
     return "$site · /${board.value}/"
 }
+
+internal fun ThreadKey.toCollectionRow(
+    title: String,
+    time: String = "",
+    unread: Int = 0,
+    availability: ThreadCollectionStatus = ThreadCollectionStatus.UNKNOWN,
+): ThreadCollectionRow =
+    ThreadCollectionRow(
+        id = toString(),
+        title = title,
+        source = collectionSource(),
+        time = time,
+        threadNumber = thread.value.toString(),
+        unread = unread,
+        availability = availability,
+    )

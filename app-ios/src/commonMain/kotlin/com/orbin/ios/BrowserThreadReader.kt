@@ -34,7 +34,7 @@ internal class BrowserThreadReader(
         currentCoroutineContext().ensureActive()
         recordVisit(visible)
         // The repository independently checks bookmarks and persistent history before retaining.
-        runCatching { copies?.cacheLastLoaded(visible) }.onFailure { if (it is CancellationException) throw it }
+        cacheLastLoaded(visible)
         return visible
             .withViolentMediaCovered(options.coverViolentMedia)
             .withNsfwMediaCovered(options.coverNsfwMedia && boardIsNsfw)
@@ -55,8 +55,13 @@ internal class BrowserThreadReader(
     /** A failed history write must not make an otherwise readable thread fail to open. */
     private suspend fun recordVisit(thread: Thread) {
         if (!settings().saveBrowsingHistory) return
-        runCatching { history.record(withContext(dispatcher) { thread.toHistoryEntry(now()) }) }
+        val timestamp = now()
+        runCatching { history.record(withContext(dispatcher) { thread.toHistoryEntry(timestamp) }) }
             .onFailure { if (it is CancellationException) throw it }
+    }
+
+    private suspend fun cacheLastLoaded(thread: Thread) {
+        runCatching { copies?.cacheLastLoaded(thread) }.onFailure { if (it is CancellationException) throw it }
     }
 }
 

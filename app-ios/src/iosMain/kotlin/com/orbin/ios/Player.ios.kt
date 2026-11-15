@@ -392,19 +392,16 @@ internal actual fun NativeWebMPlayer(
         WebMPlaybackRequest(playCommand, playRequested && currentActive && foreground, muted, loop, playbackSpeed)
     }
     val live = remember(url) { LiveWebMSession() }
+    val restorePosition = bookmark?.position?.takeIf { it.isFinite() && it > 0.0 }
     val navigation =
         remember(url) {
             WebMPageDelegate { webView ->
                 if (live.active && webView.hasPlaybackSurface()) {
-                    if (handoff == null &&
-                        bookmark != null &&
-                        bookmark.position.isFinite() &&
-                        bookmark.position > 0.0
-                    ) {
+                    if (handoff == null && restorePosition != null) {
                         webView.evaluateJavaScript(
                             "(function(){var v=document.getElementById('v');if(!v||v.__orbinRestoredPosition)return;" +
                                 "v.__orbinRestoredPosition=true;" +
-                                "function restore(){v.currentTime=${bookmark.position};}" +
+                                "function restore(){v.currentTime=$restorePosition;}" +
                                 "if(v.readyState>=1)restore();" +
                                 "else v.addEventListener('loadedmetadata',restore,{once:true});})()",
                             completionHandler = null,

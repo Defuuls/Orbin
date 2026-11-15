@@ -388,7 +388,10 @@ private fun SavedMediaPlaceholder(
 private fun libraryBytes(bytes: Long): String =
     when {
         bytes <= 0 -> ""
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        else -> "${bytes / (1024 * 1024)} MB"
+        bytes < LIBRARY_KIBIBYTE -> "$bytes B"
+        bytes < LIBRARY_MEBIBYTE -> "${bytes / LIBRARY_KIBIBYTE} KB"
+        else -> "${bytes / LIBRARY_MEBIBYTE} MB"
     }
+
+private const val LIBRARY_KIBIBYTE = 1024L
+private const val LIBRARY_MEBIBYTE = LIBRARY_KIBIBYTE * LIBRARY_KIBIBYTE

@@ -102,7 +102,7 @@ class ReaderInputTest {
                 )
             }
         }
-        compose.onNodeWithTag("item").performMouseInput { click(MouseButton.Secondary) }
+        compose.onNodeWithTag("item").performMouseInput { click(button = MouseButton.Secondary) }
         compose.runOnIdle {
             assertEquals(0, opened)
             assertEquals(1, options)

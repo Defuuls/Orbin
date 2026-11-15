@@ -206,8 +206,8 @@ class SavedMediaLibraryViewModel
                                         retriever.getScaledFrameAtTime(
                                             0,
                                             MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                                            320,
-                                            320,
+                                            VIDEO_THUMBNAIL_EDGE,
+                                            VIDEO_THUMBNAIL_EDGE,
                                         )
                                     } finally {
                                         retriever.release()
@@ -219,7 +219,7 @@ class SavedMediaLibraryViewModel
                                 val sample =
                                     generateSequence(1) { it * 2 }.first {
                                         maxOf(bounds.outWidth, bounds.outHeight) / it <=
-                                            640
+                                            IMAGE_THUMBNAIL_EDGE
                                     }
                                 BitmapFactory.decodeFile(
                                     source.absolutePath,
@@ -228,7 +228,9 @@ class SavedMediaLibraryViewModel
                             }
                         bitmap ?: return@withContext null
                         try {
-                            image.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+                            image.outputStream().use { output ->
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_JPEG_QUALITY, output)
+                            }
                         } finally {
                             bitmap.recycle()
                         }
@@ -256,7 +258,7 @@ class SavedMediaLibraryViewModel
                         .replace(
                             Regex("[^\\p{L}\\p{N}._ -]"),
                             "_",
-                        ).take(150)
+                        ).take(MAX_STAGED_FILENAME_LENGTH)
                         .trim('.', ' ')
                         .ifBlank { "saved-file" }
                 val target = File(File(folder, UUID.randomUUID().toString()).apply { mkdirs() }, name)
@@ -328,5 +330,9 @@ class SavedMediaLibraryViewModel
 
         private companion object {
             const val SHARE_LIFETIME_MS = 86_400_000L
+            const val VIDEO_THUMBNAIL_EDGE = 320
+            const val IMAGE_THUMBNAIL_EDGE = 640
+            const val THUMBNAIL_JPEG_QUALITY = 85
+            const val MAX_STAGED_FILENAME_LENGTH = 150
         }
     }

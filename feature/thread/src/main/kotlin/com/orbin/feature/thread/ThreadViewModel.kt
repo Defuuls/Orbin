@@ -303,7 +303,7 @@ class ThreadViewModel
                 attachments.forEach { (postId, attachment) ->
                     downloadRepository.enqueue(
                         url = attachment.sourceUrl,
-                        fileName = attachment.downloadFileName(),
+                        fileName = attachment.downloadFileName(key),
                         boardId = board.value,
                         threadId = threadId.value,
                         threadTitle = threadTitle,
@@ -640,16 +640,7 @@ class ThreadViewModel
             )
         }
 
-        private fun com.orbin.core.model.MediaAttachment.downloadFileName(): String {
-            val cleanName =
-                originalFileName
-                    .ifBlank { id }
-                    .replace(UNSAFE_FILENAME_CHARS, "_")
-            return "${provider.value}_${board.value}_${threadId.value}_${id}_$cleanName"
-        }
-
         private companion object {
-            val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
             const val STOP_TIMEOUT_MS = 5_000L
             const val SCROLL_PERSIST_DEBOUNCE_MS = 650L
             const val ZIP_MIME_TYPE = "application/zip"
@@ -663,6 +654,13 @@ data class ThreadScrollPosition(
     val postId: PostId,
     val offsetPx: Int,
 )
+
+private val UNSAFE_FILENAME_CHARS = Regex("""[\\/:*?"<>|]""")
+
+private fun com.orbin.core.model.MediaAttachment.downloadFileName(key: ThreadKey): String {
+    val cleanName = originalFileName.ifBlank { id }.replace(UNSAFE_FILENAME_CHARS, "_")
+    return "${key.provider.value}_${key.board.value}_${key.thread.value}_${id}_$cleanName"
+}
 
 internal fun Thread.hidingMatches(
     tokens: Set<String>,

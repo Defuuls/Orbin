@@ -47,7 +47,7 @@ class AndroidManagedMediaFilesTest {
                 assertTrue(failure.isFailure)
                 assertFalse(target.exists())
                 assertTrue(
-                    target.parentFile
+                    checkNotNull(target.parentFile)
                         .listFiles()
                         .orEmpty()
                         .isEmpty(),

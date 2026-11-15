@@ -120,16 +120,6 @@ class PortableCloudStore(
         return snapshot.items
     }
 
-    private fun shouldWithhold(
-        item: CloudSyncItem,
-        options: AppSettings,
-        deferred: Set<String>,
-        unavailable: Boolean,
-    ): Boolean {
-        val privateActivity = options.historySessionOnly && item.isActivity()
-        return privateActivity || item.id in deferred || unavailable
-    }
-
     private suspend fun captureRecords(
         document: BackupDocument,
         options: AppSettings,
@@ -583,3 +573,13 @@ private const val MAX_CLOUD_ORIGIN_LENGTH = 128
 private const val MAX_CLOUD_READING_IDS = 100_000
 
 private fun AppSettings.activityPolicy(): Pair<Boolean, Boolean> = saveBrowsingHistory to historySessionOnly
+
+private fun shouldWithhold(
+    item: CloudSyncItem,
+    options: AppSettings,
+    deferred: Set<String>,
+    unavailable: Boolean,
+): Boolean {
+    val privateActivity = options.historySessionOnly && item.isActivity()
+    return privateActivity || item.id in deferred || unavailable
+}

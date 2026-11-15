@@ -40,7 +40,10 @@ internal object VideoFrames {
     private val framesMutex = NSLock()
     private var generation = 0L
 
-    fun usageBytes(): Long = framesMutex.withLock { frames.values.sumOf { it.width.toLong() * it.height * 4 } }
+    fun usageBytes(): Long =
+        framesMutex.withLock {
+            frames.values.sumOf { it.width.toLong() * it.height * RGBA_BYTES_PER_PIXEL }
+        }
 
     fun clear() =
         framesMutex.withLock {
@@ -173,3 +176,5 @@ private inline fun <T> NSLock.withLock(block: () -> T): T {
         unlock()
     }
 }
+
+private const val RGBA_BYTES_PER_PIXEL = 4

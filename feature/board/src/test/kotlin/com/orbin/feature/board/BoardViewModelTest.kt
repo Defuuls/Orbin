@@ -1,6 +1,7 @@
 package com.orbin.feature.board
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import androidx.paging.LoadState
 import androidx.paging.LoadStates
 import androidx.paging.PagingData
@@ -28,6 +29,7 @@ import com.orbin.core.testing.repository.FakeHistoryRepository
 import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.domain.repository.CatalogRepository
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -163,19 +165,27 @@ class BoardViewModelTest {
                         sort: CatalogSort,
                     ): Flow<PagingData<CatalogThread>> {
                         requests++
-                        return flowOf(PagingData.from(rows))
+                        // cachedIn is hot, so fixtures must publish the terminal states of a real Pager.
+                        val complete = LoadState.NotLoading(endOfPaginationReached = true)
+                        return flowOf(
+                            PagingData.from(rows, sourceLoadStates = LoadStates(complete, complete, complete)),
+                        )
                     }
                 }
             val settings = FakeSettingsRepository()
             val model = createViewModel(catalogRepository = repository, settingsRepository = settings)
-            assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(1L, 2L, 3L)
-            settings.setHiddenThreadPatterns(listOf("garden.*conversation"))
-            settings.setShowStickyThreads(false)
-            assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(3L)
-            settings.setHiddenThreadPatterns(emptyList())
-            settings.setShowStickyThreads(true)
-            assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(1L, 2L, 3L)
-            assertThat(requests).isEqualTo(1)
+            try {
+                assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(1L, 2L, 3L)
+                settings.setHiddenThreadPatterns(listOf("garden.*conversation"))
+                settings.setShowStickyThreads(false)
+                assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(3L)
+                settings.setHiddenThreadPatterns(emptyList())
+                settings.setShowStickyThreads(true)
+                assertThat(model.catalog.asSnapshot().map { it.key.thread.value }).containsExactly(1L, 2L, 3L)
+                assertThat(requests).isEqualTo(1)
+            } finally {
+                model.viewModelScope.cancel()
+            }
         }
 
     @Test

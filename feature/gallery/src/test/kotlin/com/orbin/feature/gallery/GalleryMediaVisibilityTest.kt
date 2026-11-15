@@ -58,9 +58,9 @@ class GalleryMediaVisibilityTest {
         assertEquals(listOf("post3:reused"), filtered.pageKeys)
         assertEquals(ready.threadMedia, filtered.threadMedia)
         assertEquals(
+            "Hidden owners must never leak through download-rest",
             emptyList<MediaAttachment>(),
             galleryRemainingMedia(filtered, 0),
-            "Hidden owners must never leak through download-rest",
         )
     }
 

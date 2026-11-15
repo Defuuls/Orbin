@@ -26,7 +26,6 @@ import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.isVisibleInOrbin
 import com.orbin.uinext.FeedRow
 import io.ktor.http.HttpStatusCode
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +33,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -49,9 +47,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
@@ -336,18 +332,15 @@ class Browser(
         _pendingThreadPost.compareAndSet(expected, null)
     }
 
-    private val _boards = MutableStateFlow<Load<List<SiteBoard>>>(Load.Loading)
+    private val directoryLoader = BrowserBoardDirectory(providers, scope)
+    private val _boards = directoryLoader.boards
     val boards: StateFlow<Load<List<SiteBoard>>> = _boards.asStateFlow()
 
-    private val _unreachableSites = MutableStateFlow<List<String>>(emptyList())
-    private val feedDirectory =
-        MutableStateFlow(HomeFeedDirectory(loading = providers.mapTo(mutableSetOf()) { it.metadata.id }))
+    private val _unreachableSites = directoryLoader.unreachable
+    private val feedDirectory = directoryLoader.directory
 
     /** Per-source directory progress lets a ready source remain usable while another loads. */
     internal val boardDirectory: StateFlow<HomeFeedDirectory> = feedDirectory.asStateFlow()
-    private var boardLoadJob: Job? = null
-    private var boardLoadGeneration = 0
-    private val boardPublication = Mutex()
 
     /**
      * The sites whose boards failed to load while others loaded, each with the reason, so the
@@ -687,80 +680,7 @@ class Browser(
         }
     }
 
-    private fun loadBoards() {
-        boardLoadJob?.cancel()
-        val generation = ++boardLoadGeneration
-        _boards.value = Load.Loading
-        feedDirectory.update {
-            it.copy(
-                loading = providers.mapTo(mutableSetOf()) { provider -> provider.metadata.id },
-                failures = emptyMap(),
-            )
-        }
-        boardLoadJob =
-            scope.launch {
-                providers
-                    .map { provider ->
-                        async {
-                            val result =
-                                try {
-                                    Result.success(provider.siteBoards())
-                                } catch (cancelled: CancellationException) {
-                                    throw cancelled
-                                } catch (
-                                    @Suppress("TooGenericExceptionCaught") error: Exception,
-                                ) {
-                                    Result.failure(error)
-                                }
-                            kotlinx.coroutines.currentCoroutineContext().ensureActive()
-                            boardPublication.withLock {
-                                if (generation != boardLoadGeneration) return@withLock
-                                publishBoardIndex(provider, result)
-                            }
-                        }
-                    }.awaitAll()
-            }
-    }
-
-    private fun publishBoardIndex(
-        provider: ImageBoardProvider,
-        result: Result<List<SiteBoard>>,
-    ) {
-        val id = provider.metadata.id
-        feedDirectory.update { current ->
-            if (result.isSuccess) {
-                current.copy(
-                    boards = current.boards.filterNot { it.provider == id } + result.getOrThrow(),
-                    completed = current.completed + id,
-                    loading = current.loading - id,
-                    failures = current.failures - id,
-                )
-            } else {
-                current.copy(
-                    loading = current.loading - id,
-                    failures =
-                        current.failures + (id to result.exceptionOrNull()!!.readable()),
-                )
-            }
-        }
-        val index = feedDirectory.value
-        _unreachableSites.value =
-            providers.mapNotNull { source ->
-                index.failures[source.metadata.id]?.let { "${source.metadata.displayName} ($it)" }
-            }
-        _boards.value =
-            when {
-                index.loading.isNotEmpty() -> Load.Loading
-                index.boards.isNotEmpty() ->
-                    Load.Ready(
-                        providers.flatMap { provider ->
-                            index.boards.filter { it.provider == provider.metadata.id }
-                        },
-                    )
-                index.failures.isNotEmpty() -> Load.Failed(index.failures.values.first())
-                else -> Load.Ready(emptyList())
-            }
-    }
+    private fun loadBoards() = directoryLoader.load()
 
     private fun loadCurrent(force: Boolean = false) {
         cancelHiddenPages()
@@ -911,7 +831,7 @@ class Browser(
 
     private val threadReader by lazy {
         BrowserThreadReader(
-            settings = { settings.current.value },
+            settings = { this@Browser.settings.current.value },
             board = { key ->
                 (_boards.value as? Load.Ready)
                     ?.value
@@ -975,7 +895,7 @@ internal suspend fun <T> loadEach(
 private const val MAX_CONCURRENT_BOARD_LOADS = 4
 
 // Filtering before adapting keeps both providers consistent with the Android directory.
-private suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
+internal suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
     ContentPolicy
         .visibleBoards(
             getBoards().ifEmpty {

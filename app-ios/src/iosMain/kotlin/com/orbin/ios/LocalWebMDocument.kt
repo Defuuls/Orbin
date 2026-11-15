@@ -36,7 +36,7 @@ internal fun WKWebView.loadWebMDocument(
         path.startsWith(root) &&
             media.host.isNullOrEmpty() &&
             parts.size == 2 &&
-            parts[0].length == 36 &&
+            parts[0].length == UUID_TEXT_LENGTH &&
             parts[0].all { it.isDigit() || it.lowercaseChar() in 'a'..'f' || it == '-' } &&
             parts[1].isNotBlank() &&
             parts[1] != "." &&
@@ -70,3 +70,5 @@ internal fun WebMPageDelegate.releaseLocalDocument() {
         }?.let { NSFileManager.defaultManager.removeItemAtPath(it, null) }
     localDocumentUrl = null
 }
+
+private const val UUID_TEXT_LENGTH = 36
