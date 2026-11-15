@@ -27,7 +27,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "en-rUS-w390dp-h844dp-mdpi")
-class CoralFoundationScreenshotTest {
+class FoundationScreenshotTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -88,7 +88,7 @@ class CoralFoundationScreenshotTest {
         composeRule.waitForIdle()
         val root = if (dialog) composeRule.onNode(isDialog()) else composeRule.onRoot()
         val theme = if (dark) "dark" else "light"
-        root.captureRoboImage("src/androidHostTest/screenshots/coral_foundation_${theme}_$name.png")
+        root.captureRoboImage("src/androidHostTest/screenshots/foundation_${theme}_$name.png")
     }
 }
 

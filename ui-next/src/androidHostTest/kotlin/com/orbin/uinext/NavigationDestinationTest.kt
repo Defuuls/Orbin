@@ -25,7 +25,7 @@ import org.robolectric.annotation.Config
 /** Drawer entries preserve the five primary destinations and expose Settings after a divider. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class SocialNavigationTest {
+class NavigationDestinationTest {
     @get:Rule
     val composeRule = createComposeRule()
 

@@ -27,7 +27,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w390dp-h844dp-mdpi")
-class FeedCoralChromeTest {
+class FeedChromeTest {
     @get:Rule
     val compose = createComposeRule()
 
@@ -62,7 +62,7 @@ class FeedCoralChromeTest {
         val first = compose.onNodeWithTag(ReaderFeedTags.row(rows[0].id)).getUnclippedBoundsInRoot()
         val second = compose.onNodeWithTag(ReaderFeedTags.row(rows[1].id)).getUnclippedBoundsInRoot()
         assertEquals(first.top.value, second.top.value, 0.5f)
-        assertTrue("A phone grid has two Coral card columns", second.left > first.left)
+        assertTrue("A phone grid has two card columns", second.left > first.left)
 
         compose.onNodeWithTag(ReaderFeedTags.MODE).assertContentDescriptionEquals("List view").performClick()
         compose.runOnIdle { assertEquals(CatalogMode.LIST, mode) }

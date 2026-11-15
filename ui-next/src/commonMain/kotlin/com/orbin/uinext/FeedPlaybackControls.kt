@@ -126,9 +126,9 @@ fun FeedPlaybackControls(
 }
 
 object FeedPlaybackTags {
-    const val SURFACE = "tiktok_video_surface"
-    const val MUTE = "tiktok_video_mute"
-    const val PROGRESS = "tiktok_video_progress"
+    const val SURFACE = "feed_video_surface"
+    const val MUTE = "feed_video_mute"
+    const val PROGRESS = "feed_video_progress"
 }
 
 /**

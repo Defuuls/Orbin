@@ -39,7 +39,7 @@ import org.robolectric.annotation.Config
 /** The thread screen of docs/design-system: app bar actions, the shared post cell, and Files. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class SocialThreadTest {
+class ThreadScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 

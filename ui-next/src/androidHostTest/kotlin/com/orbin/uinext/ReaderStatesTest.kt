@@ -133,7 +133,7 @@ class ReaderStatesTest {
     }
 
     @Test
-    fun `grid catalog skeleton follows the Coral catalog grid`() {
+    fun `grid catalog skeleton follows the catalog grid`() {
         composeRule.setContent { NextTheme { ReaderCatalogSkeleton(mode = CatalogMode.GRID, showProgress = false) } }
 
         val root = composeRule.onNodeWithTag(ReaderStateTags.CATALOG_SKELETON).getUnclippedBoundsInRoot()

@@ -17,9 +17,9 @@ import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.uinext.FeedPagerTags
 import com.orbin.uinext.ReaderAppBarTags
 import com.orbin.uinext.ReaderFeedTags
-import com.orbin.uinext.TikTokFeedTags
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.runBlocking
@@ -81,8 +81,8 @@ class ReaderHomeLaunchTest {
             composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
             composeRule.onNodeWithTag(ReaderAppBarTags.BAR).assertIsDisplayed()
             composeRule.onNodeWithContentDescription("Menu").assertExists()
-            composeRule.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
-            composeRule.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
+            composeRule.onNodeWithTag(FeedPagerTags.PAGER).assertDoesNotExist()
+            composeRule.onNodeWithTag(FeedPagerTags.ACTIONS).assertDoesNotExist()
 
             scenario.onActivity { activity ->
                 assertTrue(

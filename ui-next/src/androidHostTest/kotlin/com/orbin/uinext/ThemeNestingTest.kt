@@ -57,7 +57,7 @@ class ThemeNestingTest {
         assertTrue(paletteUnder { it() }.dark)
     }
 
-    /** AMOLED blackens the page and retains its own readable text, cyan accent and lifted cards. */
+    /** AMOLED blackens the page and retains its own readable text, indigo accent and lifted cards. */
     @Test
     fun `amoled reaches a nested screen and blackens the ground`() {
         lateinit var amoled: NextPalette

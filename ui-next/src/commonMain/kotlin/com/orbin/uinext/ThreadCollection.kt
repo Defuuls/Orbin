@@ -50,9 +50,7 @@ import com.orbin.uinext.resources.collection_remove
 import com.orbin.uinext.resources.collection_remove_deleted
 import com.orbin.uinext.resources.reader_row_meta
 import com.orbin.uinext.resources.reader_secondary_settings
-import com.orbin.uinext.resources.reader_unread
 import com.orbin.uinext.tokens.ReaderSpace
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 enum class ThreadCollectionStatus { UNKNOWN, LIVE, ARCHIVED, DELETED }
@@ -367,7 +365,7 @@ private fun StoredThreadRow(
         source = row.source,
         metadata = listOf(metadata, status).filter { it.isNotBlank() }.joinToString(" · "),
         detail = row.detail,
-        unread = if (row.unread > 0) pluralStringResource(Res.plurals.reader_unread, row.unread, row.unread) else "",
+        unread = row.unread,
         onOpen = { onOpen(row) },
         onLongClick = onLongClick?.let { action -> { action(row) } },
         onLongClickLabel = stringResource(Res.string.collection_manage),

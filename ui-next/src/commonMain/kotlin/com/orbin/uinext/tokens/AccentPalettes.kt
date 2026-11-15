@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.orbin.uinext.NextAccentTheme
 
-/** Stable user-selected hues; Orbin's default remains the indigo/cyan identity. */
+/** Stable user-selected hues; Orbin's default remains the indigo identity. */
 private data class AccentSpec(
     val hue: Float,
     val accent: Color,
@@ -13,7 +13,7 @@ private data class AccentSpec(
 
 private val namedAccentSwatches =
     mapOf(
-        NextAccentTheme.ORBIN to AccentSpec(188f, Color(0xFF00D4FF), Color(0xFFA78BFA)),
+        NextAccentTheme.ORBIN to AccentSpec(230f, Color(0xFFA5B4FC), Color(0xFFA78BFA)),
         NextAccentTheme.CYAN to AccentSpec(191f, Color(0xFF6DD4EC), Color(0xFFA78BFA)),
         NextAccentTheme.BLUE to AccentSpec(213f, Color(0xFF60A5FA), Color(0xFFC084FC)),
         NextAccentTheme.INDIGO to AccentSpec(239f, Color(0xFF818CF8), Color(0xFFE879F9)),

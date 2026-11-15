@@ -43,6 +43,9 @@ import androidx.compose.ui.unit.sp
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
+import com.orbin.uinext.tokens.ReaderAmoledColors
+import com.orbin.uinext.tokens.ReaderDarkColors
+import com.orbin.uinext.tokens.ReaderLightColors
 
 /** Theme choices exposed by the shared setup and update screens. */
 enum class SetupThemeOption {
@@ -78,7 +81,7 @@ private val SplashBorder: Color
     @Composable get() = reader.hairline
 private val SplashMuted: Color
     @Composable get() = reader.inkMuted
-private val SplashCyan: Color
+private val SplashAccent: Color
     @Composable get() = reader.accent
 
 @Composable
@@ -130,13 +133,13 @@ internal fun WelcomeSplashStep(
                     Modifier
                         .clip(RoundedCornerShape(OrbinRadius.pill))
                         .background(SplashSurface)
-                        .border(1.dp, SplashCyan.copy(alpha = 0.45f), RoundedCornerShape(OrbinRadius.pill))
+                        .border(1.dp, SplashAccent.copy(alpha = 0.45f), RoundedCornerShape(OrbinRadius.pill))
                         .padding(horizontal = 12.dp, vertical = 4.dp),
             ) {
                 Text(
                     text = "READ-ONLY · NO ACCOUNTS",
                     style = OrbinType.caption2.withReaderFont().copy(fontWeight = FontWeight.Bold),
-                    color = SplashCyan,
+                    color = SplashAccent,
                 )
             }
             Spacer(Modifier.height(20.dp))
@@ -190,12 +193,12 @@ private fun SplashHighlightRow(
         androidx.compose.material3.Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = SplashCyan,
+            tint = SplashAccent,
             modifier =
                 Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(11.dp))
-                    .background(SplashCyan.copy(alpha = 0.16f))
+                    .background(SplashAccent.copy(alpha = 0.16f))
                     .padding(8.dp),
         )
         Column(
@@ -238,21 +241,21 @@ internal fun AppearanceSetupStep(
                 "Soft light surfaces with an indigo accent",
                 SetupThemeOption.LIGHT,
                 Color.White,
-                Color(0xFF4338CA),
+                ReaderLightColors.accent,
             ),
             ThemeChoice(
                 "Dark",
-                "Quiet dark surfaces with a cyan accent",
+                "Quiet dark surfaces with an indigo accent",
                 SetupThemeOption.DARK,
-                Color(0xFF0B0D11),
-                Color(0xFF00D4FF),
+                ReaderDarkColors.background,
+                ReaderDarkColors.accent,
             ),
             ThemeChoice(
                 "AMOLED — True Black",
-                "Pure black surfaces with a cyan accent",
+                "Pure black surfaces with an indigo accent",
                 SetupThemeOption.AMOLED,
-                Color.Black,
-                Color(0xFF00D4FF),
+                ReaderAmoledColors.background,
+                ReaderAmoledColors.accent,
             ),
         )
     Column(
@@ -338,9 +341,9 @@ private fun ThemeOptionCard(
                 modifier =
                     Modifier
                         .size(width = 48.dp, height = 38.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(OrbinRadius.control))
                         .background(option.swatchBg)
-                        .border(1.dp, reader.hairline, RoundedCornerShape(14.dp)),
+                        .border(1.dp, reader.hairline, RoundedCornerShape(OrbinRadius.control)),
             ) {
                 Box(
                     modifier =

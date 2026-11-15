@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_media_transport_actions
+import com.orbin.uinext.tokens.OrbinRadius
+import com.orbin.uinext.tokens.ReaderDarkColors
 import org.jetbrains.compose.resources.stringResource
 
 object ReaderMediaControlsTags {
@@ -113,7 +115,7 @@ fun ReaderMediaControls(
             ).padding(start = 12.dp, end = 12.dp, top = 44.dp, bottom = 12.dp),
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(OrbinRadius.panel),
             color = Color(0xD11C1C1E),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
             modifier = Modifier.fillMaxWidth().testTag(ReaderMediaControlsTags.PANEL),
@@ -127,7 +129,7 @@ fun ReaderMediaControls(
                     if (playing || loading) MediaTransportIcons.Pause else MediaTransportIcons.Play,
                     if (playing || loading) pauseLabel else playLabel,
                     48.dp,
-                    accent = Color(0xFF00D4FF),
+                    accent = ReaderDarkColors.accent,
                 ) { onPlayPause() }
                 Column(Modifier.weight(1f)) {
                     MediaTimeBar(
@@ -159,7 +161,7 @@ fun ReaderMediaControls(
                     DropdownMenu(
                         expanded = actionsVisible,
                         onDismissRequest = { actionsVisible = false },
-                        shape = RoundedCornerShape(22.dp),
+                        shape = RoundedCornerShape(OrbinRadius.card),
                         containerColor = Color(0xFF1C1C1E),
                     ) {
                         MediaTransportMenuItem(restartLabel, seekable) {
@@ -248,7 +250,7 @@ private fun MediaTimeBar(
     onScrubbingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = Color(0xFF00D4FF)
+    val accent = ReaderDarkColors.accent
     var dragging by remember { mutableStateOf(false) }
     val seek by rememberUpdatedState(onSeek)
     val scrubbing by rememberUpdatedState(onScrubbingChange)

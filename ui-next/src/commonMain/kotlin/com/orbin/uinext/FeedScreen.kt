@@ -63,15 +63,15 @@ object ReaderFeedTags {
 }
 
 /** Legacy identifiers remain source compatible; Home no longer renders these immersive nodes. */
-object TikTokFeedTags {
-    const val PAGER = "tiktok_feed_pager"
-    const val HEADER = "tiktok_feed_header"
-    const val CAPTION = "tiktok_feed_caption"
-    const val ACTIONS = "tiktok_feed_actions"
+object FeedPagerTags {
+    const val PAGER = "feed_pager_pager"
+    const val HEADER = "feed_pager_header"
+    const val CAPTION = "feed_pager_caption"
+    const val ACTIONS = "feed_pager_actions"
     const val FOLLOWING = "reader_feed_following"
     const val FOR_YOU = "reader_feed_for_you"
 
-    fun page(id: String): String = "tiktok_feed_page:$id"
+    fun page(id: String): String = "feed_pager_page:$id"
 }
 
 /**

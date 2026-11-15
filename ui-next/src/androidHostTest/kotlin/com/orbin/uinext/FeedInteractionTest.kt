@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xhdpi")
-class SocialFeedInteractionTest {
+class FeedInteractionTest {
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -186,8 +186,8 @@ class SocialFeedInteractionTest {
             }
         }
         composeRule.onNodeWithText("Showing previously loaded threads", substring = true).assertExists()
-        composeRule.onNodeWithTag(TikTokFeedTags.HEADER).assertDoesNotExist()
-        composeRule.onNodeWithTag(TikTokFeedTags.CAPTION).assertDoesNotExist()
+        composeRule.onNodeWithTag(FeedPagerTags.HEADER).assertDoesNotExist()
+        composeRule.onNodeWithTag(FeedPagerTags.CAPTION).assertDoesNotExist()
     }
 
     @Test

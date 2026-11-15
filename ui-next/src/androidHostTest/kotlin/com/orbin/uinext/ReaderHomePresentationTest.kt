@@ -52,9 +52,9 @@ class ReaderHomePresentationTest {
         compose.onNodeWithTag(ReaderFeedTags.GRID).assertIsDisplayed()
         compose.onNodeWithTag(ReaderFeedTags.row(rows[0].id)).assertIsDisplayed()
         compose.onNodeWithTag(ReaderFeedTags.row(rows[1].id)).assertIsDisplayed()
-        compose.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
-        compose.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
-        compose.onNodeWithTag(TikTokFeedTags.HEADER).assertDoesNotExist()
+        compose.onNodeWithTag(FeedPagerTags.PAGER).assertDoesNotExist()
+        compose.onNodeWithTag(FeedPagerTags.ACTIONS).assertDoesNotExist()
+        compose.onNodeWithTag(FeedPagerTags.HEADER).assertDoesNotExist()
         assertNoFeedSelectors()
     }
 
@@ -497,8 +497,8 @@ class ReaderHomePresentationTest {
         listOf(
             ReaderFeedTags.FOLLOWING,
             ReaderFeedTags.FOR_YOU,
-            TikTokFeedTags.FOLLOWING,
-            TikTokFeedTags.FOR_YOU,
+            FeedPagerTags.FOLLOWING,
+            FeedPagerTags.FOR_YOU,
         ).forEach { tag ->
             compose.onNodeWithTag(tag).assertDoesNotExist()
         }
