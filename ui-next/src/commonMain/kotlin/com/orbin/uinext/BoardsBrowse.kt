@@ -38,7 +38,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -624,7 +623,7 @@ private fun FollowChip(
         Icon(
             imageVector = if (board.followed) ReaderIcons.HeartFilled else ReaderIcons.Heart,
             contentDescription = null,
-            tint = if (board.followed) Color(0xFFF472B6) else reader.inkSecondary,
+            tint = if (board.followed) reader.accent else reader.inkSecondary,
             modifier = Modifier.size(20.dp),
         )
     }
