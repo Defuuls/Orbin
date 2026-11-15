@@ -4,35 +4,28 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assertWidthIsEqualTo
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
-import com.orbin.uinext.tokens.ReaderLightColors
 import com.orbin.uinext.tokens.ReaderSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
 
 /** Production Home rows, chrome and drawer must respect real system safe areas. */
 @RunWith(RobolectricTestRunner::class)
@@ -112,14 +105,19 @@ class WindowInsetsTest {
         composeRule.setContent {
             NextTheme {
                 Box {
-                    ReaderScaffold("Home", destination = NextDestination.FEED, onDestination = {}) {}
+                    ReaderScaffold(
+                        "Feed",
+                        destination = NextDestination.FEED,
+                        onDestination = {},
+                        actions = listOf(ReaderAction(ReaderIcons.Search, "Search") {}),
+                    ) {}
                 }
             }
         }
         applySystemBars(horizontal = 24.dp)
         val root = composeRule.onRoot().getUnclippedBoundsInRoot()
         val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR).getUnclippedBoundsInRoot()
-        val menu = composeRule.onNodeWithContentDescription("Menu").getUnclippedBoundsInRoot()
+        val menu = composeRule.onNodeWithContentDescription("Search").getUnclippedBoundsInRoot()
         assertThat(bar.left.value).isWithin(0.5f).of(root.left.value)
         assertThat(bar.right.value).isWithin(0.5f).of(root.right.value)
         assertThat(menu.left.value).isAtLeast((root.left + 24.dp).value)
@@ -141,45 +139,6 @@ class WindowInsetsTest {
 
         val title = composeRule.onNodeWithTag(ReaderAppBarTags.TITLE).getUnclippedBoundsInRoot()
         assertThat(title.top.value).isAtLeast(STATUS_BAR.value)
-    }
-
-    @Test
-    @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `an open drawer keeps the reader app bar ground behind light status icons`() {
-        composeRule.setContent {
-            NextTheme(darkTheme = false) {
-                ReaderScaffold("Boards", destination = NextDestination.BOARDS, onDestination = {}) {}
-            }
-        }
-        applySystemBars()
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        val drawer = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER)
-        drawer.assertWidthIsEqualTo(ReaderSize.drawerMax)
-        val pixels = drawer.captureToImage().toPixelMap()
-        val topInsetPx = with(composeRule.density) { STATUS_BAR.roundToPx() }
-        assertThat(pixels[0, 0].toArgb()).isEqualTo(ReaderLightColors.statusBar.toArgb())
-        assertThat(pixels[pixels.width - 1, topInsetPx - 1].toArgb()).isEqualTo(ReaderLightColors.statusBar.toArgb())
-        // Top is consumed by the sheet; the first entry starts immediately below it.
-        assertThat(pixels[0, topInsetPx + 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
-        assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
-    }
-
-    @Test
-    @GraphicsMode(GraphicsMode.Mode.NATIVE)
-    fun `the Home drawer keeps the themed bottom system inset`() {
-        composeRule.setContent {
-            NextTheme(darkTheme = false) {
-                FeedScreen(rows = emptyList(), onOpenBoards = {}, onOpenMedia = {})
-            }
-        }
-        applySystemBars()
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        val pixels = composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).captureToImage().toPixelMap()
-        val bottomInsetPx = with(composeRule.density) { NAVIGATION_BAR.roundToPx() }
-        assertThat(pixels[0, pixels.height - 1].toArgb()).isEqualTo(ReaderLightColors.background.toArgb())
-        assertThat(
-            pixels[0, pixels.height - bottomInsetPx - 1].toArgb(),
-        ).isEqualTo(ReaderLightColors.background.toArgb())
     }
 
     /**

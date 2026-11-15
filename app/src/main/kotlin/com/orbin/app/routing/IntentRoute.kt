@@ -16,6 +16,8 @@ sealed interface IntentRoute {
 
     data object DownloadsShortcut : IntentRoute
 
+    data object WatchedShortcut : IntentRoute
+
     data object BoardsShortcut : IntentRoute
 
     data object Unknown : IntentRoute
@@ -55,6 +57,7 @@ fun Intent.parseRoute(isNotificationToken: (String?) -> Boolean): IntentRoute {
     return when (shortcut) {
         "feed", "com.orbin.shortcut.FEED" -> IntentRoute.FeedShortcut
         "downloads", "com.orbin.shortcut.DOWNLOADS" -> IntentRoute.DownloadsShortcut
+        "watched", "com.orbin.shortcut.WATCHED" -> IntentRoute.WatchedShortcut
         "boards", "com.orbin.shortcut.BOARDS" -> IntentRoute.BoardsShortcut
         else -> IntentRoute.Unknown
     }

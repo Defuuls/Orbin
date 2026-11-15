@@ -24,8 +24,9 @@ import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextTheme
 import com.orbin.uinext.OnboardingBoards
 import com.orbin.uinext.OnboardingScreen
+import com.orbin.uinext.ReaderAction
 import com.orbin.uinext.ReaderAppBarTags
-import com.orbin.uinext.ReaderDrawerTags
+import com.orbin.uinext.ReaderIcons
 import com.orbin.uinext.ReaderScaffold
 import com.orbin.uinext.tokens.NextMotion
 import org.junit.Rule
@@ -39,6 +40,9 @@ import org.robolectric.annotation.Config
 class OrbinContentFrameTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private var searches = 0
+    private val searchAction = listOf(ReaderAction(ReaderIcons.Search, "Search") { searches++ })
 
     @Test
     fun systemIconsFollowCoralBrightnessAndRestoreThePaletteAfterBlackMedia() {
@@ -121,11 +125,16 @@ class OrbinContentFrameTest {
         composeRule.setContent {
             NextTheme {
                 OrbinContentFrame(isOnline = online) {
-                    ReaderScaffold("Home", destination = NextDestination.FEED, onDestination = {}) {}
+                    ReaderScaffold(
+                        "Feed",
+                        destination = NextDestination.FEED,
+                        onDestination = {},
+                        actions = searchAction,
+                    ) {}
                 }
             }
         }
-        val menu = composeRule.onNodeWithContentDescription("Menu")
+        val menu = composeRule.onNodeWithContentDescription("Search")
         val bar = composeRule.onNodeWithTag(ReaderAppBarTags.BAR)
         applySystemBars(0.dp)
         val zeroInsetMenu = menu.getUnclippedBoundsInRoot()
@@ -167,7 +176,7 @@ class OrbinContentFrameTest {
             .isWithin(0.5f)
             .of(toolbarMenuOffset.value)
         menu.performTouchInput { click() }
-        composeRule.onNodeWithTag(ReaderDrawerTags.DRAWER).assertIsDisplayed()
+        composeRule.runOnIdle { assertThat(searches).isEqualTo(1) }
     }
 
     @Test
@@ -176,12 +185,17 @@ class OrbinContentFrameTest {
         composeRule.setContent {
             NextTheme {
                 OrbinContentFrame(isOnline = online) {
-                    ReaderScaffold("Home", destination = NextDestination.FEED, onDestination = {}) {}
+                    ReaderScaffold(
+                        "Feed",
+                        destination = NextDestination.FEED,
+                        onDestination = {},
+                        actions = searchAction,
+                    ) {}
                 }
             }
         }
         applySystemBars(52.dp)
-        val menu = composeRule.onNodeWithContentDescription("Menu")
+        val menu = composeRule.onNodeWithContentDescription("Search")
         val banner = composeRule.onNodeWithTag(OFFLINE_BANNER_TAG)
         val fullBannerHeight = banner.fetchSemanticsNode().boundsInRoot.height
         composeRule.onNodeWithText("You're offline").assertIsDisplayed()

@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.navigation.toRoute
 import com.google.common.truth.Truth.assertThat
+import com.orbin.uinext.LibrarySection
 import com.orbin.uinext.NextDestination
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +53,7 @@ class TabNavigationStateTest {
     }
 
     @Test
-    fun drawerSwitchingFromAThreadReturnsToItsSelectedRootWithoutRetainingTheThread() {
+    fun switchingFromAThreadReturnsToItsSelectedRootWithoutRetainingTheThread() {
         val nav = controller()
         nav.navigateToTab(Route.BoardGallery)
         nav.navigate(Route.Thread("fourchan", "g", 42L, "Topic"))
@@ -61,39 +62,6 @@ class TabNavigationStateTest {
         assertThat(nav.currentDestination!!.hasRoute(Route.Search::class)).isTrue()
         nav.popBackStack()
         assertThat(nav.currentDestination!!.hasRoute(Route.NextFeed::class)).isTrue()
-    }
-
-    @Test
-    fun drawerSettingsAndDownloadsUseHierarchicalBack() {
-        val nav = controller()
-        nav.openDestination(NextDestination.WATCHED)
-        nav.openDestination(NextDestination.SETTINGS)
-        nav.popBackStack()
-        assertThat(nav.currentDestination!!.hasRoute(Route.Watched::class)).isTrue()
-        nav.openDestination(NextDestination.DOWNLOADS)
-        assertThat(nav.currentDestination!!.hasRoute(Route.Downloads::class)).isTrue()
-        nav.popBackStack()
-        assertThat(nav.currentDestination!!.hasRoute(Route.Watched::class)).isTrue()
-    }
-
-    @Test
-    fun primarySettingsAndDownloadsReplaceEachOtherWithoutDiscardingTheReader() {
-        val nav = controller()
-        nav.navigateToTab(Route.BoardGallery)
-        val reader = nav.currentBackStackEntry!!
-        reader.savedStateHandle["scrollIndex"] = 18
-        nav.openDestination(NextDestination.SETTINGS)
-        nav.openDestination(NextDestination.DOWNLOADS)
-
-        repeat(3) {
-            nav.openPrimaryDestination(NextDestination.SETTINGS)
-            nav.openPrimaryDestination(NextDestination.DOWNLOADS)
-        }
-
-        assertThat(nav.currentDestination!!.hasRoute(Route.Downloads::class)).isTrue()
-        nav.popBackStack()
-        assertThat(nav.currentBackStackEntry).isSameInstanceAs(reader)
-        assertThat(reader.savedStateHandle.get<Int>("scrollIndex")).isEqualTo(18)
     }
 
     @Test
@@ -113,41 +81,73 @@ class TabNavigationStateTest {
     }
 
     @Test
-    fun primarySettingsReturnsToItsRetainedStoragePageUnderDownloads() {
+    fun everyLibrarySectionSitsAboveFeedSoBackReturnsThere() {
+        LibrarySection.entries.forEach { section ->
+            val nav = controller()
+            nav.navigateToTab(Route.BoardGallery)
+            nav.openDestination(section.destination)
+            assertThat(nav.currentDestination!!.librarySection()).isEqualTo(section)
+            nav.popBackStack()
+            assertThat(nav.currentDestination!!.hasRoute(Route.NextFeed::class)).isTrue()
+        }
+    }
+
+    @Test
+    fun theLibraryTabReopensTheLastSectionUsed() {
         val nav = controller()
-        nav.navigateToTab(Route.Saved)
-        nav.openDestination(NextDestination.SETTINGS)
-        val settings = nav.currentBackStackEntry!!
-        settings.savedStateHandle["category"] = "storage"
-        settings.savedStateHandle["scrollIndex"] = 4
-        nav.openDestination(NextDestination.DOWNLOADS)
+        val memory = LibraryMemory()
+        nav.openPrimaryDestination(NextDestination.LIBRARY, memory)
+        assertThat(nav.currentDestination!!.hasRoute(Route.Watched::class)).isTrue()
+        nav.openLibrary(LibrarySection.DOWNLOADS, memory)
+        nav.openPrimaryDestination(NextDestination.BOARDS, memory)
+        nav.openPrimaryDestination(NextDestination.LIBRARY, memory)
+        assertThat(nav.currentDestination!!.hasRoute(Route.Downloads::class)).isTrue()
+        assertThat(memory.section).isEqualTo(LibrarySection.DOWNLOADS)
+    }
 
+    @Test
+    fun settingsOverALibrarySectionReturnsToIt() {
+        val nav = controller()
+        nav.openDestination(NextDestination.SAVED)
         nav.openPrimaryDestination(NextDestination.SETTINGS)
-
-        assertThat(nav.currentBackStackEntry).isSameInstanceAs(settings)
-        assertThat(settings.savedStateHandle.get<String>("category")).isEqualTo("storage")
-        assertThat(settings.savedStateHandle.get<Int>("scrollIndex")).isEqualTo(4)
         nav.popBackStack()
         assertThat(nav.currentDestination!!.hasRoute(Route.Saved::class)).isTrue()
     }
 
     @Test
-    fun primarySwitchDoesNotRestoreAnOlderSettingsPageBelowAnotherReader() {
+    fun theWatchedSettingsLinkOpensLibraryOnWatched() {
         val nav = controller()
-        nav.navigateToTab(Route.Saved)
-        nav.openDestination(NextDestination.SETTINGS)
-        val oldSettings = nav.currentBackStackEntry!!
-        nav.navigate(Route.History)
-        val history = nav.currentBackStackEntry!!
-        history.savedStateHandle["scrollIndex"] = 9
-        nav.openDestination(NextDestination.DOWNLOADS)
-
-        nav.openPrimaryDestination(NextDestination.SETTINGS)
-
-        assertThat(nav.currentBackStackEntry).isNotSameInstanceAs(oldSettings)
+        val memory = LibraryMemory(LibrarySection.SAVED)
+        nav.openPrimaryDestination(NextDestination.SETTINGS, memory)
+        nav.openSettingsLink("watched", memory)
+        assertThat(nav.currentDestination!!.hasRoute(Route.Watched::class)).isTrue()
+        assertThat(memory.section).isEqualTo(LibrarySection.WATCHED)
         nav.popBackStack()
-        assertThat(nav.currentBackStackEntry).isSameInstanceAs(history)
-        assertThat(history.savedStateHandle.get<Int>("scrollIndex")).isEqualTo(9)
+        assertThat(nav.currentDestination!!.hasRoute(Route.NextFeed::class)).isTrue()
+    }
+
+    @Test
+    fun theWatchedShortcutOpensLibraryOnWatched() {
+        val nav = controller()
+        nav.navigateToTab(Route.BoardGallery)
+        nav.openPendingRoute(Route.Watched)
+        assertThat(nav.currentDestination!!.hasRoute(Route.Watched::class)).isTrue()
+        nav.popBackStack()
+        assertThat(nav.currentDestination!!.hasRoute(Route.NextFeed::class)).isTrue()
+    }
+
+    @Test
+    fun aNotificationOpensItsThreadOverLibraryWatched() {
+        val nav = controller()
+        val memory = LibraryMemory(LibrarySection.DOWNLOADS)
+        nav.navigateToTab(Route.BoardGallery)
+        nav.openPendingRoute(Route.Thread("fourchan", "g", 42L, "Topic"), memory)
+        assertThat(nav.currentDestination!!.hasRoute(Route.Thread::class)).isTrue()
+        nav.popBackStack()
+        assertThat(nav.currentDestination!!.hasRoute(Route.Watched::class)).isTrue()
+        assertThat(memory.section).isEqualTo(LibrarySection.WATCHED)
+        nav.popBackStack()
+        assertThat(nav.currentDestination!!.hasRoute(Route.NextFeed::class)).isTrue()
     }
 
     @Test

@@ -12,6 +12,7 @@ class QuickActionsTest {
         assertEquals(Route.Feed, QuickActions.tabFor(QuickActions.FEED))
         assertEquals(Route.Downloads, QuickActions.tabFor(QuickActions.DOWNLOADS))
         assertEquals(Route.Boards, QuickActions.tabFor(QuickActions.BOARDS))
+        assertEquals(Route.Watched, QuickActions.tabFor(QuickActions.WATCHED))
     }
 
     @Test

@@ -350,8 +350,8 @@ class ReaderHomePresentationTest {
             assertEquals(1, searches)
             assertEquals(0, boards)
         }
-        // Menu and overflow frame exactly two primary actions; Downloads remains in overflow.
-        compose.onAllNodes(insideBar and hasClickAction()).assertCountEquals(4)
+        // Two primary actions and More; there is no drawer Menu, and Downloads stays in overflow.
+        compose.onAllNodes(insideBar and hasClickAction()).assertCountEquals(3)
     }
 
     @Test

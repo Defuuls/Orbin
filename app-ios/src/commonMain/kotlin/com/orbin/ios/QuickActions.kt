@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Home-screen quick actions open Home, Boards, or the secondary Downloads page.
+ * Home-screen quick actions open Feed, Boards, or a Library section (Watched or Downloads).
  * The items are declared in the app's Info.plist; the scene delegate hands the
  * tapped one's type to [perform], at launch or while running, and the app opens [pending].
  */
@@ -13,6 +13,7 @@ object QuickActions {
     const val FEED = "io.github.defuuls.orbin.feed"
     const val DOWNLOADS = "io.github.defuuls.orbin.downloads"
     const val BOARDS = "io.github.defuuls.orbin.boards"
+    const val WATCHED = "io.github.defuuls.orbin.watched"
 
     private val _pending = MutableStateFlow<Route?>(null)
 
@@ -36,6 +37,7 @@ object QuickActions {
             FEED -> Route.Feed
             DOWNLOADS -> Route.Downloads
             BOARDS -> Route.Boards
+            WATCHED -> Route.Watched
             else -> null
         }
 }

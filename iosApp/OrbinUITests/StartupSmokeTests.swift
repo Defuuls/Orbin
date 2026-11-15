@@ -52,7 +52,7 @@ final class StartupSmokeTests: XCTestCase {
         layoutButton().tap()
         assertLayoutAction("Grid view")
 
-        assertDrawerDestinations()
+        assertPrimaryDestinations()
 
         // Cold startup repairs a zero-follow install, so reaching Home again also proves that
         // the selected board survived process termination along with setup completion.
@@ -85,9 +85,9 @@ final class StartupSmokeTests: XCTestCase {
             waitUntilHittable([done], description: "The release notes dismissal action")
             done.tap()
         }
-        let menu = menuButton()
-        waitUntilHittable([menu], description: "Home Menu after mandatory board setup")
-        XCTAssertTrue(appBarTitle("Home").exists, "The fixed app bar identifies the Home destination")
+        let feedTab = navigationEntry("FEED")
+        waitUntilHittable([feedTab], description: "The Feed tab after mandatory board setup")
+        XCTAssertTrue(appBarTitle("Feed").exists, "The fixed app bar identifies the Feed destination")
         XCTAssertFalse(labeled("Welcome to Orbin").exists, "Persisted setup must not reopen onboarding")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@", "Start browsing")).firstMatch.exists)
 
@@ -104,7 +104,7 @@ final class StartupSmokeTests: XCTestCase {
         )
         XCTAssertEqual(legacyFeed.count, 0, "Home must not render the old full-screen video pager or action column")
 
-        // Reader Home has one subscription scope, including after drawer returns and cold launch.
+        // Reader Home has one subscription scope, including after tab returns and cold launch.
         let socialTabs = app.buttons.matching(
             NSPredicate(format: "label == %@ OR label == %@", "For You", "Following")
         )
@@ -205,10 +205,6 @@ final class StartupSmokeTests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "label == %@", "Done")).firstMatch
     }
 
-    private func menuButton() -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label == %@", "Menu")).firstMatch
-    }
-
     private func appBarTitle(_ title: String) -> XCUIElement {
         app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == %@ AND label == %@", "reader-app-bar-title", title)
@@ -225,55 +221,45 @@ final class StartupSmokeTests: XCTestCase {
         return appBarTitle(title)
     }
 
-    private func drawerEntry(_ destination: String) -> XCUIElement {
+    private func navigationEntry(_ destination: String) -> XCUIElement {
         app.descendants(matching: .any).matching(
             NSPredicate(format: "identifier == %@", "reader-navigation-entry-" + destination)
         ).firstMatch
     }
 
-    private func openDrawer() {
-        let menu = menuButton()
-        waitUntilHittable([menu], description: "The app bar Menu button")
-        XCTAssertGreaterThanOrEqual(menu.frame.width, 44)
-        XCTAssertGreaterThanOrEqual(menu.frame.height, 44)
-        menu.tap()
-        waitUntilHittable([drawerEntry("FEED")], description: "The navigation drawer")
-    }
-
-    private func assertDrawerDestinations() {
-        let destinations = [
-            ("FEED", "Home"), ("WATCHED", "Watched"), ("BOARDS", "Boards"),
-            ("SEARCH", "Search"), ("SAVED", "Saved")
-        ]
+    private func assertPrimaryDestinations() {
+        // The bottom bar is the only primary navigation: Boards, Feed, Library and Settings.
+        let entries = ["BOARDS", "FEED", "LIBRARY", "SETTINGS"]
+        let destinations = [("BOARDS", "Boards"), ("LIBRARY", "Library"), ("FEED", "Feed")]
         for (identifier, title) in destinations {
-            openDrawer()
-            for (entryID, _) in destinations {
-                let entry = drawerEntry(entryID)
-                XCTAssertTrue(entry.exists && entry.isHittable, "Every primary drawer destination must be reachable")
+            for entryID in entries {
+                let entry = navigationEntry(entryID)
+                waitUntilHittable([entry], description: "Every primary tab must be reachable")
                 XCTAssertGreaterThanOrEqual(entry.frame.width, 44)
                 XCTAssertGreaterThanOrEqual(entry.frame.height, 44)
             }
-            drawerEntry(identifier).tap()
+            navigationEntry(identifier).tap()
             waitUntilExists([destinationHeader(identifier, title: title)], description: "The " + title + " header")
-            openDrawer()
-            XCTAssertTrue(drawerEntry(identifier).isSelected, title + " announces its selected drawer state")
-            drawerEntry(identifier).tap()
+            XCTAssertTrue(navigationEntry(identifier).isSelected, title + " announces its selected tab state")
         }
 
-        openDrawer()
-        let settings = drawerEntry("SETTINGS")
-        XCTAssertTrue(settings.exists && settings.isHittable)
+        navigationEntry("LIBRARY").tap()
+        waitUntilExists([appBarTitle("Library")], description: "Library opens on its last section")
+        let settings = navigationEntry("SETTINGS")
+        waitUntilHittable([settings], description: "The Settings tab")
         settings.tap()
         waitUntilExists([appBarTitle("Settings")], description: "Reader preferences use the Settings app bar")
         XCTAssertFalse(appBarTitle("Settings and privacy").exists, "Settings must not retain the social directory title")
         attachScreenshot(named: "ios-reader-settings")
         let back = app.buttons.matching(NSPredicate(format: "label == %@", "Back")).firstMatch
         waitUntilHittable([back], description: "Settings uses Back in its app bar")
-        XCTAssertFalse(menuButton().exists, "A child screen must not offer the navigation drawer")
+        XCTAssertFalse(
+            app.buttons.matching(NSPredicate(format: "label == %@", "Menu")).firstMatch.exists,
+            "There is no navigation drawer"
+        )
         back.tap()
-        waitUntilExists([appBarTitle("Saved")], description: "Back returns to the previous drawer destination")
-        openDrawer()
-        drawerEntry("FEED").tap()
+        waitUntilExists([appBarTitle("Library")], description: "Back returns to Library")
+        navigationEntry("FEED").tap()
         assertHomeAfterSetup()
     }
 

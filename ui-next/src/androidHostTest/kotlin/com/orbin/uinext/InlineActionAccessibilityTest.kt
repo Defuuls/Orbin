@@ -65,14 +65,13 @@ class InlineActionAccessibilityTest {
         composeRule.onAllNodes(isButton).assertCountEquals(0)
     }
 
-    /** Replaces `a destination tab is at least the minimum touch target` with drawer targets. */
     @Test
-    fun `a drawer destination is at least the minimum touch target`() {
+    fun `a primary navigation tab is at least the minimum touch target`() {
         composeRule.setContent {
-            NextTheme { ReaderDrawer(selected = NextDestination.FEED, onSelect = {}) }
+            NextTheme { OrbinBottomBar(selected = NextDestination.FEED, onSelect = {}) }
         }
 
-        composeRule.onAllNodes(isTab).assertCountEquals(6)
-        repeat(6) { index -> composeRule.onAllNodes(isTab)[index].assertHeightIsAtLeast(MIN_TOUCH_TARGET) }
+        composeRule.onAllNodes(isTab).assertCountEquals(4)
+        repeat(4) { index -> composeRule.onAllNodes(isTab)[index].assertHeightIsAtLeast(MIN_TOUCH_TARGET) }
     }
 }

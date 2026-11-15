@@ -29,14 +29,14 @@ class RailHidesOnScrollTest {
 
     /** Replaces `TikTok navigation remains reachable while paging even with legacy hide preference`. */
     @Test
-    fun `the drawer opens Saved after scrolling with the legacy hide preference enabled`() {
-        assertSavedDrawerReachableAfterPaging(hidePreference = true)
+    fun `the bar opens Library after scrolling with the legacy hide preference enabled`() {
+        assertLibraryReachableAfterPaging(hidePreference = true)
     }
 
     /** Replaces `TikTok navigation remains reachable when the legacy hide preference is off`. */
     @Test
-    fun `the drawer opens Saved after scrolling with the legacy hide preference disabled`() {
-        assertSavedDrawerReachableAfterPaging(hidePreference = false)
+    fun `the bar opens Library after scrolling with the legacy hide preference disabled`() {
+        assertLibraryReachableAfterPaging(hidePreference = false)
     }
 
     @Test
@@ -75,21 +75,19 @@ class RailHidesOnScrollTest {
         assertTrue("expected one reload, got $reloads", reloads == 1)
     }
 
-    private fun assertSavedDrawerReachableAfterPaging(hidePreference: Boolean) {
+    private fun assertLibraryReachableAfterPaging(hidePreference: Boolean) {
         var savedOpens = 0
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenSaved = { savedOpens++ }, hideRailOnScroll = hidePreference) }
+            NextTheme { FeedScreen(rows = ROWS, onOpenLibrary = { savedOpens++ }, hideRailOnScroll = hidePreference) }
         }
-        composeRule.onNodeWithContentDescription("Menu").assertIsDisplayed()
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.LIBRARY.name).assertIsDisplayed()
         scrollFeedDown()
-        composeRule.onNodeWithContentDescription("Menu").assertIsDisplayed().performClick()
         composeRule
-            .onNodeWithTag(
-                ReaderDrawerTags.ENTRY + NextDestination.SAVED.name,
-            ).assertIsDisplayed()
+            .onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.LIBRARY.name)
+            .assertIsDisplayed()
             .performClick()
         composeRule.waitForIdle()
-        assertTrue("Saved must remain wired after Home scrolls", savedOpens == 1)
+        assertTrue("Library must remain wired after Feed scrolls", savedOpens == 1)
         composeRule.onNodeWithTag(ReaderFeedTags.row(ROWS[12].id)).assertIsDisplayed()
     }
 

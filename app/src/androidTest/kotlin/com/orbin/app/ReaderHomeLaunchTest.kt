@@ -3,6 +3,7 @@ package com.orbin.app
 import android.Manifest
 import android.os.Build
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -17,6 +18,8 @@ import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
+import com.orbin.uinext.NextDestination
+import com.orbin.uinext.OrbinNavigationTags
 import com.orbin.uinext.ReaderAppBarTags
 import com.orbin.uinext.ReaderFeedTags
 import com.orbin.uinext.TikTokFeedTags
@@ -80,7 +83,13 @@ class ReaderHomeLaunchTest {
             composeRule.onNodeWithTag(ReaderFeedTags.FOLLOWING).assertDoesNotExist()
             composeRule.onNodeWithTag(ReaderFeedTags.FOR_YOU).assertDoesNotExist()
             composeRule.onNodeWithTag(ReaderAppBarTags.BAR).assertIsDisplayed()
-            composeRule.onNodeWithContentDescription("Menu").assertExists()
+            // One bottom bar is the primary navigation; there is no drawer Menu.
+            composeRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
+            listOf(NextDestination.BOARDS, NextDestination.FEED, NextDestination.LIBRARY, NextDestination.SETTINGS)
+                .forEach { destination ->
+                    composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + destination.name).assertIsDisplayed()
+                }
+            composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.FEED.name).assertIsSelected()
             composeRule.onNodeWithTag(TikTokFeedTags.PAGER).assertDoesNotExist()
             composeRule.onNodeWithTag(TikTokFeedTags.ACTIONS).assertDoesNotExist()
 

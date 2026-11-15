@@ -148,7 +148,7 @@ private fun startApp(): StartedApp {
         pendingNotificationJob =
             graph.scope.launch {
                 lock.state.first { !it.locked && !it.obscured }
-                browser.openThread(key)
+                browser.openWatchedThread(key)
             }
     }
 

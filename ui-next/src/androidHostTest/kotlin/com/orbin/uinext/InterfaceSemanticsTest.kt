@@ -185,34 +185,25 @@ class InterfaceSemanticsTest {
         composeRule.onNodeWithText("First new post").assertDoesNotExist()
     }
 
-    /** Replaces `the five tabs expose home boards watched search and saved`; missing callbacks omit entries. */
     @Test
-    fun `the drawer exposes only the wired root destinations and Settings`() {
+    fun `the feed bar exposes only the wired primary destinations`() {
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
         }
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        listOf(NextDestination.FEED, NextDestination.BOARDS, NextDestination.SETTINGS).forEach { destination ->
-            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertExists()
-        }
-        listOf(
-            NextDestination.WATCHED,
-            NextDestination.SEARCH,
-            NextDestination.SAVED,
-            NextDestination.DOWNLOADS,
-        ).forEach { destination ->
-            composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + destination.name).assertDoesNotExist()
-        }
+        listOf(NextDestination.FEED, NextDestination.BOARDS, NextDestination.LIBRARY, NextDestination.SETTINGS)
+            .forEach { destination ->
+                composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + destination.name).assertExists()
+            }
+        composeRule.onNodeWithContentDescription("Menu").assertDoesNotExist()
     }
 
     @Test
-    fun `settings opens from the reader drawer`() {
+    fun `settings opens from the feed bar`() {
         var opened = 0
         composeRule.setContent {
             NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onSettings = { opened++ }) }
         }
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.SETTINGS.name).performClick()
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.SETTINGS.name).performClick()
         composeRule.waitForIdle()
         composeRule.runOnIdle { assertEquals(1, opened) }
     }

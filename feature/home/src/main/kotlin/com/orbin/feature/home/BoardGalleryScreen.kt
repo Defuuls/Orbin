@@ -40,6 +40,8 @@ fun BoardGalleryScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenSaved: (() -> Unit)? = null,
     onOpenWatched: (() -> Unit)? = null,
+    onOpenLibrary: (() -> Unit)? = onOpenWatched,
+    watchedBadge: Int = 0,
     onOpenThread: ((provider: String, board: String, thread: Long, title: String) -> Unit)? = null,
 ) {
     var linkDialog by rememberSaveable { mutableStateOf(false) }
@@ -113,6 +115,8 @@ fun BoardGalleryScreen(
             onOpenSearch = onOpenSearch,
             onOpenSaved = onOpenSaved,
             onOpenWatched = onOpenWatched,
+            onOpenLibrary = onOpenLibrary,
+            watchedBadge = watchedBadge,
             hideRailOnScroll = hideRailOnScroll,
             onChromeVisibleChange = onChromeVisibleChange,
             emptyMessage =

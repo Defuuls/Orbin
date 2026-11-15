@@ -91,6 +91,9 @@ targets:
           - UIApplicationShortcutItemType: io.github.defuuls.orbin.boards
             UIApplicationShortcutItemTitle: Browse Boards
             UIApplicationShortcutItemIconSymbolName: square.grid.2x2
+          - UIApplicationShortcutItemType: io.github.defuuls.orbin.watched
+            UIApplicationShortcutItemTitle: Watched Threads
+            UIApplicationShortcutItemIconSymbolName: bell
         # audio: a playing video carries on in picture in picture after leaving the app (Player.ios.kt).
         UIBackgroundModes:
           - fetch

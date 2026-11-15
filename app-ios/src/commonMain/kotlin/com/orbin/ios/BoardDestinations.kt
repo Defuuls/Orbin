@@ -40,7 +40,6 @@ import com.orbin.ios.resources.ios_catalog_no_matches_title
 import com.orbin.ios.resources.ios_reader_reload
 import com.orbin.uinext.BoardScreen
 import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.LocalReaderOpenDrawer
 import com.orbin.uinext.MediaWallScreen
 import com.orbin.uinext.NextDestination
 import com.orbin.uinext.NextPullToRefresh
@@ -122,7 +121,6 @@ internal fun CatalogDestination(
         onDestination = browser::openDestination,
         drawAppBar = false,
     ) { _ ->
-        val openDrawer = LocalReaderOpenDrawer.current
         NextPullToRefresh(
             isRefreshing = refreshing,
             onRefresh = reload,
@@ -175,16 +173,8 @@ internal fun CatalogDestination(
                 BoardScreen(
                     wideWindow = wide,
                     navigation =
-                        when {
-                            onBack != null -> ReaderNavigation.BACK
-                            openDrawer != null -> ReaderNavigation.MENU
-                            else -> ReaderNavigation.NONE
-                        },
-                    onNavigation =
-                        onBack ?: {
-                            openDrawer?.invoke()
-                            Unit
-                        },
+                        if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+                    onNavigation = onBack ?: {},
                     onPickBoard = { pickerVisible = true },
                     onSearch = {
                         searchVisible = !searchVisible

@@ -1,5 +1,6 @@
 package com.orbin.uinext
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,7 +11,6 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -31,33 +31,37 @@ class ThreadCollectionInteractionTest {
 
     /** Replaces sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheFiveTabsReachable. */
     @Test
-    fun sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepTheDrawerReachable() {
+    fun sourceQualifiedRowsOpenTheCorrectSavedThreadAndKeepLibraryNavigationReachable() {
         var opened = ""
         var destination: NextDestination? = null
+        var section: LibrarySection? = null
         composeRule.setContent {
             NextTheme {
-                ThreadCollectionScreen(
-                    title = "Saved",
-                    rows =
-                        listOf(
-                            ThreadCollectionRow("fourchan/g/7", "First", "4chan · /g/"),
-                            ThreadCollectionRow("bbwchan/g/7", "Second", "BBWChan · /g/"),
-                        ),
-                    onOpen = { opened = it.id },
-                    onDestination = { destination = it },
-                )
+                CompositionLocalProvider(
+                    LocalLibraryNavigation provides
+                        LibraryNavigation(onSelect = { section = it }, onPrimary = { destination = it }),
+                ) {
+                    ThreadCollectionScreen(
+                        title = "Saved",
+                        rows =
+                            listOf(
+                                ThreadCollectionRow("fourchan/g/7", "First", "4chan · /g/"),
+                                ThreadCollectionRow("bbwchan/g/7", "Second", "BBWChan · /g/"),
+                            ),
+                        onOpen = { opened = it.id },
+                        onDestination = { destination = it },
+                    )
+                }
             }
         }
         composeRule.onNodeWithTag(ReaderSavedTags.row("bbwchan/g/7")).performClick()
         assertEquals("bbwchan/g/7", opened)
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.WATCHED.name).performClick()
+        composeRule.onNodeWithTag(LibraryTags.SECTION + LibrarySection.WATCHED.name).performClick()
         composeRule.waitForIdle()
-        assertEquals(NextDestination.WATCHED, destination)
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.SEARCH.name).performClick()
+        assertEquals(LibrarySection.WATCHED, section)
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.FEED.name).performClick()
         composeRule.waitForIdle()
-        assertEquals(NextDestination.SEARCH, destination)
+        assertEquals(NextDestination.FEED, destination)
     }
 
     @Test
@@ -154,22 +158,26 @@ class ThreadCollectionInteractionTest {
 
     /** Replaces watchedHasItsOwnSelectedTabAndOpensTheSourceQualifiedThread. */
     @Test
-    fun watchedHasItsOwnSelectedDrawerEntryAndOpensTheSourceQualifiedThread() {
+    fun watchedIsASelectedLibrarySectionAndOpensTheSourceQualifiedThread() {
         var opened = ""
         composeRule.setContent {
             NextTheme {
-                ThreadCollectionScreen(
-                    title = "Watched threads",
-                    rows = listOf(ThreadCollectionRow("bbwchan/gen/7", "Discussion", "BBWChan · /gen/")),
-                    onOpen = { opened = it.id },
-                    selectedDestination = NextDestination.WATCHED,
-                    onDestination = {},
-                )
+                CompositionLocalProvider(
+                    LocalLibraryNavigation provides LibraryNavigation(onSelect = {}, onPrimary = {}),
+                ) {
+                    ThreadCollectionScreen(
+                        title = "Watched threads",
+                        rows = listOf(ThreadCollectionRow("bbwchan/gen/7", "Discussion", "BBWChan · /gen/")),
+                        onOpen = { opened = it.id },
+                        selectedDestination = NextDestination.WATCHED,
+                        onDestination = {},
+                    )
+                }
             }
         }
         composeRule.onNodeWithText("Discussion").performClick()
         assertEquals("bbwchan/gen/7", opened)
-        composeRule.onNodeWithContentDescription("Menu").performClick()
-        composeRule.onNodeWithTag(ReaderDrawerTags.ENTRY + NextDestination.WATCHED.name).assertIsSelected()
+        composeRule.onNodeWithTag(LibraryTags.SECTION + LibrarySection.WATCHED.name).assertIsSelected()
+        composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.LIBRARY.name).assertIsSelected()
     }
 }
