@@ -200,10 +200,9 @@ commit separately from the pinned app source. Its unsigned archive is retained a
 tar with source/build metadata, so a later export failure has a recoverable build artifact.
 
 Release 211's initial TestFlight attempt exhausted its previous 4 GB heap during native release
-linking before upload. `retry-testflight-211.yml` temporarily retries the unchanged, validated
-release commit after the corrected workflow merges. Remove that retry wrapper after a confirmed
-upload. A successful Debug simulator build does not establish that the optimized device archive
-fits its compiler memory budget; the separate Release archive check must actually pass.
+linking before upload. A successful Debug simulator build does not establish that the optimized
+device archive fits its compiler memory budget; the separate Release archive check must actually
+pass.
 
 ## Setting up TestFlight
 
