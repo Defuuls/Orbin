@@ -30,6 +30,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.activityMillis
 import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.uinext.CatalogMode
@@ -97,6 +98,8 @@ fun NextFeedScreen(
     val visited by viewModel.visitedThreadKeys.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val isMetered by viewModel.isMetered.collectAsStateWithLifecycle()
+    val isDataSaver by viewModel.isDataSaver.collectAsStateWithLifecycle()
     val windowSize = LocalWindowInfo.current.containerSize
     val density = LocalDensity.current
     val wideWindow =
@@ -350,7 +353,15 @@ fun NextFeedScreen(
                         MediaThumbnail(
                             // The shared reader owns spoiler reveal before composing the image.
                             attachment.copy(isSpoiler = false),
-                            fullResolution = catalogMode.sharpensThumbnails,
+                            fullResolution =
+                                shouldLoadSharpPreview(
+                                    modeWantsSharp = catalogMode.sharpensThumbnails,
+                                    setting = settings.sharpPreviews,
+                                    isMetered = isMetered,
+                                    isDataSaver = isDataSaver,
+                                    mediaType = attachment.type,
+                                    sizeBytes = attachment.sizeBytes,
+                                ),
                             contentScale = ContentScale.Crop,
                             cornerRadius = 0.dp,
                             modifier = tileModifier,

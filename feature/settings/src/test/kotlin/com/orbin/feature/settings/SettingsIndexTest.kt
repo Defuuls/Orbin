@@ -24,7 +24,7 @@ class SettingsIndexTest {
     fun `settings groups keep every preference editable in place`() {
         assertThat(buildModel().groups.map { rows -> rows.second.map { it.id } })
             .containsExactly(
-                listOf("themeMode", "amoled", "catalogMode", "accentTheme"),
+                listOf("themeMode", "amoled", "catalogMode", "sharpPreviews", "accentTheme"),
                 listOf(
                     "hideNsfw",
                     "coverViolent",
@@ -85,10 +85,10 @@ class SettingsIndexTest {
     fun `appearance includes brightness AMOLED catalog view and stable accent choices`() {
         val appearance = buildModel().groups.single { it.first == "Appearance" }.second
         assertThat(appearance.map { it.label })
-            .containsExactly("Theme", "AMOLED black", "Catalog view", "Accent color")
+            .containsExactly("Theme", "AMOLED black", "Catalog view", "Sharp previews", "Accent color")
             .inOrder()
         assertThat(appearance.map { it.id })
-            .containsExactly("themeMode", "amoled", "catalogMode", "accentTheme")
+            .containsExactly("themeMode", "amoled", "catalogMode", "sharpPreviews", "accentTheme")
             .inOrder()
         val accent = appearance.single { it.id == "accentTheme" }
         assertThat(accent.kind).isEqualTo(SettingKind.CHOICE)

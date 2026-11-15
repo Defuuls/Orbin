@@ -1,5 +1,7 @@
 package com.orbin.ios
 
+import com.orbin.core.common.network.NetworkMonitor
+import com.orbin.core.common.network.StaticNetworkMonitor
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.CatalogRequest
@@ -176,6 +178,7 @@ class Browser(
         com.orbin.domain.repository
             .InMemoryThreadMemoryRepository(),
     private val threadCopies: com.orbin.domain.repository.SavedThreadRepository? = null,
+    val networkMonitor: NetworkMonitor = StaticNetworkMonitor(),
 ) {
     private val byId = providers.associateBy { it.metadata.id }
 

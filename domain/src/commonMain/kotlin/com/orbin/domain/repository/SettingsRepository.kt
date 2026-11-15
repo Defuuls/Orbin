@@ -10,6 +10,7 @@ import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostFilterRule
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import kotlinx.coroutines.flow.Flow
 
@@ -88,6 +89,9 @@ interface SettingsRepository {
 
     /** Saves the device-wide board catalog presentation. */
     suspend fun setCatalogMode(mode: CatalogMode)
+
+    /** Saves whether card and grid views may load full-size still images. */
+    suspend fun setSharpPreviews(mode: SharpPreviewsMode)
 
     /** Saves the on-disk video cache limit in megabytes. */
     suspend fun setVideoCacheMegabytes(megabytes: Int)

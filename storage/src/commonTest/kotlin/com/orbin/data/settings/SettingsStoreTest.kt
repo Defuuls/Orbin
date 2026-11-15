@@ -18,6 +18,7 @@ import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.core.model.PostFilterKind
 import com.orbin.core.model.PostFilterRule
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
@@ -164,6 +165,40 @@ class SettingsStoreTest {
 
             assertEquals(CatalogMode.GRID, restored.catalogMode)
             assertTrue(restored.screenPrivacyEnabled)
+        }
+
+    @Test
+    fun everySharpPreviewsModeSurvivesAStoreWrapperRecreation() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            val store = SettingsStore(dataStore)
+            SharpPreviewsMode.entries.forEach { mode ->
+                store.setSharpPreviews(mode)
+                val restored = SettingsStore(dataStore).settings.first()
+                assertEquals(mode, restored.sharpPreviews)
+            }
+        }
+
+    @Test
+    fun unknownSharpPreviewsFallsBackToWifiOnlyWithoutLosingOtherSettings() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit {
+                it[stringPreferencesKey("sharp_previews")] = "FUTURE_MODE"
+                it[booleanPreferencesKey("screen_privacy")] = true
+            }
+            val restored = SettingsStore(dataStore).settings.first()
+            assertEquals(SharpPreviewsMode.WIFI_ONLY, restored.sharpPreviews)
+            assertTrue(restored.screenPrivacyEnabled)
+        }
+
+    @Test
+    fun aMissingSharpPreviewsKeyDefaultsToWifiOnly() =
+        runTest {
+            assertEquals(
+                SharpPreviewsMode.WIFI_ONLY,
+                SettingsStore(backgroundScope.dataStore()).settings.first().sharpPreviews,
+            )
         }
 
     @Test

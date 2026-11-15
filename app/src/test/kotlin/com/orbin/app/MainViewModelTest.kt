@@ -2,7 +2,7 @@ package com.orbin.app
 
 import androidx.lifecycle.viewModelScope
 import com.google.common.truth.Truth.assertThat
-import com.orbin.core.common.network.NetworkMonitor
+import com.orbin.core.common.network.StaticNetworkMonitor
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppUpdateState
 import com.orbin.core.model.BoardId
@@ -50,7 +50,7 @@ class MainViewModelTest {
             Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
             val persisted = MutableSharedFlow<AppSettings>(replay = 1)
             val repository = mockk<SettingsRepository> { every { settings } returns persisted }
-            val network = mockk<NetworkMonitor> { every { isOnline } returns MutableStateFlow(true) }
+            val network = StaticNetworkMonitor(isOnline = true, isMetered = false)
             val updater = mockk<AppUpdater> { every { state } returns MutableStateFlow(AppUpdateState.Idle) }
             val preferences =
                 mockk<BoardPreferencesRepository> {
@@ -283,7 +283,7 @@ class MainViewModelTest {
         fun viewModel(): MainViewModel =
             MainViewModel(
                 repository,
-                mockk<NetworkMonitor> { every { isOnline } returns MutableStateFlow(true) },
+                StaticNetworkMonitor(isOnline = true, isMetered = false),
                 mockk<AppUpdater> { every { state } returns MutableStateFlow(AppUpdateState.Idle) },
                 preferences,
                 registry("fourchan", "bbwchan"),

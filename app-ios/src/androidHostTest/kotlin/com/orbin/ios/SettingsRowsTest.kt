@@ -3,6 +3,7 @@ package com.orbin.ios
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.uinext.OFF_LABEL
 import com.orbin.uinext.ON_LABEL
 import com.orbin.uinext.SettingKind
@@ -32,12 +33,13 @@ class SettingsRowsTest {
         assertTrue(groups.all { it.second.isNotEmpty() })
         val ids = groups.flatMap { it.second }.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
-        assertEquals(31, ids.size)
+        assertEquals(32, ids.size)
         assertEquals(
             setOf(
                 "themeMode",
                 "amoled",
                 "catalogMode",
+                "sharpPreviews",
                 "accentTheme",
                 "hideNsfw",
                 "coverViolent",
@@ -104,6 +106,29 @@ class SettingsRowsTest {
         }
 
     @Test
+    fun sharpPreviewsWritesThroughTheSharedRepositoryAndDefaultsToWifiOnly() =
+        runTest {
+            val repository = FakeSettings()
+            val reader = ReaderSettings(repository, FakeHistory(), backgroundScope)
+            runCurrent()
+            assertEquals(SharpPreviewsMode.WIFI_ONLY, reader.current.value.sharpPreviews)
+            reader.setSharpPreviews(SharpPreviewsMode.ALWAYS).join()
+            runCurrent()
+            assertEquals(SharpPreviewsMode.ALWAYS, repository.settings.value.sharpPreviews)
+            val reopened = ReaderSettings(repository, FakeHistory(), backgroundScope)
+            runCurrent()
+            assertEquals(SharpPreviewsMode.ALWAYS, reopened.current.value.sharpPreviews)
+            val row =
+                settingsGroups(AppSettings(), false, false)
+                    .flatMap { it.second }
+                    .single { it.id == SettingIds.SHARP_PREVIEWS }
+            assertEquals(SettingKind.CHOICE, row.kind)
+            assertEquals(listOf("Always", "Wi-Fi only", "Never"), row.options)
+            assertEquals("Wi-Fi only", row.value)
+            assertEquals(1, row.selected)
+        }
+
+    @Test
     fun theRowsShowTheCurrentSettings() {
         val rows =
             settingsGroups(
@@ -138,8 +163,11 @@ class SettingsRowsTest {
     @Test
     fun appearanceHasOnlyBrightnessAmoledAndDeviceWideCatalogView() {
         val appearance = settingsGroups(AppSettings(), false, false).single { it.first == "Appearance" }.second
-        assertEquals(listOf(SettingIds.THEME, SettingIds.AMOLED, SettingIds.CATALOG_MODE), appearance.map { it.id })
-        assertEquals(listOf("Theme", "AMOLED black", "Catalog view"), appearance.map { it.label })
+        assertEquals(
+            listOf(SettingIds.THEME, SettingIds.AMOLED, SettingIds.CATALOG_MODE, SettingIds.SHARP_PREVIEWS),
+            appearance.map { it.id },
+        )
+        assertEquals(listOf("Theme", "AMOLED black", "Catalog view", "Sharp previews"), appearance.map { it.label })
         val catalog = appearance.single { it.id == SettingIds.CATALOG_MODE }
         assertEquals(listOf("List", "Grid", "Card"), catalog.options)
         assertEquals("Grid", catalog.value)

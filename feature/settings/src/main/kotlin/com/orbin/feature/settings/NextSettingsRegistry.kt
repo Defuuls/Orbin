@@ -5,6 +5,7 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
+import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import com.orbin.core.model.VIDEO_CACHE_MEGABYTE_OPTIONS
 import com.orbin.uinext.OFF_LABEL
@@ -38,7 +39,7 @@ internal fun buildSettings(
             rows.historyAndMediaExtras(settings, vm) + rows.readingExtras(settings, vm) +
             rows.filterEditors(settings) + rows.strictDns(dns, vm)
     val data = rows.data(settings, vm, updateState, imageCacheLabel, videoCacheLabel, clearArmed, mediaCacheLabel)
-    val appearanceIds = setOf("themeMode", "accentTheme", "amoled", "catalogMode")
+    val appearanceIds = setOf("themeMode", "accentTheme", "amoled", "catalogMode", "sharpPreviews")
     val groups =
         listOf(
             strings.get(R.string.settings_section_appearance) to preferences.filter { it.id in appearanceIds },
@@ -255,6 +256,7 @@ private class Rows(
         selected: T,
         text: (T) -> String,
         onChange: (T) -> Unit,
+        hint: String? = null,
     ): SettingItem {
         choices[id] = { index -> values.getOrNull(index)?.let(onChange) }
         return SettingItem(
@@ -264,6 +266,7 @@ private class Rows(
             kind = SettingKind.CHOICE,
             options = values.map(text),
             selected = values.indexOf(selected),
+            hint = hint,
         )
     }
 
@@ -304,6 +307,15 @@ private class Rows(
             settings.catalogMode,
             CatalogMode::label,
             vm::setCatalogMode,
+        ),
+        choice(
+            "sharpPreviews",
+            strings.get(R.string.settings_sharp_previews),
+            SharpPreviewsMode.entries,
+            settings.sharpPreviews,
+            SharpPreviewsMode::label,
+            vm::setSharpPreviews,
+            hint = strings.get(R.string.settings_sharp_previews_hint),
         ),
         toggle(
             "biometric",

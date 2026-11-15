@@ -144,6 +144,8 @@ data class AppSettings(
     val tabletFeedColumns: Int = DEFAULT_WIDE_FEED_COLUMNS,
     /** Catalog presentation is shared by every board and saved on this device. */
     val catalogMode: CatalogMode = CatalogMode.GRID,
+    /** Whether card and grid views may load full-size still images. Default is Wi-Fi only. */
+    val sharpPreviews: SharpPreviewsMode = SharpPreviewsMode.WIFI_ONLY,
     val playbackPreferences: PlaybackPreferences = PlaybackPreferences(),
     /** Open comments from Home's chat button instead of the thread's videos. */
     val openThreadComments: Boolean = false,

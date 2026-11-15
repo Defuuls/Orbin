@@ -8,6 +8,8 @@ import co.touchlab.kermit.Logger
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.common.lock.AppLockController
+import com.orbin.core.common.network.NetworkMonitor
+import com.orbin.core.common.network.StaticNetworkMonitor
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.BoardId
@@ -115,6 +117,7 @@ class SubscribedFeedViewModel
         private val imagePreloader: ImagePreloader,
         private val videoPreloader: VideoPreloader? = null,
         @Dispatcher(OrbinDispatcher.Default) workDispatcher: CoroutineDispatcher = Dispatchers.Default,
+        networkMonitor: NetworkMonitor = StaticNetworkMonitor(),
     ) : ViewModel() {
         private val feedLoader = SubscribedFeedLoader()
         private val providers = registry.all()
@@ -216,6 +219,14 @@ class SubscribedFeedViewModel
         }
 
         private val refreshRequests = MutableStateFlow<Map<String, Int>>(emptyMap())
+
+        val isMetered: StateFlow<Boolean> =
+            networkMonitor.isMetered
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), true)
+
+        val isDataSaver: StateFlow<Boolean> =
+            networkMonitor.isDataSaver
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
 
         val settings: StateFlow<AppSettings> =
             settingsRepository.settings
