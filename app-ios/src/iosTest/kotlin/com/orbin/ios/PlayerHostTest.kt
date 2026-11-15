@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
+import com.orbin.core.model.MediaLibraryRecord
 import com.orbin.core.model.MediaType
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.UByteVar
@@ -16,6 +17,7 @@ import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.useContents
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.runBlocking
 import platform.AVFoundation.AVPlayerItemVideoOutput
 import platform.AVFoundation.AVURLAsset
 import platform.AVFoundation.addOutput
@@ -73,6 +75,8 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 /** Native host and decoder tests; these do not sample composited onscreen pixels. */
 class PlayerHostTest {
@@ -425,38 +429,40 @@ class PlayerHostTest {
 
     @Test
     fun webMUrlReplacementMountsTheNewViewAndRemovesTheOldOne() {
-        val url = mutableStateOf(FIRST_URL)
-        val visible = mutableStateOf(true)
-        val root =
-            // The Kotlin test executable has no app Info.plist. The shipped Xcode app supplies
-            // CADisableMinimumFrameDurationOnPhone; skip only that display-link check here.
-            ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
-                if (visible.value) NativeWebMPlayer(url.value, Modifier.fillMaxSize())
-            }
-        withWindow(root, disposeContent = { visible.value = false }) {
-            repeat(3) {
-                await { root.view.webViews().size == 1 }
-                val previous = root.view.webViews().single()
-                url.value = if (url.value == FIRST_URL) SECOND_URL else FIRST_URL
-                await {
-                    root.view
-                        .webViews()
-                        .singleOrNull()
-                        ?.let { it.objcPtr() != previous.objcPtr() } == true
+        withOwnedWebMFixtures { urls ->
+            val url = mutableStateOf(urls.first())
+            val visible = mutableStateOf(true)
+            val root =
+                // The Kotlin test executable has no app Info.plist. The shipped Xcode app supplies
+                // CADisableMinimumFrameDurationOnPhone; skip only that display-link check here.
+                ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
+                    if (visible.value) NativeWebMPlayer(url.value, Modifier.fillMaxSize())
                 }
-                val current = root.view.webViews().single()
-                await { current.bounds.useContents { size.width > 0 && size.height > 0 } }
-                visible.value = false
-                await { root.view.webViews().isEmpty() }
-                visible.value = true
-                await { root.view.webViews().size == 1 }
-                assertNotEquals(
-                    current.objcPtr(),
-                    root.view
-                        .webViews()
-                        .single()
-                        .objcPtr(),
-                )
+            withWindow(root, disposeContent = { visible.value = false }) {
+                repeat(3) {
+                    await { root.view.webViews().size == 1 }
+                    val previous = root.view.webViews().single()
+                    url.value = if (url.value == urls.first()) urls.last() else urls.first()
+                    await {
+                        root.view
+                            .webViews()
+                            .singleOrNull()
+                            ?.let { it.objcPtr() != previous.objcPtr() } == true
+                    }
+                    val current = root.view.webViews().single()
+                    await { current.bounds.useContents { size.width > 0 && size.height > 0 } }
+                    visible.value = false
+                    await { root.view.webViews().isEmpty() }
+                    visible.value = true
+                    await { root.view.webViews().size == 1 }
+                    assertNotEquals(
+                        current.objcPtr(),
+                        root.view
+                            .webViews()
+                            .single()
+                            .objcPtr(),
+                    )
+                }
             }
         }
     }
@@ -680,8 +686,44 @@ private fun WKWebView.assertDecodedPlayback() {
     assertTrue(playing[4] > 0.0, "WebKit reports decoded video frames")
 }
 
-private fun writeFeedFixture(encoded: String): String {
-    val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".mp4"
+/** Originals and staging use the same private-file bridge as the Saved media viewer. */
+private fun withOwnedWebMFixtures(block: (List<String>) -> Unit) {
+    val source = writeFeedFixture(PlaybackFixtures.WEBM, "webm")
+    val files = IosManagedMediaFiles()
+    val keys = List(2) { "webm-host-${NSUUID().UUIDString}" }
+    val staged = mutableListOf<String>()
+    try {
+        runBlocking {
+            keys.forEach { key ->
+                files.importFile(key, source)
+                staged +=
+                    stageSavedMedia(
+                        files,
+                        MediaLibraryRecord(
+                            id = key,
+                            providerId = "fixture",
+                            fileName = "$key.webm",
+                            mediaType = MediaType.VIDEO,
+                            storageKey = key,
+                        ),
+                    )
+            }
+        }
+        block(staged.map(::savedMediaFileUrl))
+    } finally {
+        runBlocking {
+            staged.forEach { releaseSavedMedia(it) }
+            keys.forEach { files.remove(it) }
+        }
+        NSFileManager.defaultManager.removeItemAtPath(source, error = null)
+    }
+}
+
+private fun writeFeedFixture(
+    encoded: String,
+    extension: String = "mp4",
+): String {
+    val path = NSTemporaryDirectory() + NSUUID().UUIDString + ".$extension"
     val bytes = Base64.decode(encoded)
     val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
     assertTrue(data.writeToFile(path, atomically = true))
@@ -770,15 +812,27 @@ private fun withWindow(
     }
 }
 
+// Nested media snapshots share their caller's deadline instead of multiplying five-second polls.
+private var nativeAwaitDeadline: TimeSource.Monotonic.ValueTimeMark? = null
+
 private fun await(
     failureMessage: () -> String = { "Native view did not reach the expected state within five seconds" },
     condition: () -> Boolean,
 ) {
-    repeat(100) {
-        if (condition()) return
-        NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.05))
+    val previousDeadline = nativeAwaitDeadline
+    val deadline = previousDeadline ?: (TimeSource.Monotonic.markNow() + 5.seconds)
+    nativeAwaitDeadline = deadline
+    try {
+        while (deadline.hasNotPassedNow()) {
+            if (condition()) return
+            if (deadline.hasNotPassedNow()) {
+                NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.05))
+            }
+        }
+        assertTrue(false, failureMessage())
+    } finally {
+        nativeAwaitDeadline = previousDeadline
     }
-    assertTrue(condition(), failureMessage())
 }
 
 private fun UIViewController.players(): List<AVPlayerViewController> =

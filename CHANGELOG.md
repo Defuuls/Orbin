@@ -6,6 +6,18 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [211-Alabaster] - 2026-11-15
+
+### Fixed
+- Prevented disposal of a previous iOS player from clearing the display controller after its replacement video had attached.
+
+### Testing
+- Exercised WebM replacement and reopening with real protected app-owned files while retaining local-file privacy restrictions.
+- Bounded nested native-player polling and frame-cache cleanup, and made foreground polling tests use one deterministic test clock.
+- Enabled independent Swift build, conversion and startup diagnostics after a native-test failure while preserving failed validation gates.
+- Added native crash-report collection to support diagnosis of platform failures.
+
+
 ## [210-Agate] - 2026-11-15
 
 ### Added
@@ -3207,7 +3219,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v210-Agate...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v211-Alabaster...HEAD
+[211-Alabaster]: https://github.com/Defuuls/Orbin/compare/v210-Agate...v211-Alabaster
 [210-Agate]: https://github.com/Defuuls/Orbin/compare/v209-Aegirine...v210-Agate
 [209-Aegirine]: https://github.com/Defuuls/Orbin/compare/v208-Adamite...v209-Aegirine
 [208-Adamite]: https://github.com/Defuuls/Orbin/compare/v207-Actinolite...v208-Adamite

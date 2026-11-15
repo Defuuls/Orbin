@@ -174,7 +174,9 @@ internal actual fun NativePlayer(
             center.removeObserver(observer)
             center.removeObserver(resignObserver)
             center.removeObserver(backgroundObserver)
-            controller.player = null
+            // URL replacement reuses the controller. An old effect may retire after UIKit has
+            // attached its successor; detach only the player this effect actually owns.
+            if (controller.player == player) controller.player = null
             NativePlaybackContinuity.retain(
                 url,
                 player,
