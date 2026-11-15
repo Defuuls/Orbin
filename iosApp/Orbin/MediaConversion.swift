@@ -97,16 +97,28 @@ final class OrbinMediaConverter {
         let support = try manager.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                       appropriateFor: nil, create: true)
         let directory = support.appendingPathComponent("Orbin/MediaExport/\(UUID().uuidString)", isDirectory: true)
-        try manager.createDirectory(at: directory, withIntermediateDirectories: true,
-                                    attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
-        var values = URLResourceValues()
-        values.isExcludedFromBackup = true
-        var protectedDirectory = directory
-        try protectedDirectory.setResourceValues(values)
+        let stagedInput = directory.appendingPathComponent("input.webm")
         let output = directory.appendingPathComponent("converted.mp4")
         do {
+            try manager.createDirectory(at: directory, withIntermediateDirectories: true,
+                                        attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            var protectedDirectory = directory
+            try protectedDirectory.setResourceValues(values)
+            guard [stagedInput.path, output.path].allSatisfy(Self.supportsPinnedArgument) else {
+                throw ConversionError.invalidInput
+            }
+            // The pinned backend joins argv and reparses without escapes. Copy to fixed names;
+            // never alter the caller's bytes or change its file protection through a hard link.
+            defer { try? manager.removeItem(at: stagedInput) }
+            try manager.copyItem(at: source, to: stagedInput)
+            try manager.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
+                                      ofItemAtPath: stagedInput.path)
+            try job.checkCancellation()
+            // The pinned ffprobe parser requires a quoted input to remain the last argument.
             let probe = try? command(["-v", "error", "-protocol_whitelist", "file,pipe", "-show_entries",
-                                      "format=duration,bit_rate", "-of", "json", source.path], probe: true, job: job)
+                                      "format=duration,bit_rate", "-of", "json", stagedInput.path], probe: true, job: job)
             let probeData = probe?.data(using: .utf8)
             let probeRoot = probeData.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
             let format = probeRoot?["format"] as? [String: Any]
@@ -117,7 +129,7 @@ final class OrbinMediaConverter {
             try job.checkCancellation()
             _ = try command([
                 "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-                "-protocol_whitelist", "file,pipe", "-i", source.path,
+                "-protocol_whitelist", "file,pipe", "-i", stagedInput.path,
                 "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
                 "-vf", "crop=trunc(iw/2)*2:trunc(ih/2)*2:0:0",
                 "-c:v", "h264_videotoolbox", "-allow_sw", "1", "-b:v", String(bitrate),
@@ -137,8 +149,16 @@ final class OrbinMediaConverter {
         }
     }
 
+    /// Exact pinned parser has raw double-quote delimiters, no escapes, and loses empty tokens.
+    static func supportsPinnedArgument(_ value: String) -> Bool {
+        !value.isEmpty && !value.contains("\"") &&
+            value.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) }
+    }
+
     private func command(_ arguments: [String], probe: Bool, job: Job) throws -> String {
-        // Native argv avoids shell parsing, including spaces/quotes in local filenames.
+        // No shell is involved, but this pinned native backend serializes and reparses argv.
+        // Ordinary spaces round-trip; quotes/controls require the fixed protected staging above.
+        guard arguments.allSatisfy(Self.supportsPinnedArgument) else { throw ConversionError.invalidInput }
         let allocated = arguments.map { strdup($0) }
         defer { allocated.forEach { free($0) } }
         guard allocated.allSatisfy({ $0 != nil }) else { throw ConversionError.failed }
