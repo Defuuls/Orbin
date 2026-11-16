@@ -1,31 +1,21 @@
-# Orbin 213 - Alexandrite
+# Orbin 214 - Allanite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 213
-codename = "Alexandrite"
-version_code = 231
+number = 214
+codename = "Allanite"
+version_code = 232
 
-highlight = "Simpler Boards, Feed, Library and Settings navigation, sharper image previews, and more reliable iOS media opening."
+highlight = "Smoother media scrolling without loading flashes, plus sharper thread previews."
 
 summary = [
-  "bump Orbin to 213-Alexandrite / versionCode 231",
-  "unify primary navigation and bring Watched, Saved and Downloads together in Library",
-  "add data-aware sharp previews and improve visual clarity and accessibility",
-  "fix iOS media opening after an unchanged thread refresh",
+  "bump Orbin to 214-Allanite / versionCode 232",
+  "eliminate image loading flashes while scrolling by aligning preloader and UI cache precision",
+  "use sharp previews for inline thread media and thread file albums",
 ]
 
 [changelog]
-Added = [
-  "Added Sharp previews (Always, Wi-Fi only, Never), defaulting to unmetered connections with Data Saver or Low Data Mode off. Card and grid previews keep thumbnails for videos, GIFs, unknown file sizes and images larger than 4 MiB.",
-]
 Changed = [
-  "Unified primary navigation around Boards, Feed, Library and Settings, with Watched, Saved and Downloads together in Library.",
-  "Improved board labels, grid title contrast, orange accents, magenta error indicators and underlined quote links.",
-  "Added navigation tooltips for large text and refreshed startup profiles for Home, Feed and Card view.",
-]
-Fixed = [
-  "Fixed iOS thread media opening as Not found after a refresh that returned unchanged content.",
-]
-Testing = [
-  "Expanded shared navigation, preview-policy and accessibility regression coverage, and made bundled iOS UI tests deterministic.",
+  "Aligned Coil cache precision between preloaders and UI image requests and set synchronous thumbnail placeholder cache keys to prevent blank flashes while scrolling.",
+  "Defaulted image rendering to medium filter quality for cleaner scaling.",
+  "Wired network-aware sharp preview selection into inline thread media and thread file albums.",
 ]
