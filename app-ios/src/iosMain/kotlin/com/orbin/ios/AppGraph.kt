@@ -121,9 +121,12 @@ internal object AppGraph {
         )
     val downloadDao = database.downloadDao()
 
-    /** The sites, with the same violent-media cover Android applies, following the same setting. */
+    /**
+     * The sites, with the same violent-media cover Android applies, following the same setting.
+     * Under the native UI tests' launch flag they answer from the bundled fixture instead.
+     */
     val providers =
-        shared.providers.map { provider ->
+        boardSources(shared.providers.toList(), bundledDirectoryLaunch).map { provider ->
             NsfwMediaCoverProvider(
                 ViolentMediaCoverProvider(provider) { settingsStore.settings.first().coverViolentMedia },
             ) { settingsStore.settings.first().coverNsfwMedia }
