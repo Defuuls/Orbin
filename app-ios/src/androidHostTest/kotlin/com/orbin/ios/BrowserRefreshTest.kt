@@ -187,6 +187,28 @@ class BrowserRefreshTest {
         }
 
     @Test
+    fun anUnchangedThreadRefreshKeepsThePreparedPresentationOnTheVisibleThread() =
+        runTest {
+            val fixture = Fixture()
+            val browser = fixture.browser(backgroundScope)
+            browser.firstRun.state.first { it.initialized && !it.needed }
+            browser.openThread(ThreadKey(FOURCHAN, BoardId("x"), ThreadId(7)))
+            browser.thread.settled()
+            val refresh = fixture.gate(FOURCHAN_THREAD)
+
+            // A live thread's automatic refresh usually finds nothing new: the same posts again.
+            browser.retry()
+            refresh.entered.await()
+            refresh.response.complete(Reply(thread(7, "Original thread")))
+            browser.threadRefreshing.first { !it }
+
+            val visible = assertIs<Load.Ready<Thread>>(browser.thread.value).value
+            // The media viewer pairs these by identity; an equal copy left it with no files, so
+            // every tap showed "Not found" until something in the thread changed.
+            assertSame(visible, assertNotNull(browser.preparedThread.value).thread)
+        }
+
+    @Test
     fun anotherThreadCannotShowThePreviousThreadsPostsWhileLoading() =
         runTest {
             val fixture = Fixture()
