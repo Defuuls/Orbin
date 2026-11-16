@@ -275,9 +275,13 @@ Before enabling distribution signing for sync, the Apple Developer team must:
 
 1. Register `iCloud.<bundle id>` (normally `iCloud.io.github.defuuls.orbin`) and associate it with
    Orbin's App ID using the CloudKit service.
-2. Create the `OrbinItem` record type in the container's Development schema, with String fields
-   `itemID`, `origin`, `payload`; Int64 fields `revision`, `deleted`, `hasFile`, `hasThumbnail`; and Asset fields
-   `file`, `thumbnail`. Allow queries for this record type, then deploy the schema to Production. Records live
+2. Create the `OrbinItem` record type in the container's Development schema, with **Encrypted
+   String** fields `secureItemID`, `secureOrigin`, `securePayload`; Int64 fields `revision`,
+   `deleted`, `hasFile`, `hasThumbnail`; and Asset fields `file`, `thumbnail`. The three encrypted
+   fields hold everything that says what the reader follows and saves, so they must not be
+   created as plain Strings: CloudKit fixes a field's type on first save and a plain field is
+   readable by Apple. Plain `itemID`, `origin` and `payload` are read only to migrate records an
+   earlier development build wrote; do not add them to a new schema. Allow queries for this record type, then deploy the schema to Production. Records live
    in the user's private `OrbinPortableData` zone, not a public database.
 3. Set repository variable `IOS_ICLOUD_ENABLED=true`. The archive then requests
    `Orbin/CloudSync.entitlements`; distribution export must produce a matching signed profile.
