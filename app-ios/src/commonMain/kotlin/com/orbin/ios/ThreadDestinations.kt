@@ -64,12 +64,12 @@ import com.orbin.ios.resources.ios_saved_export_confirm
 import com.orbin.ios.resources.ios_saved_export_title
 import com.orbin.ios.resources.ios_thread_offline_copy
 import com.orbin.ios.resources.ios_thread_requested_post_unavailable
-import com.orbin.uinext.ReaderMediaClose
-import com.orbin.uinext.ReaderMediaTitle
-import com.orbin.uinext.ReaderMediaToolbar
 import com.orbin.uinext.components.NextConfirmDialog
 import com.orbin.uinext.components.NextPullToRefresh
 import com.orbin.uinext.components.ReaderAppBar
+import com.orbin.uinext.components.ReaderMediaClose
+import com.orbin.uinext.components.ReaderMediaTitle
+import com.orbin.uinext.components.ReaderMediaToolbar
 import com.orbin.uinext.components.ReaderNavigation
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.rememberThreadInlineMediaState

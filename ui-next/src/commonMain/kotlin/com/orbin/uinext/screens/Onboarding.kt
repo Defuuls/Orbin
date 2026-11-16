@@ -45,15 +45,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.orbin.uinext.OrbinCard
-import com.orbin.uinext.OrbinWordmark
 import com.orbin.uinext.components.BoardIcon
 import com.orbin.uinext.components.ErrorNote
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
 import com.orbin.uinext.components.NextError
 import com.orbin.uinext.components.NextLoading
+import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.OrbinFilledButton
 import com.orbin.uinext.components.OrbinTextButton
+import com.orbin.uinext.components.OrbinWordmark
 import com.orbin.uinext.components.ReaderHairline
 import com.orbin.uinext.components.ReaderSettingsSwitch
 import com.orbin.uinext.components.nextClickable

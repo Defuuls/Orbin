@@ -32,14 +32,17 @@ import com.orbin.core.model.comparator
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.boardLabel
+import com.orbin.core.reader.threadRowId
 import com.orbin.core.ui.date.formatRelativeTime
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextPullToRefresh
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.sourceLabel
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -54,7 +57,6 @@ fun NextFeedScreen(
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     showRail: Boolean = true,
-    hideRailOnScroll: Boolean = true,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onCompactTitleVisibleChange: (Boolean) -> Unit = {},
     onOpenBoards: (() -> Unit)? = null,
@@ -244,115 +246,131 @@ fun NextFeedScreen(
                     StoredCatalogMode.CARD -> CatalogMode.CARD
                 }
             FeedScreen(
-                rows = rows,
-                emptyTitle = stringResource(R.string.feed_favorites_empty_title).takeIf { favoritesOnly },
-                emptyMessage = stringResource(R.string.feed_favorites_empty_message).takeIf { favoritesOnly },
-                isLoading = loading,
-                errorMessage = (uiState as? SubscribedFeedUiState.Error)?.message ?: emptyError,
-                onRetry = viewModel::refresh,
-                onLoadMore =
-                    (viewModel::loadMoreDiscovery).takeIf {
-                        state?.canLoadMore == true &&
-                            !state.isLoadingMore &&
-                            mappingCurrent &&
-                            (state.errorMessage == null || entries.isNotEmpty())
-                    },
-                loadMoreKey = state?.discoveryLimit,
-                subtitle = baseSubtitle,
-                statusMessage = statusSubtitle,
-                showRail = showRail,
-                headerContent = headerContent,
-                sourceLabels = sourceLabels,
-                selectedSource = selectedSource,
-                onSelectSource = onSelectSource,
-                query = localQuery,
-                onQueryChange = { localQuery = it },
-                mode = catalogMode,
-                downloadBadge = activeDownloads,
-                onModeChange = { selected ->
-                    viewModel.setCatalogMode(
-                        when (selected) {
-                            CatalogMode.LIST -> StoredCatalogMode.LIST
-                            CatalogMode.GRID -> StoredCatalogMode.GRID
-                            CatalogMode.CARD -> StoredCatalogMode.CARD
+                state =
+                    FeedScreenState(
+                        rows = rows,
+                        emptyTitle = stringResource(R.string.feed_favorites_empty_title).takeIf { favoritesOnly },
+                        emptyMessage = stringResource(R.string.feed_favorites_empty_message).takeIf { favoritesOnly },
+                        isLoading = loading,
+                        errorMessage = (uiState as? SubscribedFeedUiState.Error)?.message ?: emptyError,
+                        loadMoreKey = state?.discoveryLimit,
+                        subtitle = baseSubtitle,
+                        statusMessage = statusSubtitle,
+                        showRail = showRail,
+                        sourceLabels = sourceLabels,
+                        selectedSource = selectedSource,
+                        query = localQuery,
+                        mode = catalogMode,
+                        downloadBadge = activeDownloads,
+                        wideWindow = wideWindow,
+                        watchedBadge = watchedBadge,
+                        repliesOpenComments = settings.openThreadComments,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onRetry = viewModel::refresh,
+                        onLoadMore =
+                            (viewModel::loadMoreDiscovery).takeIf {
+                                state?.canLoadMore == true &&
+                                    !state.isLoadingMore &&
+                                    mappingCurrent &&
+                                    (state.errorMessage == null || entries.isNotEmpty())
+                            },
+                        onSelectSource = onSelectSource,
+                        onQueryChange = { localQuery = it },
+                        onModeChange = { selected ->
+                            viewModel.setCatalogMode(
+                                when (selected) {
+                                    CatalogMode.LIST -> StoredCatalogMode.LIST
+                                    CatalogMode.GRID -> StoredCatalogMode.GRID
+                                    CatalogMode.CARD -> StoredCatalogMode.CARD
+                                },
+                            )
                         },
-                    )
-                },
-                wideWindow = wideWindow,
-                hideRailOnScroll = hideRailOnScroll,
-                onChromeVisibleChange = onChromeVisibleChange,
-                onCompactTitleVisibleChange = onCompactTitleVisibleChange,
-                onSettings = onOpenSettings,
-                onOpenBoards = onOpenBoards,
-                onOpenDownloads = onOpenDownloads,
-                onOpenSearch = onOpenSearch,
-                onOpenSaved = onOpenSaved,
-                onOpenWatched = onOpenWatched,
-                onOpenLibrary = onOpenLibrary,
-                watchedBadge = watchedBadge,
-                onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
-                onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
-                onShareRow = { row ->
-                    byId[row.id]?.let { entry ->
-                        val intent =
-                            Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, entry.title)
-                                putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    listOfNotNull(entry.title, actionsViewModel.shareUrl(entry.key)).joinToString("\n"),
+                        onChromeVisibleChange = onChromeVisibleChange,
+                        onCompactTitleVisibleChange = onCompactTitleVisibleChange,
+                        onSettings = onOpenSettings,
+                        onOpenBoards = onOpenBoards,
+                        onOpenDownloads = onOpenDownloads,
+                        onOpenSearch = onOpenSearch,
+                        onOpenSaved = onOpenSaved,
+                        onOpenWatched = onOpenWatched,
+                        onOpenLibrary = onOpenLibrary,
+                        onToggleWatch = { row -> byId[row.id]?.let(actionsViewModel::toggleWatch) },
+                        onToggleSaved = { row -> byId[row.id]?.let(actionsViewModel::toggleSaved) },
+                        onShareRow = { row ->
+                            byId[row.id]?.let { entry ->
+                                val intent =
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_SUBJECT, entry.title)
+                                        putExtra(
+                                            Intent.EXTRA_TEXT,
+                                            listOfNotNull(
+                                                entry.title,
+                                                actionsViewModel.shareUrl(entry.key),
+                                            ).joinToString("\n"),
+                                        )
+                                    }
+                                context.startActivity(
+                                    Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                                 )
                             }
-                        context.startActivity(
-                            Intent.createChooser(intent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                        )
-                    }
-                },
+                        },
+                        onOpenRow = { row ->
+                            byId[row.id]?.let {
+                                onOpenThread(
+                                    it.key.provider.value,
+                                    it.key.board.value,
+                                    it.key.thread.value,
+                                    it.title,
+                                )
+                            }
+                        },
+                        onOpenReplies = { row ->
+                            byId[row.id]?.let {
+                                val open = if (settings.openThreadComments) onOpenThread else onOpenThreadVideos
+                                open(it.key.provider.value, it.key.board.value, it.key.thread.value, it.title)
+                            }
+                        },
+                        onOpenMedia = { row ->
+                            byId[row.id]?.let { entry ->
+                                val attachment = entry.attachment
+                                if (onOpenMedia != null && attachment != null) {
+                                    onOpenMedia(
+                                        entry.key.provider.value,
+                                        entry.key.board.value,
+                                        entry.key.thread.value,
+                                        attachment,
+                                    )
+                                } else {
+                                    onOpenThreadVideos(
+                                        entry.key.provider.value,
+                                        entry.key.board.value,
+                                        entry.key.thread.value,
+                                        entry.title,
+                                    )
+                                }
+                            }
+                        },
+                        onOpenBoard =
+                            onOpenBoard?.let { open ->
+                                { row ->
+                                    byId[row.id]?.let {
+                                        open(
+                                            it.key.provider.value,
+                                            it.key.board.value,
+                                            row.boardTitle,
+                                        )
+                                    }
+                                }
+                            },
+                    ),
+                headerContent = headerContent,
                 activityText = { row ->
                     byId[row.id]?.let { formatRelativeTime(it.activityMillis, nowMillis).orEmpty() }
                         ?: row.activity
                 },
-                onOpenRow = { row ->
-                    byId[row.id]?.let {
-                        onOpenThread(
-                            it.key.provider.value,
-                            it.key.board.value,
-                            it.key.thread.value,
-                            it.title,
-                        )
-                    }
-                },
-                onOpenReplies = { row ->
-                    byId[row.id]?.let {
-                        val open = if (settings.openThreadComments) onOpenThread else onOpenThreadVideos
-                        open(it.key.provider.value, it.key.board.value, it.key.thread.value, it.title)
-                    }
-                },
-                onOpenMedia = { row ->
-                    byId[row.id]?.let { entry ->
-                        val attachment = entry.attachment
-                        if (onOpenMedia != null && attachment != null) {
-                            onOpenMedia(
-                                entry.key.provider.value,
-                                entry.key.board.value,
-                                entry.key.thread.value,
-                                attachment,
-                            )
-                        } else {
-                            onOpenThreadVideos(
-                                entry.key.provider.value,
-                                entry.key.board.value,
-                                entry.key.thread.value,
-                                entry.title,
-                            )
-                        }
-                    }
-                },
-                repliesOpenComments = settings.openThreadComments,
-                onOpenBoard =
-                    onOpenBoard?.let { open ->
-                        { row -> byId[row.id]?.let { open(it.key.provider.value, it.key.board.value, row.boardTitle) } }
-                    },
                 thumbnail = { row, tileModifier ->
                     byId[row.id]?.attachment?.let { attachment ->
                         MediaThumbnail(
@@ -458,7 +476,7 @@ private fun CatalogThread.toEntry(
         activityMillis = activityMillis,
         row =
             FeedRow(
-                id = "${key.provider.value}/${key.board.value}/${key.thread.value}",
+                id = threadRowId(key.provider.value, key.board.value, key.thread.value),
                 subject = title,
                 board = boardLabel(key.board.value),
                 site = sourceLabel(key.provider.value),

@@ -18,8 +18,13 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.OpenThreadLinkDialog
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogSortTabs
 import com.orbin.uinext.screens.SearchScreen
 import com.orbin.uinext.screens.SearchState
+import com.orbin.uinext.screens.catalogSortTabs
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -40,16 +45,22 @@ class BrowsingFeatureParityTest {
             var selected by remember { mutableStateOf(CatalogSortTabs.BUMP_ORDER) }
             NextTheme(fontScale = 2f) {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = 0,
-                    rowAt = { null },
-                    sortTabs = catalogSortTabs(),
-                    selectedSortId = selected,
-                    onSelectSort = {
-                        selected = it
-                        chosen += it
-                    },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = 0,
+                            rowAt = { null },
+                            sortTabs = catalogSortTabs(),
+                            selectedSortId = selected,
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onSelectSort = {
+                                selected = it
+                                chosen += it
+                            },
+                        ),
                 )
             }
         }

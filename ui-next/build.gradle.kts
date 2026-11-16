@@ -120,11 +120,11 @@ abstract class GenerateReleaseNotes : DefaultTask() {
                     entries.joinToString("") { "                    ${quote(it)},\n" } +
                     "                ),\n            )"
             }
-        val file = outputDir.get().asFile.resolve("com/orbin/uinext/CurrentReleaseNotes.kt")
+        val file = outputDir.get().asFile.resolve("com/orbin/uinext/screens/CurrentReleaseNotes.kt")
         file.parentFile.mkdirs()
         file.writeText(
             "// Generated from CHANGELOG.md by :ui-next:generateReleaseNotes. Do not edit.\n" +
-                "package com.orbin.uinext\n\n" +
+                "package com.orbin.uinext.screens\n\n" +
                 "/** This build's release notes; empty when CHANGELOG.md has no section for it. */\n" +
                 "val CurrentReleaseNotes: ReleaseNotes =\n" +
                 "    ReleaseNotes(\n        ${quote(version)},\n        listOf(\n" +

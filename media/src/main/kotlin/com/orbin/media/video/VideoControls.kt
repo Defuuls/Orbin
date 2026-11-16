@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.ReaderMediaControls
+import com.orbin.uinext.components.ReaderMediaControls
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 

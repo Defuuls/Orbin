@@ -21,6 +21,8 @@ import com.google.common.truth.Truth.assertThat
 import com.orbin.uinext.components.FeedPlaybackControls
 import com.orbin.uinext.components.FeedPlaybackTags
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderMediaControls
+import com.orbin.uinext.components.ReaderMediaControlsTags
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,7 +1,6 @@
 package com.orbin.uinext.screens
 
 import androidx.compose.runtime.Composable
-import com.orbin.uinext.SettingItem
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_settings_about
 import com.orbin.uinext.resources.reader_settings_downloads

@@ -25,8 +25,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.OrbinCard
-import com.orbin.uinext.OrbinLogo
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_pane_thread
 import com.orbin.uinext.resources.reader_select_thread

@@ -22,9 +22,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.SettingFilterRule
-import com.orbin.uinext.SettingItem
-import com.orbin.uinext.SettingKind
 import com.orbin.uinext.components.InlineAction
 import com.orbin.uinext.components.NextIconAction
 import com.orbin.uinext.components.ReaderIcons

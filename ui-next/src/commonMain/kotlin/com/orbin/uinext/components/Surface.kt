@@ -62,8 +62,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.OrbinBottomBar
-import com.orbin.uinext.PendingBar
 import com.orbin.uinext.tokens.NextSpace
 import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
@@ -706,3 +704,18 @@ internal fun SkeletonGrid(modifier: Modifier = Modifier) {
 
 private const val SKELETON_CARDS = 6
 private const val SKELETON_TILE_ALPHA = 0.5f
+
+@Composable
+internal fun PendingBar(
+    width: androidx.compose.ui.unit.Dp,
+    height: androidx.compose.ui.unit.Dp,
+) {
+    Box(
+        modifier =
+            Modifier
+                .width(width)
+                .height(height)
+                .clip(RoundedCornerShape(3.dp))
+                .background(next.hairline),
+    )
+}

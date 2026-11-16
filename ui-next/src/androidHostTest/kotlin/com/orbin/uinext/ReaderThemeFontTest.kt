@@ -30,6 +30,14 @@ import com.orbin.uinext.components.NextPlatform
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.ReaderCatalogSearch
 import com.orbin.uinext.components.withReaderFont
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.tokens.LocalNextFontFamily
 import com.orbin.uinext.tokens.OrbinType
 import org.junit.Assert.assertEquals
@@ -220,17 +228,27 @@ class ReaderThemeFontTest(
                 when (screen) {
                     0 ->
                         FeedScreen(
-                            rows = listOf(fontRow("Home typeface fixture")),
-                            onOpenBoards = {},
-                            onOpenSearch = {},
-                            onSettings = {},
+                            state =
+                                FeedScreenState(
+                                    rows = listOf(fontRow("Home typeface fixture")),
+                                ),
+                            actions =
+                                FeedScreenActions(
+                                    onOpenBoards = {},
+                                    onOpenSearch = {},
+                                    onSettings = {},
+                                ),
                         )
                     1 ->
                         BoardScreen(
-                            board = "/g/",
-                            description = "Typeface catalog",
-                            itemCount = 1,
-                            rowAt = { fontRow("Catalog typeface fixture") },
+                            state =
+                                BoardScreenState(
+                                    board = "/g/",
+                                    description = "Typeface catalog",
+                                    itemCount = 1,
+                                    rowAt = { fontRow("Catalog typeface fixture") },
+                                ),
+                            actions = BoardScreenActions(),
                         )
                     2 ->
                         SettingsScreen(

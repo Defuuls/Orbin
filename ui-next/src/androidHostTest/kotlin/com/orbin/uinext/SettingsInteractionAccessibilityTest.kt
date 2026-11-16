@@ -27,6 +27,8 @@ import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.screens.OnboardingBoard
 import com.orbin.uinext.screens.OnboardingBoards
 import com.orbin.uinext.screens.OnboardingScreen
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingsScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

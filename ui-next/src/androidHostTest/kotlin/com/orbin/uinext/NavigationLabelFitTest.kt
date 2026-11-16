@@ -24,7 +24,10 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OrbinBottomBar
 import com.orbin.uinext.components.OrbinNavigationTags
+import com.orbin.uinext.components.OrbinSideBar
+import com.orbin.uinext.components.tabLabelStyle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

@@ -42,10 +42,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.OrbinCard
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
 import com.orbin.uinext.components.NextConfirmDialog
 import com.orbin.uinext.components.NextLinearProgress
+import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.PlatformSegments
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderSpoilerCover

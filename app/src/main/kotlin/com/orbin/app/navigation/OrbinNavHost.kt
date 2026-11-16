@@ -35,11 +35,11 @@ import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
-import com.orbin.uinext.OrbinBottomBar
 import com.orbin.uinext.components.LibrarySection
 import com.orbin.uinext.components.LocalOrbinNavigationAtSide
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextScaffold
+import com.orbin.uinext.components.OrbinBottomBar
 import com.orbin.uinext.components.ReaderAction
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderScaffold
@@ -98,7 +98,6 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
-                hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
                 onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },

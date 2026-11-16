@@ -19,11 +19,21 @@ import androidx.compose.ui.test.performScrollToNode
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.NextTitleTags
+import com.orbin.uinext.components.OrbinStyle
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
 import com.orbin.uinext.screens.BoardTile
 import com.orbin.uinext.screens.BoardsScreen
 import com.orbin.uinext.screens.BoardsTags
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.CatalogTags
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import com.orbin.uinext.screens.MediaCell
 import com.orbin.uinext.screens.MediaWallScreen
+import com.orbin.uinext.screens.ReaderFeedTags
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,9 +52,13 @@ class ScrollingHeaderTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows(),
-                    showRail = false,
-                    sourceLabels = listOf("All followed sites", "4chan"),
+                    state =
+                        FeedScreenState(
+                            rows = rows(),
+                            showRail = false,
+                            sourceLabels = listOf("All followed sites", "4chan"),
+                        ),
+                    actions = FeedScreenActions(),
                 )
             }
         }
@@ -63,10 +77,14 @@ class ScrollingHeaderTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows(),
-                    showRail = false,
-                    mode = CatalogMode.GRID,
-                    sourceLabels = listOf("All followed sites", "4chan"),
+                    state =
+                        FeedScreenState(
+                            rows = rows(),
+                            showRail = false,
+                            mode = CatalogMode.GRID,
+                            sourceLabels = listOf("All followed sites", "4chan"),
+                        ),
+                    actions = FeedScreenActions(),
                 )
             }
         }
@@ -85,10 +103,14 @@ class ScrollingHeaderTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = rows.size,
-                    rowAt = { index -> rows.getOrNull(index) },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = rows.size,
+                            rowAt = { index -> rows.getOrNull(index) },
+                        ),
+                    actions = BoardScreenActions(),
                 )
             }
         }

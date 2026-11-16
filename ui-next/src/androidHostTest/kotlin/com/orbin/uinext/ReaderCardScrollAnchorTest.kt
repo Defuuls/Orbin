@@ -22,6 +22,16 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.Surface
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.CatalogTags
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ORBIN_CATALOG_GUTTER
+import com.orbin.uinext.screens.ReaderFeedTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -55,20 +65,28 @@ class ReaderCardScrollAnchorTest(
                     when (surface) {
                         Surface.HOME ->
                             FeedScreen(
-                                rows = rows,
-                                mode = mode,
-                                wideWindow = true,
+                                state =
+                                    FeedScreenState(
+                                        rows = rows,
+                                        mode = mode,
+                                        wideWindow = true,
+                                    ),
+                                actions = FeedScreenActions(),
                                 thumbnail = { _, modifier -> Box(modifier) },
                             )
                         Surface.BOARD ->
                             BoardScreen(
-                                board = "/g/",
-                                description = "Technology",
-                                itemCount = rows.size,
-                                rowAt = { rows.getOrNull(it) },
-                                mode = mode,
-                                wideWindow = true,
-                                state = boardState,
+                                state =
+                                    BoardScreenState(
+                                        board = "/g/",
+                                        description = "Technology",
+                                        itemCount = rows.size,
+                                        rowAt = { rows.getOrNull(it) },
+                                        mode = mode,
+                                        wideWindow = true,
+                                    ),
+                                actions = BoardScreenActions(),
+                                gridState = boardState,
                                 thumbnail = { _, modifier -> Box(modifier) },
                             )
                     }
@@ -153,12 +171,18 @@ class ReaderCardRestoredScrollAnchorTest {
             NextTheme {
                 Box(Modifier.requiredSize(800.dp, 1000.dp)) {
                     FeedScreen(
-                        rows = if (source == 0) first else second,
-                        sourceLabels = listOf("First source", "Second source"),
-                        selectedSource = source,
-                        onSelectSource = { source = it },
-                        mode = mode,
-                        wideWindow = true,
+                        state =
+                            FeedScreenState(
+                                rows = if (source == 0) first else second,
+                                sourceLabels = listOf("First source", "Second source"),
+                                selectedSource = source,
+                                mode = mode,
+                                wideWindow = true,
+                            ),
+                        actions =
+                            FeedScreenActions(
+                                onSelectSource = { source = it },
+                            ),
                         thumbnail = { _, modifier -> Box(modifier) },
                     )
                 }
@@ -203,13 +227,17 @@ class ReaderCardRestoredScrollAnchorTest {
             NextTheme {
                 Box(Modifier.requiredSize(800.dp, 1000.dp)) {
                     BoardScreen(
-                        board = "/g/",
-                        description = description,
-                        itemCount = rows.size,
-                        rowAt = { rows.getOrNull(it) },
-                        mode = CatalogMode.CARD,
-                        wideWindow = true,
-                        state = state,
+                        state =
+                            BoardScreenState(
+                                board = "/g/",
+                                description = description,
+                                itemCount = rows.size,
+                                rowAt = { rows.getOrNull(it) },
+                                mode = CatalogMode.CARD,
+                                wideWindow = true,
+                            ),
+                        actions = BoardScreenActions(),
+                        gridState = state,
                         thumbnail = { _, modifier -> Box(modifier) },
                     )
                 }

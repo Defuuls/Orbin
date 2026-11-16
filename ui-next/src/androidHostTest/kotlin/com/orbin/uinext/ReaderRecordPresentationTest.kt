@@ -14,6 +14,7 @@ import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.screens.ReaderCollectionTags
 import com.orbin.uinext.screens.ReaderSavedTags
+import com.orbin.uinext.screens.ReaderSearchTags
 import com.orbin.uinext.screens.SearchRow
 import com.orbin.uinext.screens.SearchScreen
 import com.orbin.uinext.screens.SearchState

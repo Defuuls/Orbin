@@ -32,6 +32,12 @@ import com.orbin.uinext.components.NextPlatform
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.PlatformSwitch
 import com.orbin.uinext.components.SchematicSearch
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ReaderFeedTags
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderDarkColors
@@ -118,7 +124,16 @@ class ReaderControlPaletteTest(
         val row = FeedRow("Palette fixture", "/g/", "1m", 2, 0, hasPreview = false, watched = true)
         compose.setContent {
             NextTheme(darkTheme = mode != "light", amoled = mode == "amoled") {
-                FeedScreen(rows = listOf(row), onToggleWatch = {})
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = listOf(row),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onToggleWatch = {},
+                        ),
+                )
             }
         }
         compose.onNodeWithTag(ReaderFeedTags.more(row.id)).assertDoesNotExist()

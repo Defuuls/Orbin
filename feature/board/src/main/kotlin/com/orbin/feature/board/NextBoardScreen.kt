@@ -29,9 +29,6 @@ import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.boardLabel
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.BoardScreen
-import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.catalogSortTabs
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextPullToRefresh
@@ -40,10 +37,15 @@ import com.orbin.uinext.components.ReaderBoardPicker
 import com.orbin.uinext.components.ReaderCatalogSearch
 import com.orbin.uinext.components.ReaderNavigation
 import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
 import com.orbin.uinext.screens.ReaderCatalogSkeleton
 import com.orbin.uinext.screens.ReaderEmptyState
 import com.orbin.uinext.screens.ReaderErrorState
 import com.orbin.uinext.screens.ReaderRefreshFailure
+import com.orbin.uinext.screens.catalogSortTabs
 import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 /** A paged catalog keeps its frame and loaded rows through refresh failures. */
@@ -142,58 +144,66 @@ fun NextBoardScreen(
             Box(Modifier.fillMaxSize()) {
                 NextPullToRefresh(isRefreshing = load.isRefreshing, onRefresh = threads::refresh) {
                     BoardScreen(
-                        board = board,
-                        description = viewModel.title,
-                        itemCount = matching.size,
-                        rowAt = rowFor,
-                        rowKey = { index -> catalogItemKey(matching[index]) },
-                        sortLabel = catalogSort.label,
-                        onSort = viewModel::cycleCatalogSort,
-                        sortTabs = catalogSortTabs(),
-                        selectedSortId = catalogSort.name,
-                        onSelectSort = { id ->
-                            runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(viewModel::setCatalogSort)
-                        },
-                        navigation =
-                            if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
-                        onNavigation = onBack ?: {},
-                        onPickBoard =
-                            onOpenBoard?.let {
-                                {
-                                    picker.refresh()
-                                    pickerVisible = true
-                                }
-                            },
-                        onSearch = {
-                            searchVisible = !searchVisible
-                            if (!searchVisible) query = ""
-                        },
-                        onOpenBrowser = browserUrl?.let { url -> { uriHandler.openUri(url) } },
-                        onOpenMedia = onOpenMedia?.let { open -> { open(viewModel.boardId) } },
-                        onOpenRow = { row ->
-                            row.threadId()?.let { id ->
-                                onOpenThread(
-                                    viewModel.providerId,
-                                    viewModel.boardId,
-                                    id,
-                                    byThreadId[id]?.originalPost?.subject ?: "No.$id",
-                                )
-                            }
-                        },
-                        mode = mode,
-                        onModeChange = { selected ->
-                            viewModel.setCatalogMode(
-                                when (selected) {
-                                    CatalogMode.LIST -> StoredCatalogMode.LIST
-                                    CatalogMode.GRID -> StoredCatalogMode.GRID
-                                    CatalogMode.CARD -> StoredCatalogMode.CARD
+                        state =
+                            BoardScreenState(
+                                board = board,
+                                description = viewModel.title,
+                                itemCount = matching.size,
+                                rowAt = rowFor,
+                                rowKey = { index -> catalogItemKey(matching[index]) },
+                                sortLabel = catalogSort.label,
+                                sortTabs = catalogSortTabs(),
+                                selectedSortId = catalogSort.name,
+                                navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+                                mode = mode,
+                                reloading = load.isRefreshing,
+                                wideWindow = wide,
+                                selectedRowId =
+                                    selectedThread?.let {
+                                        "${viewModel.providerId}/${viewModel.boardId}/$it"
+                                    },
+                            ),
+                        actions =
+                            BoardScreenActions(
+                                onSort = viewModel::cycleCatalogSort,
+                                onSelectSort = { id ->
+                                    runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(viewModel::setCatalogSort)
                                 },
-                            )
-                        },
-                        onReload = threads::refresh,
-                        reloading = load.isRefreshing,
-                        wideWindow = wide,
-                        selectedRowId = selectedThread?.let { "${viewModel.providerId}/${viewModel.boardId}/$it" },
+                                onNavigation = onBack ?: {},
+                                onPickBoard =
+                                    onOpenBoard?.let {
+                                        {
+                                            picker.refresh()
+                                            pickerVisible = true
+                                        }
+                                    },
+                                onSearch = {
+                                    searchVisible = !searchVisible
+                                    if (!searchVisible) query = ""
+                                },
+                                onOpenBrowser = browserUrl?.let { url -> { uriHandler.openUri(url) } },
+                                onOpenMedia = onOpenMedia?.let { open -> { open(viewModel.boardId) } },
+                                onOpenRow = { row ->
+                                    row.threadId()?.let { id ->
+                                        onOpenThread(
+                                            viewModel.providerId,
+                                            viewModel.boardId,
+                                            id,
+                                            byThreadId[id]?.originalPost?.subject ?: "No.$id",
+                                        )
+                                    }
+                                },
+                                onModeChange = { selected ->
+                                    viewModel.setCatalogMode(
+                                        when (selected) {
+                                            CatalogMode.LIST -> StoredCatalogMode.LIST
+                                            CatalogMode.GRID -> StoredCatalogMode.GRID
+                                            CatalogMode.CARD -> StoredCatalogMode.CARD
+                                        },
+                                    )
+                                },
+                                onReload = threads::refresh,
+                            ),
                         headerContent =
                             if (searchVisible) {
                                 {

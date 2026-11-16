@@ -51,12 +51,16 @@ import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
-import com.orbin.uinext.BoardScreen
-import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.FeedScreen
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.ReaderTwoPane
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import com.orbin.uinext.screens.ThreadLayout
 import com.orbin.uinext.screens.ThreadScreen
 import kotlinx.collections.immutable.persistentListOf
@@ -171,22 +175,28 @@ private fun ReaderBenchmarkFixture(
             }
             SideEffect { counters.catalogCompositions += 1 }
             BoardScreen(
+                state =
+                    BoardScreenState(
+                        board = "/bench/",
+                        description = "Reader benchmark",
+                        itemCount = data.rows.size,
+                        rowAt = data.rows::getOrNull,
+                        rowKey = { data.rows[it].id },
+                        mode =
+                            when (journey) {
+                                "catalog-grid" -> CatalogMode.GRID
+                                "catalog-card" -> CatalogMode.CARD
+                                else -> CatalogMode.LIST
+                            },
+                        selectedRowId = selected?.id,
+                        wideWindow = wide,
+                    ),
+                actions =
+                    BoardScreenActions(
+                        onOpenRow = { selected = it },
+                    ),
                 modifier = Modifier.onSizeChanged { geometry.catalogWidthPx = it.width },
-                board = "/bench/",
-                description = "Reader benchmark",
-                itemCount = data.rows.size,
-                rowAt = data.rows::getOrNull,
-                rowKey = { data.rows[it].id },
-                mode =
-                    when (journey) {
-                        "catalog-grid" -> CatalogMode.GRID
-                        "catalog-card" -> CatalogMode.CARD
-                        else -> CatalogMode.LIST
-                    },
-                state = catalogState,
-                onOpenRow = { selected = it },
-                selectedRowId = selected?.id,
-                wideWindow = wide,
+                gridState = catalogState,
                 thumbnail = { _, modifier -> thumbnail(modifier) },
             )
         }
@@ -228,10 +238,14 @@ private fun ReaderBenchmarkFixture(
             // The redesign's Home feed in card view: the real FeedScreen with the fixture rows.
             "home-feed" ->
                 FeedScreen(
-                    rows = data.rows,
+                    state =
+                        FeedScreenState(
+                            rows = data.rows,
+                            mode = CatalogMode.CARD,
+                            wideWindow = wide,
+                        ),
+                    actions = FeedScreenActions(),
                     modifier = Modifier.onSizeChanged { geometry.catalogWidthPx = it.width },
-                    mode = CatalogMode.CARD,
-                    wideWindow = wide,
                     thumbnail = { _, modifier -> thumbnail(modifier) },
                 )
             else -> catalog()

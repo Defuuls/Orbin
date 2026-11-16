@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.orbin.uinext.OrbinCard
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_confirm_cancel
 import com.orbin.uinext.resources.next_confirm_delete

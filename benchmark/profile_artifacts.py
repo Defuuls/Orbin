@@ -18,10 +18,10 @@ CASES = ("startup", "catalogList", "catalogGrid", "thread", "files", "twoPane", 
 CLASS = "com.orbin.benchmark.BaselineProfileGenerator"
 FIXTURE = "Lcom/orbin/app/benchmark/"
 READERS = (
-    "Lcom/orbin/uinext/BoardCatalogKt;",
+    "Lcom/orbin/uinext/screens/BoardCatalogKt;",
     "Lcom/orbin/uinext/screens/ThreadKt;",
     "Lcom/orbin/uinext/components/ReaderTwoPaneKt;",
-    "Lcom/orbin/uinext/FeedScreenKt;",
+    "Lcom/orbin/uinext/screens/FeedScreenKt;",
     "Lcom/orbin/core/reader/ThreadPresentationKt;",
 )
 MAIN = "Lcom/orbin/app/MainActivity;"

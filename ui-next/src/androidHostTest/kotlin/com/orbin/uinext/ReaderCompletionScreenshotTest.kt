@@ -19,11 +19,16 @@ import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.MediaKind
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OrbinBottomBar
 import com.orbin.uinext.components.ReaderNavigation
 import com.orbin.uinext.components.ReaderScaffold
 import com.orbin.uinext.components.ReaderTwoPane
 import com.orbin.uinext.components.canonicalNextPalette
 import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
 import com.orbin.uinext.screens.MediaCell
 import com.orbin.uinext.screens.Post
 import com.orbin.uinext.screens.ThreadLayout
@@ -192,25 +197,31 @@ private fun CompletionCatalogContent(
     selected: Boolean,
 ) {
     BoardScreen(
-        board = "/g/",
-        description = "Technology",
-        itemCount = completionRows.size,
-        rowAt = { completionRows.getOrNull(it) },
-        mode = mode,
-        onModeChange = {},
-        sortLabel = "Bump order",
-        onSort = {},
-        onOpenMedia = {},
-        onOpenRow = {},
+        state =
+            BoardScreenState(
+                board = "/g/",
+                description = "Technology",
+                itemCount = completionRows.size,
+                rowAt = { completionRows.getOrNull(it) },
+                mode = mode,
+                sortLabel = "Bump order",
+                navigation = ReaderNavigation.NONE,
+                wideWindow = wideWindow,
+                selectedRowId = completionRows.first().id.takeIf { selected },
+            ),
+        actions =
+            BoardScreenActions(
+                onModeChange = {},
+                onSort = {},
+                onOpenMedia = {},
+                onOpenRow = {},
+                onNavigation = {},
+                onPickBoard = {},
+                onReload = {},
+                onSearch = {},
+                onOpenBrowser = {},
+            ),
         thumbnail = { _, modifier -> CompletionThumbnail(modifier) },
-        navigation = ReaderNavigation.NONE,
-        onNavigation = {},
-        onPickBoard = {},
-        onReload = {},
-        onSearch = {},
-        wideWindow = wideWindow,
-        selectedRowId = completionRows.first().id.takeIf { selected },
-        onOpenBrowser = {},
     )
 }
 

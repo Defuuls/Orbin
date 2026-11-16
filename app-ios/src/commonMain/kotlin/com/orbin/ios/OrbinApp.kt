@@ -22,9 +22,6 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
 import com.orbin.domain.repository.WhatsNewRepository
-import com.orbin.uinext.OrbinSideBar
-import com.orbin.uinext.UpdateThemeConfig
-import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.components.LibraryNavigation
 import com.orbin.uinext.components.LocalLibraryNavigation
 import com.orbin.uinext.components.NextDestination
@@ -32,6 +29,7 @@ import com.orbin.uinext.components.NextLoading
 import com.orbin.uinext.components.NextPlatform
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.OrbinAdaptiveNavigation
+import com.orbin.uinext.components.OrbinSideBar
 import com.orbin.uinext.components.canonicalNextPalette
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.readerKeyboardShortcuts
@@ -41,6 +39,8 @@ import com.orbin.uinext.screens.OnboardingBoards
 import com.orbin.uinext.screens.OnboardingScreen
 import com.orbin.uinext.screens.OnboardingSetupConfig
 import com.orbin.uinext.screens.SetupThemeOption
+import com.orbin.uinext.screens.UpdateThemeConfig
+import com.orbin.uinext.screens.WhatsNewOnUpdate
 import kotlinx.coroutines.flow.map
 
 /**

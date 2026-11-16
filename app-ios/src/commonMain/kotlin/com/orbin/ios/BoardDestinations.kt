@@ -39,9 +39,6 @@ import com.orbin.ios.resources.ios_catalog_empty_title
 import com.orbin.ios.resources.ios_catalog_no_matches_message
 import com.orbin.ios.resources.ios_catalog_no_matches_title
 import com.orbin.ios.resources.ios_reader_reload
-import com.orbin.uinext.BoardScreen
-import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.catalogSortTabs
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextPullToRefresh
 import com.orbin.uinext.components.ReaderAction
@@ -52,12 +49,17 @@ import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderNavigation
 import com.orbin.uinext.components.ReaderScaffold
 import com.orbin.uinext.components.ReaderTwoPane
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
 import com.orbin.uinext.screens.MediaWallScreen
 import com.orbin.uinext.screens.ReaderCatalogSkeleton
 import com.orbin.uinext.screens.ReaderEmptyState
 import com.orbin.uinext.screens.ReaderErrorState
 import com.orbin.uinext.screens.ReaderRefreshFailure
 import com.orbin.uinext.screens.ReaderRefreshProgress
+import com.orbin.uinext.screens.catalogSortTabs
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 import com.orbin.core.model.CatalogMode as StoredCatalogMode
@@ -174,42 +176,47 @@ internal fun CatalogDestination(
                             }
                     }
                 BoardScreen(
-                    wideWindow = wide,
-                    navigation =
-                        if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
-                    onNavigation = onBack ?: {},
-                    onPickBoard = { pickerVisible = true },
-                    onSearch = {
-                        searchVisible = !searchVisible
-                        if (!searchVisible) query = ""
-                    },
-                    onReload = reload,
-                    reloading = refreshing || catalog is Load.Loading,
-                    board = "/${board.board.id.value}/",
-                    description = board.board.title,
-                    itemCount = rows.size,
-                    selectedRowId = selectedThread?.catalogRowId,
-                    rowAt = { index -> rows.getOrNull(index) },
-                    sortLabel = sort.label,
-                    onSort = browser::cycleCatalogSort,
-                    sortTabs = catalogSortTabs(),
-                    selectedSortId = sort.name,
-                    onSelectSort = { id ->
-                        runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(browser::setCatalogSort)
-                    },
-                    mode = mode,
-                    onModeChange = { selected ->
-                        browser.settings.setCatalogMode(
-                            when (selected) {
-                                CatalogMode.LIST -> StoredCatalogMode.LIST
-                                CatalogMode.GRID -> StoredCatalogMode.GRID
-                                CatalogMode.CARD -> StoredCatalogMode.CARD
+                    state =
+                        BoardScreenState(
+                            wideWindow = wide,
+                            navigation = if (onBack != null) ReaderNavigation.BACK else ReaderNavigation.NONE,
+                            reloading = refreshing || catalog is Load.Loading,
+                            board = "/${board.board.id.value}/",
+                            description = board.board.title,
+                            itemCount = rows.size,
+                            selectedRowId = selectedThread?.catalogRowId,
+                            rowAt = { index -> rows.getOrNull(index) },
+                            sortLabel = sort.label,
+                            sortTabs = catalogSortTabs(),
+                            selectedSortId = sort.name,
+                            mode = mode,
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onNavigation = onBack ?: {},
+                            onPickBoard = { pickerVisible = true },
+                            onSearch = {
+                                searchVisible = !searchVisible
+                                if (!searchVisible) query = ""
                             },
-                        )
-                    },
-                    onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
-                    onOpenMedia = { browser.open(Route.BoardMedia(board)) },
-                    onOpenBrowser = webUrl?.let { url -> { uriHandler.openUri(url) } },
+                            onReload = reload,
+                            onSort = browser::cycleCatalogSort,
+                            onSelectSort = { id ->
+                                runCatching { CatalogSort.valueOf(id) }.getOrNull()?.let(browser::setCatalogSort)
+                            },
+                            onModeChange = { selected ->
+                                browser.settings.setCatalogMode(
+                                    when (selected) {
+                                        CatalogMode.LIST -> StoredCatalogMode.LIST
+                                        CatalogMode.GRID -> StoredCatalogMode.GRID
+                                        CatalogMode.CARD -> StoredCatalogMode.CARD
+                                    },
+                                )
+                            },
+                            onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.key) } },
+                            onOpenMedia = { browser.open(Route.BoardMedia(board)) },
+                            onOpenBrowser = webUrl?.let { url -> { uriHandler.openUri(url) } },
+                        ),
                     headerContent =
                         if (searchVisible) {
                             {

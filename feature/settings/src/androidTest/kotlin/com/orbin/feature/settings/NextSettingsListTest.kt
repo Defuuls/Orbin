@@ -16,9 +16,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.AppSettings
 import com.orbin.core.testing.repository.FakeSettingsRepository
-import com.orbin.uinext.SettingKind
-import com.orbin.uinext.SettingsScreen
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.SettingKind
+import com.orbin.uinext.screens.SettingsScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

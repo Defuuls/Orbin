@@ -23,23 +23,23 @@ STARTUP = (
 )
 PROFILES = {
     "startup": STARTUP,
-    "catalogList": "Lcom/orbin/uinext/BoardCatalogKt;\nSPLcom/orbin/uinext/BoardCatalogKt;->render()V\n",
-    "catalogGrid": "HPLcom/orbin/uinext/BoardCatalogKt;->render()V\n",
+    "catalogList": "Lcom/orbin/uinext/screens/BoardCatalogKt;\nSPLcom/orbin/uinext/screens/BoardCatalogKt;->render()V\n",
+    "catalogGrid": "HPLcom/orbin/uinext/screens/BoardCatalogKt;->render()V\n",
     "thread": "Lcom/orbin/uinext/screens/ThreadKt;\nSPLcom/orbin/uinext/screens/ThreadKt;->render([ILjava/lang/Object;)V\n",
     "files": "Lcom/orbin/core/reader/ThreadPresentationKt;\n",
     "twoPane": "Lcom/orbin/uinext/components/ReaderTwoPaneKt;\n",
-    "homeFeed": "Lcom/orbin/uinext/FeedScreenKt;\n",
-    "catalogCard": "Lcom/orbin/uinext/BoardCatalogKt;\n",
+    "homeFeed": "Lcom/orbin/uinext/screens/FeedScreenKt;\n",
+    "catalogCard": "Lcom/orbin/uinext/screens/BoardCatalogKt;\n",
 }
 # Explicitly expected official selection: HP is lexically first; flags are not unioned into HSP.
 BASELINE = STARTUP + (
-    "Lcom/orbin/uinext/BoardCatalogKt;\n"
-    "HPLcom/orbin/uinext/BoardCatalogKt;->render()V\n"
+    "Lcom/orbin/uinext/screens/BoardCatalogKt;\n"
+    "HPLcom/orbin/uinext/screens/BoardCatalogKt;->render()V\n"
     "Lcom/orbin/uinext/screens/ThreadKt;\n"
     "SPLcom/orbin/uinext/screens/ThreadKt;->render([ILjava/lang/Object;)V\n"
     "Lcom/orbin/core/reader/ThreadPresentationKt;\n"
     "Lcom/orbin/uinext/components/ReaderTwoPaneKt;\n"
-    "Lcom/orbin/uinext/FeedScreenKt;\n"
+    "Lcom/orbin/uinext/screens/FeedScreenKt;\n"
 )
 
 
@@ -280,7 +280,7 @@ class ProfileArtifactsTest(unittest.TestCase):
         self.aggregate()
         self.generate()
         path = self.generated / "baseline-prof.txt"
-        path.write_text(BASELINE.replace("HPLcom/orbin/uinext/BoardCatalogKt;", "HSPLcom/orbin/uinext/BoardCatalogKt;"))
+        path.write_text(BASELINE.replace("HPLcom/orbin/uinext/screens/BoardCatalogKt;", "HSPLcom/orbin/uinext/screens/BoardCatalogKt;"))
         with self.assertRaisesRegex(ProfileError, "Official baseline-prof"):
             self.verify()
 

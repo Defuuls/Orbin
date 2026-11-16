@@ -3,6 +3,9 @@ package com.orbin.uinext
 import com.orbin.uinext.components.MEDIA_SIZE_MAX_DP
 import com.orbin.uinext.components.MEDIA_SIZE_MIN_DP
 import com.orbin.uinext.components.MEDIA_SIZE_STEPS
+import com.orbin.uinext.screens.FEED_SIZE_MAX_DP
+import com.orbin.uinext.screens.FEED_SIZE_MIN_DP
+import com.orbin.uinext.screens.FEED_SIZE_STEPS
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

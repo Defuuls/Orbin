@@ -40,13 +40,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.orbin.uinext.OrbinCard
-import com.orbin.uinext.OrbinStyle
-import com.orbin.uinext.OrbinWordmark
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
+import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.OrbinFilledButton
 import com.orbin.uinext.components.OrbinLogoMark
+import com.orbin.uinext.components.OrbinStyle
 import com.orbin.uinext.components.OrbinTextButton
+import com.orbin.uinext.components.OrbinWordmark
 import com.orbin.uinext.components.ReaderHairline
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderSettingsSwitch

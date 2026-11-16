@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.orbin.uinext.CatalogMode
 
 /** Keep the current thread when a shorter presentation cannot accommodate its old pixel offset. */
 @Composable

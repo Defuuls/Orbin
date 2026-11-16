@@ -32,6 +32,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderMediaAction
+import com.orbin.uinext.components.ReaderMediaControls
+import com.orbin.uinext.components.ReaderMediaControlsTags
+import com.orbin.uinext.components.ReaderMediaToolbar
+import com.orbin.uinext.components.ReaderMediaToolbarTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

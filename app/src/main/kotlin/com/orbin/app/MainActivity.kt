@@ -35,9 +35,9 @@ import com.orbin.data.notification.NotificationLaunchToken
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WhatsNewRepository
-import com.orbin.uinext.UpdateThemeConfig
-import com.orbin.uinext.WhatsNewOnUpdate
 import com.orbin.uinext.screens.SetupThemeOption
+import com.orbin.uinext.screens.UpdateThemeConfig
+import com.orbin.uinext.screens.WhatsNewOnUpdate
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

@@ -22,7 +22,17 @@ import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.OrbinNavigationTags
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.ReaderFeedTags
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.screens.ThreadScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -43,7 +53,17 @@ class InterfaceSemanticsTest {
         val chosen = mutableListOf<CatalogMode>()
         composeRule.setContent {
             NextTheme {
-                FeedScreen(rows = ROWS, onOpenBoards = {}, onModeChange = { chosen += it })
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = {},
+                            onModeChange = { chosen += it },
+                        ),
+                )
             }
         }
         composeRule.onNodeWithText("Grid view").assertDoesNotExist()
@@ -55,7 +75,15 @@ class InterfaceSemanticsTest {
     @Test
     fun `Home omits Reload when its refresh callback is not wired`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions = FeedScreenActions(),
+                )
+            }
         }
         composeRule.onNodeWithContentDescription("Reload").assertDoesNotExist()
     }
@@ -66,12 +94,18 @@ class InterfaceSemanticsTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = ROWS.size,
-                    rowAt = ROWS::getOrNull,
-                    mode = CatalogMode.LIST,
-                    onModeChange = { chosen += it },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = ROWS.size,
+                            rowAt = ROWS::getOrNull,
+                            mode = CatalogMode.LIST,
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onModeChange = { chosen += it },
+                        ),
                 )
             }
         }
@@ -87,10 +121,14 @@ class InterfaceSemanticsTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = ROWS.size,
-                    rowAt = ROWS::getOrNull,
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = ROWS.size,
+                            rowAt = ROWS::getOrNull,
+                        ),
+                    actions = BoardScreenActions(),
                 )
             }
         }
@@ -100,7 +138,15 @@ class InterfaceSemanticsTest {
     @Test
     fun `the reader row opens the thread as an accessible button`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions = FeedScreenActions(),
+                )
+            }
         }
         composeRule
             .onNodeWithTag(ReaderFeedTags.row(ROWS[0].id))
@@ -111,7 +157,19 @@ class InterfaceSemanticsTest {
     @Test
     fun `feed replies remain a separate accessible row action`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenReplies = {}, repliesOpenComments = true) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                            repliesOpenComments = true,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenReplies = {},
+                        ),
+                )
+            }
         }
         composeRule.onNodeWithTag(ReaderFeedTags.more(ROWS[0].id)).assertDoesNotExist()
         composeRule.onNodeWithTag(ReaderFeedTags.row(ROWS[0].id)).performTouchInput { longClick() }
@@ -121,7 +179,15 @@ class InterfaceSemanticsTest {
     @Test
     fun `reader rows retain the current board identity with legacy grouping requested`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, groupByBoard = true) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions = FeedScreenActions(),
+                )
+            }
         }
         composeRule
             .onNodeWithTag(
@@ -134,10 +200,14 @@ class InterfaceSemanticsTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = ROWS.size,
-                    rowAt = ROWS::getOrNull,
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = ROWS.size,
+                            rowAt = ROWS::getOrNull,
+                        ),
+                    actions = BoardScreenActions(),
                 )
             }
         }
@@ -194,7 +264,20 @@ class InterfaceSemanticsTest {
     @Test
     fun `the feed bar exposes only the wired primary destinations`() {
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onOpenBoards = {}, onSettings = {}) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenDownloads = {},
+                            onOpenBoards = {},
+                            onSettings = {},
+                        ),
+                )
+            }
         }
         listOf(NextDestination.FEED, NextDestination.BOARDS, NextDestination.LIBRARY, NextDestination.SETTINGS)
             .forEach { destination ->
@@ -207,7 +290,19 @@ class InterfaceSemanticsTest {
     fun `settings opens from the feed bar`() {
         var opened = 0
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenDownloads = {}, onSettings = { opened++ }) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenDownloads = {},
+                            onSettings = { opened++ },
+                        ),
+                )
+            }
         }
         composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.SETTINGS.name).performClick()
         composeRule.waitForIdle()

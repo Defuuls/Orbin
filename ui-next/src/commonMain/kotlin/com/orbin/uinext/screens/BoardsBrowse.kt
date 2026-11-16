@@ -52,9 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.orbin.uinext.OrbinBottomBar
-import com.orbin.uinext.OrbinLogo
-import com.orbin.uinext.OrbinStyle
 import com.orbin.uinext.components.BoardIcon
 import com.orbin.uinext.components.InlineAction
 import com.orbin.uinext.components.LocalOrbinNavigationAtSide
@@ -62,6 +59,9 @@ import com.orbin.uinext.components.MIN_TOUCH_TARGET
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextIconAction
 import com.orbin.uinext.components.NextScaffold
+import com.orbin.uinext.components.OrbinBottomBar
+import com.orbin.uinext.components.OrbinLogo
+import com.orbin.uinext.components.OrbinStyle
 import com.orbin.uinext.components.ReaderHairline
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.SchematicSearch

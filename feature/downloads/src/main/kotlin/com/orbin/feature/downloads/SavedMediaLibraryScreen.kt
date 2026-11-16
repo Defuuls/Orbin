@@ -33,10 +33,10 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.media.image.OrbinAsyncImage
 import com.orbin.media.image.ZoomableImage
 import com.orbin.media.video.VideoPlayer
-import com.orbin.uinext.ReaderMediaClose
-import com.orbin.uinext.ReaderMediaTitle
-import com.orbin.uinext.ReaderMediaToolbar
 import com.orbin.uinext.components.NextConfirmDialog
+import com.orbin.uinext.components.ReaderMediaClose
+import com.orbin.uinext.components.ReaderMediaTitle
+import com.orbin.uinext.components.ReaderMediaToolbar
 import com.orbin.uinext.screens.SavedMediaItem
 import com.orbin.uinext.screens.SavedMediaKind
 import com.orbin.uinext.screens.SavedMediaLibraryScreen

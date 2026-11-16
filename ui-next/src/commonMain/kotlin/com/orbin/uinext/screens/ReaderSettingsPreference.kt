@@ -44,8 +44,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import com.orbin.uinext.SettingItem
-import com.orbin.uinext.SettingKind
 import com.orbin.uinext.components.settingsStyle
 import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res

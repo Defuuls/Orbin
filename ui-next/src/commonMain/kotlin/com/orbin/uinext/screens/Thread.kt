@@ -73,10 +73,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import com.orbin.uinext.ORBIN_CATALOG_GAP
-import com.orbin.uinext.ORBIN_CATALOG_GUTTER
-import com.orbin.uinext.OrbinCard
-import com.orbin.uinext.catalogGridColumns
 import com.orbin.uinext.components.LocalReaderInputState
 import com.orbin.uinext.components.LocalReaderPostBodyStyle
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
@@ -85,6 +81,7 @@ import com.orbin.uinext.components.MediaKind
 import com.orbin.uinext.components.MediaKindFilter
 import com.orbin.uinext.components.NextSheetAction
 import com.orbin.uinext.components.OrbinActionSheet
+import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.OrbinPill
 import com.orbin.uinext.components.OrbinTextButton
 import com.orbin.uinext.components.PillVariant
@@ -103,7 +100,6 @@ import com.orbin.uinext.components.readerBackSwipe
 import com.orbin.uinext.components.readerKeyboardShortcuts
 import com.orbin.uinext.components.sourceLabel
 import com.orbin.uinext.components.withReaderFont
-import com.orbin.uinext.orbinCatalogCardSpec
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_post_collapse
 import com.orbin.uinext.resources.next_post_collapsed

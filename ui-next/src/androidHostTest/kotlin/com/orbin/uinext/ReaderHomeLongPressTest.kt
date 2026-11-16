@@ -18,6 +18,11 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ReaderFeedTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -43,16 +48,22 @@ class ReaderHomeLongPressTest(
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW),
-                    mode = mode,
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { events += "thread" to it.id },
+                            onOpenMedia = { events += "media" to it.id },
+                            onOpenReplies = { events += "videos" to it.id },
+                            onOpenBoard = { events += "board" to it.id },
+                            onToggleWatch = { events += "watch" to it.id },
+                            onToggleSaved = { events += "save" to it.id },
+                            onShareRow = { events += "share" to it.id },
+                        ),
                     thumbnail = { _, modifier -> Box(modifier) },
-                    onOpenRow = { events += "thread" to it.id },
-                    onOpenMedia = { events += "media" to it.id },
-                    onOpenReplies = { events += "videos" to it.id },
-                    onOpenBoard = { events += "board" to it.id },
-                    onToggleWatch = { events += "watch" to it.id },
-                    onToggleSaved = { events += "save" to it.id },
-                    onShareRow = { events += "share" to it.id },
                 )
             }
         }
@@ -89,10 +100,16 @@ class ReaderHomeLongPressTest(
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW),
-                    mode = mode,
-                    onOpenRow = { opened++ },
-                    onToggleWatch = { watched++ },
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { opened++ },
+                            onToggleWatch = { watched++ },
+                        ),
                 )
             }
         }
@@ -122,12 +139,18 @@ class ReaderHomeLongPressTest(
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW.copy(imageSpoiler = true)),
-                    mode = mode,
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW.copy(imageSpoiler = true)),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { threads++ },
+                            onOpenMedia = { media++ },
+                            onOpenReplies = { videos++ },
+                        ),
                     thumbnail = { _, modifier -> Box(modifier) },
-                    onOpenRow = { threads++ },
-                    onOpenMedia = { media++ },
-                    onOpenReplies = { videos++ },
                 )
             }
         }
@@ -156,7 +179,17 @@ class ReaderHomeLongPressTest(
         var opened = 0
         compose.setContent {
             NextTheme {
-                FeedScreen(rows = listOf(ROW), mode = mode, onOpenRow = { opened++ })
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { opened++ },
+                        ),
+                )
             }
         }
         val row = compose.onNodeWithTag(ReaderFeedTags.row(ROW.id))
@@ -177,12 +210,18 @@ class ReaderHomeLongPressTest(
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW.copy(imageSpoiler = covered)),
-                    mode = mode,
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW.copy(imageSpoiler = covered)),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { threads++ },
+                            onOpenMedia = { media++ },
+                            onToggleWatch = { watches++ },
+                        ),
                     thumbnail = { _, modifier -> Box(modifier) },
-                    onOpenRow = { threads++ },
-                    onOpenMedia = { media++ },
-                    onToggleWatch = { watches++ },
                 )
             }
         }
@@ -224,10 +263,16 @@ class ReaderHomeLongPressTest(
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW),
-                    mode = mode,
-                    onOpenRow = { threads++ },
-                    onToggleWatch = if (enabled) ({ watched++ }) else null,
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { threads++ },
+                            onToggleWatch = if (enabled) ({ watched++ }) else null,
+                        ),
                 )
             }
         }

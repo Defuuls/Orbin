@@ -25,7 +25,7 @@ import com.orbin.ios.resources.ios_media_pause_video
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.ios.resources.ios_media_restart_video
 import com.orbin.ios.resources.ios_media_rewind_video
-import com.orbin.uinext.ReaderMediaControls
+import com.orbin.uinext.components.ReaderMediaControls
 import com.orbin.uinext.components.reader
 import org.jetbrains.compose.resources.stringResource
 

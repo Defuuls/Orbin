@@ -36,8 +36,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberConstraintsSizeResolver
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.uinext.OrbinCard
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
+import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.nextClickable
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.withReaderFont

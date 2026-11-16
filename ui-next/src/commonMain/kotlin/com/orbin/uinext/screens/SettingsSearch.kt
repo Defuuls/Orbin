@@ -1,7 +1,5 @@
 package com.orbin.uinext.screens
 
-import com.orbin.uinext.SettingItem
-
 /** Search display text and options without inspecting text-field contents or secret values. */
 internal fun filterSettings(
     groups: List<Pair<String, List<SettingItem>>>,

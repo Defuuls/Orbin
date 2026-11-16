@@ -21,6 +21,12 @@ import com.orbin.uinext.components.NextPlatform
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.canonicalNextPalette
 import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.FeedPagerTags
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ReaderFeedTags
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -121,28 +127,34 @@ private fun HomeReaderFixture(
     wideWindow: Boolean,
 ) {
     FeedScreen(
-        rows = homeReaderRows,
-        mode = mode,
-        onModeChange = {},
-        wideWindow = wideWindow,
-        sourceLabels = listOf("All sites", "4chan", "BBWChan"),
-        onSelectSource = {},
+        state =
+            FeedScreenState(
+                rows = homeReaderRows,
+                mode = mode,
+                wideWindow = wideWindow,
+                sourceLabels = listOf("All sites", "4chan", "BBWChan"),
+                repliesOpenComments = false,
+                downloadBadge = 2,
+            ),
+        actions =
+            FeedScreenActions(
+                onModeChange = {},
+                onSelectSource = {},
+                onOpenRow = {},
+                onOpenMedia = {},
+                onOpenReplies = {},
+                onOpenBoard = {},
+                onOpenBoards = {},
+                onOpenDownloads = {},
+                onOpenSearch = {},
+                onOpenSaved = {},
+                onOpenWatched = {},
+                onSettings = {},
+                onToggleWatch = {},
+                onToggleSaved = {},
+                onShareRow = {},
+            ),
         thumbnail = { row, modifier -> HomeReaderArtwork(row.threadNumber.lastOrNull() == '1', modifier) },
-        onOpenRow = {},
-        onOpenMedia = {},
-        onOpenReplies = {},
-        repliesOpenComments = false,
-        onOpenBoard = {},
-        onOpenBoards = {},
-        onOpenDownloads = {},
-        downloadBadge = 2,
-        onOpenSearch = {},
-        onOpenSaved = {},
-        onOpenWatched = {},
-        onSettings = {},
-        onToggleWatch = {},
-        onToggleSaved = {},
-        onShareRow = {},
     )
 }
 

@@ -1,7 +1,7 @@
 package com.orbin.ios
 
-import com.orbin.uinext.SettingItem
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

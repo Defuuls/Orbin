@@ -2,10 +2,10 @@ package com.orbin.feature.settings
 
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.PlaybackScope
-import com.orbin.uinext.OFF_LABEL
-import com.orbin.uinext.ON_LABEL
-import com.orbin.uinext.SettingItem
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.OFF_LABEL
+import com.orbin.uinext.screens.ON_LABEL
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
 
 internal data class PlaybackScopeChoice(
     val scope: PlaybackScope,

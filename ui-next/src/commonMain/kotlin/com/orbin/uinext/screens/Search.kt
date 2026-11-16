@@ -3,8 +3,6 @@ package com.orbin.uinext.screens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
-import com.orbin.uinext.ReaderSearchResults
-import com.orbin.uinext.ReaderSearchScreen
 
 /** A search hit: the thread's title, its board as `/g/`, and the start of its opening post. */
 @Immutable

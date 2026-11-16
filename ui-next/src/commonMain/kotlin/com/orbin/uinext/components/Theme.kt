@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.orbin.core.designsystem.theme.OrbinShapes
-import com.orbin.uinext.LocalOrbinSavedMediaTabVisible
 import com.orbin.uinext.tokens.LocalNextFontFamily
 import com.orbin.uinext.tokens.OrbinType
 

@@ -30,6 +30,10 @@ import androidx.compose.ui.unit.dp
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.ReaderAppBarTags
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ReaderFeedTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -52,13 +56,19 @@ class ReaderHomeAccessibilityTest {
             NextTheme(fontScale = 2f) {
                 Box(Modifier.size(248.dp, 700.dp)) {
                     FeedScreen(
-                        rows = listOf(ROW),
-                        sourceLabels = listOf("All followed sites", "4chan", "BBWChan"),
-                        selectedSource = source,
-                        onSelectSource = { source = it },
-                        onOpenBoards = {},
-                        onToggleWatch = {},
-                        onToggleSaved = {},
+                        state =
+                            FeedScreenState(
+                                rows = listOf(ROW),
+                                sourceLabels = listOf("All followed sites", "4chan", "BBWChan"),
+                                selectedSource = source,
+                            ),
+                        actions =
+                            FeedScreenActions(
+                                onSelectSource = { source = it },
+                                onOpenBoards = {},
+                                onToggleWatch = {},
+                                onToggleSaved = {},
+                            ),
                     )
                 }
             }
@@ -100,9 +110,15 @@ class ReaderHomeAccessibilityTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW),
-                    onOpenRow = { opened++ },
-                    onOpenMedia = { media++ },
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenRow = { opened++ },
+                            onOpenMedia = { media++ },
+                        ),
                     thumbnail = { _, modifier -> Box(modifier) },
                 )
             }
@@ -140,8 +156,14 @@ class ReaderHomeAccessibilityTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = listOf(ROW.copy(imageSpoiler = true)),
-                    onOpenMedia = { opened++ },
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW.copy(imageSpoiler = true)),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenMedia = { opened++ },
+                        ),
                     thumbnail = { _, modifier -> Box(modifier) },
                 )
             }
@@ -163,7 +185,16 @@ class ReaderHomeAccessibilityTest {
     @Test
     fun unwiredOptionalActionsDoNotLeaveAnOverflowControl() {
         compose.setContent {
-            NextTheme { FeedScreen(rows = listOf(ROW), thumbnail = { _, modifier -> Box(modifier) }) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = listOf(ROW),
+                        ),
+                    actions = FeedScreenActions(),
+                    thumbnail = { _, modifier -> Box(modifier) },
+                )
+            }
         }
         compose.onNodeWithTag(ReaderFeedTags.row(ROW.id)).assertIsDisplayed()
         compose.onNodeWithTag(ReaderFeedTags.more(ROW.id)).assertDoesNotExist()

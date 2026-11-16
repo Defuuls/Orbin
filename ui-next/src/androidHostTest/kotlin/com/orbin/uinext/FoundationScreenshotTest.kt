@@ -25,8 +25,11 @@ import com.orbin.uinext.components.OrbinConfirmDialog
 import com.orbin.uinext.components.ReaderAppBar
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.screens.LockScreen
+import com.orbin.uinext.screens.ReleaseNoteSection
+import com.orbin.uinext.screens.ReleaseNotes
 import com.orbin.uinext.screens.SafeModeScreen
 import com.orbin.uinext.screens.SafeModeText
+import com.orbin.uinext.screens.WhatsNewDialog
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

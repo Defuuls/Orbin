@@ -22,8 +22,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogGridSpec
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.CatalogTags
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import com.orbin.uinext.screens.ReaderCatalogSkeleton
+import com.orbin.uinext.screens.ReaderFeedTags
 import com.orbin.uinext.screens.ReaderStateTags
+import com.orbin.uinext.screens.orbinCatalogCardSpec
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -213,24 +224,36 @@ class ReaderCardModeTest(
     ) {
         if (isHome) {
             FeedScreen(
-                rows = if (isLoading) emptyList() else ROWS,
-                mode = mode,
-                isLoading = isLoading,
-                onModeChange = onModeChange,
-                onOpenRow = onOpenRow,
-                onOpenMedia = onOpenMedia,
+                state =
+                    FeedScreenState(
+                        rows = if (isLoading) emptyList() else ROWS,
+                        mode = mode,
+                        isLoading = isLoading,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onModeChange = onModeChange,
+                        onOpenRow = onOpenRow,
+                        onOpenMedia = onOpenMedia,
+                    ),
                 thumbnail = { _, modifier -> Box(modifier) },
             )
         } else {
             BoardScreen(
-                board = "/g/",
-                description = "Technology",
-                itemCount = ROWS.size,
-                rowAt = ROWS::getOrNull,
-                mode = mode,
-                onModeChange = onModeChange,
-                onOpenRow = onOpenRow,
-                selectedRowId = ROWS[1].id,
+                state =
+                    BoardScreenState(
+                        board = "/g/",
+                        description = "Technology",
+                        itemCount = ROWS.size,
+                        rowAt = ROWS::getOrNull,
+                        mode = mode,
+                        selectedRowId = ROWS[1].id,
+                    ),
+                actions =
+                    BoardScreenActions(
+                        onModeChange = onModeChange,
+                        onOpenRow = onOpenRow,
+                    ),
                 thumbnail = { _, modifier -> Box(modifier) },
                 stateContent = if (isLoading) ({ ReaderCatalogSkeleton(mode = mode) }) else null,
             )

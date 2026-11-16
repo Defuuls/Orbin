@@ -19,11 +19,11 @@ import com.orbin.domain.privacy.PrivacySession
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadMemoryRepository
-import com.orbin.uinext.OFF_LABEL
-import com.orbin.uinext.ON_LABEL
-import com.orbin.uinext.SettingFilterRule
-import com.orbin.uinext.SettingItem
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.OFF_LABEL
+import com.orbin.uinext.screens.ON_LABEL
+import com.orbin.uinext.screens.SettingFilterRule
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted

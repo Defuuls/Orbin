@@ -1,15 +1,6 @@
 {
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/BoardCatalog.kt": {
-    "opacity": 2,
-    "radius": 3
-  },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/BoardIcons.kt": {
     "color": 28
-  },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/BoardsBrowse.kt": {
-    "color": 1,
-    "radius": 2,
-    "textSize": 9
   },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/Controls.kt": {
     "textSize": 2
@@ -35,19 +26,12 @@
     "opacity": 1,
     "radius": 4
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/MediaWall.kt": {
-    "radius": 1
-  },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/Onboarding.kt": {
-    "radius": 1,
-    "textSize": 4
-  },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/OrbinDialogs.kt": {
     "opacity": 4,
     "radius": 3,
     "textSize": 10
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/OrbinStyle.kt": {
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/OrbinStyle.kt": {
     "opacity": 4,
     "radius": 3,
     "textSize": 3
@@ -61,26 +45,18 @@
     "opacity": 1,
     "radius": 2
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/ReaderAlbumCell.kt": {
-    "color": 1,
-    "radius": 1
-  },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ReaderCatalogControls.kt": {
     "radius": 1
   },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ReaderFastScrollThumb.kt": {
     "radius": 1
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/ReaderFeedControls.kt": {
-    "opacity": 1,
-    "radius": 2
-  },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/ReaderMediaControls.kt": {
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ReaderMediaControls.kt": {
     "color": 4,
     "opacity": 3,
     "textSize": 1
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/ReaderMediaToolbar.kt": {
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ReaderMediaToolbar.kt": {
     "color": 2,
     "opacity": 2,
     "radius": 2,
@@ -92,7 +68,47 @@
     "radius": 2,
     "textSize": 5
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/ReaderSearch.kt": {
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ReaderSettingsSwitch.kt": {
+    "opacity": 1
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/SettingsStyle.kt": {
+    "opacity": 1,
+    "radius": 2
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/Surface.kt": {
+    "radius": 1
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/Theme.kt": {
+    "color": 40
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ThreadInlineMedia.kt": {
+    "opacity": 1
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/BoardCatalog.kt": {
+    "opacity": 2,
+    "radius": 2
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/BoardsBrowse.kt": {
+    "color": 1,
+    "radius": 2,
+    "textSize": 9
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/MediaWall.kt": {
+    "radius": 1
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/Onboarding.kt": {
+    "radius": 1,
+    "textSize": 4
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/ReaderAlbumCell.kt": {
+    "color": 1,
+    "radius": 1
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/ReaderFeedControls.kt": {
+    "opacity": 1,
+    "radius": 2
+  },
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/ReaderSearch.kt": {
     "color": 1,
     "opacity": 3,
     "radius": 4,
@@ -103,9 +119,6 @@
     "radius": 4,
     "textSize": 6
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ReaderSettingsSwitch.kt": {
-    "opacity": 1
-  },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/ReaderStates.kt": {
     "opacity": 1,
     "radius": 2,
@@ -114,15 +127,11 @@
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/SavedMediaLibrary.kt": {
     "radius": 2
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/SettingsList.kt": {
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/SettingsList.kt": {
     "color": 12,
     "opacity": 4,
     "radius": 7,
     "textSize": 4
-  },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/SettingsStyle.kt": {
-    "opacity": 1,
-    "radius": 2
   },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/SetupWizard.kt": {
     "color": 1,
@@ -130,18 +139,12 @@
     "radius": 5,
     "textSize": 2
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/Theme.kt": {
-    "color": 40
-  },
   "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/Thread.kt": {
     "opacity": 4,
     "radius": 1,
     "textSize": 2
   },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/components/ThreadInlineMedia.kt": {
-    "opacity": 1
-  },
-  "ui-next/src/commonMain/kotlin/com/orbin/uinext/WhatsNew.kt": {
+  "ui-next/src/commonMain/kotlin/com/orbin/uinext/screens/WhatsNew.kt": {
     "opacity": 2,
     "radius": 3,
     "textSize": 2

@@ -25,6 +25,11 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderMediaAction
+import com.orbin.uinext.components.ReaderMediaControls
+import com.orbin.uinext.components.ReaderMediaControlsTags
+import com.orbin.uinext.components.ReaderMediaToolbar
+import com.orbin.uinext.components.ReaderMediaToolbarTags
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -65,12 +65,12 @@ import com.orbin.app.navigation.primaryNavigationDestination
 import com.orbin.app.navigation.primaryWatchedBadge
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.feature.home.FeedDownloadBadgeViewModel
-import com.orbin.uinext.OrbinSideBar
 import com.orbin.uinext.components.LibraryNavigation
 import com.orbin.uinext.components.LocalLibraryNavigation
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.NextSnackbarHost
 import com.orbin.uinext.components.OrbinAdaptiveNavigation
+import com.orbin.uinext.components.OrbinSideBar
 import com.orbin.uinext.components.next
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.tokens.NextMotion

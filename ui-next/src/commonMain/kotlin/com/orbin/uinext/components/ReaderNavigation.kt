@@ -35,8 +35,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.LocalOrbinSavedMediaTabVisible
-import com.orbin.uinext.OrbinBottomBar
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.reader_library_new_replies
 import com.orbin.uinext.resources.reader_library_sections

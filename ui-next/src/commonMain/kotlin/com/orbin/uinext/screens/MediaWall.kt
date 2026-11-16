@@ -32,8 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.OrbinCard
-import com.orbin.uinext.OrbinLogo
 import com.orbin.uinext.components.CompactTitleBar
 import com.orbin.uinext.components.Gap
 import com.orbin.uinext.components.IMAGE_MIN_CELL
@@ -46,6 +44,8 @@ import com.orbin.uinext.components.MediaTile
 import com.orbin.uinext.components.MetaLine
 import com.orbin.uinext.components.NextScaffold
 import com.orbin.uinext.components.NextSlider
+import com.orbin.uinext.components.OrbinCard
+import com.orbin.uinext.components.OrbinLogo
 import com.orbin.uinext.components.ScreenTitle
 import com.orbin.uinext.components.contentInsets
 import com.orbin.uinext.components.fullWidthItem

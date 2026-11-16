@@ -27,10 +27,16 @@ import com.orbin.uinext.components.PlatformSegments
 import com.orbin.uinext.components.next
 import com.orbin.uinext.screens.BoardTile
 import com.orbin.uinext.screens.BoardsScreen
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import com.orbin.uinext.screens.Post
 import com.orbin.uinext.screens.SearchRow
 import com.orbin.uinext.screens.SearchScreen
 import com.orbin.uinext.screens.SearchState
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
+import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.screens.ThreadCollectionRow
 import com.orbin.uinext.screens.ThreadCollectionScreen
 import com.orbin.uinext.screens.ThreadScreen
@@ -54,47 +60,51 @@ class PhoneScreensScreenshotTest {
     fun homeAcrossBothSites() =
         capture("phone_home") {
             FeedScreen(
-                rows =
-                    listOf(
-                        FeedRow(
-                            subject = "Quiet landscapes",
-                            board = "/wg/",
-                            activity = "8m",
-                            replies = 128,
-                            media = 42,
-                            id = "fourchan/wg/482917",
-                            site = "4chan",
-                            mediaLabel = "JPG",
-                            mediaAspectRatio = 2.6f,
-                            excerpt = "A place to share a favorite view.",
-                        ),
-                        FeedRow(
-                            subject = "Weekly discussion",
-                            board = "/gen/",
-                            activity = "5m",
-                            replies = 24,
-                            media = 0,
-                            hasPreview = false,
-                            id = "bbwchan/gen/230145",
-                            site = "BBWChan",
-                            excerpt = "What's everyone working on this week?",
-                        ),
+                state =
+                    FeedScreenState(
+                        rows =
+                            listOf(
+                                FeedRow(
+                                    subject = "Quiet landscapes",
+                                    board = "/wg/",
+                                    activity = "8m",
+                                    replies = 128,
+                                    media = 42,
+                                    id = "fourchan/wg/482917",
+                                    site = "4chan",
+                                    mediaLabel = "JPG",
+                                    mediaAspectRatio = 2.6f,
+                                    excerpt = "A place to share a favorite view.",
+                                ),
+                                FeedRow(
+                                    subject = "Weekly discussion",
+                                    board = "/gen/",
+                                    activity = "5m",
+                                    replies = 24,
+                                    media = 0,
+                                    hasPreview = false,
+                                    id = "bbwchan/gen/230145",
+                                    site = "BBWChan",
+                                    excerpt = "What's everyone working on this week?",
+                                ),
+                            ),
+                        sourceLabels = listOf("All sites", "4chan", "BBWChan"),
+                        selectedSource = 0,
                     ),
-                columns = 1,
-                hideRailOnScroll = false,
-                sourceLabels = listOf("All sites", "4chan", "BBWChan"),
-                selectedSource = 0,
-                onSelectSource = {},
+                actions =
+                    FeedScreenActions(
+                        onSelectSource = {},
+                        onOpenRow = {},
+                        onOpenBoards = {},
+                        onOpenSearch = {},
+                        onOpenSaved = {},
+                        onOpenWatched = {},
+                        onSettings = {},
+                        onToggleWatch = {},
+                        onToggleSaved = {},
+                        onShareRow = {},
+                    ),
                 thumbnail = { _, modifier -> ScenicPlaceholder(modifier) },
-                onOpenRow = {},
-                onOpenBoards = {},
-                onOpenSearch = {},
-                onOpenSaved = {},
-                onOpenWatched = {},
-                onSettings = {},
-                onToggleWatch = {},
-                onToggleSaved = {},
-                onShareRow = {},
             )
         }
 

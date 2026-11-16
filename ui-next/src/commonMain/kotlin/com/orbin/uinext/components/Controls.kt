@@ -57,7 +57,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.orbin.uinext.OrbinCard
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_refresh
 import com.orbin.uinext.resources.next_snackbar_dismiss

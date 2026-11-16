@@ -13,7 +13,13 @@ import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.canonicalNextPalette
 import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
 import com.orbin.uinext.screens.Post
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
+import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.screens.ThreadScreen
 import org.junit.Rule
 import org.junit.Test
@@ -37,19 +43,33 @@ class ReaderPaletteScreenshotTest(
     fun feed() =
         capture("feed") {
             FeedScreen(
-                rows =
-                    listOf(
-                        FeedRow("Home server discussion", "/g/", "4m", 218, 31, id = "first"),
-                        FeedRow("What did you cook this week?", "/ck/", "31m", 47, 22, read = true, id = "read"),
-                        FeedRow("Film photography and grain", "/p/", "1h", 156, 140, id = "photo"),
-                        FeedRow("Reading list", "/lit/", "3h", 28, 4, hasPreview = false, id = "text"),
+                state =
+                    FeedScreenState(
+                        rows =
+                            listOf(
+                                FeedRow("Home server discussion", "/g/", "4m", 218, 31, id = "first"),
+                                FeedRow(
+                                    "What did you cook this week?",
+                                    "/ck/",
+                                    "31m",
+                                    47,
+                                    22,
+                                    read = true,
+                                    id = "read",
+                                ),
+                                FeedRow("Film photography and grain", "/p/", "1h", 156, 140, id = "photo"),
+                                FeedRow("Reading list", "/lit/", "3h", 28, 4, hasPreview = false, id = "text"),
+                            ),
+                        subtitle = "4 threads across 4 boards",
                     ),
-                subtitle = "4 threads across 4 boards",
-                onOpenBoards = {},
-                onOpenSearch = {},
-                onOpenSaved = {},
-                onOpenWatched = {},
-                onSettings = {},
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenSearch = {},
+                        onOpenSaved = {},
+                        onOpenWatched = {},
+                        onSettings = {},
+                    ),
                 thumbnail = { _, modifier -> Box(modifier.background(reader.surfaceVariant)) },
             )
         }

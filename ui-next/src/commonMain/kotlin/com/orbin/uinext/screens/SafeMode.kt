@@ -25,10 +25,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.OrbinCard
-import com.orbin.uinext.OrbinLogo
+import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.OrbinConfirmDialog
 import com.orbin.uinext.components.OrbinFilledButton
+import com.orbin.uinext.components.OrbinLogo
 import com.orbin.uinext.components.OrbinTextButton
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.withReaderFont

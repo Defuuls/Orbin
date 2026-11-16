@@ -1,7 +1,7 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.SettingKind
 import org.junit.Test
 
 /** The shape of the settings list: its headings, its row ids and what each row is allowed to be. */
