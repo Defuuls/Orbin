@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.viewinterop.AndroidView
+import com.orbin.core.common.web.WebViewBrowsingData
 import com.orbin.core.model.Board
 import com.orbin.provider.api.FourchanSearchSession
 import com.orbin.provider.api.fourchanSearchInspectionScript
@@ -106,12 +107,19 @@ internal fun FourchanWebSearch(
     }
 }
 
-/** Application context avoids retaining the Activity while the Search destination is covered. */
+/**
+ * Application context avoids retaining the Activity while the Search destination is covered.
+ *
+ * This is the one place Orbin's traffic leaves its own HTTP client: the page, its verification
+ * frames and their DNS lookups go through the system WebView. [clearBrowsingData] removes the
+ * cookies, site storage and cache WebView wrote to disk as soon as the browser is closed.
+ */
 @SuppressLint("SetJavaScriptEnabled")
 internal class RetainedSearchBrowser(
     context: Context,
     val session: FourchanSearchSession,
     scope: CoroutineScope,
+    private val clearBrowsingData: (WebView) -> Unit = { WebViewBrowsingData.clear(it) },
 ) {
     private var requestId = -1L
     private var closed = false
@@ -186,6 +194,8 @@ internal class RetainedSearchBrowser(
         requests.cancel()
         view.stopLoading()
         (view.parent as? ViewGroup)?.removeView(view)
+        // Before destroy(): the cache is cleared through the view, which cannot be used afterwards.
+        clearBrowsingData(view)
         view.destroy()
     }
 }

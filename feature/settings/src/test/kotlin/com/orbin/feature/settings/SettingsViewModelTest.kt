@@ -29,6 +29,7 @@ import com.orbin.domain.repository.ImageCacheRepository
 import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.VideoCacheRepository
+import com.orbin.domain.repository.WebSearchDataRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -139,6 +140,33 @@ class SettingsViewModelTest {
             // No direct getter for "cleared" beyond re-observing; each fake starts empty and the
             // call must not throw, which is the behavior worth locking down here.
             assertThat(history.observeHistory().first()).isEmpty()
+        }
+
+    @Test
+    fun `clearLocalActivity removes what the search web view stored`() =
+        runTest {
+            val webSearchData = mockk<WebSearchDataRepository>()
+            coEvery { webSearchData.clear() } returns Unit
+            val viewModel = createViewModel(webSearchData = webSearchData)
+            val results = mutableListOf<Boolean>()
+
+            viewModel.clearLocalActivity { results += it }
+
+            coVerify(exactly = 1) { webSearchData.clear() }
+            assertThat(results).containsExactly(true)
+        }
+
+    @Test
+    fun `clearing reports failure when the search web view data cannot be removed`() =
+        runTest {
+            val webSearchData = mockk<WebSearchDataRepository>()
+            coEvery { webSearchData.clear() } throws IllegalStateException("web view unavailable")
+            val viewModel = createViewModel(webSearchData = webSearchData)
+            val results = mutableListOf<Boolean>()
+
+            viewModel.clearLocalActivity { results += it }
+
+            assertThat(results).containsExactly(false)
         }
 
     @Test
@@ -315,6 +343,7 @@ class SettingsViewModelTest {
         imageCache: ImageCacheRepository = mockk(relaxed = true),
         videoCache: VideoCacheRepository = mockk(relaxed = true),
         memory: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
+        webSearchData: WebSearchDataRepository = mockk(relaxed = true),
     ) = SettingsViewModel(
         repository = settings,
         historyRepository = history,
@@ -329,5 +358,6 @@ class SettingsViewModelTest {
         imageCacheRepository = imageCache,
         videoCacheRepository = videoCache,
         threadMemoryRepository = memory,
+        webSearchDataRepository = webSearchData,
     )
 }

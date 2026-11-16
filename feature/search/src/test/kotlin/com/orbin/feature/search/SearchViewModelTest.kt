@@ -27,6 +27,7 @@ import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -286,6 +287,63 @@ class SearchViewModelTest {
             assertThat(session.state.value.nextOffset).isEqualTo(25)
         }
 
+    @Test
+    fun `web search is offered once settings load without strict encrypted DNS`() =
+        runTest {
+            val model = createViewModel(FakeSearchRepository(), registry = FakeProviderRegistry(fourchan()))
+            val browser = mockk<RetainedSearchBrowser>(relaxed = true)
+
+            assertThat(model.webSearchAllowed.first { it }).isTrue()
+            assertThat(model.webSearchBrowser(mockk(relaxed = true)) { _, _ -> browser }).isSameInstanceAs(browser)
+            // Retained: asking again must not build a second web view.
+            assertThat(model.webSearchBrowser(mockk(relaxed = true)) { _, _ -> error("created twice") })
+                .isSameInstanceAs(browser)
+        }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `strict encrypted DNS never creates the search web view`() =
+        runTest {
+            val model =
+                createViewModel(
+                    FakeSearchRepository(),
+                    settings = AppSettings.Default.copy(strictDohEnabled = true),
+                    registry = FakeProviderRegistry(fourchan()),
+                )
+            advanceUntilIdle()
+
+            assertThat(model.webSearchAllowed.value).isFalse()
+            assertThat(model.webSearchBrowser(mockk(relaxed = true)) { _, _ -> error("web view created") }).isNull()
+        }
+
+    @Test
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    fun `turning strict encrypted DNS on closes a search web view that is already open`() =
+        runTest {
+            val settings = FakeSettingsRepository()
+            val model =
+                createViewModel(
+                    FakeSearchRepository(),
+                    registry = FakeProviderRegistry(fourchan()),
+                    settingsRepository = settings,
+                )
+            val browser = mockk<RetainedSearchBrowser>(relaxed = true)
+            model.webSearchAllowed.first { it }
+            model.webSearchBrowser(mockk(relaxed = true)) { _, _ -> browser }
+
+            settings.setStrictDohEnabled(true)
+            advanceUntilIdle()
+
+            verify(exactly = 1) { browser.close() }
+            assertThat(model.webSearchBrowser(mockk(relaxed = true)) { _, _ -> error("web view created") }).isNull()
+        }
+
+    private fun fourchan(): ImageBoardProvider =
+        object : ImageBoardProvider by com.orbin.core.testing.repository
+            .FakeImageBoardProvider() {
+            override val metadata = ProviderMetadata(ProviderId("fourchan"), "4chan", "https://boards.4chan.org")
+        }
+
     private fun createViewModel(
         repository: SearchRepository,
         settings: AppSettings = AppSettings.Default,
@@ -293,9 +351,9 @@ class SearchViewModelTest {
         subscribed: Set<BoardId> = setOf(BoardId("g")),
         favorites: Set<BoardId> = emptySet(),
         registry: ProviderRegistry = FakeProviderRegistry(),
-    ): SearchViewModel {
-        val settingsRepository = FakeSettingsRepository(settings)
-        return SearchViewModel(
+        settingsRepository: FakeSettingsRepository = FakeSettingsRepository(settings),
+    ): SearchViewModel =
+        SearchViewModel(
             searchRepository = repository,
             boardRepository = FakeBoardRepository(boards),
             boardPreferencesRepository = FakeBoardPreferencesRepository(subscribed, favorites),
@@ -303,5 +361,4 @@ class SearchViewModelTest {
             registry = registry,
             observeActiveProvider = ObserveActiveProviderUseCase(registry, settingsRepository),
         )
-    }
 }

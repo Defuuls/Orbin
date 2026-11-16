@@ -60,3 +60,26 @@ fun WebSearchResultsPane(
         }
     }
 }
+
+/**
+ * Shown in place of the "All of 4chan" search while strict encrypted DNS is on.
+ *
+ * That search loads the site in the system web view, which looks names up with the device's
+ * resolver rather than the app's encrypted one. Strict mode exists for readers who would rather a
+ * feature stop than have a hostname reach the network, so the host never creates the web view and
+ * this says why. Followed-board search is unaffected: it goes through the app's own client.
+ */
+@Composable
+fun WebSearchBlockedPane(modifier: Modifier = Modifier) {
+    ReaderEmptyState(
+        title = WEB_SEARCH_BLOCKED_TITLE,
+        message = WEB_SEARCH_BLOCKED_MESSAGE,
+        modifier = modifier,
+    )
+}
+
+const val WEB_SEARCH_BLOCKED_TITLE = "Off in strict DNS mode"
+const val WEB_SEARCH_BLOCKED_MESSAGE =
+    "Searching all of 4chan opens the site in a system web view, which uses your device's DNS " +
+        "instead of encrypted DNS. Turn off Strict encrypted DNS in Settings to use it. " +
+        "Followed boards can still be searched."
