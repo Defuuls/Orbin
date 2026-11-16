@@ -34,9 +34,13 @@ class ScrollingHeaderTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows(),
-                    showRail = false,
-                    sourceLabels = listOf("All followed sites", "4chan"),
+                    state =
+                        FeedScreenState(
+                            rows = rows(),
+                            showRail = false,
+                            sourceLabels = listOf("All followed sites", "4chan"),
+                        ),
+                    actions = FeedScreenActions(),
                 )
             }
         }
@@ -55,10 +59,14 @@ class ScrollingHeaderTest {
         composeRule.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows(),
-                    showRail = false,
-                    mode = CatalogMode.GRID,
-                    sourceLabels = listOf("All followed sites", "4chan"),
+                    state =
+                        FeedScreenState(
+                            rows = rows(),
+                            showRail = false,
+                            mode = CatalogMode.GRID,
+                            sourceLabels = listOf("All followed sites", "4chan"),
+                        ),
+                    actions = FeedScreenActions(),
                 )
             }
         }
@@ -77,10 +85,14 @@ class ScrollingHeaderTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = rows.size,
-                    rowAt = { index -> rows.getOrNull(index) },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = rows.size,
+                            rowAt = { index -> rows.getOrNull(index) },
+                        ),
+                    actions = BoardScreenActions(),
                 )
             }
         }

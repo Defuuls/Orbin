@@ -230,21 +230,21 @@ private fun SearchSourceTabs(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         val tabs = listOf(null to stringResource(Res.string.reader_search_all)) + sources.map { it to sourceLabel(it) }
+        val accent = reader.accent
+        val idle = reader.surfaceVariant
+        val activeFill =
+            remember(accent) {
+                Brush.linearGradient(listOf(accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f)))
+            }
+        val idleFill = remember(idle) { Brush.linearGradient(listOf(idle, idle)) }
         tabs.forEach { (source, label) ->
             val active = source == selected
             Box(
                 Modifier
                     .heightIn(min = MIN_TOUCH_TARGET)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(
-                        Brush.linearGradient(
-                            if (active) {
-                                listOf(reader.accent.copy(alpha = 0.18f), Color(0xFFA78BFA).copy(alpha = 0.14f))
-                            } else {
-                                listOf(reader.surfaceVariant, reader.surfaceVariant)
-                            },
-                        ),
-                    ).border(1.dp, reader.hairline, RoundedCornerShape(14.dp))
+                    .background(if (active) activeFill else idleFill)
+                    .border(1.dp, reader.hairline, RoundedCornerShape(14.dp))
                     .selectable(selected = active, role = Role.Tab, onClick = { onSelect(source) })
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,

@@ -178,25 +178,31 @@ private fun CompletionCatalogContent(
     selected: Boolean,
 ) {
     BoardScreen(
-        board = "/g/",
-        description = "Technology",
-        itemCount = completionRows.size,
-        rowAt = { completionRows.getOrNull(it) },
-        mode = mode,
-        onModeChange = {},
-        sortLabel = "Bump order",
-        onSort = {},
-        onOpenMedia = {},
-        onOpenRow = {},
+        state =
+            BoardScreenState(
+                board = "/g/",
+                description = "Technology",
+                itemCount = completionRows.size,
+                rowAt = { completionRows.getOrNull(it) },
+                mode = mode,
+                sortLabel = "Bump order",
+                navigation = ReaderNavigation.NONE,
+                wideWindow = wideWindow,
+                selectedRowId = completionRows.first().id.takeIf { selected },
+            ),
+        actions =
+            BoardScreenActions(
+                onModeChange = {},
+                onSort = {},
+                onOpenMedia = {},
+                onOpenRow = {},
+                onNavigation = {},
+                onPickBoard = {},
+                onReload = {},
+                onSearch = {},
+                onOpenBrowser = {},
+            ),
         thumbnail = { _, modifier -> CompletionThumbnail(modifier) },
-        navigation = ReaderNavigation.NONE,
-        onNavigation = {},
-        onPickBoard = {},
-        onReload = {},
-        onSearch = {},
-        wideWindow = wideWindow,
-        selectedRowId = completionRows.first().id.takeIf { selected },
-        onOpenBrowser = {},
     )
 }
 

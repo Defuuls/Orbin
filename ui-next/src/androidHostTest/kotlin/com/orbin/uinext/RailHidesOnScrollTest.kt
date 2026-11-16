@@ -27,16 +27,13 @@ class RailHidesOnScrollTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    /** Replaces `Navigation remains reachable while paging even with legacy hide preference`. */
+    /**
+     * Replaces `Navigation remains reachable while paging even with legacy hide preference` and its
+     * preference-off twin: the legacy preference no longer reaches Home at all, so one case covers both.
+     */
     @Test
-    fun `the bar opens Library after scrolling with the legacy hide preference enabled`() {
-        assertLibraryReachableAfterPaging(hidePreference = true)
-    }
-
-    /** Replaces `Navigation remains reachable when the legacy hide preference is off`. */
-    @Test
-    fun `the bar opens Library after scrolling with the legacy hide preference disabled`() {
-        assertLibraryReachableAfterPaging(hidePreference = false)
+    fun `the bar opens Library after scrolling`() {
+        assertLibraryReachableAfterPaging()
     }
 
     @Test
@@ -61,11 +58,17 @@ class RailHidesOnScrollTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = ROWS.size,
-                    rowAt = { ROWS.getOrNull(it) },
-                    onReload = { reloads += 1 },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = ROWS.size,
+                            rowAt = { ROWS.getOrNull(it) },
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onReload = { reloads += 1 },
+                        ),
                 )
             }
         }
@@ -75,10 +78,21 @@ class RailHidesOnScrollTest {
         assertTrue("expected one reload, got $reloads", reloads == 1)
     }
 
-    private fun assertLibraryReachableAfterPaging(hidePreference: Boolean) {
+    private fun assertLibraryReachableAfterPaging() {
         var savedOpens = 0
         composeRule.setContent {
-            NextTheme { FeedScreen(rows = ROWS, onOpenLibrary = { savedOpens++ }, hideRailOnScroll = hidePreference) }
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = ROWS,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenLibrary = { savedOpens++ },
+                        ),
+                )
+            }
         }
         composeRule.onNodeWithTag(OrbinNavigationTags.ENTRY + NextDestination.LIBRARY.name).assertIsDisplayed()
         scrollFeedDown()

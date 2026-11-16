@@ -52,20 +52,28 @@ class ReaderCardScrollAnchorTest(
                     when (surface) {
                         Surface.HOME ->
                             FeedScreen(
-                                rows = rows,
-                                mode = mode,
-                                wideWindow = true,
+                                state =
+                                    FeedScreenState(
+                                        rows = rows,
+                                        mode = mode,
+                                        wideWindow = true,
+                                    ),
+                                actions = FeedScreenActions(),
                                 thumbnail = { _, modifier -> Box(modifier) },
                             )
                         Surface.BOARD ->
                             BoardScreen(
-                                board = "/g/",
-                                description = "Technology",
-                                itemCount = rows.size,
-                                rowAt = { rows.getOrNull(it) },
-                                mode = mode,
-                                wideWindow = true,
-                                state = boardState,
+                                state =
+                                    BoardScreenState(
+                                        board = "/g/",
+                                        description = "Technology",
+                                        itemCount = rows.size,
+                                        rowAt = { rows.getOrNull(it) },
+                                        mode = mode,
+                                        wideWindow = true,
+                                    ),
+                                actions = BoardScreenActions(),
+                                gridState = boardState,
                                 thumbnail = { _, modifier -> Box(modifier) },
                             )
                     }
@@ -150,12 +158,18 @@ class ReaderCardRestoredScrollAnchorTest {
             NextTheme {
                 Box(Modifier.requiredSize(800.dp, 1000.dp)) {
                     FeedScreen(
-                        rows = if (source == 0) first else second,
-                        sourceLabels = listOf("First source", "Second source"),
-                        selectedSource = source,
-                        onSelectSource = { source = it },
-                        mode = mode,
-                        wideWindow = true,
+                        state =
+                            FeedScreenState(
+                                rows = if (source == 0) first else second,
+                                sourceLabels = listOf("First source", "Second source"),
+                                selectedSource = source,
+                                mode = mode,
+                                wideWindow = true,
+                            ),
+                        actions =
+                            FeedScreenActions(
+                                onSelectSource = { source = it },
+                            ),
                         thumbnail = { _, modifier -> Box(modifier) },
                     )
                 }
@@ -200,13 +214,17 @@ class ReaderCardRestoredScrollAnchorTest {
             NextTheme {
                 Box(Modifier.requiredSize(800.dp, 1000.dp)) {
                     BoardScreen(
-                        board = "/g/",
-                        description = description,
-                        itemCount = rows.size,
-                        rowAt = { rows.getOrNull(it) },
-                        mode = CatalogMode.CARD,
-                        wideWindow = true,
-                        state = state,
+                        state =
+                            BoardScreenState(
+                                board = "/g/",
+                                description = description,
+                                itemCount = rows.size,
+                                rowAt = { rows.getOrNull(it) },
+                                mode = CatalogMode.CARD,
+                                wideWindow = true,
+                            ),
+                        actions = BoardScreenActions(),
+                        gridState = state,
                         thumbnail = { _, modifier -> Box(modifier) },
                     )
                 }

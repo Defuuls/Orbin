@@ -208,11 +208,17 @@ class OrbinAdaptiveNavigationTest {
             navigation = { OrbinSideBar(selected = selected, onSelect = onSelect, downloadBadge = 3) },
         ) {
             FeedScreen(
-                rows = emptyList(),
-                onOpenBoards = { onSelect(NextDestination.BOARDS) },
-                onOpenDownloads = { onSelect(NextDestination.DOWNLOADS) },
-                onSettings = { onSelect(NextDestination.SETTINGS) },
-                downloadBadge = 3,
+                state =
+                    FeedScreenState(
+                        rows = emptyList(),
+                        downloadBadge = 3,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = { onSelect(NextDestination.BOARDS) },
+                        onOpenDownloads = { onSelect(NextDestination.DOWNLOADS) },
+                        onSettings = { onSelect(NextDestination.SETTINGS) },
+                    ),
             )
         }
     }

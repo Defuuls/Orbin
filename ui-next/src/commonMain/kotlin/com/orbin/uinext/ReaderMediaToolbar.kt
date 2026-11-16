@@ -120,13 +120,16 @@ private fun ReaderMediaToolbarFrame(
         modifier
             .testTag(ReaderMediaToolbarTags.BAR)
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))
+            .background(MediaToolbarShade)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 28.dp),
     ) {
         content()
     }
 }
+
+/** The top shade behind the toolbar; constant, so built once rather than per frame. */
+private val MediaToolbarShade = Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent))
 
 private val MEDIA_TOOLBAR_STACKED_WIDTH = 360.dp
 

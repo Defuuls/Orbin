@@ -149,29 +149,33 @@ class CatalogLargeTextTest {
         CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    mode = CatalogMode.GRID,
-                    itemCount = ROWS.size,
-                    rowAt = { index ->
-                        ROWS.getOrNull(index)?.let { row ->
-                            val counted =
-                                if (longCounts && index == 0) {
-                                    row.copy(replies = 123_456_789, media = 123_456_789)
-                                } else if (longCounts) {
-                                    row.copy(unread = 123_456_789)
-                                } else {
-                                    row
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            mode = CatalogMode.GRID,
+                            itemCount = ROWS.size,
+                            rowAt = { index ->
+                                ROWS.getOrNull(index)?.let { row ->
+                                    val counted =
+                                        if (longCounts && index == 0) {
+                                            row.copy(replies = 123_456_789, media = 123_456_789)
+                                        } else if (longCounts) {
+                                            row.copy(unread = 123_456_789)
+                                        } else {
+                                            row
+                                        }
+                                    if (longTitles) {
+                                        counted.copy(
+                                            subject = "A complete reader title that needs all three lines",
+                                        )
+                                    } else {
+                                        counted
+                                    }
                                 }
-                            if (longTitles) {
-                                counted.copy(
-                                    subject = "A complete reader title that needs all three lines",
-                                )
-                            } else {
-                                counted
-                            }
-                        }
-                    },
+                            },
+                        ),
+                    actions = BoardScreenActions(),
                     thumbnail = { _, modifier -> Box(modifier) },
                 )
             }

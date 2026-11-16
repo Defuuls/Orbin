@@ -34,11 +34,17 @@ class ProposalScreenshotTest {
     fun feed() =
         capture("next_feed") {
             FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenDownloads = {},
-                onSettings = {},
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        subtitle = SAMPLE_SUBTITLE,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenDownloads = {},
+                        onSettings = {},
+                    ),
             )
         }
 
@@ -46,11 +52,17 @@ class ProposalScreenshotTest {
     fun feedDark() =
         capture("next_feed_dark", dark = true) {
             FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenDownloads = {},
-                onSettings = {},
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        subtitle = SAMPLE_SUBTITLE,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenDownloads = {},
+                        onSettings = {},
+                    ),
             )
         }
 
@@ -58,11 +70,17 @@ class ProposalScreenshotTest {
     fun feedAmoled() =
         capture("next_feed_amoled", dark = true, amoled = true) {
             FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenDownloads = {},
-                onSettings = {},
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        subtitle = SAMPLE_SUBTITLE,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenDownloads = {},
+                        onSettings = {},
+                    ),
             )
         }
 
@@ -70,11 +88,17 @@ class ProposalScreenshotTest {
     fun feedLargeText() =
         capture("next_feed_large_text", fontScale = XL_FONT_SCALE) {
             FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenDownloads = {},
-                onSettings = {},
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        subtitle = SAMPLE_SUBTITLE,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenDownloads = {},
+                        onSettings = {},
+                    ),
             )
         }
 
@@ -82,30 +106,50 @@ class ProposalScreenshotTest {
     fun feedMaxText() =
         capture("next_feed_max_text", fontScale = MAX_FONT_SCALE) {
             FeedScreen(
-                rows = feedRows(),
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenDownloads = {},
-                onSettings = {},
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        subtitle = SAMPLE_SUBTITLE,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenDownloads = {},
+                        onSettings = {},
+                    ),
             )
         }
 
     @Test
     fun feedInShell() =
         capture("next_feed_in_shell") {
-            FeedScreen(rows = feedRows(), subtitle = SAMPLE_SUBTITLE, showRail = false)
+            FeedScreen(
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        subtitle = SAMPLE_SUBTITLE,
+                        showRail = false,
+                    ),
+                actions = FeedScreenActions(),
+            )
         }
 
     @Test
     fun feedGrid() =
         capture("next_feed_grid") {
             FeedScreen(
-                rows = feedRows(),
-                mode = CatalogMode.GRID,
-                subtitle = SAMPLE_SUBTITLE,
-                onOpenBoards = {},
-                onOpenDownloads = {},
-                onSettings = {},
+                state =
+                    FeedScreenState(
+                        rows = feedRows(),
+                        mode = CatalogMode.GRID,
+                        subtitle = SAMPLE_SUBTITLE,
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onOpenBoards = {},
+                        onOpenDownloads = {},
+                        onSettings = {},
+                    ),
             )
         }
 
@@ -114,10 +158,14 @@ class ProposalScreenshotTest {
         capture("next_board") {
             val rows = boardRows()
             BoardScreen(
-                board = "/g/",
-                description = "Technology",
-                itemCount = rows.size,
-                rowAt = { index -> rows.getOrNull(index) },
+                state =
+                    BoardScreenState(
+                        board = "/g/",
+                        description = "Technology",
+                        itemCount = rows.size,
+                        rowAt = { index -> rows.getOrNull(index) },
+                    ),
+                actions = BoardScreenActions(),
             )
         }
 

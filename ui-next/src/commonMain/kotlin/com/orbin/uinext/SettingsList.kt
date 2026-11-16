@@ -488,19 +488,23 @@ private fun SettingsBrandHero(
                 }
             }
         }
+        val dark = next.dark
+        val heroFill =
+            remember(colors.accent, colors.secondary, dark) {
+                Brush.linearGradient(
+                    listOf(
+                        colors.accent.copy(alpha = if (dark) 0.22f else 0.35f),
+                        colors.secondary.copy(alpha = if (dark) 0.18f else 0.28f),
+                    ),
+                )
+            }
         val heroModifier =
             Modifier
                 .fillMaxWidth()
                 .testTag("settings-brand-hero")
                 .clip(shape)
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            colors.accent.copy(alpha = if (next.dark) 0.22f else 0.35f),
-                            colors.secondary.copy(alpha = if (next.dark) 0.18f else 0.28f),
-                        ),
-                    ),
-                ).border(1.dp, colors.accent.copy(alpha = 0.2f), shape)
+                .background(heroFill)
+                .border(1.dp, colors.accent.copy(alpha = 0.2f), shape)
                 .padding(18.dp)
         if (stacked) {
             Column(heroModifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {

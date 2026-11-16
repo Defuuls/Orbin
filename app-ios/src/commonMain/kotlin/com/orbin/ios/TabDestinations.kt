@@ -48,6 +48,8 @@ import com.orbin.ios.resources.ios_primary_loading
 import com.orbin.ios.resources.ios_search_follow_boards
 import com.orbin.uinext.BoardsScreen
 import com.orbin.uinext.FeedScreen
+import com.orbin.uinext.FeedScreenActions
+import com.orbin.uinext.FeedScreenState
 import com.orbin.uinext.LibrarySection
 import com.orbin.uinext.LocalOrbinNavigationAtSide
 import com.orbin.uinext.NextDestination
@@ -138,58 +140,114 @@ internal fun FeedDestination(
                     CatalogMode.CARD -> ReaderCatalogMode.CARD
                 }
             FeedScreen(
-                rows = rows,
-                emptyTitle = stringResource(Res.string.ios_feed_favorites_empty_title).takeIf { favoritesOnly },
-                emptyMessage = stringResource(Res.string.ios_feed_favorites_empty_message).takeIf { favoritesOnly },
-                mode = catalogMode,
-                downloadBadge = downloadBadge,
-                onModeChange = { selected ->
-                    browser.settings.setCatalogMode(
-                        when (selected) {
-                            ReaderCatalogMode.LIST -> CatalogMode.LIST
-                            ReaderCatalogMode.GRID -> CatalogMode.GRID
-                            ReaderCatalogMode.CARD -> CatalogMode.CARD
-                        },
-                    )
-                },
-                wideWindow = isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
-                isLoading = !policyMatches || feed is Load.Loading || loadingMore && rows.isEmpty(),
-                errorMessage = (feed as? Load.Failed)?.message,
-                onRetry = browser::retry,
-                onLoadMore =
-                    (browser::loadMoreFeed).takeIf {
-                        canLoadMore &&
-                            !loadingMore &&
-                            feed is Load.Ready &&
-                            policyMatches
-                    },
-                loadMoreKey = discoveryProgress,
-                hideRailOnScroll = false,
-                onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
-                onOpenMedia = { row ->
-                    byRow[row.id]?.let { entry ->
-                        entry.thread.originalPost.attachments.firstOrNull()?.let { attachment ->
-                            browser.openMedia(entry.thread.key, attachment)
-                        }
-                    }
-                },
-                onOpenReplies = { row ->
-                    byRow[row.id]?.let {
-                        if (settings.openThreadComments) {
-                            browser.openThread(
-                                it.thread.key,
+                state =
+                    FeedScreenState(
+                        rows = rows,
+                        emptyTitle = stringResource(Res.string.ios_feed_favorites_empty_title).takeIf { favoritesOnly },
+                        emptyMessage =
+                            stringResource(
+                                Res.string.ios_feed_favorites_empty_message,
+                            ).takeIf { favoritesOnly },
+                        mode = catalogMode,
+                        downloadBadge = downloadBadge,
+                        wideWindow = isWideWindow(maxWidth.value.toInt(), maxHeight.value.toInt()),
+                        isLoading = !policyMatches || feed is Load.Loading || loadingMore && rows.isEmpty(),
+                        errorMessage = (feed as? Load.Failed)?.message,
+                        loadMoreKey = discoveryProgress,
+                        repliesOpenComments = settings.openThreadComments,
+                        watchedBadge = rememberWatchedBadge(browser),
+                        sourceLabels =
+                            listOf(
+                                stringResource(Res.string.ios_collection_all_sites),
+                                stringResource(Res.string.ios_feed_favorites),
+                            ) +
+                                browser.sites.map { it.name },
+                        selectedSource =
+                            if (favoritesOnly) {
+                                1
+                            } else if (site ==
+                                null
+                            ) {
+                                0
+                            } else {
+                                browser.sites.indexOfFirst { it.id == site } + 2
+                            },
+                    ),
+                actions =
+                    FeedScreenActions(
+                        onModeChange = { selected ->
+                            browser.settings.setCatalogMode(
+                                when (selected) {
+                                    ReaderCatalogMode.LIST -> CatalogMode.LIST
+                                    ReaderCatalogMode.GRID -> CatalogMode.GRID
+                                    ReaderCatalogMode.CARD -> CatalogMode.CARD
+                                },
                             )
-                        } else {
-                            browser.openThreadVideos(it.thread.key)
-                        }
-                    }
-                },
-                repliesOpenComments = settings.openThreadComments,
-                onToggleWatch = { row -> byRow[row.id]?.let(browser::toggleFeedWatch) },
-                onToggleSaved = { row -> byRow[row.id]?.let(browser::toggleFeedSaved) },
-                onShareRow = { row ->
-                    byRow[row.id]?.let { shareContent(row.subject, browser.threadWebUrl(it.thread.key)) }
-                },
+                        },
+                        onRetry = browser::retry,
+                        onLoadMore =
+                            (browser::loadMoreFeed).takeIf {
+                                canLoadMore &&
+                                    !loadingMore &&
+                                    feed is Load.Ready &&
+                                    policyMatches
+                            },
+                        onOpenRow = { row -> byRow[row.id]?.let { browser.openThread(it.thread.key) } },
+                        onOpenMedia = { row ->
+                            byRow[row.id]?.let { entry ->
+                                entry.thread.originalPost.attachments.firstOrNull()?.let { attachment ->
+                                    browser.openMedia(entry.thread.key, attachment)
+                                }
+                            }
+                        },
+                        onOpenReplies = { row ->
+                            byRow[row.id]?.let {
+                                if (settings.openThreadComments) {
+                                    browser.openThread(
+                                        it.thread.key,
+                                    )
+                                } else {
+                                    browser.openThreadVideos(it.thread.key)
+                                }
+                            }
+                        },
+                        onToggleWatch = { row -> byRow[row.id]?.let(browser::toggleFeedWatch) },
+                        onToggleSaved = { row -> byRow[row.id]?.let(browser::toggleFeedSaved) },
+                        onShareRow = { row ->
+                            byRow[row.id]?.let { shareContent(row.subject, browser.threadWebUrl(it.thread.key)) }
+                        },
+                        onOpenBoard = { row ->
+                            byRow[row.id]?.let { entry ->
+                                val key = entry.thread.key
+                                val known =
+                                    (boards as? Load.Ready<List<SiteBoard>>)?.value?.firstOrNull {
+                                        it.provider == key.provider && it.board.id == key.board
+                                    }
+                                browser.openBoard(
+                                    known
+                                        ?: SiteBoard(
+                                            key.provider,
+                                            browser.siteName(key.provider),
+                                            Board(key.board, row.boardTitle),
+                                        ),
+                                )
+                            }
+                        },
+                        onOpenBoards = { browser.openTab(Route.Boards) },
+                        onOpenDownloads = { browser.openLibrary(LibrarySection.DOWNLOADS) },
+                        onOpenSearch = { browser.open(Route.Search) },
+                        onOpenSaved = { browser.openLibrary(LibrarySection.SAVED) },
+                        onOpenWatched = { browser.openLibrary(LibrarySection.WATCHED) },
+                        onOpenLibrary = { browser.openLibrary() },
+                        onSettings = { browser.openPrimaryPage(Route.Settings) },
+                        onSelectSource = { index ->
+                            if (index == 1) {
+                                browser.selectFeedFavoritesOnly(true)
+                            } else {
+                                browser.selectFeedSite(browser.sites.getOrNull(index - 2)?.id)
+                            }
+                        },
+                    ),
                 thumbnail = { row, modifier ->
                     byRow[row.id]?.thread?.originalPost?.attachments?.firstOrNull()?.let { attachment ->
                         // The reader cell reveals spoilers before requesting this bounded preview.
@@ -208,55 +266,6 @@ internal fun FeedDestination(
                         )
                     }
                 },
-                onOpenBoard = { row ->
-                    byRow[row.id]?.let { entry ->
-                        val key = entry.thread.key
-                        val known =
-                            (boards as? Load.Ready<List<SiteBoard>>)?.value?.firstOrNull {
-                                it.provider == key.provider && it.board.id == key.board
-                            }
-                        browser.openBoard(
-                            known
-                                ?: SiteBoard(
-                                    key.provider,
-                                    browser.siteName(key.provider),
-                                    Board(key.board, row.boardTitle),
-                                ),
-                        )
-                    }
-                },
-                onOpenBoards = { browser.openTab(Route.Boards) },
-                onOpenDownloads = { browser.openLibrary(LibrarySection.DOWNLOADS) },
-                onOpenSearch = { browser.open(Route.Search) },
-                onOpenSaved = { browser.openLibrary(LibrarySection.SAVED) },
-                onOpenWatched = { browser.openLibrary(LibrarySection.WATCHED) },
-                onOpenLibrary = { browser.openLibrary() },
-                watchedBadge = rememberWatchedBadge(browser),
-                onSettings = { browser.openPrimaryPage(Route.Settings) },
-                sourceLabels =
-                    listOf(
-                        stringResource(Res.string.ios_collection_all_sites),
-                        stringResource(Res.string.ios_feed_favorites),
-                    ) +
-                        browser.sites.map { it.name },
-                selectedSource =
-                    if (favoritesOnly) {
-                        1
-                    } else if (site ==
-                        null
-                    ) {
-                        0
-                    } else {
-                        browser.sites.indexOfFirst { it.id == site } + 2
-                    },
-                onSelectSource = { index ->
-                    if (index == 1) {
-                        browser.selectFeedFavoritesOnly(true)
-                    } else {
-                        browser.selectFeedSite(browser.sites.getOrNull(index - 2)?.id)
-                    }
-                },
-                uniformCards = true,
             )
         }
     }

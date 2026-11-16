@@ -225,11 +225,17 @@ class CatalogScreenTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = 1,
-                    rowAt = { ROWS.first().copy(id = "source/g/1", imageSpoiler = true) },
-                    onOpenRow = { opens++ },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = 1,
+                            rowAt = { ROWS.first().copy(id = "source/g/1", imageSpoiler = true) },
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onOpenRow = { opens++ },
+                        ),
                     thumbnail = { _, modifier ->
                         SideEffect { mediaCompositions++ }
                         Box(modifier.testTag("requested-thumbnail"))
@@ -258,12 +264,18 @@ class CatalogScreenTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    mode = CatalogMode.GRID,
-                    itemCount = 1,
-                    rowAt = { ROWS.first().copy(id = "source/g/1", imageSpoiler = true) },
-                    onOpenRow = { opens++ },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            mode = CatalogMode.GRID,
+                            itemCount = 1,
+                            rowAt = { ROWS.first().copy(id = "source/g/1", imageSpoiler = true) },
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onOpenRow = { opens++ },
+                        ),
                     thumbnail = { _, modifier ->
                         SideEffect { mediaCompositions++ }
                         Box(modifier.testTag("requested-thumbnail"))
@@ -357,11 +369,15 @@ class CatalogScreenTest {
         composeRule.setContent {
             NextTheme {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = 2,
-                    rowAt = { index -> ROWS.first().takeIf { index == 0 } },
-                    mode = CatalogMode.GRID,
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = 2,
+                            rowAt = { index -> ROWS.first().takeIf { index == 0 } },
+                            mode = CatalogMode.GRID,
+                        ),
+                    actions = BoardScreenActions(),
                     thumbnail = { _, _ -> },
                 )
             }
@@ -528,17 +544,23 @@ class CatalogScreenTest {
     ) {
         val slot: (@Composable (FeedRow, Modifier) -> Unit)? = if (thumbnail) { _, _ -> } else null
         BoardScreen(
-            board = "/g/",
-            description = "Technology",
-            itemCount = rows.size,
-            rowAt = rows::getOrNull,
-            mode = mode,
-            wideWindow = wideWindow,
-            selectedRowId = selectedRowId,
-            reloading = reloading,
-            state = state,
-            onPickBoard = onPickBoard,
-            onOpenRow = onOpenRow,
+            state =
+                BoardScreenState(
+                    board = "/g/",
+                    description = "Technology",
+                    itemCount = rows.size,
+                    rowAt = rows::getOrNull,
+                    mode = mode,
+                    wideWindow = wideWindow,
+                    selectedRowId = selectedRowId,
+                    reloading = reloading,
+                ),
+            actions =
+                BoardScreenActions(
+                    onPickBoard = onPickBoard,
+                    onOpenRow = onOpenRow,
+                ),
+            gridState = state,
             thumbnail = slot,
         )
     }

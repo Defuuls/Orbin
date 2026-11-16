@@ -36,16 +36,22 @@ class BrowsingFeatureParityTest {
             var selected by remember { mutableStateOf(CatalogSortTabs.BUMP_ORDER) }
             NextTheme(fontScale = 2f) {
                 BoardScreen(
-                    board = "/g/",
-                    description = "Technology",
-                    itemCount = 0,
-                    rowAt = { null },
-                    sortTabs = catalogSortTabs(),
-                    selectedSortId = selected,
-                    onSelectSort = {
-                        selected = it
-                        chosen += it
-                    },
+                    state =
+                        BoardScreenState(
+                            board = "/g/",
+                            description = "Technology",
+                            itemCount = 0,
+                            rowAt = { null },
+                            sortTabs = catalogSortTabs(),
+                            selectedSortId = selected,
+                        ),
+                    actions =
+                        BoardScreenActions(
+                            onSelectSort = {
+                                selected = it
+                                chosen += it
+                            },
+                        ),
                 )
             }
         }

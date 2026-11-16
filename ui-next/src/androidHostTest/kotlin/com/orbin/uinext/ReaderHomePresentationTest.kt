@@ -45,7 +45,18 @@ class ReaderHomePresentationTest {
         val rows = rows("fourchan")
         compose.setContent {
             NextTheme {
-                FeedScreen(rows = rows, onOpenBoards = {}, onOpenSearch = {}, onSettings = {})
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = {},
+                            onOpenSearch = {},
+                            onSettings = {},
+                        ),
+                )
             }
         }
         compose.onNodeWithTag(ReaderAppBarTags.BAR).assertIsDisplayed()
@@ -66,9 +77,15 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows("fourchan"),
-                    onActivePreviewChanged = { owners += it },
-                    onUpcomingPreviewChanged = { upcoming += it },
+                    state =
+                        FeedScreenState(
+                            rows = rows("fourchan"),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onActivePreviewChanged = { owners += it },
+                            onUpcomingPreviewChanged = { upcoming += it },
+                        ),
                     mediaContent = { _, modifier, playing ->
                         active += playing
                         Box(modifier)
@@ -97,13 +114,19 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = if (source == 0) first else second,
-                    sourceLabels = listOf("4chan", "BBWChan"),
-                    selectedSource = source,
-                    onSelectSource = { source = it },
-                    mode = mode,
-                    onModeChange = { mode = it },
-                    onOpenBoards = {},
+                    state =
+                        FeedScreenState(
+                            rows = if (source == 0) first else second,
+                            sourceLabels = listOf("4chan", "BBWChan"),
+                            selectedSource = source,
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onSelectSource = { source = it },
+                            onModeChange = { mode = it },
+                            onOpenBoards = {},
+                        ),
                 )
             }
         }
@@ -129,10 +152,16 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = if (source == 0) first else second,
-                    sourceLabels = listOf("4chan", "BBWChan"),
-                    selectedSource = source,
-                    onSelectSource = { source = it },
+                    state =
+                        FeedScreenState(
+                            rows = if (source == 0) first else second,
+                            sourceLabels = listOf("4chan", "BBWChan"),
+                            selectedSource = source,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onSelectSource = { source = it },
+                        ),
                 )
             }
         }
@@ -149,7 +178,17 @@ class ReaderHomePresentationTest {
     @Test
     fun reorderingRetainsTheFirstVisibleThread() {
         var rows by mutableStateOf(rows("fourchan"))
-        compose.setContent { NextTheme { FeedScreen(rows = rows) } }
+        compose.setContent {
+            NextTheme {
+                FeedScreen(
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                        ),
+                    actions = FeedScreenActions(),
+                )
+            }
+        }
         compose.onNodeWithTag(ReaderFeedTags.GRID).performScrollToIndex(18)
         val retained = rows[18]
         val before = compose.onNodeWithTag(ReaderFeedTags.row(retained.id)).getUnclippedBoundsInRoot()
@@ -171,10 +210,16 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = if (source == 0) first else second,
-                    sourceLabels = listOf("4chan", "BBWChan"),
-                    selectedSource = source,
-                    onSelectSource = { source = it },
+                    state =
+                        FeedScreenState(
+                            rows = if (source == 0) first else second,
+                            sourceLabels = listOf("4chan", "BBWChan"),
+                            selectedSource = source,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onSelectSource = { source = it },
+                        ),
                 )
             }
         }
@@ -207,9 +252,15 @@ class ReaderHomePresentationTest {
             NextTheme {
                 if (visible) {
                     FeedScreen(
-                        rows = rows("fourchan"),
-                        onActivePreviewChanged = { owners += it },
-                        onUpcomingPreviewChanged = { upcoming += it },
+                        state =
+                            FeedScreenState(
+                                rows = rows("fourchan"),
+                            ),
+                        actions =
+                            FeedScreenActions(
+                                onActivePreviewChanged = { owners += it },
+                                onUpcomingPreviewChanged = { upcoming += it },
+                            ),
                     )
                 }
             }
@@ -228,17 +279,23 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = if (completedBatch >= 24) rows("fourchan") else rows("fourchan").take(2),
-                    loadMoreKey = completedBatch,
-                    onLoadMore =
-                        if (completedBatch >= 24) {
-                            null
-                        } else {
-                            {
-                                calls++
-                                completedBatch += 8
-                            }
-                        },
+                    state =
+                        FeedScreenState(
+                            rows = if (completedBatch >= 24) rows("fourchan") else rows("fourchan").take(2),
+                            loadMoreKey = completedBatch,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onLoadMore =
+                                if (completedBatch >= 24) {
+                                    null
+                                } else {
+                                    {
+                                        calls++
+                                        completedBatch += 8
+                                    }
+                                },
+                        ),
                 )
             }
         }
@@ -257,19 +314,25 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows =
-                        when {
-                            source == 1 -> second
-                            firstReady -> first
-                            else -> emptyList()
-                        },
-                    sourceLabels = listOf("4chan", "BBWChan"),
-                    selectedSource = source,
-                    onSelectSource = {
-                        if (it == 0) firstReady = false
-                        source = it
-                    },
-                    isLoading = source == 0 && !firstReady,
+                    state =
+                        FeedScreenState(
+                            rows =
+                                when {
+                                    source == 1 -> second
+                                    firstReady -> first
+                                    else -> emptyList()
+                                },
+                            sourceLabels = listOf("4chan", "BBWChan"),
+                            selectedSource = source,
+                            isLoading = source == 0 && !firstReady,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onSelectSource = {
+                                if (it == 0) firstReady = false
+                                source = it
+                            },
+                        ),
                 )
             }
         }
@@ -298,13 +361,19 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = emptyList(),
-                    sourceLabels = listOf("4chan", "BBWChan"),
-                    selectedSource = source,
-                    onSelectSource = { source = it },
-                    isLoading = source == 0,
-                    errorMessage = if (source == 1) "The source is temporarily unavailable" else null,
-                    onRetry = {},
+                    state =
+                        FeedScreenState(
+                            rows = emptyList(),
+                            sourceLabels = listOf("4chan", "BBWChan"),
+                            selectedSource = source,
+                            isLoading = source == 0,
+                            errorMessage = if (source == 1) "The source is temporarily unavailable" else null,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onSelectSource = { source = it },
+                            onRetry = {},
+                        ),
                 )
             }
         }
@@ -326,12 +395,18 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows,
-                    onRetry = { retries++ },
-                    onOpenSearch = { searches++ },
-                    onOpenBoards = { boards++ },
-                    onModeChange = {},
-                    onOpenDownloads = {},
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onRetry = { retries++ },
+                            onOpenSearch = { searches++ },
+                            onOpenBoards = { boards++ },
+                            onModeChange = {},
+                            onOpenDownloads = {},
+                        ),
                 )
             }
         }
@@ -362,9 +437,15 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = emptyList(),
-                    onRetry = if (canRetry) ({ retries++ }) else null,
-                    onOpenBoards = { boards++ },
+                    state =
+                        FeedScreenState(
+                            rows = emptyList(),
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onRetry = if (canRetry) ({ retries++ }) else null,
+                            onOpenBoards = { boards++ },
+                        ),
                 )
             }
         }
@@ -398,10 +479,16 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows,
-                    errorMessage = failure,
-                    onRetry = { retries++ },
-                    onOpenBoards = { boards++ },
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                            errorMessage = failure,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onRetry = { retries++ },
+                            onOpenBoards = { boards++ },
+                        ),
                 )
             }
         }
@@ -426,9 +513,11 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = subscribedRows,
-                    following = legacyFollowing,
-                    onFollowingChange = { modeChanges++ },
+                    state =
+                        FeedScreenState(
+                            rows = subscribedRows,
+                        ),
+                    actions = FeedScreenActions(),
                 )
             }
         }
@@ -455,12 +544,18 @@ class ReaderHomePresentationTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = rows,
-                    mode = CatalogMode.GRID,
+                    state =
+                        FeedScreenState(
+                            rows = rows,
+                            mode = CatalogMode.GRID,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onOpenBoards = {},
+                            onOpenSearch = {},
+                            onSettings = {},
+                        ),
                     thumbnail = { _, modifier -> Box(modifier) },
-                    onOpenBoards = {},
-                    onOpenSearch = {},
-                    onSettings = {},
                 )
             }
         }

@@ -344,18 +344,23 @@ private fun OrbinNavigationTab(
     val label = orbinBottomLabel(destination)
     var tooltip by remember { mutableStateOf(false) }
     if (!iconOnly) tooltip = false
+    val secondary = accentSecondary(next.accentTheme)
     val gradient =
-        if (selected) {
-            listOf(colors.accent.copy(alpha = 0.24f), accentSecondary(next.accentTheme).copy(alpha = 0.20f))
-        } else {
-            listOf(Color.Transparent, Color.Transparent)
+        remember(selected, colors.accent, secondary) {
+            Brush.linearGradient(
+                if (selected) {
+                    listOf(colors.accent.copy(alpha = 0.24f), secondary.copy(alpha = 0.20f))
+                } else {
+                    listOf(Color.Transparent, Color.Transparent)
+                },
+            )
         }
     Column(
         modifier =
             modifier
                 .testTag(OrbinNavigationTags.ENTRY + destination.name)
                 .clip(RoundedCornerShape(22.dp))
-                .background(Brush.linearGradient(gradient))
+                .background(gradient)
                 .combinedClickable(
                     role = Role.Tab,
                     onClick = { if (!selected) onSelect(destination) },

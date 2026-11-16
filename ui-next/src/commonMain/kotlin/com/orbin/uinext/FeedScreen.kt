@@ -79,65 +79,20 @@ object FeedPagerTags {
  * belong to the hosts; only the presentation changes. Media starts in its explicit viewer,
  * while the bounded Home thumbnails remain static in every theme and catalog mode.
  */
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun FeedScreen(
-    rows: List<FeedRow>,
+    state: FeedScreenState,
+    actions: FeedScreenActions,
     modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    showRail: Boolean = true,
-    onOpenRow: (FeedRow) -> Unit = {},
-    onSettings: (() -> Unit)? = null,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)? = null,
-    activityText: @Composable (FeedRow) -> String = { it.activity },
-    onActivePreviewChanged: (String?) -> Unit = {},
-    hideRailOnScroll: Boolean = true,
-    onChromeVisibleChange: (Boolean) -> Unit = {},
-    onCompactTitleVisibleChange: (Boolean) -> Unit = {},
-    onOpenBoards: (() -> Unit)? = null,
-    onOpenDownloads: (() -> Unit)? = null,
-    headerContent: @Composable () -> Unit = {},
-    query: String = "",
-    onQueryChange: (String) -> Unit = {},
-    groupByBoard: Boolean = false,
-    columns: Int? = null,
-    uniformCards: Boolean = false,
-    onOpenSearch: (() -> Unit)? = null,
-    onOpenSaved: (() -> Unit)? = null,
-    onOpenWatched: (() -> Unit)? = null,
-    onOpenLibrary: (() -> Unit)? = onOpenWatched ?: onOpenSaved ?: onOpenDownloads,
-    onToggleWatch: ((FeedRow) -> Unit)? = null,
-    onToggleSaved: ((FeedRow) -> Unit)? = null,
-    onShareRow: ((FeedRow) -> Unit)? = null,
-    sourceLabels: List<String> = emptyList(),
-    selectedSource: Int = 0,
-    onSelectSource: (Int) -> Unit = {},
-    statusMessage: String? = null,
     mediaContent: (@Composable (FeedRow, Modifier, Boolean) -> Unit)? = null,
-    onOpenBoard: ((FeedRow) -> Unit)? = null,
-    onUpcomingPreviewChanged: (String?) -> Unit = {},
-    following: Boolean? = null,
-    onFollowingChange: (Boolean) -> Unit = {},
-    isLoading: Boolean = false,
-    errorMessage: String? = null,
-    onRetry: (() -> Unit)? = null,
-    onLoadMore: (() -> Unit)? = null,
-    onOpenReplies: ((FeedRow) -> Unit)? = null,
-    repliesOpenComments: Boolean = onOpenReplies == null,
-    loadMoreKey: Any? = null,
-    mode: CatalogMode = CatalogMode.LIST,
-    onModeChange: ((CatalogMode) -> Unit)? = null,
-    wideWindow: Boolean = false,
-    downloadBadge: Int = 0,
-    watchedBadge: Int = 0,
-    onOpenMedia: ((FeedRow) -> Unit)? = null,
-    emptyTitle: String? = null,
-    emptyMessage: String? = null,
+    activityText: @Composable (FeedRow) -> String = { it.activity },
+    headerContent: @Composable () -> Unit = {},
 ) {
-    val previewCallback by rememberUpdatedState(onActivePreviewChanged)
-    val upcomingCallback by rememberUpdatedState(onUpcomingPreviewChanged)
-    val chromeCallback by rememberUpdatedState(onChromeVisibleChange)
-    val titleCallback by rememberUpdatedState(onCompactTitleVisibleChange)
+    val previewCallback by rememberUpdatedState(actions.onActivePreviewChanged)
+    val upcomingCallback by rememberUpdatedState(actions.onUpcomingPreviewChanged)
+    val chromeCallback by rememberUpdatedState(actions.onChromeVisibleChange)
+    val titleCallback by rememberUpdatedState(actions.onCompactTitleVisibleChange)
     DisposableEffect(Unit) {
         previewCallback(null)
         upcomingCallback(null)
@@ -148,143 +103,150 @@ fun FeedScreen(
             upcomingCallback(null)
         }
     }
-    val onDestination: ((NextDestination) -> Unit)? =
-        if (onOpenBoards != null || onOpenLibrary != null || onSettings != null) {
-            { destination ->
-                when (destination) {
-                    NextDestination.FEED -> Unit
-                    NextDestination.BOARDS -> onOpenBoards?.invoke()
-                    NextDestination.DOWNLOADS -> onOpenDownloads?.invoke()
-                    NextDestination.SEARCH -> onOpenSearch?.invoke()
-                    NextDestination.SAVED -> onOpenSaved?.invoke()
-                    NextDestination.WATCHED -> onOpenWatched?.invoke()
-                    NextDestination.SETTINGS -> onSettings?.invoke()
-                    NextDestination.LIBRARY -> onOpenLibrary?.invoke()
-                }
-            }
-        } else {
-            null
-        }
+    val onDestination = feedDestinationHandler(actions)
     val staticThumbnail: (@Composable (FeedRow, Modifier) -> Unit)? =
         thumbnail ?: mediaContent?.let { content -> { row, imageModifier -> content(row, imageModifier, false) } }
-    val bottomDestinations =
-        buildList {
-            if (onOpenBoards != null) add(NextDestination.BOARDS)
-            add(NextDestination.FEED)
-            if (onOpenLibrary != null) add(NextDestination.LIBRARY)
-            if (onSettings != null) add(NextDestination.SETTINGS)
-        }
+    val bottomDestinations = feedBottomDestinations(actions)
     val showBottomBar =
-        showRail && onDestination != null && bottomDestinations.size > 1 && !LocalOrbinNavigationAtSide.current
+        state.showRail && onDestination != null && bottomDestinations.size > 1 && !LocalOrbinNavigationAtSide.current
     val downloadsLabel = stringResource(Res.string.next_downloads_tab)
     val rowActions =
-        ReaderFeedRowActions(
-            onOpenRow,
-            onOpenMedia,
-            onOpenReplies,
-            repliesOpenComments,
-            onOpenBoard,
-            onToggleWatch,
-            onToggleSaved,
-            onShareRow,
-        )
+        remember(actions, state.repliesOpenComments) {
+            ReaderFeedRowActions(
+                actions.onOpenRow,
+                actions.onOpenMedia,
+                actions.onOpenReplies,
+                state.repliesOpenComments ?: (actions.onOpenReplies == null),
+                actions.onOpenBoard,
+                actions.onToggleWatch,
+                actions.onToggleSaved,
+                actions.onShareRow,
+            )
+        }
     NextScaffold(
         where = stringResource(Res.string.next_feed_title),
         modifier = modifier.fillMaxSize(),
-        destination = NextDestination.FEED.takeIf { showRail },
-        onDestination = onDestination.takeIf { showRail },
+        destination = NextDestination.FEED.takeIf { state.showRail },
+        onDestination = onDestination.takeIf { state.showRail },
         actions =
             listOfNotNull(
-                onRetry?.let {
+                actions.onRetry?.let {
                     ReaderAction(ReaderIcons.Refresh, stringResource(Res.string.reader_reload), it)
                 },
-                onOpenSearch?.let {
+                actions.onOpenSearch?.let {
                     ReaderAction(ReaderIcons.Search, stringResource(Res.string.next_search_title), it)
                 },
             ),
         overflow =
             buildList {
-                onModeChange?.let { change ->
-                    addAll(catalogModeMenuItems(mode, change))
+                actions.onModeChange?.let { change ->
+                    addAll(catalogModeMenuItems(state.mode, change))
                 }
-                onOpenDownloads?.let { add(ReaderMenuItem(downloadsLabel, onClick = it)) }
+                actions.onOpenDownloads?.let { add(ReaderMenuItem(downloadsLabel, onClick = it)) }
             },
     ) { bottomPadding ->
         Column(Modifier.fillMaxSize().background(reader.background).testTag(ReaderFeedTags.ROOT)) {
             ReaderFeedControls(
-                sourceLabels = sourceLabels,
-                selectedSource = selectedSource,
-                onSelectSource = onSelectSource,
-                subtitle = subtitle,
-                statusMessage = statusMessage,
+                sourceLabels = state.sourceLabels,
+                selectedSource = state.selectedSource,
+                onSelectSource = actions.onSelectSource,
+                subtitle = state.subtitle,
+                statusMessage = state.statusMessage,
                 headerContent = headerContent,
-                mode = mode,
-                onModeChange = onModeChange,
+                mode = state.mode,
+                onModeChange = actions.onModeChange,
             )
-            if (query.isNotEmpty()) ReaderCatalogSearch(query, onQueryChange, { onQueryChange("") })
-            ReaderRefreshProgress(refreshing = isLoading && rows.isNotEmpty())
+            if (state.query.isNotEmpty()) {
+                ReaderCatalogSearch(state.query, actions.onQueryChange, { actions.onQueryChange("") })
+            }
+            ReaderRefreshProgress(refreshing = state.isLoading && state.rows.isNotEmpty())
             val positions = rememberSaveableStateHolder()
             Box(Modifier.weight(1f)) {
-                positions.SaveableStateProvider("$selectedSource:subscriptions") {
+                positions.SaveableStateProvider("${state.selectedSource}:subscriptions") {
                     ReaderFeedGrid(
-                        rows = rows,
-                        mode = mode,
-                        wideWindow = wideWindow,
-                        isLoading = isLoading,
-                        errorMessage = errorMessage,
-                        onRetry = onRetry,
-                        onOpenBoards = onOpenBoards,
-                        onLoadMore = onLoadMore,
-                        loadMoreKey = loadMoreKey,
+                        state = state,
+                        actions = actions,
                         thumbnail = staticThumbnail,
                         activityText = activityText,
-                        actions = rowActions,
+                        rowActions = rowActions,
                         bottomPadding = if (showBottomBar) PaddingValues() else bottomPadding,
-                        emptyTitle = emptyTitle,
-                        emptyMessage = emptyMessage,
                     )
                 }
             }
-            if (rows.isNotEmpty() && errorMessage != null && !isLoading) {
-                ReaderRefreshFailure(ReaderFailureCause.UNKNOWN, onRetry = onRetry, message = errorMessage)
+            if (state.rows.isNotEmpty() && state.errorMessage != null && !state.isLoading) {
+                ReaderRefreshFailure(
+                    ReaderFailureCause.UNKNOWN,
+                    onRetry = actions.onRetry,
+                    message = state.errorMessage,
+                )
             }
             if (showBottomBar) {
                 OrbinBottomBar(
                     selected = NextDestination.FEED,
                     onSelect = checkNotNull(onDestination),
                     destinations = bottomDestinations,
-                    downloadBadge = downloadBadge,
-                    watchedBadge = watchedBadge,
+                    downloadBadge = state.downloadBadge,
+                    watchedBadge = state.watchedBadge,
                 )
             }
         }
     }
 }
 
+/** Routes a navigation destination to the host action that opens it; `null` when Home has none. */
+internal fun feedDestinationHandler(actions: FeedScreenActions): ((NextDestination) -> Unit)? {
+    if (actions.onOpenBoards == null && actions.onOpenLibrary == null && actions.onSettings == null) return null
+    return { destination ->
+        when (destination) {
+            NextDestination.FEED -> Unit
+            NextDestination.BOARDS -> actions.onOpenBoards?.invoke()
+            NextDestination.DOWNLOADS -> actions.onOpenDownloads?.invoke()
+            NextDestination.SEARCH -> actions.onOpenSearch?.invoke()
+            NextDestination.SAVED -> actions.onOpenSaved?.invoke()
+            NextDestination.WATCHED -> actions.onOpenWatched?.invoke()
+            NextDestination.SETTINGS -> actions.onSettings?.invoke()
+            NextDestination.LIBRARY -> actions.onOpenLibrary?.invoke()
+        }
+    }
+}
+
+/** The bottom bar shows Home plus each top-level destination the host can open, in spec order. */
+internal fun feedBottomDestinations(actions: FeedScreenActions): List<NextDestination> =
+    buildList {
+        if (actions.onOpenBoards != null) add(NextDestination.BOARDS)
+        add(NextDestination.FEED)
+        if (actions.onOpenLibrary != null) add(NextDestination.LIBRARY)
+        if (actions.onSettings != null) add(NextDestination.SETTINGS)
+    }
+
+/** Content types for the Home and catalog grids, so Compose reuses a composition only for a matching cell. */
+internal enum class FeedItemType { STATE, LIST_ROW, GRID_CARD, FULL_CARD }
+
+internal fun feedItemType(mode: CatalogMode): FeedItemType =
+    when (mode) {
+        CatalogMode.LIST -> FeedItemType.LIST_ROW
+        CatalogMode.GRID -> FeedItemType.GRID_CARD
+        CatalogMode.CARD -> FeedItemType.FULL_CARD
+    }
+
 @Composable
 private fun ReaderFeedGrid(
-    rows: List<FeedRow>,
-    mode: CatalogMode,
-    wideWindow: Boolean,
-    isLoading: Boolean,
-    errorMessage: String?,
-    onRetry: (() -> Unit)?,
-    onOpenBoards: (() -> Unit)?,
-    onLoadMore: (() -> Unit)?,
-    loadMoreKey: Any?,
+    state: FeedScreenState,
+    actions: FeedScreenActions,
     thumbnail: (@Composable (FeedRow, Modifier) -> Unit)?,
     activityText: @Composable (FeedRow) -> String,
-    actions: ReaderFeedRowActions,
+    rowActions: ReaderFeedRowActions,
     bottomPadding: PaddingValues,
-    emptyTitle: String?,
-    emptyMessage: String?,
 ) {
-    val state = rememberReaderFeedState(rows, mode)
+    val rows = state.rows
+    val mode = state.mode
+    val onLoadMore = actions.onLoadMore
+    val gridState = rememberReaderFeedState(rows, mode)
     val loadMoreCallback by rememberUpdatedState(onLoadMore)
-    LaunchedEffect(state, rows.size, onLoadMore != null, loadMoreKey) {
+    LaunchedEffect(gridState, rows.size, onLoadMore != null, state.loadMoreKey) {
         snapshotFlow {
             rows.isNotEmpty() &&
-                state.layoutInfo.visibleItemsInfo
+                gridState.layoutInfo.visibleItemsInfo
                     .lastOrNull()
                     ?.index
                     ?.let { it >= rows.lastIndex - 2 } == true
@@ -294,7 +256,7 @@ private fun ReaderFeedGrid(
         val grid = mode == CatalogMode.GRID
         val gap = ORBIN_CATALOG_GAP
         // First-load skeletons own the same gutters as the loaded cells.
-        val outer = if (rows.isEmpty() && isLoading) 0.dp else GRID_SIDE_INSET
+        val outer = if (rows.isEmpty() && state.isLoading) 0.dp else GRID_SIDE_INSET
         val gridSpec =
             if (mode == CatalogMode.CARD) {
                 orbinCatalogCardSpec(maxWidth, gutter = GRID_SIDE_INSET)
@@ -302,9 +264,10 @@ private fun ReaderFeedGrid(
                 orbinCatalogGridSpec(maxWidth, gutter = GRID_SIDE_INSET)
             }
         val stateHeight = (maxHeight - outer * 2 - bottomPadding.calculateBottomPadding()).coerceAtLeast(0.dp)
+        val itemType = feedItemType(mode)
         LazyVerticalGrid(
             columns = GridCells.Fixed(if (grid) gridSpec.columns else 1),
-            state = state,
+            state = gridState,
             modifier = Modifier.fillMaxSize().testTag(ReaderFeedTags.GRID),
             contentPadding =
                 PaddingValues(
@@ -318,24 +281,27 @@ private fun ReaderFeedGrid(
             verticalArrangement = Arrangement.spacedBy(gap),
         ) {
             if (rows.isEmpty()) {
-                item(key = "reader-feed-state", span = { GridItemSpan(maxLineSpan) }) {
+                item(
+                    key = "reader-feed-state",
+                    span = { GridItemSpan(maxLineSpan) },
+                    contentType = FeedItemType.STATE,
+                ) {
                     Box(Modifier.fillMaxWidth().height(stateHeight)) {
-                        ReaderFeedEmpty(
-                            isLoading,
-                            errorMessage,
-                            onRetry,
-                            onOpenBoards,
-                            mode,
-                            wideWindow,
-                            emptyTitle,
-                            emptyMessage,
-                        )
+                        ReaderFeedEmpty(state, actions)
                     }
                 }
             } else {
-                items(count = rows.size, key = { rows[it].id }, contentType = { mode }) { index ->
+                items(count = rows.size, key = { rows[it].id }, contentType = { itemType }) { index ->
                     val row = rows[index]
-                    ReaderFeedItem(row, mode, wideWindow, thumbnail, activityText(row), actions, gridSpec.imageHeight)
+                    ReaderFeedItem(
+                        row,
+                        mode,
+                        state.wideWindow,
+                        thumbnail,
+                        activityText(row),
+                        rowActions,
+                        gridSpec.imageHeight,
+                    )
                 }
             }
         }
@@ -396,23 +362,21 @@ private data class ReaderFeedPosition(
 
 @Composable
 private fun ReaderFeedEmpty(
-    isLoading: Boolean,
-    errorMessage: String?,
-    onRetry: (() -> Unit)?,
-    onOpenBoards: (() -> Unit)?,
-    mode: CatalogMode,
-    wideWindow: Boolean,
-    emptyTitle: String?,
-    emptyMessage: String?,
+    state: FeedScreenState,
+    actions: FeedScreenActions,
 ) {
+    val onRetry = actions.onRetry
+    val onOpenBoards = actions.onOpenBoards
+    val mode = state.mode
+    val errorMessage = state.errorMessage
     when {
-        isLoading -> ReaderCatalogSkeleton(mode = mode, wideWindow = wideWindow, gutter = GRID_SIDE_INSET)
+        state.isLoading -> ReaderCatalogSkeleton(mode = mode, wideWindow = state.wideWindow, gutter = GRID_SIDE_INSET)
         errorMessage != null -> ReaderErrorState(ReaderFailureCause.UNKNOWN, onRetry = onRetry, message = errorMessage)
         else ->
             Column(Modifier.fillMaxSize()) {
                 ReaderEmptyState(
-                    title = emptyTitle ?: stringResource(Res.string.feed_redesign_empty_title),
-                    message = emptyMessage ?: stringResource(Res.string.feed_redesign_empty_hint),
+                    title = state.emptyTitle ?: stringResource(Res.string.feed_redesign_empty_title),
+                    message = state.emptyMessage ?: stringResource(Res.string.feed_redesign_empty_hint),
                     onReload = onRetry,
                     modifier = Modifier.weight(1f),
                 )

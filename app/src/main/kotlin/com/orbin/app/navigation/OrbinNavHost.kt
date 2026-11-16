@@ -98,7 +98,6 @@ fun OrbinNavHost(
                     navController.navigate(Route.Board(provider, board, title))
                 },
                 onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
-                hideRailOnScroll = chromeHidesOnScroll,
                 onChromeVisibleChange = onChromeVisibleChange,
                 onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
                 onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },

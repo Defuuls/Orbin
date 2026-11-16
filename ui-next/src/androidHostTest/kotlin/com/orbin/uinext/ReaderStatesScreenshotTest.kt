@@ -72,23 +72,27 @@ fun ReaderStateScreenshotFixture(
     Box(modifier.fillMaxSize()) {
         if (state == ReaderStateFixture.REFRESHING || state == ReaderStateFixture.REFRESH_FAILED) {
             BoardScreen(
-                board = "/g/",
-                description = "Technology",
-                itemCount = 1,
-                rowAt = {
-                    FeedRow(
-                        subject = "A thread that stays visible during refresh",
+                state =
+                    BoardScreenState(
                         board = "/g/",
-                        activity = "2m",
-                        replies = 23,
-                        media = 4,
-                        excerpt = "The loaded catalog remains available.",
-                        hasPreview = false,
-                        id = "fourchan/g/1",
-                    )
-                },
-                reloading = state == ReaderStateFixture.REFRESHING,
-                wideWindow = wideWindow,
+                        description = "Technology",
+                        itemCount = 1,
+                        rowAt = {
+                            FeedRow(
+                                subject = "A thread that stays visible during refresh",
+                                board = "/g/",
+                                activity = "2m",
+                                replies = 23,
+                                media = 4,
+                                excerpt = "The loaded catalog remains available.",
+                                hasPreview = false,
+                                id = "fourchan/g/1",
+                            )
+                        },
+                        reloading = state == ReaderStateFixture.REFRESHING,
+                        wideWindow = wideWindow,
+                    ),
+                actions = BoardScreenActions(),
             )
             if (state == ReaderStateFixture.REFRESH_FAILED) {
                 ReaderRefreshFailure(

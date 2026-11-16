@@ -43,12 +43,18 @@ class ReaderCatalogControlsTest {
         compose.setContent {
             NextTheme {
                 FeedScreen(
-                    rows = emptyList(),
-                    mode = mode,
-                    onModeChange = {
-                        choices += it
-                        mode = it
-                    },
+                    state =
+                        FeedScreenState(
+                            rows = emptyList(),
+                            mode = mode,
+                        ),
+                    actions =
+                        FeedScreenActions(
+                            onModeChange = {
+                                choices += it
+                                mode = it
+                            },
+                        ),
                 )
             }
         }
@@ -113,16 +119,22 @@ class ReaderCatalogControlsTest {
                 NextTheme(fontScale = 2f) {
                     Box(Modifier.size(248.dp, 400.dp)) {
                         BoardScreen(
-                            board = "/g/",
-                            description = "Technology",
-                            itemCount = 0,
-                            rowAt = { null },
-                            navigation = ReaderNavigation.BACK,
-                            onNavigation = {},
-                            onPickBoard = { picks++ },
-                            onReload = {},
-                            onSearch = { searches++ },
-                            onModeChange = {},
+                            state =
+                                BoardScreenState(
+                                    board = "/g/",
+                                    description = "Technology",
+                                    itemCount = 0,
+                                    rowAt = { null },
+                                    navigation = ReaderNavigation.BACK,
+                                ),
+                            actions =
+                                BoardScreenActions(
+                                    onNavigation = {},
+                                    onPickBoard = { picks++ },
+                                    onReload = {},
+                                    onSearch = { searches++ },
+                                    onModeChange = {},
+                                ),
                         )
                     }
                 }
