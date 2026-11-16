@@ -15,12 +15,12 @@ import com.orbin.core.reader.preparePresentation
 import com.orbin.core.reader.providerLabel
 import com.orbin.core.reader.threadFiles
 import com.orbin.core.reader.threadRowId
-import com.orbin.uinext.BoardTile
-import com.orbin.uinext.FeedRow
-import com.orbin.uinext.SearchRow
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.SearchRow
 import kotlinx.collections.immutable.toImmutableList
 import com.orbin.core.reader.safeExternalLink as sharedSafeExternalLink
-import com.orbin.uinext.Post as NextPost
+import com.orbin.uinext.screens.Post as NextPost
 
 // Plain-value adapters from the domain model to the ui-next rows, as the Android `Next*Screen`
 // adapters do. Kept free of Compose so they are unit-tested on both platforms.

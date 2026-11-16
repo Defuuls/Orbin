@@ -26,8 +26,8 @@ import com.orbin.provider.api.EngineKind
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderException
 import com.orbin.provider.api.isVisibleInOrbin
-import com.orbin.uinext.FeedRow
-import com.orbin.uinext.LibrarySection
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.LibrarySection
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -135,7 +135,7 @@ sealed interface Route {
         val thumbnailUrl: String? = null,
         /** The exact tapped file can start before its thread's remaining files arrive. */
         val initialAttachment: MediaAttachment? = null,
-        val mediaFilter: com.orbin.uinext.MediaKindFilter = com.orbin.uinext.MediaKindFilter.ALL,
+        val mediaFilter: com.orbin.uinext.components.MediaKindFilter = com.orbin.uinext.components.MediaKindFilter.ALL,
     ) : Route
 }
 
@@ -620,11 +620,11 @@ class Browser(
         history.observeVisitedThreadIds(board.provider, board.board.id)
 
     /** Opens the viewer on the open thread's file number [index], counted across all its posts. */
-    fun openMedia(index: Int) = openMedia(index, com.orbin.uinext.MediaKindFilter.ALL)
+    fun openMedia(index: Int) = openMedia(index, com.orbin.uinext.components.MediaKindFilter.ALL)
 
     fun openMedia(
         index: Int,
-        mediaFilter: com.orbin.uinext.MediaKindFilter,
+        mediaFilter: com.orbin.uinext.components.MediaKindFilter,
     ) {
         val thread = (_backStack.value.last() as? Route.ThreadPage)?.key ?: return
         preparedThread.value

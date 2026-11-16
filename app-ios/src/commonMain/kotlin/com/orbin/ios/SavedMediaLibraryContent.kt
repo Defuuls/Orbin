@@ -33,10 +33,10 @@ import com.orbin.ios.resources.ios_saved_export_confirm
 import com.orbin.ios.resources.ios_saved_export_title
 import com.orbin.ios.resources.ios_saved_prepare
 import com.orbin.ios.resources.ios_saved_unavailable
-import com.orbin.uinext.SavedMediaItem
-import com.orbin.uinext.SavedMediaKind
-import com.orbin.uinext.SavedMediaLibraryScreen
-import com.orbin.uinext.SavedMediaOperation
+import com.orbin.uinext.screens.SavedMediaItem
+import com.orbin.uinext.screens.SavedMediaKind
+import com.orbin.uinext.screens.SavedMediaLibraryScreen
+import com.orbin.uinext.screens.SavedMediaOperation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation

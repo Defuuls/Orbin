@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.orbin.uinext.NextSnackbarHostState
+import com.orbin.uinext.components.NextSnackbarHostState
 
 val LocalOrbinSnackbarHostState =
     staticCompositionLocalOf<NextSnackbarHostState> {

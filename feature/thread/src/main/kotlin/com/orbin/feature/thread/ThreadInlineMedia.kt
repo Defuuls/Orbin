@@ -19,10 +19,10 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
 import com.orbin.media.video.prepareVideoPlaybackHandoff
-import com.orbin.uinext.FeedPlaybackControls
-import com.orbin.uinext.ThreadInlineFullscreenButton
-import com.orbin.uinext.ThreadInlineMediaFrame
-import com.orbin.uinext.ThreadInlineMediaState
+import com.orbin.uinext.components.FeedPlaybackControls
+import com.orbin.uinext.components.ThreadInlineFullscreenButton
+import com.orbin.uinext.components.ThreadInlineMediaFrame
+import com.orbin.uinext.components.ThreadInlineMediaState
 
 @Composable
 internal fun ThreadInlineMedia(

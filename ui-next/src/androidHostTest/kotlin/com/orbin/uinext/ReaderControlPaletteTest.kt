@@ -27,6 +27,17 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.PlatformSwitch
+import com.orbin.uinext.components.SchematicSearch
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ReaderFeedTags
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderColors
 import com.orbin.uinext.tokens.ReaderDarkColors

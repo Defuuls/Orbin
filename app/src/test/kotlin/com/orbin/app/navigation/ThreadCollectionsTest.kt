@@ -5,7 +5,7 @@ import com.orbin.core.model.BoardId
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
-import com.orbin.uinext.ThreadCollectionRow
+import com.orbin.uinext.screens.ThreadCollectionRow
 import org.junit.Test
 
 class ThreadCollectionsTest {

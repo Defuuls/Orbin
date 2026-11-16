@@ -35,15 +35,15 @@ import com.orbin.feature.onboarding.OnboardingScreen
 import com.orbin.feature.search.NextSearchScreen
 import com.orbin.feature.settings.NextSettingsScreen
 import com.orbin.feature.thread.NextThreadScreen
-import com.orbin.uinext.LibrarySection
-import com.orbin.uinext.LocalOrbinNavigationAtSide
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.NextScaffold
-import com.orbin.uinext.OrbinBottomBar
-import com.orbin.uinext.ReaderAction
-import com.orbin.uinext.ReaderIcons
-import com.orbin.uinext.ReaderScaffold
-import com.orbin.uinext.readerKeyboardShortcuts
+import com.orbin.uinext.components.LibrarySection
+import com.orbin.uinext.components.LocalOrbinNavigationAtSide
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextScaffold
+import com.orbin.uinext.components.OrbinBottomBar
+import com.orbin.uinext.components.ReaderAction
+import com.orbin.uinext.components.ReaderIcons
+import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.components.readerKeyboardShortcuts
 
 internal const val THREAD_MEDIA_SCROLL_INDEX_KEY = "threadMediaScrollIndex"
 internal const val NO_THREAD_MEDIA_SCROLL_INDEX = -1

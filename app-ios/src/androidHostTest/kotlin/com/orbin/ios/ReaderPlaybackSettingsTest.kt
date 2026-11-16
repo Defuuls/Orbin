@@ -5,9 +5,9 @@ import com.orbin.core.model.PlaybackPreferences
 import com.orbin.core.model.PlaybackScope
 import com.orbin.core.model.PlaybackSettings
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.uinext.OFF_LABEL
-import com.orbin.uinext.ON_LABEL
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.OFF_LABEL
+import com.orbin.uinext.screens.ON_LABEL
+import com.orbin.uinext.screens.SettingKind
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runCurrent

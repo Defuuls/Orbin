@@ -19,9 +19,9 @@ import com.orbin.core.model.PlaybackSettings
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_open_in_browser
 import com.orbin.ios.resources.ios_media_spoiler_reveal
-import com.orbin.uinext.FeedPlaybackControls
-import com.orbin.uinext.InlineAction
-import com.orbin.uinext.rememberFeedPlaybackChoice
+import com.orbin.uinext.components.FeedPlaybackControls
+import com.orbin.uinext.components.InlineAction
+import com.orbin.uinext.components.rememberFeedPlaybackChoice
 import org.jetbrains.compose.resources.stringResource
 
 /** Only a settled page can fetch original media or own the native decoder. */

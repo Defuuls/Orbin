@@ -2,7 +2,7 @@ package com.orbin.feature.gallery
 
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
-import com.orbin.uinext.MediaKindFilter
+import com.orbin.uinext.components.MediaKindFilter
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame

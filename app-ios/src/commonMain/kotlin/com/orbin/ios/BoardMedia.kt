@@ -5,8 +5,8 @@ import com.orbin.core.model.attachmentDetails
 import com.orbin.domain.media.AllMediaItem
 import com.orbin.domain.media.MediaWallCollector
 import com.orbin.domain.media.sweepBoard
-import com.orbin.uinext.MediaCell
-import com.orbin.uinext.mediaKindOf
+import com.orbin.uinext.components.mediaKindOf
+import com.orbin.uinext.screens.MediaCell
 
 /** The files of [board]'s catalog as wall items, filtered and de-duplicated as Android's wall is. */
 internal fun boardMediaItems(

@@ -1,8 +1,8 @@
 package com.orbin.feature.gallery
 
-import com.orbin.uinext.MediaKindFilter
-import com.orbin.uinext.mediaFilterIndices
-import com.orbin.uinext.mediaKindOf
+import com.orbin.uinext.components.MediaKindFilter
+import com.orbin.uinext.components.mediaFilterIndices
+import com.orbin.uinext.components.mediaKindOf
 import kotlinx.collections.immutable.toImmutableList
 
 /** Filtering changes displayed positions, never canonical file identities or parent-thread indices. */

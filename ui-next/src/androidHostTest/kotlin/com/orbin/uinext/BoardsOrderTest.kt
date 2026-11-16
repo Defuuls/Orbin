@@ -1,5 +1,7 @@
 package com.orbin.uinext
 
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.sortedAlphabetically
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

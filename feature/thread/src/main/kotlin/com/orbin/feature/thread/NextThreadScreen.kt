@@ -45,21 +45,21 @@ import com.orbin.core.reader.readerRows
 import com.orbin.core.reader.readerThreadStatus
 import com.orbin.core.reader.unseenPostIds
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.MessageScreen
-import com.orbin.uinext.NextConfirmDialog
-import com.orbin.uinext.NextPullToRefresh
-import com.orbin.uinext.NextSnackbarHost
-import com.orbin.uinext.NextSnackbarHostState
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderAppBar
-import com.orbin.uinext.ReaderErrorState
-import com.orbin.uinext.ReaderFailureCause
-import com.orbin.uinext.ReaderNavigation
-import com.orbin.uinext.ReaderRefreshFailure
-import com.orbin.uinext.ReaderThreadSkeleton
-import com.orbin.uinext.ThreadLayout
-import com.orbin.uinext.ThreadScreen
-import com.orbin.uinext.rememberThreadInlineMediaState
+import com.orbin.uinext.components.MessageScreen
+import com.orbin.uinext.components.NextConfirmDialog
+import com.orbin.uinext.components.NextPullToRefresh
+import com.orbin.uinext.components.NextSnackbarHost
+import com.orbin.uinext.components.NextSnackbarHostState
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBar
+import com.orbin.uinext.components.ReaderNavigation
+import com.orbin.uinext.components.rememberThreadInlineMediaState
+import com.orbin.uinext.screens.ReaderErrorState
+import com.orbin.uinext.screens.ReaderFailureCause
+import com.orbin.uinext.screens.ReaderRefreshFailure
+import com.orbin.uinext.screens.ReaderThreadSkeleton
+import com.orbin.uinext.screens.ThreadLayout
+import com.orbin.uinext.screens.ThreadScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -73,7 +73,7 @@ fun NextThreadScreen(
     onMediaScrollConsumed: () -> Unit = {},
     viewModel: ThreadViewModel = hiltViewModel(),
     onBack: (() -> Unit)? = null,
-    onOpenMediaFiltered: ((Int, com.orbin.uinext.MediaKindFilter) -> Unit)? = null,
+    onOpenMediaFiltered: ((Int, com.orbin.uinext.components.MediaKindFilter) -> Unit)? = null,
     initialPostId: Long? = null,
     onInitialPostConsumed: () -> Unit = {},
 ) {
@@ -171,7 +171,7 @@ private fun LoadedThread(
     onOpenMedia: (Int) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
-    onOpenMediaFiltered: ((Int, com.orbin.uinext.MediaKindFilter) -> Unit)? = null,
+    onOpenMediaFiltered: ((Int, com.orbin.uinext.components.MediaKindFilter) -> Unit)? = null,
     initialPostId: Long? = null,
     onInitialPostConsumed: () -> Unit = {},
 ) {
@@ -194,13 +194,13 @@ private fun LoadedThread(
     val haptics = LocalHapticFeedback.current
     val thread = state.thread
     var layout by rememberSaveable(thread.key) { mutableStateOf(ThreadLayout.POSTS) }
-    var mediaFilter by rememberSaveable(thread.key) { mutableStateOf(com.orbin.uinext.MediaKindFilter.ALL) }
+    var mediaFilter by rememberSaveable(thread.key) { mutableStateOf(com.orbin.uinext.components.MediaKindFilter.ALL) }
     val presentation = state.presentation
     val memory by viewModel.readerMemory.collectAsStateWithLifecycle()
     val preferences by viewModel.readerPreferences.collectAsStateWithLifecycle()
     val revealed by viewModel.revealedPosts.collectAsStateWithLifecycle()
     val statusText = readerThreadStatus(presentation)
-    val rows by produceState<List<com.orbin.uinext.Post>>(
+    val rows by produceState<List<com.orbin.uinext.screens.Post>>(
         emptyList(),
         initialScrollLoaded,
         presentation,
@@ -226,7 +226,7 @@ private fun LoadedThread(
                 )
             }
     }
-    val detailRows by produceState<List<com.orbin.uinext.Post>>(
+    val detailRows by produceState<List<com.orbin.uinext.screens.Post>>(
         emptyList(),
         initialScrollLoaded,
         presentation,
@@ -307,7 +307,7 @@ private fun LoadedThread(
 
     fun openMedia(index: Int) {
         saveVisiblePost(flush = true)
-        val filter = if (layout == ThreadLayout.FILES) mediaFilter else com.orbin.uinext.MediaKindFilter.ALL
+        val filter = if (layout == ThreadLayout.FILES) mediaFilter else com.orbin.uinext.components.MediaKindFilter.ALL
         if (onOpenMediaFiltered != null) onOpenMediaFiltered(index, filter) else onOpenMedia(index)
     }
 
@@ -433,10 +433,10 @@ private fun LoadedThread(
                 onAddPostFilter = { post, target ->
                     val pattern =
                         when (target) {
-                            com.orbin.uinext.PostFilterTarget.TEXT -> post.body.take(80)
-                            com.orbin.uinext.PostFilterTarget.NAME -> post.posterName.orEmpty()
-                            com.orbin.uinext.PostFilterTarget.TRIPCODE -> post.posterTripcode.orEmpty()
-                            com.orbin.uinext.PostFilterTarget.COUNTRY -> post.posterCountry.orEmpty()
+                            com.orbin.uinext.screens.PostFilterTarget.TEXT -> post.body.take(80)
+                            com.orbin.uinext.screens.PostFilterTarget.NAME -> post.posterName.orEmpty()
+                            com.orbin.uinext.screens.PostFilterTarget.TRIPCODE -> post.posterTripcode.orEmpty()
+                            com.orbin.uinext.screens.PostFilterTarget.COUNTRY -> post.posterCountry.orEmpty()
                         }
                     viewModel.addPostFilter(PostFilterKind.valueOf(target.name), pattern)
                 },

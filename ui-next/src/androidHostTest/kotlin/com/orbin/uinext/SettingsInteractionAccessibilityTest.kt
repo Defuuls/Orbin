@@ -22,6 +22,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.OnboardingBoard
+import com.orbin.uinext.screens.OnboardingBoards
+import com.orbin.uinext.screens.OnboardingScreen
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingsScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

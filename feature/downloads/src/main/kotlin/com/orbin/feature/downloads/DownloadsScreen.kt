@@ -22,15 +22,15 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
-import com.orbin.uinext.DownloadRow
-import com.orbin.uinext.DownloadTags
-import com.orbin.uinext.NextConfirmDialog
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.PlatformSegments
-import com.orbin.uinext.ReaderEmptyState
-import com.orbin.uinext.ReaderMenuItem
-import com.orbin.uinext.ReaderScaffold
+import com.orbin.uinext.components.DownloadRow
+import com.orbin.uinext.components.DownloadTags
+import com.orbin.uinext.components.NextConfirmDialog
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.PlatformSegments
+import com.orbin.uinext.components.ReaderMenuItem
+import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.screens.ReaderEmptyState
 import com.orbin.uinext.tokens.ReaderSpace
 
 /**

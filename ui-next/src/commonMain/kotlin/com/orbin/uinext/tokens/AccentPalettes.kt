@@ -2,7 +2,7 @@ package com.orbin.uinext.tokens
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import com.orbin.uinext.NextAccentTheme
+import com.orbin.uinext.components.NextAccentTheme
 
 /** Stable user-selected hues; Orbin's default is the orange identity, so the picker has no separate Orange. */
 private data class AccentSpec(

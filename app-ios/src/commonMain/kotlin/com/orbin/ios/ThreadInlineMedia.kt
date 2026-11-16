@@ -18,10 +18,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
-import com.orbin.uinext.FeedPlaybackControls
-import com.orbin.uinext.ThreadInlineFullscreenButton
-import com.orbin.uinext.ThreadInlineMediaFrame
-import com.orbin.uinext.ThreadInlineMediaState
+import com.orbin.uinext.components.FeedPlaybackControls
+import com.orbin.uinext.components.ThreadInlineFullscreenButton
+import com.orbin.uinext.components.ThreadInlineMediaFrame
+import com.orbin.uinext.components.ThreadInlineMediaState
 
 /** The parent spoiler cover and thread projection must approve a post before composing this slot. */
 @Composable

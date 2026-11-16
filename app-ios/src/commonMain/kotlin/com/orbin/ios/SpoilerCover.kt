@@ -16,9 +16,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_media_spoiler
-import com.orbin.uinext.ReaderIcons
+import com.orbin.uinext.components.ReaderIcons
+import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.tokens.OrbinType
-import com.orbin.uinext.withReaderFont
 import org.jetbrains.compose.resources.stringResource
 
 /**

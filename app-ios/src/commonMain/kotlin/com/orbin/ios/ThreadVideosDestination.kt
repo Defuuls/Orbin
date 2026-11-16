@@ -33,11 +33,11 @@ import com.orbin.ios.resources.ios_media_close
 import com.orbin.ios.resources.ios_thread_videos_empty
 import com.orbin.ios.resources.ios_thread_videos_loading
 import com.orbin.ios.resources.ios_thread_videos_title
-import com.orbin.uinext.InlineAction
-import com.orbin.uinext.NextCircularProgress
-import com.orbin.uinext.NextIconAction
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.next
+import com.orbin.uinext.components.InlineAction
+import com.orbin.uinext.components.NextCircularProgress
+import com.orbin.uinext.components.NextIconAction
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.next
 import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 

@@ -18,11 +18,11 @@ import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.ProviderId
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.uinext.FeedPagerTags
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.OrbinNavigationTags
-import com.orbin.uinext.ReaderAppBarTags
-import com.orbin.uinext.ReaderFeedTags
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.OrbinNavigationTags
+import com.orbin.uinext.components.ReaderAppBarTags
+import com.orbin.uinext.screens.FeedPagerTags
+import com.orbin.uinext.screens.ReaderFeedTags
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.runBlocking

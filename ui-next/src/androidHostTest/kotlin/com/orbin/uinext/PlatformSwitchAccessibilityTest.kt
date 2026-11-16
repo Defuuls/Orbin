@@ -15,6 +15,10 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performClick
+import com.orbin.uinext.components.MIN_TOUCH_TARGET
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.PlatformSwitch
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

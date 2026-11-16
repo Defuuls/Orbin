@@ -1,7 +1,7 @@
 package com.orbin.feature.board
 
 import com.google.common.truth.Truth.assertThat
-import com.orbin.uinext.FeedRow
+import com.orbin.uinext.components.FeedRow
 import org.junit.Test
 
 class CatalogSearchTest {

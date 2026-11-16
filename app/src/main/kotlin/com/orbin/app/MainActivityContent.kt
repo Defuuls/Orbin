@@ -18,12 +18,12 @@ import com.orbin.app.navigation.Route
 import com.orbin.app.update.UpdateDialog
 import com.orbin.app.update.UpdateDialogActions
 import com.orbin.core.model.AppSettings
-import com.orbin.uinext.LockScreen
-import com.orbin.uinext.NextPlatform
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.canonicalNextPalette
-import com.orbin.uinext.next
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.canonicalNextPalette
+import com.orbin.uinext.components.next
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.screens.LockScreen
 import kotlinx.coroutines.launch
 
 // What MainActivity draws once it is past safe mode and the version guard: the app itself, its

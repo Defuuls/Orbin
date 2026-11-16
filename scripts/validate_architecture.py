@@ -172,6 +172,16 @@ def main() -> int:
         if imported.startswith("com.orbin.") and not imported.startswith(allowed_ui_packages):
             fail(errors, f"{file.relative_to(ROOT)} crosses ui-next presentation seam: {imported}")
 
+    # Inside ui-next, shared pieces sit below whole screens (redesign step 10): files in the tokens and
+    # components packages may not import from com.orbin.uinext.screens.
+    for file, imported in source_imports(":ui-next"):
+        package = file.read_text(encoding="utf-8")
+        match = re.search(r"^package\s+([\w.]+)", package, re.MULTILINE)
+        if not match or not match.group(1).startswith(("com.orbin.uinext.components", "com.orbin.uinext.tokens")):
+            continue
+        if imported.startswith("com.orbin.uinext.screens."):
+            fail(errors, f"{file.relative_to(ROOT)} imports a screen from a shared package: {imported}")
+
     # :app-ios is the iOS composition root, as :app is Android's: nothing depends on it, and it may
     # only use modules that build for iOS — never the Android-only app, data or feature layers.
     for module in sorted(m for m in modules if ":app-ios" in deps[m]):

@@ -19,12 +19,12 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.OrbinFilledButton
-import com.orbin.uinext.OrbinLogo
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OrbinFilledButton
+import com.orbin.uinext.components.OrbinLogo
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.tokens.OrbinType
-import com.orbin.uinext.withReaderFont
 
 /**
  * Shown instead of the app when the running build is older than one that has already run here.

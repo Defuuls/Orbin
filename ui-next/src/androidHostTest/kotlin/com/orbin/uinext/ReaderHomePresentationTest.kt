@@ -24,6 +24,17 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performSemanticsAction
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
+import com.orbin.uinext.components.next
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.FeedPagerTags
+import com.orbin.uinext.screens.FeedScreen
+import com.orbin.uinext.screens.FeedScreenActions
+import com.orbin.uinext.screens.FeedScreenState
+import com.orbin.uinext.screens.ReaderFeedTags
+import com.orbin.uinext.screens.ReaderStateTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

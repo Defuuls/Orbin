@@ -14,11 +14,11 @@ import com.orbin.core.model.Board
 import com.orbin.core.model.matchesFilterTokens
 import com.orbin.feature.home.R
 import com.orbin.provider.api.parseThreadLink
-import com.orbin.uinext.BoardTile
-import com.orbin.uinext.BoardsScreen
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.OpenThreadLinkDialog
-import com.orbin.uinext.PlatformSegments
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OpenThreadLinkDialog
+import com.orbin.uinext.components.PlatformSegments
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.BoardsScreen
 
 /**
  * Boards destination: Next-styled tile grid with DestinationPill chrome.

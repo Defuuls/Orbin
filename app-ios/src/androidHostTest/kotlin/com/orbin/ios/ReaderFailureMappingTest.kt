@@ -1,7 +1,7 @@
 package com.orbin.ios
 
 import com.orbin.provider.api.ProviderException
-import com.orbin.uinext.ReaderFailureCause
+import com.orbin.uinext.screens.ReaderFailureCause
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

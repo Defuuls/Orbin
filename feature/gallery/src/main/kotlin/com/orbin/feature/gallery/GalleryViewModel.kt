@@ -28,7 +28,7 @@ import com.orbin.media.ImagePreloader
 import com.orbin.media.image.ImageClipboard
 import com.orbin.media.image.ImageCopyResult
 import com.orbin.media.video.VideoPreloader
-import com.orbin.uinext.MediaKindFilter
+import com.orbin.uinext.components.MediaKindFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

@@ -9,6 +9,15 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.next
+import com.orbin.uinext.screens.OnboardingBoard
+import com.orbin.uinext.screens.OnboardingBoards
+import com.orbin.uinext.screens.OnboardingScreen
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
+import com.orbin.uinext.screens.SettingsScreen
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

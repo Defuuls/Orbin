@@ -1,6 +1,6 @@
 package com.orbin.ios
 
-import com.orbin.uinext.ReaderFailureCause
+import com.orbin.uinext.screens.ReaderFailureCause
 
 internal fun BrowserFailureCause.toReaderCause(): ReaderFailureCause =
     when (this) {

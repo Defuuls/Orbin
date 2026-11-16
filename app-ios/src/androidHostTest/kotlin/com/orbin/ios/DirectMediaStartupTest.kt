@@ -28,9 +28,9 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.data.database.entity.DownloadEntity
 import com.orbin.graph.orbinProviders
-import com.orbin.uinext.NextPlatform
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderStateTags
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.ReaderStateTags
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond

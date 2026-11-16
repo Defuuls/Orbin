@@ -12,10 +12,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
-import com.orbin.uinext.DownloadTags
-import com.orbin.uinext.NextPlatform
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderAppBarTags
+import com.orbin.uinext.components.DownloadTags
+import com.orbin.uinext.components.NextPlatform
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

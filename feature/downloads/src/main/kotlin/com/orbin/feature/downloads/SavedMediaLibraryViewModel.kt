@@ -17,7 +17,7 @@ import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.ManagedMediaFiles
 import com.orbin.domain.repository.MediaLibraryRepository
 import com.orbin.domain.repository.SettingsRepository
-import com.orbin.uinext.SavedMediaOperation
+import com.orbin.uinext.screens.SavedMediaOperation
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException

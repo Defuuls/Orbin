@@ -1,7 +1,7 @@
 package com.orbin.feature.board
 
 import com.orbin.provider.api.ProviderException
-import com.orbin.uinext.ReaderFailureCause
+import com.orbin.uinext.screens.ReaderFailureCause
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException

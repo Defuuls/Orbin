@@ -8,11 +8,11 @@ import com.orbin.core.model.DohProvider
 import com.orbin.core.model.SharpPreviewsMode
 import com.orbin.core.model.ThreadLayout
 import com.orbin.core.model.VIDEO_CACHE_MEGABYTE_OPTIONS
-import com.orbin.uinext.OFF_LABEL
-import com.orbin.uinext.ON_LABEL
-import com.orbin.uinext.SettingFilterRule
-import com.orbin.uinext.SettingItem
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.OFF_LABEL
+import com.orbin.uinext.screens.ON_LABEL
+import com.orbin.uinext.screens.SettingFilterRule
+import com.orbin.uinext.screens.SettingItem
+import com.orbin.uinext.screens.SettingKind
 
 /**
  * Searchable, in-place settings grouped by the reader's task.

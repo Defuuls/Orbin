@@ -19,9 +19,9 @@ import com.orbin.core.model.Board
 import com.orbin.provider.api.FourchanSearchSession
 import com.orbin.provider.api.fourchanSearchInspectionScript
 import com.orbin.provider.api.isFourchanWebSearchUrl
-import com.orbin.uinext.SearchRow
-import com.orbin.uinext.SearchState
-import com.orbin.uinext.WebSearchResultsPane
+import com.orbin.uinext.screens.SearchRow
+import com.orbin.uinext.screens.SearchState
+import com.orbin.uinext.screens.WebSearchResultsPane
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged

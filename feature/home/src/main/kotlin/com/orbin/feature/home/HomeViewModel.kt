@@ -12,7 +12,7 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
 import com.orbin.provider.api.ImageBoardProvider
 import com.orbin.provider.api.ProviderRegistry
-import com.orbin.uinext.sourceLabel
+import com.orbin.uinext.components.sourceLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi

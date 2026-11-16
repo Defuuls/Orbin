@@ -16,6 +16,14 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
+import com.orbin.uinext.components.FeedSourceSheet
+import com.orbin.uinext.components.NextSheetAction
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.OrbinActionSheet
+import com.orbin.uinext.components.OrbinConfirmDialog
+import com.orbin.uinext.components.OrbinDialog
+import com.orbin.uinext.components.OrbinDialogMessage
+import com.orbin.uinext.components.OrbinDialogTitle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule

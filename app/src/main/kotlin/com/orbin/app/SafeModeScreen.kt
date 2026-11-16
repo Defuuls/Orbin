@@ -3,9 +3,9 @@ package com.orbin.app
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.SafeModeText
-import com.orbin.uinext.SafeModeScreen as SharedSafeModeScreen
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.screens.SafeModeText
+import com.orbin.uinext.screens.SafeModeScreen as SharedSafeModeScreen
 
 /** Shown instead of the app when consecutive launches have crashed during startup: the shared screen. */
 @Composable

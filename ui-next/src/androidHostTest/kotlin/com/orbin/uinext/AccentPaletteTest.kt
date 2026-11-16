@@ -2,6 +2,8 @@ package com.orbin.uinext
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import com.orbin.uinext.components.NextAccentTheme
+import com.orbin.uinext.components.canonicalNextPalette
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

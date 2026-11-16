@@ -10,7 +10,7 @@ import com.orbin.core.model.ThreadKey
 import com.orbin.core.testing.MainDispatcherRule
 import com.orbin.core.testing.repository.FakeBookmarkRepository
 import com.orbin.domain.repository.ThreadRepository
-import com.orbin.uinext.FeedRow
+import com.orbin.uinext.components.FeedRow
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi

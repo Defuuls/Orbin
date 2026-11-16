@@ -1,7 +1,7 @@
 package com.orbin.core.reader
 
 import com.orbin.core.model.CatalogThread
-import com.orbin.uinext.FeedRow
+import com.orbin.uinext.components.FeedRow
 
 /**
  * The stable key of a thread's feed or catalog row. It includes the source because two sites can

@@ -1,5 +1,7 @@
 package com.orbin.uinext
 
+import com.orbin.uinext.screens.BoardTile
+import com.orbin.uinext.screens.boardDirectorySections
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test

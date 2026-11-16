@@ -20,9 +20,9 @@ import com.orbin.core.model.DownloadRecord
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.testing.repository.FakeDownloadRepository
 import com.orbin.domain.repository.DownloadRepository
-import com.orbin.uinext.DownloadTags
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderAppBarTags
+import com.orbin.uinext.components.DownloadTags
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderAppBarTags
 import com.orbin.uinext.tokens.ReaderSize
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking

@@ -32,8 +32,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.orbin.media.video.VideoPlayer
-import com.orbin.uinext.FeedPlaybackTags
-import com.orbin.uinext.NextTheme
+import com.orbin.uinext.components.FeedPlaybackTags
+import com.orbin.uinext.components.NextTheme
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import org.junit.After

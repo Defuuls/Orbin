@@ -19,8 +19,8 @@ import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.image.SpoilerOverlay
 import com.orbin.media.video.VideoPlayer
 import com.orbin.media.video.canAutoplayInFeed
-import com.orbin.uinext.FeedPlaybackControls
-import com.orbin.uinext.rememberFeedPlaybackChoice
+import com.orbin.uinext.components.FeedPlaybackControls
+import com.orbin.uinext.components.rememberFeedPlaybackChoice
 
 /** Only the settled page owns a decoder; its explicit play choice survives paging away. */
 @Composable

@@ -2,7 +2,7 @@ package com.orbin.feature.board
 
 import com.google.common.truth.Truth.assertThat
 import com.orbin.provider.api.ProviderException
-import com.orbin.uinext.ReaderFailureCause
+import com.orbin.uinext.screens.ReaderFailureCause
 import org.junit.Test
 import java.io.IOException
 import java.net.SocketTimeoutException

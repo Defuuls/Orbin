@@ -25,8 +25,8 @@ import com.orbin.ios.resources.ios_media_pause_video
 import com.orbin.ios.resources.ios_media_play_video
 import com.orbin.ios.resources.ios_media_restart_video
 import com.orbin.ios.resources.ios_media_rewind_video
-import com.orbin.uinext.ReaderMediaControls
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.ReaderMediaControls
+import com.orbin.uinext.components.reader
 import org.jetbrains.compose.resources.stringResource
 
 /** What the video on screen is doing, for [VideoControls]. Times are in seconds; 0 while unknown. */

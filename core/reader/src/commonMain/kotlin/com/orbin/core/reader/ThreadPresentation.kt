@@ -18,20 +18,20 @@ import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.thread.replyCounts
 import com.orbin.domain.thread.replyDepths
 import com.orbin.provider.api.UriParts
-import com.orbin.uinext.LocalReaderPostBodyStyle
-import com.orbin.uinext.MediaCell
-import com.orbin.uinext.MediaKind
-import com.orbin.uinext.next
-import com.orbin.uinext.reader
+import com.orbin.uinext.components.LocalReaderPostBodyStyle
+import com.orbin.uinext.components.MediaKind
+import com.orbin.uinext.components.next
+import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.withReaderFont
+import com.orbin.uinext.screens.MediaCell
 import com.orbin.uinext.tokens.ReaderAmoledColors
 import com.orbin.uinext.tokens.ReaderDarkColors
 import com.orbin.uinext.tokens.ReaderLightColors
-import com.orbin.uinext.withReaderFont
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
-import com.orbin.uinext.Post as ReaderPost
+import com.orbin.uinext.screens.Post as ReaderPost
 
 /** The complete model stays beside its presentation, including poster identity and every file. */
 data class ThreadRow(

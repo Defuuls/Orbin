@@ -8,13 +8,13 @@ import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.core.model.AppThemeMode
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.OnboardingBoard
-import com.orbin.uinext.OnboardingBoards
-import com.orbin.uinext.OnboardingSetupConfig
-import com.orbin.uinext.SetupThemeOption
-import com.orbin.uinext.canonicalNextPalette
-import com.orbin.uinext.OnboardingScreen as SharedOnboardingScreen
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.canonicalNextPalette
+import com.orbin.uinext.screens.OnboardingBoard
+import com.orbin.uinext.screens.OnboardingBoards
+import com.orbin.uinext.screens.OnboardingSetupConfig
+import com.orbin.uinext.screens.SetupThemeOption
+import com.orbin.uinext.screens.OnboardingScreen as SharedOnboardingScreen
 
 /** First run: the shared board picker over [OnboardingViewModel]. */
 @Composable

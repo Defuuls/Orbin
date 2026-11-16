@@ -4,9 +4,9 @@ import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.SharpPreviewsMode
-import com.orbin.uinext.OFF_LABEL
-import com.orbin.uinext.ON_LABEL
-import com.orbin.uinext.SettingKind
+import com.orbin.uinext.screens.OFF_LABEL
+import com.orbin.uinext.screens.ON_LABEL
+import com.orbin.uinext.screens.SettingKind
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test

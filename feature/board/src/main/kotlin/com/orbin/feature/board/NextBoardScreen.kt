@@ -29,23 +29,23 @@ import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.boardLabel
 import com.orbin.media.image.MediaThumbnail
-import com.orbin.uinext.BoardScreen
-import com.orbin.uinext.BoardScreenActions
-import com.orbin.uinext.BoardScreenState
-import com.orbin.uinext.CatalogMode
-import com.orbin.uinext.FeedRow
-import com.orbin.uinext.NextDestination
-import com.orbin.uinext.NextPullToRefresh
-import com.orbin.uinext.NextTheme
-import com.orbin.uinext.ReaderBoardPicker
-import com.orbin.uinext.ReaderCatalogSearch
-import com.orbin.uinext.ReaderCatalogSkeleton
-import com.orbin.uinext.ReaderEmptyState
-import com.orbin.uinext.ReaderErrorState
-import com.orbin.uinext.ReaderNavigation
-import com.orbin.uinext.ReaderRefreshFailure
-import com.orbin.uinext.ReaderScaffold
-import com.orbin.uinext.catalogSortTabs
+import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.NextDestination
+import com.orbin.uinext.components.NextPullToRefresh
+import com.orbin.uinext.components.NextTheme
+import com.orbin.uinext.components.ReaderBoardPicker
+import com.orbin.uinext.components.ReaderCatalogSearch
+import com.orbin.uinext.components.ReaderNavigation
+import com.orbin.uinext.components.ReaderScaffold
+import com.orbin.uinext.screens.BoardScreen
+import com.orbin.uinext.screens.BoardScreenActions
+import com.orbin.uinext.screens.BoardScreenState
+import com.orbin.uinext.screens.CatalogMode
+import com.orbin.uinext.screens.ReaderCatalogSkeleton
+import com.orbin.uinext.screens.ReaderEmptyState
+import com.orbin.uinext.screens.ReaderErrorState
+import com.orbin.uinext.screens.ReaderRefreshFailure
+import com.orbin.uinext.screens.catalogSortTabs
 import com.orbin.core.model.CatalogMode as StoredCatalogMode
 
 /** A paged catalog keeps its frame and loaded rows through refresh failures. */

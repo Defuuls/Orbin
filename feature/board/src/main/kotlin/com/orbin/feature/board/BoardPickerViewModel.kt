@@ -9,8 +9,8 @@ import com.orbin.domain.repository.BoardRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
-import com.orbin.uinext.ReaderBoardOption
-import com.orbin.uinext.sourceLabel
+import com.orbin.uinext.components.ReaderBoardOption
+import com.orbin.uinext.components.sourceLabel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine

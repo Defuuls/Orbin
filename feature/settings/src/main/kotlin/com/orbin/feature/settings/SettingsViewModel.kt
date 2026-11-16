@@ -30,7 +30,7 @@ import com.orbin.domain.repository.UpdateRepository
 import com.orbin.domain.repository.VideoCacheRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
-import com.orbin.uinext.SettingFilterRule
+import com.orbin.uinext.screens.SettingFilterRule
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
