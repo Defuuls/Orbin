@@ -42,7 +42,12 @@ internal class BrowserPageLoader(
                     if (retained == null) target.value = failure else refreshFailure.value = failure
                 }
                 try {
-                    val value = fetch()
+                    val fetched = fetch()
+                    // StateFlow keeps the current value when the new one is equal, so an unchanged
+                    // refresh would leave the old instance visible while the presentation is
+                    // prepared from the new copy. Readers that pair the two by identity (the media
+                    // viewer) then found no files and showed "Not found". Prepare from what stays.
+                    val value = (target.value as? Load.Ready<T>)?.value?.takeIf { it == fetched } ?: fetched
                     val publishPrepared = preparePublication(value)
                     kotlinx.coroutines.currentCoroutineContext().ensureActive()
                     if (generation != page.generation) return@launch
