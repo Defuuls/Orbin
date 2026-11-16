@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
+import com.orbin.core.common.network.NetworkMonitor
+import com.orbin.core.common.network.StaticNetworkMonitor
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AppSettings
@@ -85,6 +87,7 @@ class ThreadViewModel
             OrbinDispatcher.Default,
         ) private val presentationDispatcher: CoroutineDispatcher = Dispatchers.Default,
         private val threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
+        networkMonitor: NetworkMonitor = StaticNetworkMonitor(),
     ) : ViewModel() {
         val title: String = savedStateHandle.get<String>("title").orEmpty()
 
@@ -102,6 +105,12 @@ class ThreadViewModel
                 SharingStarted.Eagerly,
                 AppSettings.Default,
             )
+        val isMetered: StateFlow<Boolean> =
+            networkMonitor.isMetered
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), true)
+        val isDataSaver: StateFlow<Boolean> =
+            networkMonitor.isDataSaver
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), false)
         private val _revealedPosts = MutableStateFlow<Set<Long>>(emptySet())
         val revealedPosts = _revealedPosts.asStateFlow()
 

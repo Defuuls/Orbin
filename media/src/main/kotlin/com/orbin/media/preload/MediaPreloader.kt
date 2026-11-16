@@ -8,6 +8,7 @@ import coil3.ImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
+import coil3.size.Precision
 import com.orbin.core.common.dispatchers.Dispatcher
 import com.orbin.core.common.dispatchers.OrbinDispatcher
 import com.orbin.core.model.MediaAttachment
@@ -137,6 +138,7 @@ class MediaPreloader
                 ImageRequest
                     .Builder(context)
                     .data(url)
+                    .precision(Precision.INEXACT)
                     .memoryCachePolicy(CachePolicy.ENABLED)
                     .diskCachePolicy(CachePolicy.ENABLED)
                     .build()

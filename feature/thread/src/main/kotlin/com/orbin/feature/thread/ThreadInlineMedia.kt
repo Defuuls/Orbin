@@ -32,13 +32,14 @@ internal fun ThreadInlineMedia(
     playback: PlaybackSettings,
     onOpenFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    fullResolution: Boolean = false,
 ) {
     val playable = attachment.type == MediaType.VIDEO && attachment.sourceUrl.startsWith("https://")
     if (!playable) {
         MediaThumbnail(
             attachment,
             modifier = modifier,
-            fullResolution = false,
+            fullResolution = fullResolution,
             cornerRadius = 0.dp,
             onClick = onOpenFullscreen,
         )
@@ -57,7 +58,7 @@ internal fun ThreadInlineMedia(
         MediaThumbnail(
             attachment,
             modifier = Modifier.fillMaxSize(),
-            fullResolution = false,
+            fullResolution = fullResolution,
             cornerRadius = 0.dp,
             onClick = open,
         )
