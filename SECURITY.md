@@ -43,7 +43,8 @@ These are deliberate trade-offs, stated so nobody has to discover them.
 - **Traffic outside the app's network stack.** The "All of 4chan" search runs in a system web
   view on both platforms, and iOS plays and previews video, and continues saves in the
   background, with system components. None of these use the app's encrypted DNS, User-Agent or
-  cookie handling. Strict encrypted DNS turns all of them off.
+  cookie handling. Strict encrypted DNS turns the search and previews off, keeps saves in the
+  app, and on iOS plays video from a copy the app fetched itself instead of streaming it.
 - **Encrypted DNS hides lookups, not connections.** The network still sees the addresses
   connected to, and usually the site name in the TLS handshake.
 - **App lock is an access gate, not encryption.** The data keys are not bound to user

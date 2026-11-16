@@ -66,6 +66,8 @@ class DirectMediaStartupTest {
 
     @Before
     fun installImageTransport() {
+        // As at app start, once settings load: streaming is allowed unless strict DNS is on.
+        SystemMediaPolicy.apply(com.orbin.core.model.AppSettings.Default)
         SingletonImageLoader.reset()
         val transport = FakeImageLoaderEngine.Builder().default(ColorImage(0xFF444444.toInt(), 640, 480)).build()
         SingletonImageLoader.setUnsafe { context -> ImageLoader.Builder(context).components { add(transport) }.build() }

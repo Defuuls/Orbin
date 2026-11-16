@@ -41,8 +41,10 @@ internal fun iosEncryptedDnsRequest(provider: DohProvider): EncryptedDnsRequest 
  * - background URLSession transfers, which run in a system daemon so they survive suspension.
  *
  * By default they are allowed, because without them video does not stream. With strict encrypted
- * DNS on, the reader has asked for a feature to stop rather than leak a hostname, so remote media
- * is not handed to any of them. Saved files still play: a local file needs no lookup.
+ * DNS on, the reader has asked for a feature to stop rather than leak a hostname, so a remote
+ * address is never handed to any of them. Video still plays: [SystemPlayable] fetches the file
+ * through the app's own client and gives the player a local copy, which needs no lookup. Previews
+ * and the web search have no such path and stay off.
  *
  * Starts closed until the saved setting has been read, so a strict reader's first screen cannot
  * start a stream in the moment before it loads.
@@ -77,7 +79,10 @@ internal fun systemLoadPermitted(url: String): Boolean {
     return permitsSystemLoad(url, allowed)
 }
 
-/** Shown where a player would be while strict encrypted DNS keeps the system from streaming. */
+/**
+ * The players' own last line of defence: shown if one is ever handed a remote address under
+ * strict encrypted DNS. Callers go through [SystemPlayable], so a reader should not meet it.
+ */
 @Composable
 internal fun StreamingBlockedNotice(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -91,5 +96,5 @@ internal fun StreamingBlockedNotice(modifier: Modifier = Modifier) {
 }
 
 internal const val STREAMING_BLOCKED_MESSAGE =
-    "Streaming is off while Strict encrypted DNS is on, because iOS plays video with the " +
-        "device's DNS. Save the file to play it, or turn off Strict encrypted DNS in Settings."
+    "This video can't be streamed while Strict encrypted DNS is on, because iOS plays video with " +
+        "the device's DNS. Save the file to play it, or turn off Strict encrypted DNS in Settings."

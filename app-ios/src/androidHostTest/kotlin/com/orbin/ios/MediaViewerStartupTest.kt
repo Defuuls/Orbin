@@ -39,6 +39,8 @@ class MediaViewerStartupTest {
 
     @Before
     fun installPreviewTransport() {
+        // As at app start, once settings load: streaming is allowed unless strict DNS is on.
+        SystemMediaPolicy.apply(com.orbin.core.model.AppSettings.Default)
         val engine = FakeImageLoaderEngine.Builder().default(ColorImage(0xFF444444.toInt())).build()
         SingletonImageLoader.setSafe { context -> ImageLoader.Builder(context).components { add(engine) }.build() }
     }

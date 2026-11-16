@@ -64,7 +64,7 @@ class SystemMediaPolicyTest {
 
     @Test
     fun theSettingSaysWhatItTurnsOffOnIos() {
-        assertTrue("streaming" in STRICT_DNS_HINT && "search" in STRICT_DNS_HINT)
+        assertTrue("video" in STRICT_DNS_HINT && "search" in STRICT_DNS_HINT)
         assertTrue("Save the file" in STREAMING_BLOCKED_MESSAGE)
     }
 }

@@ -71,10 +71,11 @@ Every host the app can contact is listed here.
     network that blocks the resolver the app does not load. iOS plays video (and decodes video
     previews) with system components that use **the device's DNS** and their own identification,
     and so does a save that continues in the background.
-  - **Strict encrypted DNS** additionally turns off everything described above that cannot use
-    encrypted DNS: the "All of 4chan" search on both platforms and, on iOS, video streaming,
-    video previews and background saves (videos you have saved still play, and saves run while
-    the app is open).
+  - **Strict encrypted DNS** additionally stops everything described above from using the
+    device's DNS. The "All of 4chan" search is turned off on both platforms. On iOS, a video is
+    downloaded in full by the app itself, over encrypted DNS, and then played from a temporary
+    copy that is deleted when you leave it, so playback starts later and a very large video has
+    to be saved instead; video previews are off, and saves run only while the app is open.
 - **Updates (Android only).** The Android app checks GitHub for new releases once a day unless you
   turn that off, and downloads an update only when you ask. iOS updates come through TestFlight
   or a build you install yourself.

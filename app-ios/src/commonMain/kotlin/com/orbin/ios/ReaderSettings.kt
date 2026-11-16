@@ -594,4 +594,5 @@ private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar
 internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md"
 internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin"
 
-internal const val STRICT_DNS_HINT = "Also turn off video streaming and 4chan web search, which use the device's DNS"
+internal const val STRICT_DNS_HINT =
+    "Load each video fully before playing and turn off 4chan web search, so nothing uses the device's DNS"

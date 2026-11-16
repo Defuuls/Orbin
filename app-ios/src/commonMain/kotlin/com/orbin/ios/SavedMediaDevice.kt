@@ -9,6 +9,15 @@ internal expect suspend fun stageSavedMedia(
     record: MediaLibraryRecord,
 ): String
 
+/**
+ * Writes a file the app fetched itself into the same staging area, for playback under strict
+ * encrypted DNS. Released with [releaseSavedMedia] like any other staged file.
+ */
+internal expect suspend fun stageFetchedMedia(
+    bytes: ByteArray,
+    fileName: String,
+): String
+
 internal expect suspend fun releaseSavedMedia(path: String)
 
 internal expect fun savedMediaFileUrl(path: String): String

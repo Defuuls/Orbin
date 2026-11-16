@@ -60,37 +60,38 @@ internal fun FeedMedia(
         // A neighbour never requests a first video frame or creates a hidden decoder.
         FeedPoster(attachment, active, playback.autoplay, Modifier.fillMaxSize())
         when {
-            active && playable && started -> {
-                if (attachment.isWebM) {
-                    NativeWebMPlayer(
-                        url = requireNotNull(source),
-                        active = true,
-                        autoPlay = requestedPlaying,
-                        initiallyMuted = initialMuted,
-                        loop = playback.loopVideos,
-                        feedMode = true,
-                        preloader = preloader,
-                        onFeedLike = onLike,
-                        onPlayIntentChange = { requestedPlaying = it },
-                        onMuteIntentChange = { initialMuted = it },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    NativePlayer(
-                        url = requireNotNull(source),
-                        active = true,
-                        autoPlay = requestedPlaying,
-                        initiallyMuted = initialMuted,
-                        loop = playback.loopVideos,
-                        feedMode = true,
-                        preloader = preloader,
-                        onFeedLike = onLike,
-                        onPlayIntentChange = { requestedPlaying = it },
-                        onMuteIntentChange = { initialMuted = it },
-                        modifier = Modifier.fillMaxSize(),
-                    )
+            active && playable && started ->
+                SystemPlayable(requireNotNull(source), showStatus = false) { playableUrl ->
+                    if (attachment.isWebM) {
+                        NativeWebMPlayer(
+                            url = playableUrl,
+                            active = true,
+                            autoPlay = requestedPlaying,
+                            initiallyMuted = initialMuted,
+                            loop = playback.loopVideos,
+                            feedMode = true,
+                            preloader = preloader,
+                            onFeedLike = onLike,
+                            onPlayIntentChange = { requestedPlaying = it },
+                            onMuteIntentChange = { initialMuted = it },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        NativePlayer(
+                            url = playableUrl,
+                            active = true,
+                            autoPlay = requestedPlaying,
+                            initiallyMuted = initialMuted,
+                            loop = playback.loopVideos,
+                            feedMode = true,
+                            preloader = preloader,
+                            onFeedLike = onLike,
+                            onPlayIntentChange = { requestedPlaying = it },
+                            onMuteIntentChange = { initialMuted = it },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
-            }
             active && playable ->
                 FeedPlaybackControls(
                     playing = false,
