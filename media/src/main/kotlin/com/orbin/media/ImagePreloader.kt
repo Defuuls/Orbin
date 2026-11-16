@@ -4,6 +4,7 @@ import android.content.Context
 import coil3.ImageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
+import coil3.size.Precision
 import coil3.size.Size
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -56,6 +57,7 @@ class ImagePreloader(
             ImageRequest
                 .Builder(context)
                 .data(url)
+                .precision(Precision.INEXACT)
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.ENABLED)
         if (maxDimensionPx != null && maxDimensionPx > 0) {

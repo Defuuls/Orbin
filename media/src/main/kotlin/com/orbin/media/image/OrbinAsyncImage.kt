@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -60,18 +61,24 @@ fun OrbinAsyncImage(
     contentScale: ContentScale = ContentScale.Crop,
     placeholderUrl: String? = null,
     model: Any? = null,
+    filterQuality: FilterQuality = FilterQuality.Medium,
 ) {
     val context = LocalPlatformContext.current
     val sizeResolver = rememberConstraintsSizeResolver()
+    val distinctPlaceholder = placeholderUrl?.takeUnless { it == url }
     val request =
-        model ?: remember(context, url, sizeResolver) {
+        model ?: remember(context, url, distinctPlaceholder, sizeResolver) {
             url?.let {
                 ImageRequest
                     .Builder(context)
                     .data(it)
                     .size(sizeResolver)
-                    .precision(Precision.EXACT)
-                    .build()
+                    .precision(Precision.INEXACT)
+                    .apply {
+                        if (distinctPlaceholder != null) {
+                            placeholderMemoryCacheKey(distinctPlaceholder)
+                        }
+                    }.build()
             }
         }
     // remember(url) already resets these when the URL changes; no effect needed.
@@ -80,7 +87,6 @@ fun OrbinAsyncImage(
     var loaded by remember(request) { mutableStateOf(false) }
 
     Box(modifier = modifier.then(sizeResolver), contentAlignment = Alignment.Center) {
-        val distinctPlaceholder = placeholderUrl?.takeUnless { it == url }
         if (distinctPlaceholder != null && request != null && !loaded) {
             AsyncImage(
                 model =
@@ -89,13 +95,14 @@ fun OrbinAsyncImage(
                             .Builder(context)
                             .data(distinctPlaceholder)
                             .size(sizeResolver)
-                            .precision(Precision.EXACT)
+                            .precision(Precision.INEXACT)
                             .build()
                     },
                 // Described by the image drawn over it; announcing both would duplicate it.
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,
+                filterQuality = filterQuality,
             )
         }
 
@@ -114,6 +121,7 @@ fun OrbinAsyncImage(
                     },
                 modifier = Modifier.fillMaxSize(),
                 contentScale = contentScale,
+                filterQuality = filterQuality,
                 onSuccess = {
                     loadFailed = false
                     failureMessage = null

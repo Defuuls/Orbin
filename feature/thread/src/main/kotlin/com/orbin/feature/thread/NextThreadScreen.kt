@@ -38,6 +38,7 @@ import com.orbin.core.model.PostFilterKind
 import com.orbin.core.model.PostId
 import com.orbin.core.model.Thread
 import com.orbin.core.model.isWideWindow
+import com.orbin.core.model.shouldLoadSharpPreview
 import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.boardLabel
 import com.orbin.core.reader.mediaPostId
@@ -198,6 +199,8 @@ private fun LoadedThread(
     val presentation = state.presentation
     val memory by viewModel.readerMemory.collectAsStateWithLifecycle()
     val preferences by viewModel.readerPreferences.collectAsStateWithLifecycle()
+    val isMetered by viewModel.isMetered.collectAsStateWithLifecycle()
+    val isDataSaver by viewModel.isDataSaver.collectAsStateWithLifecycle()
     val revealed by viewModel.revealedPosts.collectAsStateWithLifecycle()
     val statusText = readerThreadStatus(presentation)
     val rows by produceState<List<com.orbin.uinext.screens.Post>>(
@@ -527,6 +530,15 @@ private fun LoadedThread(
                             playback = preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board),
                             onOpenFullscreen = { presentation.firstMediaIndex(row.id)?.let(::openMedia) },
                             modifier = tileModifier,
+                            fullResolution =
+                                shouldLoadSharpPreview(
+                                    modeWantsSharp = true,
+                                    setting = preferences.sharpPreviews,
+                                    isMetered = isMetered,
+                                    isDataSaver = isDataSaver,
+                                    mediaType = attachment.type,
+                                    sizeBytes = attachment.sizeBytes,
+                                ),
                         )
                     }
                 },
