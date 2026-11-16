@@ -1,5 +1,6 @@
 package com.orbin.ios
 
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.DownloadStatus
 import com.orbin.core.model.MediaAttachment
@@ -12,6 +13,7 @@ import com.orbin.data.database.entity.DownloadEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
@@ -114,6 +116,35 @@ class MediaDownloadsTest {
     }
 
     @Test
+    fun aSaveUsesTheBackgroundSessionUnlessStrictEncryptedDnsIsOn() =
+        runTest {
+            for (strict in listOf(false, true)) {
+                var inProcess = 0
+                val background = RecordingDurableFetch()
+                val downloads =
+                    MediaDownloads(
+                        dao = FakeDownloadDao(),
+                        store = { _, _, _, _ -> },
+                        fetch = { _, _ ->
+                            inProcess++
+                            byteArrayOf(1)
+                        },
+                        scope = backgroundScope,
+                        now = { 1_000 },
+                        durableFetch = background,
+                        mediaSettings = flowOf(AppSettings.Default.copy(strictDohEnabled = strict)),
+                    )
+
+                assertTrue(downloads.save(file("clip.mp4"), thread, null))
+                downloads.records.first { it.singleOrNull()?.status == DownloadStatus.COMPLETED }
+
+                // The background session resolves names in a system daemon, outside encrypted DNS.
+                assertEquals(if (strict) 0 else 1, background.fetches, "strict=$strict")
+                assertEquals(if (strict) 1 else 0, inProcess, "strict=$strict")
+            }
+        }
+
+    @Test
     fun savingTheSameFileTwiceDoesNotFetchItAgain() =
         runTest {
             var fetches = 0
@@ -193,6 +224,26 @@ class MediaDownloadsTest {
 }
 
 /** The downloads table in memory. */
+private class RecordingDurableFetch : DurableMediaFetch {
+    var fetches = 0
+
+    override suspend fun fetch(
+        id: Long,
+        url: String,
+        onProgress: (received: Long, total: Long?) -> Unit,
+    ): ByteArray {
+        fetches++
+        return byteArrayOf(2)
+    }
+
+    override suspend fun hasPendingTransfer(
+        id: Long,
+        url: String,
+    ): Boolean = false
+
+    override fun didSave(id: Long) = Unit
+}
+
 private class FakeDownloadDao : DownloadDao {
     private val rows = MutableStateFlow<List<DownloadEntity>>(emptyList())
 

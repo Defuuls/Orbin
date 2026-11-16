@@ -91,13 +91,15 @@ internal object AppGraph {
             LegacySyncCleanup.clear(preferences)
             LegacyThemeMigration.clear(preferences)
         }
-        // Apply the saved resolver (and "strict" flag) as soon as settings are available, and
-        // again if the user changes them. EncryptedDns updates the process-wide PrivacyContext
-        // that Swift registered at launch; networkConfig updates the Ktor HTTPS policy.
+        // Apply the saved resolver as soon as settings are available, and again if the user
+        // changes it. EncryptedDns updates the process-wide PrivacyContext that Swift registered
+        // at launch, always requiring encryption; networkConfig updates the Ktor HTTPS policy;
+        // SystemMediaPolicy decides whether the system's own players may stream at all.
         scope.launch(Dispatchers.Default) {
             shared.settingsStore.settings.collect { settings ->
                 networkConfig.updateDoh(settings.dohProvider, settings.strictDohEnabled)
-                EncryptedDns.apply(settings.dohProvider, settings.strictDohEnabled)
+                EncryptedDns.apply(settings.dohProvider)
+                SystemMediaPolicy.apply(settings)
             }
         }
     }

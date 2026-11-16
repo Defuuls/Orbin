@@ -337,11 +337,13 @@ private fun appearanceAndPrivacyRows(settings: AppSettings): List<SettingItem> =
             options = DohProvider.entries.map { it.label },
             selected = settings.dohProvider.ordinal,
         ),
+        // On iOS the app's own requests always require encrypted DNS (see EncryptedDns). What this
+        // adds is turning off the system players and web view, which cannot use it.
         toggle(
             SettingIds.STRICT_DOH,
             "Strict encrypted DNS",
             settings.strictDohEnabled,
-            hint = "Stop loading if encrypted DNS is blocked",
+            hint = STRICT_DNS_HINT,
         ),
         toggle(
             SettingIds.SAVE_SEARCH_HISTORY,
@@ -591,3 +593,5 @@ private val AppThemeMode.label: String get() = name.lowercase().replaceFirstChar
 /** The privacy policy and project information live in the project's own repository. */
 internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/main/PRIVACY.md"
 internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin"
+
+internal const val STRICT_DNS_HINT = "Also turn off video streaming and 4chan web search, which use the device's DNS"

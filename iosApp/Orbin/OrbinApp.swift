@@ -8,9 +8,9 @@ final class OrbinAppDelegate: UIResponder, UIApplicationDelegate {
     override init() {
         super.init()
         // Encrypted DNS must be in place before any HTTP client is built. The applicator is
-        // registered first, then Android's default (Cloudflare, fallback allowed) is applied;
-        // AppGraph later updates both when settings load. registerBackgroundRefresh can itself
-        // initialize AppGraph, so it comes last.
+        // registered first, then the default resolver (Cloudflare, encryption required) is
+        // applied; AppGraph later applies the saved resolver when settings load.
+        // registerBackgroundRefresh can itself initialize AppGraph, so it comes last.
         installEncryptedDns()
         OrbinCloudSync.shared.install()
         OrbinMediaConverter.shared.install()
@@ -41,10 +41,18 @@ final class OrbinAppDelegate: UIResponder, UIApplicationDelegate {
 }
 
 /// Wires process-wide Network.framework DNS-over-HTTPS to the Kotlin settings: the saved
-/// resolver (Cloudflare, Google, OpenDNS or NextDNS) and whether encrypted resolution is
-/// required. Reached by address so looking the resolver up does not go through the network's
-/// DNS either. When [required] is false, the system may fall back to ordinary DNS if DoH fails,
-/// matching Android. When true, lookups fail instead of falling back.
+/// resolver (Cloudflare, Google, OpenDNS or NextDNS), reached by address so looking the resolver
+/// up does not go through the network's DNS either.
+///
+/// Kotlin always asks for `required`. `requireEncryptedNameResolution(false, ...)` does not mean
+/// "prefer encrypted, fall back if blocked": it means no requirement, so the system resolver is
+/// used and `fallbackResolver` is never consulted. Only `true` makes this process's lookups go to
+/// the DoH resolver (when the system's own resolver is not already encrypted). There is no
+/// fallback to ordinary DNS: on a network that blocks the resolver, lookups fail.
+///
+/// This covers URLSession and Network.framework in this process only. WKWebView, AVPlayer and
+/// background URLSession transfers resolve names elsewhere; Kotlin's `SystemMediaPolicy` turns
+/// those off when the reader chooses strict encrypted DNS.
 private func installEncryptedDns() {
     EncryptedDns.shared.setApplicator { url, bootstrapIpsCsv, requiredFlag in
         applyOrbinEncryptedDns(

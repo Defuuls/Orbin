@@ -7,6 +7,7 @@ import com.orbin.core.model.DownloadStatus
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.PermanentContentFilter
 import com.orbin.core.model.ThreadKey
+import com.orbin.core.model.allowsSystemNetworkFeatures
 import com.orbin.core.model.downloadContext
 import com.orbin.core.model.libraryRecord
 import com.orbin.data.database.dao.DownloadDao
@@ -234,7 +235,10 @@ class MediaDownloads(
                     val onProgress: (Long, Long?) -> Unit = { received, total ->
                         progress.update { it + (id to (received to total)) }
                     }
-                    val bytes = durableFetch?.fetch(id, url, onProgress) ?: fetch(url, onProgress)
+                    // A background transfer runs in a system daemon, which resolves names with the
+                    // device's DNS. Under strict encrypted DNS the save stays in this process.
+                    val durable = durableFetch?.takeIf { systemTransfersAllowed() }
+                    val bytes = durable?.fetch(id, url, onProgress) ?: fetch(url, onProgress)
                     val entry = checkNotNull(dao.getById(id)) { "Download was removed" }
                     val context =
                         entry.mediaContextJson?.let {
@@ -258,6 +262,9 @@ class MediaDownloads(
         progress.update { it - id }
         dao.updateStatus(id, if (saved.isSuccess) DownloadStatus.COMPLETED.name else DownloadStatus.FAILED.name)
     }
+
+    /** Without settings (tests, previews) nothing has asked for strict mode. */
+    private suspend fun systemTransfersAllowed(): Boolean = mediaSettings?.first()?.allowsSystemNetworkFeatures ?: true
 
     // Negative, like Android's direct transfers, and never repeated even within a millisecond.
     private fun nextId(): Long {

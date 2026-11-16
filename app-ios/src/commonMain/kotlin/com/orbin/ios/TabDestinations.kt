@@ -63,6 +63,7 @@ import com.orbin.uinext.screens.SettingsScreen
 import com.orbin.uinext.screens.ThreadCollectionRow
 import com.orbin.uinext.screens.ThreadCollectionScreen
 import com.orbin.uinext.screens.ThreadCollectionStatus
+import com.orbin.uinext.screens.WebSearchBlockedPane
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -675,6 +676,8 @@ internal fun SearchDestination(browser: Browser) {
     val query by browser.search.query.collectAsState()
     val results by browser.search.results.collectAsState()
     val followed by browser.followed.collectAsState()
+    // The web search runs in WKWebView, outside the app's encrypted DNS: off in strict mode.
+    val webSearchAllowed by SystemMediaPolicy.streamingAllowed.collectAsState()
     val followBoards = stringResource(Res.string.ios_search_follow_boards)
     val threads = (results as? Load.Ready)?.value.orEmpty()
     val byRow = remember(threads) { threads.associateBy { it.feedRowId } }
@@ -703,12 +706,18 @@ internal fun SearchDestination(browser: Browser) {
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             SearchScreen(
-                onWebSearch = browser.webSearchSession?.let { it::submit },
+                // Blocked: a submitted query must not reach the session, which would start a page load.
+                onWebSearch = if (webSearchAllowed) browser.webSearchSession?.let { it::submit } else ({}),
                 webSearch =
                     if (webProvider != null) {
                         { submitted ->
-                            browser.webSearchTransport?.let { transport ->
-                                FourchanWebSearch(submitted, transport, webBoards, browser::openThread)
+                            if (webSearchAllowed) {
+                                browser.webSearchTransport?.let { transport ->
+                                    FourchanWebSearch(submitted, transport, webBoards, browser::openThread)
+                                }
+                            } else {
+                                // The transport is lazy: under strict DNS its web view is never built.
+                                WebSearchBlockedPane()
                             }
                         }
                     } else {
