@@ -249,6 +249,47 @@ def check_emulator_options() -> None:
                 )
 
 
+# Hosts in source that the app never contacts: documentation placeholders and licence headers.
+PLACEHOLDER_HOSTS = {"www.apache.org"}
+PLACEHOLDER_SUFFIXES = (".example", ".invalid", ".test", "example.org", "example.com")
+# Production source only: tests, build logic and tooling name hosts the shipped app never reaches.
+NON_SHIPPED_PARTS = {"test", "androidTest", "jvmTest", "commonTest", "iosTest", "androidHostTest", "benchmark"}
+NON_SHIPPED_PREFIXES = ("scripts/", "build-logic/", "benchmark/", "core/testing/", "iosApp/OrbinNativeTests/", "iosApp/OrbinUITests/")
+HOST_PATTERN = re.compile(r"https://([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)")
+
+
+def contacted_hosts(sources: dict[str, str]) -> dict[str, str]:
+    """Each real host written into shipped source, with one file that names it."""
+    hosts: dict[str, str] = {}
+    for rel, text in sorted(sources.items()):
+        if rel.startswith(NON_SHIPPED_PREFIXES) or NON_SHIPPED_PARTS & set(Path(rel).parts):
+            continue
+        for host in HOST_PATTERN.findall(text):
+            host = host.lower()
+            if host in PLACEHOLDER_HOSTS or host.endswith(PLACEHOLDER_SUFFIXES):
+                continue
+            hosts.setdefault(host, rel)
+    return hosts
+
+
+def check_privacy_hosts(sources: dict[str, str] | None = None, policy: str | None = None) -> None:
+    """Every host the app can contact must be named in PRIVACY.md.
+
+    The policy promises a complete list. It drifted once already, when a web search, reverse image
+    search and iCloud sync were added without it; a host that reaches the source without reaching
+    the policy now fails here instead.
+    """
+    if sources is None:
+        tracked = subprocess.check_output(["git", "ls-files", "*.kt", "*.swift"], cwd=ROOT, text=True).splitlines()
+        sources = {rel: read(rel) for rel in tracked}
+    if policy is None:
+        policy = read("PRIVACY.md")
+    policy = policy.lower()
+    for host, rel in sorted(contacted_hosts(sources).items()):
+        if host not in policy:
+            fail("privacy-hosts", f"{host} (in {rel}) is not listed in PRIVACY.md under 'Who the app talks to'")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fix-links", action="store_true", help="backfill missing CHANGELOG link refs")
@@ -266,6 +307,7 @@ def main() -> int:
     check_release_tooling()
     check_emulator_options()
     check_tracked_hygiene()
+    check_privacy_hosts()
 
     for note in notes:
         print(f"note: {note}")
