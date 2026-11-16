@@ -49,6 +49,8 @@ object VideoMediaModule {
 
             override suspend fun clear() = videoServer.clearCache()
 
+            override suspend fun clearExceptOpenVideos() = videoServer.purgeUnwatched()
+
             override suspend fun setMaxCacheBytes(bytes: Long) = videoServer.setMaxCacheBytes(bytes)
         }
 }

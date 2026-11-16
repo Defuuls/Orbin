@@ -26,7 +26,9 @@ import java.io.RandomAccessFile
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketTimeoutException
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -36,10 +38,16 @@ import javax.inject.Singleton
  * Local HTTP streaming and LRU disk cache server on `127.0.0.1`, translated from NekoSurf's
  * `VideoServer` (PR #89).
  *
- * ExoPlayer opens `http://127.0.0.1:<port>/<id>` and receives bytes as soon as they arrive from
- * upstream while the same download fills a cache file on disk. Complete files play directly from
- * disk. Seeking ahead (such as WebM cue indices at the end of a file) fetches the requested byte
- * range upstream without blocking the sequential download.
+ * ExoPlayer opens `http://127.0.0.1:<port>/<token>/<id>` and receives bytes as soon as they arrive
+ * from upstream while the same download fills a cache file on disk. Complete files play directly
+ * from disk. Seeking ahead (such as WebM cue indices at the end of a file) fetches the requested
+ * byte range upstream without blocking the sequential download.
+ *
+ * Any app on the device can connect to a loopback port, and a stream's id is derived from its
+ * public URL, so the id alone would let another app ask "is this file being watched right now?".
+ * Every path therefore also carries [accessToken], a random value that exists only in this
+ * process: a request without it gets the same 404 as an unknown id. Request lines and headers are
+ * read with size, count and time limits so a local client cannot hold memory or a thread.
  */
 @Singleton
 @Suppress("TooManyFunctions")
@@ -73,6 +81,9 @@ class VideoServer internal constructor(
     private var serverSocket: ServerSocket? = null
     private var serverPort: Int = -1
 
+    /** Unguessable per-process path prefix; never written to disk or logged. */
+    private val accessToken: String = randomAccessToken()
+
     fun maxCacheBytes(): Long = maxCacheBytes
 
     suspend fun setMaxCacheBytes(bytes: Long) {
@@ -83,7 +94,8 @@ class VideoServer internal constructor(
 
     /**
      * Returns what the player should open for [url]: a `file://` URI if cached completely on disk,
-     * otherwise a local `http://127.0.0.1:<port>/<id>` stream that starts downloading immediately.
+     * otherwise a local `http://127.0.0.1:<port>/<token>/<id>` stream that starts downloading
+     * immediately.
      */
     suspend fun source(url: String): String =
         withContext(Dispatchers.IO) {
@@ -98,7 +110,7 @@ class VideoServer internal constructor(
             val download = downloadFor(url, file)
             schedule()
             val port = ensureServer()
-            "http://127.0.0.1:$port/${download.id}"
+            "http://127.0.0.1:$port/$accessToken/${download.id}"
         }
 
     /** Marks [url] as actively watched so its download takes priority over background prefetches. */
@@ -235,6 +247,48 @@ class VideoServer internal constructor(
             }
         }
 
+    /**
+     * Deletes every cached file and abandons every download except those behind a video that is
+     * open right now.
+     *
+     * Cached videos are ordinary files: nothing here encrypts them. A reader who locks the app
+     * expects what they watched not to be sitting in its cache while it is closed, so leaving a
+     * locked app calls this. What is on screen is kept, so playback is intact when they unlock.
+     */
+    suspend fun purgeUnwatched() =
+        withContext(Dispatchers.IO) {
+            val keptFiles = mutableSetOf<String>()
+            val abandoned =
+                synchronized(lock) {
+                    val keptUrls = watched + awaited.keys
+                    keptUrls.forEach { url ->
+                        val file = fileFor(url)
+                        keptFiles += file.name
+                        keptFiles += partFileFor(file).name
+                    }
+                    downloads.values.filter { it.url !in keptUrls }.onEach { download ->
+                        downloads.remove(download.url)
+                        ids.remove(download.id)
+                        queued.remove(download)
+                    }
+                }
+            abandoned.forEach { it.cancel() }
+            runCatching {
+                cacheDirProvider()
+                    .listFiles()
+                    ?.filter { it.isFile && it.name !in keptFiles }
+                    ?.forEach { it.delete() }
+            }
+            val keptUrls = synchronized(lock) { watched + awaited.keys }
+            for ((url, flow) in progressFlows) {
+                if (url !in keptUrls) {
+                    flow.value = null
+                    loadedFlow(url).value = emptyList()
+                }
+            }
+            schedule()
+        }
+
     fun close() {
         val socket =
             synchronized(lock) {
@@ -278,39 +332,40 @@ class VideoServer internal constructor(
     }
 
     private fun handleClient(socket: Socket) {
-        socket.use { s ->
-            val input = s.getInputStream()
-            val output = s.getOutputStream()
-            val requestLine = readHttpLine(input) ?: return
-            val parts = requestLine.split(' ')
-            if (parts.size < 2) return
-            val method = parts[0].uppercase(Locale.US)
-            val path = parts[1].substringBefore('?').trimStart('/')
-
-            val headers = mutableMapOf<String, String>()
-            while (true) {
-                val line = readHttpLine(input) ?: break
-                if (line.isEmpty()) break
-                val colon = line.indexOf(':')
-                if (colon > 0) {
-                    headers[line.substring(0, colon).trim().lowercase(Locale.US)] =
-                        line.substring(colon + 1).trim()
+        try {
+            socket.use { s ->
+                // Bounds the request read only; a stream waiting on upstream bytes writes, not reads.
+                s.soTimeout = CLIENT_READ_TIMEOUT_MS
+                val output = s.getOutputStream()
+                when (val request = readLocalRequest(s.getInputStream())) {
+                    null -> return
+                    LocalRequest.TooLarge ->
+                        writeHttpStatus(output, HTTP_HEADER_FIELDS_TOO_LARGE, "Request Header Fields Too Large")
+                    is LocalRequest.Parsed -> respond(request, output)
                 }
             }
-
-            val download = ids[path]
-            if (download == null) {
-                writeHttpStatus(output, HTTP_NOT_FOUND, "Not Found")
-                return
-            }
-
-            if (method != "GET" && method != "HEAD") {
-                writeHttpStatus(output, HTTP_METHOD_NOT_ALLOWED, "Method Not Allowed")
-                return
-            }
-
-            download.serve(output, headers["range"], headOnly = method == "HEAD")
+        } catch (_: SocketTimeoutException) {
+            // A client that connected and never sent a request; the socket is already closed.
+        } catch (_: IOException) {
+            // The player went away mid-response. Nothing to report: it will ask again if it cares.
         }
+    }
+
+    private fun respond(
+        request: LocalRequest.Parsed,
+        output: OutputStream,
+    ) {
+        // One answer for a wrong token and an unknown id, so neither can be told from the other.
+        val download = request.streamId(accessToken)?.let { ids[it] }
+        if (download == null) {
+            writeHttpStatus(output, HTTP_NOT_FOUND, "Not Found")
+            return
+        }
+        if (request.method != "GET" && request.method != "HEAD") {
+            writeHttpStatus(output, HTTP_METHOD_NOT_ALLOWED, "Method Not Allowed")
+            return
+        }
+        download.serve(output, request.headers["range"], headOnly = request.method == "HEAD")
     }
 
     private fun downloadFor(
@@ -541,11 +596,18 @@ class VideoServer internal constructor(
         private fun cleanupDownload() {
             synchronized(dataLock) { dataLock.notifyAll() }
             synchronized(lock) {
-                if (downloads[url] === this@Download) {
+                val current = downloads[url]
+                if (current === this@Download) {
                     downloads.remove(url)
                     ids.remove(id)
                 }
                 queued.remove(this@Download)
+                // An abandoned download may have reopened its partial file after whoever cancelled
+                // it deleted that file. Nothing resumes it, so it must not be left behind - unless
+                // a newer download of the same URL now owns the same path.
+                if (cancelled && (current == null || current === this@Download)) {
+                    runCatching { partFile.delete() }
+                }
             }
             if (!done.isCompleted) done.complete(Unit)
             schedule()
@@ -844,6 +906,8 @@ class VideoServer internal constructor(
         private const val HTTP_OK = 200
         private const val HTTP_PARTIAL_CONTENT = 206
         private const val HTTP_NOT_FOUND = 404
+        private const val HTTP_HEADER_FIELDS_TOO_LARGE = 431
+        private const val CLIENT_READ_TIMEOUT_MS = 5_000
         private const val HTTP_METHOD_NOT_ALLOWED = 405
         private const val HTTP_RANGE_NOT_SATISFIABLE = 416
         private const val HTTP_BAD_GATEWAY = 502
@@ -915,22 +979,102 @@ private fun parseExplicitRange(
     }
 }
 
-private fun readHttpLine(input: InputStream): String? {
-    val sb = StringBuilder()
-    var prev = -1
-    while (true) {
-        val b = input.read()
-        if (b == -1) return if (sb.isEmpty()) null else sb.toString()
-        if (b == '\n'.code) {
-            if (prev == '\r'.code && sb.isNotEmpty()) {
-                sb.setLength(sb.length - 1)
-            }
-            return sb.toString()
+/** What a loopback client asked for, read within [MAX_REQUEST_LINE_BYTES] and [MAX_REQUEST_HEADERS]. */
+internal sealed interface LocalRequest {
+    /** A line or the header block was larger than a real player ever sends. */
+    data object TooLarge : LocalRequest
+
+    data class Parsed(
+        val method: String,
+        val path: String,
+        val headers: Map<String, String>,
+    ) : LocalRequest {
+        /** The stream id, when the path is exactly `<token>/<id>` for this process's [token]. */
+        fun streamId(token: String): String? {
+            val separator = path.indexOf('/')
+            if (separator <= 0) return null
+            val presented = path.substring(0, separator).toByteArray(Charsets.US_ASCII)
+            if (!MessageDigest.isEqual(presented, token.toByteArray(Charsets.US_ASCII))) return null
+            return path.substring(separator + 1).takeIf { it.isNotEmpty() && '/' !in it }
         }
-        sb.append(b.toChar())
-        prev = b
     }
 }
+
+/** Null when the connection closed, or sent something that is not a request line, first. */
+internal fun readLocalRequest(input: InputStream): LocalRequest? =
+    when (val line = readHttpLine(input)) {
+        HttpLine.End -> null
+        HttpLine.TooLong -> LocalRequest.TooLarge
+        is HttpLine.Text -> {
+            val parts = line.value.split(' ')
+            // Not a request line at all: nothing worth answering.
+            if (parts.size < 2) null else readHeaders(input)?.let { parsedRequest(parts, it) } ?: LocalRequest.TooLarge
+        }
+    }
+
+private fun parsedRequest(
+    requestLine: List<String>,
+    headers: Map<String, String>,
+) = LocalRequest.Parsed(
+    method = requestLine[0].uppercase(Locale.US),
+    path = requestLine[1].substringBefore('?').trimStart('/'),
+    headers = headers,
+)
+
+/** The header block, lower-cased by name; null when a line or the block is over its limit. */
+private fun readHeaders(input: InputStream): Map<String, String>? {
+    val headers = mutableMapOf<String, String>()
+    var headerLines = 0
+    while (true) {
+        val line =
+            when (val next = readHttpLine(input)) {
+                HttpLine.End -> ""
+                HttpLine.TooLong -> return null
+                is HttpLine.Text -> next.value
+            }
+        if (line.isEmpty()) return headers
+        if (++headerLines > MAX_REQUEST_HEADERS) return null
+        val colon = line.indexOf(':')
+        if (colon > 0) {
+            headers[line.substring(0, colon).trim().lowercase(Locale.US)] = line.substring(colon + 1).trim()
+        }
+    }
+}
+
+private sealed interface HttpLine {
+    data object End : HttpLine
+
+    data object TooLong : HttpLine
+
+    data class Text(
+        val value: String,
+    ) : HttpLine
+}
+
+private fun readHttpLine(input: InputStream): HttpLine {
+    val sb = StringBuilder()
+    while (true) {
+        val b = input.read()
+        if (b == -1 || b == '\n'.code) {
+            if (b == -1 && sb.isEmpty()) return HttpLine.End
+            if (sb.endsWith('\r')) sb.setLength(sb.length - 1)
+            return if (sb.length > MAX_REQUEST_LINE_BYTES) HttpLine.TooLong else HttpLine.Text(sb.toString())
+        }
+        // One byte of slack for the carriage return that ends a line exactly at the limit.
+        if (sb.length > MAX_REQUEST_LINE_BYTES) return HttpLine.TooLong
+        sb.append(b.toChar())
+    }
+}
+
+/** ExoPlayer's requests are a few hundred bytes; these leave an order of magnitude of headroom. */
+internal const val MAX_REQUEST_LINE_BYTES = 8 * 1024
+internal const val MAX_REQUEST_HEADERS = 64
+private const val ACCESS_TOKEN_BYTES = 16
+
+private fun randomAccessToken(): String =
+    ByteArray(ACCESS_TOKEN_BYTES)
+        .also { SecureRandom().nextBytes(it) }
+        .joinToString("") { "%02x".format(it) }
 
 private fun writeHttpStatus(
     output: OutputStream,
