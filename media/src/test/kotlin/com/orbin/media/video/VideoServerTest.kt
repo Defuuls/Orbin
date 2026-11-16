@@ -144,6 +144,32 @@ class VideoServerTest {
             assertThat(f2.exists()).isFalse()
         }
 
+    /** A short clip can finish downloading before the player connects to the address it was given. */
+    @Test
+    fun aStreamThatFinishedBeforeThePlayerConnectedIsStillServed() =
+        runBlocking {
+            val payload = ByteArray(2048) { (it % 127).toByte() }
+            upstream.enqueue(MockResponse().setHeader("Content-Type", "video/webm").setBody(Buffer().write(payload)))
+            upstream.start()
+            val url = upstream.url("/short.webm").toString()
+            val local = URL(server.source(url))
+            // Wait until the download has finished and left the active set.
+            repeat(200) {
+                if (server.source(url).startsWith("file:")) return@repeat
+                delay(10)
+            }
+            assertThat(server.source(url)).startsWith("file:")
+
+            val late = local.openConnection(Proxy.NO_PROXY) as HttpURLConnection
+
+            assertThat(late.responseCode).isEqualTo(200)
+            assertThat(late.inputStream.readBytes()).isEqualTo(payload)
+
+            // Once the cache is cleared the old address stops answering with a body.
+            server.clearCache()
+            assertThat(statusOf(local, local.path)).isEqualTo(404)
+        }
+
     @Test
     fun purgingKeepsOnlyTheVideoThatIsOpen() =
         runBlocking {

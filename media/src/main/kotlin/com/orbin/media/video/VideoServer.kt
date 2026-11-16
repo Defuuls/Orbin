@@ -72,6 +72,13 @@ class VideoServer internal constructor(
 
     private val downloads = ConcurrentHashMap<String, Download>()
     private val ids = ConcurrentHashMap<String, Download>()
+
+    /**
+     * Downloads that finished, still answerable by id. A small file can finish before the player
+     * that was just handed its loopback address connects; without this that request found nothing
+     * and playback failed. Bounded, oldest first; guarded by [lock].
+     */
+    private val finished = LinkedHashMap<String, Download>()
     private val progressFlows = ConcurrentHashMap<String, MutableStateFlow<Float?>>()
     private val loadedFlows = ConcurrentHashMap<String, MutableStateFlow<List<Pair<Float, Float>>>>()
     private val watched = mutableSetOf<String>()
@@ -197,6 +204,7 @@ class VideoServer internal constructor(
         withContext(Dispatchers.IO) {
             val download =
                 synchronized(lock) {
+                    finished.values.removeAll { it.url == url }
                     downloads.remove(url)?.also { d ->
                         ids.remove(d.id)
                         queued.remove(d)
@@ -232,6 +240,7 @@ class VideoServer internal constructor(
 
     suspend fun clearCache() =
         withContext(Dispatchers.IO) {
+            synchronized(lock) { finished.clear() }
             runCatching {
                 val dir = cacheDirProvider()
                 val files = dir.listFiles()
@@ -266,6 +275,7 @@ class VideoServer internal constructor(
                         keptFiles += file.name
                         keptFiles += partFileFor(file).name
                     }
+                    finished.values.removeAll { it.url !in keptUrls }
                     downloads.values.filter { it.url !in keptUrls }.onEach { download ->
                         downloads.remove(download.url)
                         ids.remove(download.id)
@@ -302,6 +312,7 @@ class VideoServer internal constructor(
         downloads.clear()
         ids.clear()
         queued.clear()
+        synchronized(lock) { finished.clear() }
     }
 
     private fun ensureServer(): Int {
@@ -356,7 +367,7 @@ class VideoServer internal constructor(
         output: OutputStream,
     ) {
         // One answer for a wrong token and an unknown id, so neither can be told from the other.
-        val download = request.streamId(accessToken)?.let { ids[it] }
+        val download = request.streamId(accessToken)?.let { id -> ids[id] ?: synchronized(lock) { finished[id] } }
         if (download == null) {
             writeHttpStatus(output, HTTP_NOT_FOUND, "Not Found")
             return
@@ -600,6 +611,10 @@ class VideoServer internal constructor(
                 if (current === this@Download) {
                     downloads.remove(url)
                     ids.remove(id)
+                    if (!failed && !cancelled) {
+                        finished[id] = this@Download
+                        while (finished.size > MAX_FINISHED) finished.remove(finished.keys.first())
+                    }
                 }
                 queued.remove(this@Download)
                 // An abandoned download may have reopened its partial file after whoever cancelled
@@ -892,6 +907,7 @@ class VideoServer internal constructor(
         const val DEFAULT_MAX_CACHE_BYTES = 300L * 1024 * 1024
         private const val MAX_BACKGROUND = 2
         private const val MAX_QUEUED = 6
+        private const val MAX_FINISHED = 16
         private const val MAX_RETRIES = 4
         private const val AHEAD_FETCH_THRESHOLD_BYTES = 256L * 1024L
         private const val SERVER_BACKLOG = 50
