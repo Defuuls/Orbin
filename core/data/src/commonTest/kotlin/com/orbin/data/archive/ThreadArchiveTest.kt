@@ -79,8 +79,80 @@ class ThreadArchiveTest {
     @Test
     fun aFileThatWasntSavedLinksToTheSite() {
         val page = threadPage(thread, emptyMap(), null, 0L)
-        assertTrue("href=\"https://i.example/a1.jpg\"" in page)
+        assertTrue("href=\"https://i.example/a1.jpg\" rel=\"noopener noreferrer\"" in page)
         assertTrue("not saved" in page)
+    }
+
+    /** Opening an archive must not tell the site, or anyone watching the network, that it was opened. */
+    @Test
+    fun openingThePageFetchesNothingFromTheSite() {
+        val video =
+            image.copy(
+                id = "v1",
+                type = MediaType.VIDEO,
+                extension = ".webm",
+                sourceUrl = "https://i.example/v1.webm",
+            )
+        val audio =
+            image.copy(
+                id = "s1",
+                type = MediaType.AUDIO,
+                extension = ".mp3",
+                sourceUrl = "https://i.example/s1.mp3",
+            )
+        val unsaved =
+            thread.copy(
+                originalPost = thread.originalPost.copy(attachments = persistentListOf(image, video, audio)),
+            )
+
+        val page = threadPage(unsaved, emptyMap(), "https://boards.example/g/thread/100", 0L)
+
+        // Every attribute a browser loads without being asked: none of them may leave the archive.
+        val autoLoaded = Regex("""(?:src|poster|srcset)="([^"]*)"""").findAll(page).map { it.groupValues[1] }.toList()
+        assertEquals(emptyList(), autoLoaded)
+        assertFalse("<img" in page || "<video" in page || "<audio" in page)
+        // The files are still reachable, by a link the reader chooses to follow.
+        listOf("a1.jpg", "v1.webm", "s1.mp3").forEach { assertTrue("href=\"https://i.example/$it\"" in page) }
+        assertEquals(3, Regex("not saved").findAll(page).count())
+    }
+
+    @Test
+    fun aSavedThumbnailIsShownEvenWhenTheFullFileIsNot() {
+        val page = threadPage(thread, mapOf("a1" to SavedFiles(null, "thumbs/a1.jpg")), null, 0L)
+
+        val link = "<a href=\"https://i.example/a1.jpg\" rel=\"noopener noreferrer\">"
+        assertTrue("$link<img loading=\"lazy\" src=\"thumbs/a1.jpg\"" in page)
+        assertTrue("not saved" in page)
+    }
+
+    @Test
+    fun aSavedVideoPlaysFromTheArchiveAndOnlyShowsAPosterItHas() {
+        val video = image.copy(type = MediaType.VIDEO, extension = ".webm")
+        val archived = thread.copy(originalPost = thread.originalPost.copy(attachments = persistentListOf(video)))
+
+        val withPoster = threadPage(archived, mapOf("a1" to SavedFiles("media/a1.webm", "thumbs/a1.jpg")), null, 0L)
+        val withoutPoster = threadPage(archived, mapOf("a1" to SavedFiles("media/a1.webm", null)), null, 0L)
+
+        assertTrue("<video controls preload=\"metadata\" poster=\"thumbs/a1.jpg\" src=\"media/a1.webm\">" in withPoster)
+        assertTrue("<video controls preload=\"metadata\" src=\"media/a1.webm\">" in withoutPoster)
+        assertFalse("https://i.example" in withoutPoster)
+    }
+
+    @Test
+    fun theBrowserIsToldToLoadOnlyTheArchivesOwnFiles() {
+        val page = threadPage(thread, emptyMap(), null, 0L)
+        val head = page.substringBefore("</head>")
+
+        assertTrue("<meta http-equiv=\"Content-Security-Policy\" content=\"$ARCHIVE_CONTENT_POLICY\">" in head)
+        assertTrue("<meta name=\"referrer\" content=\"no-referrer\">" in head)
+        // The policy precedes the stylesheet it has to allow.
+        assertTrue(head.indexOf("Content-Security-Policy") < head.indexOf("<link rel=\"stylesheet\""))
+        assertTrue(ARCHIVE_CONTENT_POLICY.startsWith("default-src 'none';"))
+        listOf("script-src", "http:", "https:", "*", "'unsafe-inline'", "'unsafe-eval'").forEach {
+            assertFalse(it in ARCHIVE_CONTENT_POLICY, "$it must not be allowed")
+        }
+        // Inline styles would be blocked, so the page must not rely on any.
+        assertFalse(" style=\"" in page || "<style" in page)
     }
 
     @Test

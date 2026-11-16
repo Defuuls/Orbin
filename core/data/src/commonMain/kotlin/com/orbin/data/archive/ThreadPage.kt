@@ -18,6 +18,11 @@ internal data class SavedFiles(
  * The archive's `index.html`: every post in reading order, quotes linking to the post they quote,
  * replies listed under each post, and each file shown from the archive itself (or, if it couldn't
  * be saved, linked on the site). Nothing runs: the page is plain HTML and [ARCHIVE_CSS].
+ *
+ * Opening the page contacts nobody. A file that was not saved is a link the reader may follow,
+ * never an image or player that fetches from the site on its own, and [ARCHIVE_CONTENT_POLICY]
+ * has the browser enforce the same thing: an archive is often opened long after it was saved, on
+ * another network, or by someone it was sent to.
  */
 internal fun threadPage(
     thread: Thread,
@@ -33,6 +38,8 @@ internal fun threadPage(
         val board = thread.key.board.value
         append("<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n")
         append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+        append("<meta http-equiv=\"Content-Security-Policy\" content=\"$ARCHIVE_CONTENT_POLICY\">\n")
+        append("<meta name=\"referrer\" content=\"no-referrer\">\n")
         append(
             "<title>",
         ).appendEscaped("/$board/ – ${title.ifBlank { "Thread ${thread.key.thread.value}" }}").append("</title>\n")
@@ -107,27 +114,29 @@ private fun StringBuilder.appendFile(
     file: MediaAttachment,
     saved: SavedFiles?,
 ) {
-    val full = saved?.full ?: file.sourceUrl
-    val thumbnail = saved?.thumbnail ?: saved?.full?.takeIf { file.type == MediaType.IMAGE } ?: file.thumbnailUrl
+    val full = saved?.full
+    // Only ever a file inside the archive: a preview must not be fetched from the site.
+    val preview = saved?.thumbnail ?: full?.takeIf { file.type == MediaType.IMAGE }
+    val target = full ?: file.sourceUrl
     append("<figure>")
-    when (file.type) {
-        MediaType.VIDEO ->
-            append("<video controls preload=\"metadata\" poster=\"")
-                .appendEscaped(thumbnail)
-                .append("\" src=\"")
-                .appendEscaped(full)
-                .append("\"></video>")
-        MediaType.AUDIO -> append("<audio controls src=\"").appendEscaped(full).append("\"></audio>")
-        else ->
-            append("<a href=\"")
-                .appendEscaped(full)
-                // A file saved under the inert extension is offered as a download, never opened.
-                .append(if (full.endsWith(INERT_EXTENSION)) "\" download" else "\"")
-                .append("><img loading=\"lazy\" src=\"")
-                .appendEscaped(thumbnail)
+    when {
+        full != null && file.type == MediaType.VIDEO -> {
+            append("<video controls preload=\"metadata\"")
+            if (preview != null) append(" poster=\"").appendEscaped(preview).append('"')
+            append(" src=\"").appendEscaped(full).append("\"></video>")
+        }
+        full != null && file.type == MediaType.AUDIO ->
+            append("<audio controls src=\"").appendEscaped(full).append("\"></audio>")
+        preview != null -> {
+            appendFileLink(target, local = full != null)
+            append("<img loading=\"lazy\" src=\"")
+                .appendEscaped(preview)
                 .append("\" alt=\"")
                 .appendEscaped(file.originalFileName)
                 .append("\"></a>")
+        }
+        // Nothing of this file is in the archive; the caption's link is all there is to show.
+        else -> Unit
     }
     val base = file.originalFileName
     val ext = file.extension.trimStart('.')
@@ -137,14 +146,26 @@ private fun StringBuilder.appendFile(
         } else {
             "$base.$ext"
         }
-    append("<figcaption><a href=\"")
-        .appendEscaped(full)
-        .append("\">")
-        .appendEscaped(displayName)
-        .append("</a>")
+    append("<figcaption>")
+    appendFileLink(target, local = full != null)
+    appendEscaped(displayName).append("</a>")
     if (file.width > 0 && file.height > 0) append(" · ").append(file.width).append('×').append(file.height)
-    if (saved?.full == null) append(" · <span class=\"missing\">not saved</span>")
+    if (full == null) append(" · <span class=\"missing\">not saved</span>")
     append("</figcaption></figure>\n")
+}
+
+/** Opens `<a>` for a file: one in the archive, or the original on the site when it was not saved. */
+private fun StringBuilder.appendFileLink(
+    target: String,
+    local: Boolean,
+) {
+    append("<a href=\"").appendEscaped(target).append('"')
+    when {
+        !local -> append(" rel=\"noopener noreferrer\"")
+        // A file saved under the inert extension is offered as a download, never opened.
+        target.endsWith(INERT_EXTENSION) -> append(" download")
+    }
+    append('>')
 }
 
 private fun StringBuilder.appendNodes(nodes: List<PostNode>) {
@@ -219,6 +240,15 @@ internal fun StringBuilder.appendEscaped(text: String): StringBuilder {
 }
 
 private const val TITLE_LENGTH = 80
+
+/**
+ * Lets the page load its own stylesheet, images and media and nothing else: no script, no frames,
+ * no fonts, no requests to any site. `file:` is named beside `'self'` because a page opened from
+ * disk has no origin for `'self'` to match in every browser.
+ */
+internal const val ARCHIVE_CONTENT_POLICY =
+    "default-src 'none'; img-src 'self' file:; media-src 'self' file:; style-src 'self' file:; " +
+        "base-uri 'none'; form-action 'none'"
 
 // The browser hides all descendants while closed and supplies keyboard/touch activation without script.
 private const val SPOILER_OPEN_TAG =
