@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The write token is given only to the wiki clone below, never left in this checkout.
+          persist-credentials: false
 
       - name: Sync pages
         env:

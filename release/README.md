@@ -113,3 +113,22 @@ pushing a branch, opening a PR, or dispatching a build.
 - **The release title is derived from the tag, never typed** — see
   [`retitle-release.yml`](../.github/workflows/retitle-release.yml) for the same derivation applied
   to releases published under an older convention.
+
+## Security checks that code cannot make
+
+Run these before a release that touches the area named; tests cannot establish them.
+
+- **iOS encrypted DNS (any change to `EncryptedDns.kt`, `OrbinApp.swift` or the Darwin client).**
+  On a device, capture traffic while browsing a board: there must be no plain DNS query (UDP/TCP
+  port 53) for an imageboard hostname from the app's own requests. With **Strict encrypted DNS**
+  on, there must be none for video hosts or `find.4chan.org` either, because streaming and web
+  search are off.
+- **Bundled FFmpeg (quarterly, and any change to `iosApp/Packages/OrbinFFmpegNative`).** Follow
+  "Exposure and review" in that package's README and note the FFmpeg version reviewed.
+- **iCloud sync schema (before first enabling `IOS_ICLOUD_ENABLED`).** In the CloudKit console,
+  confirm `secureItemID`, `secureOrigin` and `securePayload` are Encrypted String fields in the
+  Production schema, as `docs/ios.md` describes.
+- **Release provenance.** After publishing, `gh attestation verify orbin-<tag>.apk --repo
+  Defuuls/Orbin` must succeed for the uploaded APK.
+- **`PRIVACY.md`.** A new host the app contacts, or a new place data is stored or sent, is listed
+  there in the same change. `scripts/validate_repo.py` checks the host list.

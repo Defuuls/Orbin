@@ -33,3 +33,22 @@ filters (65×67, 6 fps, 0.6 seconds, libvpx/libvpx-vp9 + libopus); they contain 
 third-party media. Tests also cover failed-input cleanup and queued cancellation.
 The quote/space filename test retains the caller's bytes and file protection,
 and requires that a successful output directory contain no staged original.
+
+## Exposure and review
+
+This library parses files posted by anonymous users, inside the app's own process, and it is a
+prebuilt binary from a third-party fork: the checksum in `Package.swift` proves the archive has
+not changed, not what was compiled into it. Two things keep that exposure bounded.
+
+- **Inputs are restricted.** `MediaConversion.swift` forces the Matroska/WebM demuxer and passes
+  a codec whitelist (VP8, VP9, Opus, Vorbis), with `-protocol_whitelist file,pipe`. A file that
+  is not really WebM is refused instead of being handed to whichever of FFmpeg's other parsers
+  recognises it. Do not widen either list without a reason a WebM needs.
+- **The pin is reviewed every quarter and before each release that touches this package.** Record
+  the result in `release/README.md`'s checklist:
+  1. Note the FFmpeg version the bundle reports (`ffmpeg -version` through the shim, or
+     `strings` on the framework binary) next to the tag above. It is not recorded yet.
+  2. Check that version against FFmpeg's security page for fixes in the Matroska demuxer and the
+     VP8, VP9, Opus and Vorbis decoders.
+  3. If the fork has gone quiet or a relevant fix is missing, either move the pin to a build that
+     has it or drop conversion (WebM still plays through WebKit without this package).
