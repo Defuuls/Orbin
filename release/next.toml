@@ -1,24 +1,31 @@
-# Orbin 212 - Albite
+# Orbin 213 - Alexandrite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 212
-codename = "Albite"
-version_code = 230
+number = 213
+codename = "Alexandrite"
+version_code = 231
 
-highlight = "Clearer first-run connection errors and reachable Retry controls, including at large text sizes."
+highlight = "Simpler Boards, Feed, Library and Settings navigation, sharper image previews, and more reliable iOS media opening."
 
 summary = [
-  "bump Orbin to 212-Albite / versionCode 230",
-  "replace first-run board-loading error details with clear connection guidance",
-  "keep Retry and setup navigation reachable at large text sizes",
+  "bump Orbin to 213-Alexandrite / versionCode 231",
+  "unify primary navigation and bring Watched, Saved and Downloads together in Library",
+  "add data-aware sharp previews and improve visual clarity and accessibility",
+  "fix iOS media opening after an unchanged thread refresh",
 ]
 
 [changelog]
+Added = [
+  "Added Sharp previews (Always, Wi-Fi only, Never), defaulting to unmetered connections with Data Saver or Low Data Mode off. Card and grid previews keep thumbnails for videos, GIFs, unknown file sizes and images larger than 4 MiB.",
+]
+Changed = [
+  "Unified primary navigation around Boards, Feed, Library and Settings, with Watched, Saved and Downloads together in Library.",
+  "Improved board labels, grid title contrast, orange accents, magenta error indicators and underlined quote links.",
+  "Added navigation tooltips for large text and refreshed startup profiles for Home, Feed and Card view.",
+]
 Fixed = [
-  "Resolved iOS delivery validation for bundled media tools without enabling camera access.",
-  "Show a clear connection error when first-run board loading fails instead of long platform networking details.",
-  "Keep Retry and setup navigation reachable when an error or large text would otherwise push them off screen.",
+  "Fixed iOS thread media opening as Not found after a refresh that returned unchanged content.",
 ]
 Testing = [
-  "Added regression coverage for failed first-run board loading and successful retry with long native error details and large text.",
+  "Expanded shared navigation, preview-policy and accessibility regression coverage, and made bundled iOS UI tests deterministic.",
 ]
