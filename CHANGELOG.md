@@ -6,8 +6,21 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [213-Alexandrite] - 2026-11-16
+
 ### Added
-- Added a Sharp previews setting (Always, Wi-Fi only, Never; default Wi-Fi only) so card and grid views load full-size still images only on an unmetered connection, under a 4 MB size cap, and never for videos or GIFs. Android Data Saver and iOS Low Data Mode treat Wi-Fi only as Never.
+- Added Sharp previews (Always, Wi-Fi only, Never), defaulting to unmetered connections with Data Saver or Low Data Mode off. Card and grid previews keep thumbnails for videos, GIFs, unknown file sizes and images larger than 4 MiB.
+
+### Changed
+- Unified primary navigation around Boards, Feed, Library and Settings, with Watched, Saved and Downloads together in Library.
+- Improved board labels, grid title contrast, orange accents, magenta error indicators and underlined quote links.
+- Added navigation tooltips for large text and refreshed startup profiles for Home, Feed and Card view.
+
+### Fixed
+- Fixed iOS thread media opening as Not found after a refresh that returned unchanged content.
+
+### Testing
+- Expanded shared navigation, preview-policy and accessibility regression coverage, and made bundled iOS UI tests deterministic.
 
 ## [212-Albite] - 2026-11-15
 
@@ -3232,7 +3245,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v212-Albite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v213-Alexandrite...HEAD
+[213-Alexandrite]: https://github.com/Defuuls/Orbin/compare/v212-Albite...v213-Alexandrite
 [212-Albite]: https://github.com/Defuuls/Orbin/compare/v211-Alabaster...v212-Albite
 [211-Alabaster]: https://github.com/Defuuls/Orbin/compare/v210-Agate...v211-Alabaster
 [210-Agate]: https://github.com/Defuuls/Orbin/compare/v209-Aegirine...v210-Agate
