@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [214-Allanite] - 2026-11-16
+
+### Changed
+- Aligned Coil cache precision between preloaders and UI image requests and set synchronous thumbnail placeholder cache keys to prevent blank flashes while scrolling.
+- Defaulted image rendering to medium filter quality for cleaner scaling.
+- Wired network-aware sharp preview selection into inline thread media and thread file albums.
+
+
 ## [213-Alexandrite] - 2026-11-16
 
 ### Added
@@ -3245,7 +3253,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v213-Alexandrite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v214-Allanite...HEAD
+[214-Allanite]: https://github.com/Defuuls/Orbin/compare/v213-Alexandrite...v214-Allanite
 [213-Alexandrite]: https://github.com/Defuuls/Orbin/compare/v212-Albite...v213-Alexandrite
 [212-Albite]: https://github.com/Defuuls/Orbin/compare/v211-Alabaster...v212-Albite
 [211-Alabaster]: https://github.com/Defuuls/Orbin/compare/v210-Agate...v211-Alabaster
