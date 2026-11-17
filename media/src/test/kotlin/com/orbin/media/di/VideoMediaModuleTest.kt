@@ -134,7 +134,14 @@ class VideoMediaModuleTest {
                 source.open(DataSpec.Builder().setUri(uri).build())
                 assertThat(source.readAll()).isEqualTo(payload.encodeToByteArray())
                 source.close()
-                source.open(DataSpec.Builder().setUri(uri).setPosition(3).setLength(5).build())
+                source.open(
+                    DataSpec
+                        .Builder()
+                        .setUri(uri)
+                        .setPosition(3)
+                        .setLength(5)
+                        .build(),
+                )
                 assertThat(source.readAll()).isEqualTo(payload.substring(3, 8).encodeToByteArray())
                 assertThat(server.takeRequest().getHeader("Range")).isNull()
                 assertThat(server.takeRequest().getHeader("Range")).isEqualTo("bytes=3-7")
@@ -174,7 +181,14 @@ class VideoMediaModuleTest {
                 source.open(DataSpec.Builder().setUri(uri).build())
                 assertThat(source.readAll()).isEqualTo(payload.encodeToByteArray())
                 source.close()
-                source.open(DataSpec.Builder().setUri(uri).setPosition(3).setLength(5).build())
+                source.open(
+                    DataSpec
+                        .Builder()
+                        .setUri(uri)
+                        .setPosition(3)
+                        .setLength(5)
+                        .build(),
+                )
                 assertThat(source.readAll()).isEqualTo(payload.substring(3, 8).encodeToByteArray())
                 source.close()
                 server.clearCache()

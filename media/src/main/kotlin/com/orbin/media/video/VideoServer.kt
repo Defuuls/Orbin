@@ -64,6 +64,7 @@ class VideoServer internal constructor(
 
     private val downloads = ConcurrentHashMap<String, Download>()
     private val ids = ConcurrentHashMap<String, Download>()
+
     // A short clip may finish before the player connects to its loopback URI. Keep a bounded
     // set of completed streams answerable until their cached files are cleared or evicted.
     private val finished = LinkedHashMap<String, Download>()
