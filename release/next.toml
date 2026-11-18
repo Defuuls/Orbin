@@ -1,18 +1,18 @@
-# Orbin 216 - Amazonite
+# Orbin 217 - Amber
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 216
-codename = "Amazonite"
-version_code = 234
+number = 217
+codename = "Amber"
+version_code = 235
 
-highlight = "Videos playing in grid and catalog tiles now fill the whole tile."
+highlight = "A weekly Xcode 27 check keeps the iOS app ready for Apple's 2027 SDK requirement."
 
 summary = [
-  "bump Orbin to 216-Amazonite / versionCode 234",
-  "make inline videos fill their tile the way the thumbnail does",
+  "bump Orbin to 217-Amber / versionCode 235",
+  "add a weekly Xcode 27 build-and-test check ahead of Apple's iOS 27 SDK requirement",
 ]
 
 [changelog]
-Fixed = [
-  "Videos playing in Android grid and catalog tiles now fill the whole tile instead of playing smaller with part of the still thumbnail frozen around them.",
+Testing = [
+  "Added a weekly Xcode 27 check that builds the iOS app and runs its tests on an iOS 27 simulator, ahead of App Store Connect requiring the iOS 27 SDK from April 2027.",
 ]
