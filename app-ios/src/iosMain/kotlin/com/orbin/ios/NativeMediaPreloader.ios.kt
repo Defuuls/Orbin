@@ -102,7 +102,8 @@ private class IosMediaPreloader : NativeMediaPreloader {
 
     override fun prepare(target: MediaPreloadKey?) {
         if (closed) return
-        upcoming.prepare(target?.takeIf { NSURL.URLWithString(it.url) != null })
+        // Preloading opens the same system players the gate in Player.ios.kt keeps closed.
+        upcoming.prepare(target?.takeIf { NSURL.URLWithString(it.url) != null && SystemMediaPolicy.permits(it.url) })
     }
 
     internal fun peekNative(url: String): AVPlayer? {

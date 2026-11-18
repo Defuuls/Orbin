@@ -69,6 +69,7 @@ class OrbinApplication :
         // the case this records, and a handler installed later would miss it.
         diagnosticsRepository.install()
         retireLegacyBrowsingCaches(this)
+        removeLeftoverWebViewData(this)
         // Schedule watched thread updates on a background dispatcher to avoid blocking startup.
         CoroutineScope(Dispatchers.Default).launch {
             watchScheduler.get().ensureScheduled()

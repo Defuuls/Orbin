@@ -225,7 +225,8 @@ final class OrbinCloudSync {
         releaseFiles(session)
         session.records.removeAll()
         let knownByID = Dictionary(known.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let keys = ["itemID", "revision", "origin", "payload", "deleted", "hasFile", "hasThumbnail"]
+        let keys = Field.sensitive.flatMap { [$0.encrypted, $0.legacy] }
+            + ["revision", "deleted", "hasFile", "hasThumbnail"]
         var result = try await database.records(
             matching: CKQuery(recordType: "OrbinItem", predicate: NSPredicate(value: true)),
             inZoneWith: zone, desiredKeys: keys, resultsLimit: 100)
@@ -235,10 +236,10 @@ final class OrbinCloudSync {
             for (_, match) in result.matchResults {
                 try check(session)
                 let record = try match.get()
-                guard let id = record["itemID"] as? String,
+                guard let id = Field.itemID.read(record),
                       let revision = record["revision"] as? Int64,
-                      let origin = record["origin"] as? String,
-                      let payload = record["payload"] as? String,
+                      let origin = Field.origin.read(record),
+                      let payload = Field.payload.read(record),
                       id.utf8.count <= 1024, payload.utf8.count <= 1_048_576,
                       revision >= 0 else { throw SyncError.invalidRequest }
                 var item = Item(id: id, revision: revision, origin: origin, payload: payload,
@@ -277,10 +278,10 @@ final class OrbinCloudSync {
             let recordName = SHA256.hash(data: Data(item.id.utf8)).map { String(format: "%02x", $0) }.joined()
             let record = session.records[item.id] ?? CKRecord(recordType: "OrbinItem",
                 recordID: CKRecord.ID(recordName: recordName, zoneID: zone))
-            record["itemID"] = item.id as CKRecordValue
+            Field.itemID.write(item.id, to: record)
             record["revision"] = item.revision as CKRecordValue
-            record["origin"] = item.origin as CKRecordValue
-            record["payload"] = item.payload as CKRecordValue
+            Field.origin.write(item.origin, to: record)
+            Field.payload.write(item.payload, to: record)
             record["deleted"] = (item.deleted ? 1 : 0) as CKRecordValue
             if item.deleted {
                 record["file"] = nil; record["hasFile"] = 0 as CKRecordValue
@@ -300,7 +301,7 @@ final class OrbinCloudSync {
         for (id, saved) in result.saveResults {
             let record = try saved.get()
             guard record.recordID == id else { throw SyncError.invalidRequest }
-            if let key = record["itemID"] as? String { session.records[key] = record }
+            if let key = Field.itemID.read(record) { session.records[key] = record }
         }
     }
 
@@ -388,6 +389,34 @@ final class OrbinCloudSync {
         try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
                                              ofItemAtPath: destination.path)
         complete = true
+    }
+
+    /// The fields that say what the reader follows, saves and reads.
+    ///
+    /// They are stored in `encryptedValues`, which CloudKit encrypts on the device before upload
+    /// (end to end when the account has Advanced Data Protection). An ordinary record field is
+    /// only encrypted at rest with keys Apple holds. The record name is already a hash of the id.
+    ///
+    /// CloudKit fixes a field's type the first time it is saved, so the encrypted copies need
+    /// their own names. A record written before this change is still read from its plain field;
+    /// the next save moves it across and clears the plain copy.
+    struct Field {
+        let encrypted: String
+        let legacy: String
+
+        static let itemID = Field(encrypted: "secureItemID", legacy: "itemID")
+        static let origin = Field(encrypted: "secureOrigin", legacy: "origin")
+        static let payload = Field(encrypted: "securePayload", legacy: "payload")
+        static let sensitive = [itemID, origin, payload]
+
+        func read(_ record: CKRecord) -> String? {
+            (record.encryptedValues[encrypted] as? String) ?? (record[legacy] as? String)
+        }
+
+        func write(_ value: String, to record: CKRecord) {
+            record.encryptedValues[encrypted] = value as NSString
+            record[legacy] = nil
+        }
     }
 
     private enum SyncError: Error { case invalidRequest }

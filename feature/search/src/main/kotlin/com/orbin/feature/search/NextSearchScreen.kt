@@ -14,6 +14,7 @@ import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.screens.SearchRow
 import com.orbin.uinext.screens.SearchScreen
 import com.orbin.uinext.screens.SearchState
+import com.orbin.uinext.screens.WebSearchBlockedPane
 
 /** Search: one field, searched across the catalogs of the boards you follow. */
 @Composable
@@ -33,13 +34,18 @@ fun NextSearchScreen(
         val fallbackBoards =
             remember { kotlinx.coroutines.flow.MutableStateFlow(emptyList<com.orbin.core.model.Board>()) }
         val boards by (webBoards ?: fallbackBoards).collectAsStateWithLifecycle()
+        val webSearchAllowed by viewModel.webSearchAllowed.collectAsStateWithLifecycle()
         SearchScreen(
-            onWebSearch = viewModel.webSearchSession?.let { it::submit },
+            // Blocked: a submitted query must not reach the session, which would start a page load.
+            onWebSearch = if (webSearchAllowed) viewModel.webSearchSession?.let { it::submit } else ({}),
             webSearch =
                 if (webProvider != null) {
                     { submitted ->
-                        viewModel.webSearchBrowser(LocalContext.current)?.let { browser ->
+                        val browser = if (webSearchAllowed) viewModel.webSearchBrowser(LocalContext.current) else null
+                        if (browser != null) {
                             FourchanWebSearch(submitted, browser, boards, onOpenThread, onOpenPost)
+                        } else if (!webSearchAllowed) {
+                            WebSearchBlockedPane()
                         }
                     }
                 } else {

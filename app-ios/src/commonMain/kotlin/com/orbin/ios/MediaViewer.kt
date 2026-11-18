@@ -549,35 +549,39 @@ private fun MediaPage(
         playable != null && !active -> MediaPoster(file)
         webm != null && supportsWebM && !active -> MediaPoster(file)
         playable != null ->
-            NativePlayer(
-                url = playable,
-                active = active,
-                loop = looping,
-                autoPlay = playback.autoplay,
-                initiallyMuted = muted,
-                onMuteIntentChange = onMuteChange,
-                playbackSpeed = playbackSpeed,
-                onDoubleTapSave = onDoubleTapSave,
-                preloader = preloader,
-                modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
-                onPlaybackReadyChange = onPlaybackReadyChange,
-                onPlaybackEnded = onPlaybackEnded,
-            )
+            SystemPlayable(playable, showStatus = true) { playableUrl ->
+                NativePlayer(
+                    url = playableUrl,
+                    active = active,
+                    loop = looping,
+                    autoPlay = playback.autoplay,
+                    initiallyMuted = muted,
+                    onMuteIntentChange = onMuteChange,
+                    playbackSpeed = playbackSpeed,
+                    onDoubleTapSave = onDoubleTapSave,
+                    preloader = preloader,
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
+                    onPlaybackReadyChange = onPlaybackReadyChange,
+                    onPlaybackEnded = onPlaybackEnded,
+                )
+            }
         webm != null && supportsWebM ->
-            NativeWebMPlayer(
-                url = webm,
-                modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
-                active = active,
-                autoPlay = playback.autoplay,
-                initiallyMuted = muted,
-                onMuteIntentChange = onMuteChange,
-                playbackSpeed = playbackSpeed,
-                onDoubleTapSave = onDoubleTapSave,
-                loop = looping,
-                preloader = preloader,
-                onPlaybackReadyChange = onPlaybackReadyChange,
-                onPlaybackEnded = onPlaybackEnded,
-            )
+            SystemPlayable(webm, showStatus = true) { playableUrl ->
+                NativeWebMPlayer(
+                    url = playableUrl,
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding().testTag(MediaViewerTags.PLAYER),
+                    active = active,
+                    autoPlay = playback.autoplay,
+                    initiallyMuted = muted,
+                    onMuteIntentChange = onMuteChange,
+                    playbackSpeed = playbackSpeed,
+                    onDoubleTapSave = onDoubleTapSave,
+                    loop = looping,
+                    preloader = preloader,
+                    onPlaybackReadyChange = onPlaybackReadyChange,
+                    onPlaybackEnded = onPlaybackEnded,
+                )
+            }
         else -> ExternalFile(file)
     }
 }

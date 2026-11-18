@@ -2,18 +2,24 @@ package com.orbin.ios
 
 import com.orbin.core.model.MediaLibraryRecord
 import com.orbin.domain.repository.ManagedMediaFiles
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.useContents
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSApplicationSupportDirectory
+import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSFileProtectionCompleteUntilFirstUserAuthentication
 import platform.Foundation.NSFileProtectionKey
 import platform.Foundation.NSURL
 import platform.Foundation.NSUUID
 import platform.Foundation.NSUserDomainMask
+import platform.Foundation.create
+import platform.Foundation.writeToFile
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.popoverPresentationController
 
@@ -28,23 +34,42 @@ private fun exportRoot(): String {
 internal actual suspend fun stageSavedMedia(
     files: ManagedMediaFiles,
     record: MediaLibraryRecord,
+): String =
+    stageInto(record.fileName) { destination ->
+        check(files.exportFile(record.storageKey, destination)) { "The saved original is missing" }
+    }
+
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+internal actual suspend fun stageFetchedMedia(
+    bytes: ByteArray,
+    fileName: String,
+): String =
+    withContext(Dispatchers.Default) {
+        check(bytes.isNotEmpty()) { "Empty media" }
+        stageInto(fileName) { destination ->
+            val data = bytes.usePinned { NSData.create(bytes = it.addressOf(0), length = bytes.size.toULong()) }
+            check(data.writeToFile(destination, atomically = true)) { "Could not stage media" }
+            NSFileManager.defaultManager.setAttributes(stagedFileProtection, destination, null)
+        }
+    }
+
+private val stagedFileProtection =
+    mapOf<Any?, Any?>(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication)
+
+/** One protected folder per staged file; removed again if [write] does not finish. */
+@OptIn(ExperimentalForeignApi::class)
+private suspend fun stageInto(
+    fileName: String,
+    write: suspend (destination: String) -> Unit,
 ): String {
     val directory = "${exportRoot()}/${NSUUID().UUIDString}"
-    val name =
-        record.fileName
-            .substringAfterLast('/')
-            .substringAfterLast('\\')
-            .filterNot(Char::isISOControl)
-            .replace("..", "_")
-            .ifBlank { "saved-media" }
-    val destination = "$directory/$name"
-    val protection = mapOf<Any?, Any?>(NSFileProtectionKey to NSFileProtectionCompleteUntilFirstUserAuthentication)
+    val destination = "$directory/${stagedMediaName(fileName)}"
     check(
-        NSFileManager.defaultManager.createDirectoryAtPath(directory, true, protection, null),
+        NSFileManager.defaultManager.createDirectoryAtPath(directory, true, stagedFileProtection, null),
     ) { "Could not stage media" }
     var published = false
     try {
-        check(files.exportFile(record.storageKey, destination)) { "The saved original is missing" }
+        write(destination)
         published = true
         return destination
     } finally {

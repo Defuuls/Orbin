@@ -6,10 +6,12 @@ import com.orbin.data.repository.AndroidDownloadQueue
 import com.orbin.data.repository.DownloadPlatformQueue
 import com.orbin.data.update.AppUpdaterImpl
 import com.orbin.data.version.VersionGuardRepositoryImpl
+import com.orbin.data.web.WebViewSearchDataRepository
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.DiagnosticsRepository
 import com.orbin.domain.repository.VersionGuardRepository
+import com.orbin.domain.repository.WebSearchDataRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -31,6 +33,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsThreadNotifier(impl: AndroidThreadNotifier): ThreadNotifier
+
+    @Binds
+    @Singleton
+    fun bindsWebSearchDataRepository(impl: WebViewSearchDataRepository): WebSearchDataRepository
 
     @Binds
     @Singleton

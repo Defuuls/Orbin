@@ -32,4 +32,19 @@ class LegacyBrowsingCacheCleanupTest {
         assertTrue(unrelated.exists())
         unrelated.delete()
     }
+
+    @Test
+    fun `startup removes web view data a killed process left behind`() {
+        val context = RuntimeEnvironment.getApplication()
+        val leftovers =
+            listOf(context.dataDir.resolve("app_webview"), context.cacheDir.resolve("WebView")).onEach {
+                it.resolve("Default").mkdirs()
+                it.resolve("Default/Cookies").writeText("cf_clearance=verification-token")
+            }
+
+        removeLeftoverWebViewData(context)
+        removeLeftoverWebViewData(context)
+
+        leftovers.forEach { assertFalse(it.exists()) }
+    }
 }

@@ -5,10 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.result.DataError
 import com.orbin.core.common.result.fold
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.Board
 import com.orbin.core.model.ProviderId
 import com.orbin.core.model.SearchQuery
 import com.orbin.core.model.SearchScope
+import com.orbin.core.model.allowsSystemNetworkFeatures
 import com.orbin.core.model.isPermanentlyFiltered
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BoardRepository
@@ -16,6 +18,7 @@ import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.search.searchEachBoard
 import com.orbin.domain.usecase.ObserveActiveProviderUseCase
+import com.orbin.provider.api.FourchanSearchSession
 import com.orbin.provider.api.ProviderRegistry
 import com.orbin.provider.api.isVisibleInOrbin
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +31,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -58,7 +62,7 @@ class SearchViewModel
                 .fourchanWebSearchProvider(providers.map { it.metadata })
         internal val webSearchSettings =
             settingsRepository.settings
-                .stateIn(viewModelScope, SharingStarted.Eagerly, com.orbin.core.model.AppSettings.Default)
+                .stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings.Default)
         internal val webSearchBoards =
             webSearchProvider?.let { provider ->
                 boardRepository
@@ -68,28 +72,56 @@ class SearchViewModel
 
         internal val webSearchSession =
             webSearchProvider?.let { provider ->
-                com.orbin.provider.api
-                    .FourchanSearchSession(provider) { hit ->
-                        hit.isVisibleInOrbin(webSearchSettings.value, webSearchBoards?.value.orEmpty())
-                    }.also { session ->
-                        viewModelScope.launch {
-                            combine(
-                                webSearchSettings,
-                                checkNotNull(webSearchBoards),
-                            ) { _, _ -> Unit }.collect { session.refilter() }
-                        }
+                FourchanSearchSession(provider) { hit ->
+                    hit.isVisibleInOrbin(webSearchSettings.value, webSearchBoards?.value.orEmpty())
+                }.also { session ->
+                    viewModelScope.launch {
+                        combine(
+                            webSearchSettings,
+                            checkNotNull(webSearchBoards),
+                        ) { _, _ -> Unit }.collect { session.refilter() }
                     }
+                }
             }
         private var retainedSearchBrowser: RetainedSearchBrowser? = null
 
-        internal fun webSearchBrowser(context: Context): RetainedSearchBrowser? {
+        /**
+         * False under strict encrypted DNS: the web search runs in a system web view, whose
+         * lookups use the device's resolver. The screen explains instead of searching.
+         */
+        internal val webSearchAllowed: StateFlow<Boolean> =
+            settingsRepository.settings
+                .map { it.allowsSystemNetworkFeatures }
+                // Blocked until the saved setting has been read: the default must not open a web
+                // view for a reader whose strict mode simply has not loaded yet.
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+        init {
+            // Turning strict mode on mid-search must stop a browser that is already loading.
+            viewModelScope.launch {
+                webSearchAllowed.filter { !it }.collect { closeWebSearchBrowser() }
+            }
+        }
+
+        internal fun webSearchBrowser(
+            context: Context,
+            create: (Context, FourchanSearchSession) -> RetainedSearchBrowser = { appContext, session ->
+                RetainedSearchBrowser(appContext, session, viewModelScope)
+            },
+        ): RetainedSearchBrowser? {
             val session = webSearchSession ?: return null
-            return retainedSearchBrowser ?: RetainedSearchBrowser(context.applicationContext, session, viewModelScope)
+            if (!webSearchAllowed.value) return null
+            return retainedSearchBrowser ?: create(context.applicationContext, session)
                 .also { retainedSearchBrowser = it }
         }
 
-        override fun onCleared() {
+        private fun closeWebSearchBrowser() {
             retainedSearchBrowser?.close()
+            retainedSearchBrowser = null
+        }
+
+        override fun onCleared() {
+            closeWebSearchBrowser()
             super.onCleared()
         }
 

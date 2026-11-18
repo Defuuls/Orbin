@@ -111,6 +111,8 @@ internal object VideoFrames {
 private fun nativeFrameExtraction(url: String): VideoFrameExtraction? =
     // Pools cannot span suspension: completion runs on AVFoundation's own callback queue.
     autoreleasepool {
+        // AVURLAsset fetches a remote file in a system process, outside this app's encrypted DNS.
+        if (!SystemMediaPolicy.permits(url)) return@autoreleasepool null
         val asset = AVURLAsset(uRL = NSURL.URLWithString(url) ?: return@autoreleasepool null, options = null)
         val generator =
             AVAssetImageGenerator(asset).apply {

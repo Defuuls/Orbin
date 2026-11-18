@@ -46,8 +46,9 @@ fun DohProvider.toDohConfig(): DohConfig =
     }
 
 /**
- * What both platforms apply for a resolver choice: the DoH URL, its bootstrap addresses, and
- * whether encrypted resolution is required (Android's "strict encrypted DNS").
+ * A resolver choice as iOS hands it to the system: the DoH URL, its bootstrap addresses, and
+ * whether encrypted resolution is required. iOS always asks for required, because the system only
+ * uses the DoH resolver when it is; Android has its own resolver and does not use this.
  */
 data class EncryptedDnsRequest(
     val resolverUrl: String,

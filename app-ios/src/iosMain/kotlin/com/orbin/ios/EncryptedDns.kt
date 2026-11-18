@@ -1,14 +1,23 @@
 package com.orbin.ios
 
 import com.orbin.core.model.DohProvider
-import com.orbin.data.settings.encryptedDnsRequest
 
 /**
- * Applies the saved DNS-over-HTTPS provider and "strict encrypted DNS" flag to the process-wide
- * Network.framework privacy context. Swift registers the applicator with [setApplicator] and
- * calls [applyDefault] before [AppGraph] is touched, so a Cloudflare resolver with fallback
- * allowed is in place for the first request. Settings then update both this and the Ktor
- * [com.orbin.data.settings.FixedNetworkConfigProvider].
+ * Applies the saved DNS-over-HTTPS provider to the process-wide Network.framework privacy
+ * context. Swift registers the applicator with [setApplicator] and calls [applyDefault] before
+ * [AppGraph] is touched, so the Cloudflare resolver is in place for the first request. Settings
+ * then update both this and the Ktor [com.orbin.data.settings.FixedNetworkConfigProvider].
+ *
+ * Encrypted resolution is always required here, whatever "Strict encrypted DNS" says. The system
+ * API has no "try encrypted first, then fall back" mode: asking for encryption without requiring
+ * it means the device's ordinary resolver is used and the chosen DoH resolver is never consulted.
+ * Passing the strict flag through, as this once did, therefore left a default install resolving
+ * every site in the clear. Requiring it is the only setting under which the app's own requests
+ * are looked up over DoH at all; the cost is that a network which blocks the resolver stops the
+ * app loading rather than being quietly allowed to see the lookups.
+ *
+ * On iOS the strict setting instead governs what the privacy context cannot reach: see
+ * [SystemMediaPolicy].
  */
 fun interface EncryptedDnsApplicator {
     fun apply(
@@ -32,16 +41,13 @@ object EncryptedDns {
             }
     }
 
-    /** Android's shipped default: Cloudflare, system-DNS fallback allowed. */
+    /** The shipped default resolver, Cloudflare, before settings have loaded. */
     fun applyDefault() {
-        apply(DohProvider.CLOUDFLARE, strict = false)
+        apply(DohProvider.CLOUDFLARE)
     }
 
-    fun apply(
-        provider: DohProvider,
-        strict: Boolean,
-    ) {
-        val request = encryptedDnsRequest(provider, strict)
+    fun apply(provider: DohProvider) {
+        val request = iosEncryptedDnsRequest(provider)
         applicator?.apply(
             resolverUrl = request.resolverUrl,
             bootstrapIps = request.bootstrapIps,

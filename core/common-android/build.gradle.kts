@@ -19,4 +19,6 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    // WebView's cookie and storage managers only exist on a device; Robolectric stands in for them.
+    testImplementation(libs.robolectric)
 }

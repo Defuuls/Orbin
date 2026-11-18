@@ -63,6 +63,9 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var whatsNew: WhatsNewRepository
 
+    @Inject
+    lateinit var lockedExitCleanup: LockedExitCleanup
+
     /**
      * Registered eagerly: the safe-mode screen may be the very first thing composed, and a
      * launcher registered after the activity is started throws.
@@ -329,6 +332,7 @@ class MainActivity : FragmentActivity() {
             // unlock attempt (automatic and manual).
             relockOnResume = true
         }
+        if (!isChangingConfigurations) lockedExitCleanup.onLeavingApp(lockEnabled = biometricLockActive)
     }
 
     override fun onDestroy() {

@@ -117,6 +117,8 @@ private fun startApp(): StartedApp {
         )
     // Saving files from threads, and the Downloads tab's list, through the same client and database.
     val managedMedia = IosManagedMediaFiles()
+    // Strict encrypted DNS plays video from a copy fetched through this same client.
+    StagedStreaming.fetch = ktorMediaFetch(graph.client)
     val downloads =
         MediaDownloads(
             graph.downloadDao,

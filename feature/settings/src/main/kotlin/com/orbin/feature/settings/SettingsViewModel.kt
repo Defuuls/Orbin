@@ -28,6 +28,7 @@ import com.orbin.domain.repository.SettingsRepository
 import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.UpdateRepository
 import com.orbin.domain.repository.VideoCacheRepository
+import com.orbin.domain.repository.WebSearchDataRepository
 import com.orbin.provider.api.ProviderMetadata
 import com.orbin.provider.api.ProviderRegistry
 import com.orbin.uinext.screens.SettingFilterRule
@@ -62,6 +63,7 @@ class SettingsViewModel
         private val imageCacheRepository: ImageCacheRepository = EmptyImageCacheRepository,
         private val videoCacheRepository: VideoCacheRepository = EmptyVideoCacheRepository,
         private val threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
+        private val webSearchDataRepository: WebSearchDataRepository = EmptyWebSearchDataRepository,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
@@ -300,6 +302,7 @@ class SettingsViewModel
                         threadMemoryRepository.clear()
                         searchRepository.clearRecentQueries()
                         downloadRepository.clearHistory()
+                        webSearchDataRepository.clear()
                         imageCacheRepository.clear()
                         _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
                         videoCacheRepository.clear()
@@ -410,7 +413,13 @@ private object EmptyVideoCacheRepository : VideoCacheRepository {
 
     override suspend fun clear() = Unit
 
+    override suspend fun clearExceptOpenVideos() = Unit
+
     override suspend fun setMaxCacheBytes(bytes: Long) = Unit
+}
+
+private object EmptyWebSearchDataRepository : WebSearchDataRepository {
+    override suspend fun clear() = Unit
 }
 
 sealed interface BackupStatus {

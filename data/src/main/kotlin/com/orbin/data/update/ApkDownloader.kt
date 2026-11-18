@@ -17,7 +17,8 @@ import javax.inject.Inject
  * Downloads a release APK and checks it against the release's published SHA-256.
  *
  * The hash is computed while the bytes are written, so a file that reaches the installer is
- * exactly the one the release describes; one that does not match is deleted, never kept.
+ * exactly the one the release describes; one that does not match is deleted, never kept. A
+ * download larger than [MAX_APK_BYTES] is abandoned rather than allowed to fill the device.
  */
 class ApkDownloader
     @Inject
@@ -74,32 +75,15 @@ class ApkDownloader
             client.newCall(Request.Builder().url(url).build()).execute().use { response ->
                 if (!response.isSuccessful) throw IOException("Download failed (HTTP ${response.code})")
                 val total = response.body.contentLength().takeIf { it > 0 }
+                // Refused before a byte is written when the server admits the size up front.
+                if (total != null && total > MAX_APK_BYTES) throw oversizedUpdate()
                 response.body.byteStream().use { input ->
-                    target.outputStream().use { output -> copyHashing(input, output, digest, total, onProgress) }
+                    target.outputStream().use { output ->
+                        copyHashing(input, output, digest, total, MAX_APK_BYTES, onProgress)
+                    }
                 }
             }
             return digest.digest().toHex()
-        }
-
-        /** Copies [input] to [output], feeding [digest] and reporting progress; stops when cancelled. */
-        private suspend fun copyHashing(
-            input: InputStream,
-            output: OutputStream,
-            digest: MessageDigest,
-            total: Long?,
-            onProgress: (Float?) -> Unit,
-        ) {
-            val buffer = ByteArray(BUFFER_BYTES)
-            var received = 0L
-            while (true) {
-                currentCoroutineContext().ensureActive()
-                val read = input.read(buffer)
-                if (read < 0) return
-                output.write(buffer, 0, read)
-                digest.update(buffer, 0, read)
-                received += read
-                onProgress(total?.let { received.toFloat() / it })
-            }
         }
 
         private fun fetchText(url: String): String =
@@ -131,10 +115,48 @@ class ApkDownloader
 
         private companion object {
             const val DOWNLOAD_READ_TIMEOUT_SECONDS = 60L
-            const val BUFFER_BYTES = 64 * 1024
             const val MAX_CHECKSUM_BYTES = 4096
         }
     }
+
+/**
+ * Copies [input] to [output], feeding [digest] and reporting progress; stops when cancelled.
+ *
+ * The length a server declares is not trusted: the bytes actually received are counted, and the
+ * copy stops at the first one past [maxBytes].
+ *
+ * @throws UpdateVerificationException when the stream is longer than [maxBytes].
+ */
+internal suspend fun copyHashing(
+    input: InputStream,
+    output: OutputStream,
+    digest: MessageDigest,
+    total: Long?,
+    maxBytes: Long,
+    onProgress: (Float?) -> Unit,
+) {
+    val buffer = ByteArray(BUFFER_BYTES)
+    var received = 0L
+    while (true) {
+        currentCoroutineContext().ensureActive()
+        val read = input.read(buffer)
+        if (read < 0) return
+        received += read
+        if (received > maxBytes) throw oversizedUpdate()
+        output.write(buffer, 0, read)
+        digest.update(buffer, 0, read)
+        onProgress(total?.let { received.toFloat() / it })
+    }
+}
+
+private fun oversizedUpdate() = UpdateVerificationException("The update is larger than an Orbin release can be")
+
+/**
+ * Several times the size of any release so far (tens of megabytes), and small enough that a
+ * mistaken or hostile release asset cannot fill the device's storage.
+ */
+internal const val MAX_APK_BYTES = 200L * 1024 * 1024
+private const val BUFFER_BYTES = 64 * 1024
 
 /** An update that downloaded but must not be installed. Its message is shown to the reader. */
 class UpdateVerificationException(

@@ -22,6 +22,42 @@ class ValidateRepoTest(unittest.TestCase):
         validate_repo.failures.clear()
         validate_repo.notes.clear()
 
+    def test_privacy_hosts_requires_every_contacted_host_in_the_policy(self) -> None:
+        sources = {
+            "app/src/main/kotlin/Api.kt": 'val a = "https://api.tracker.io/v1"; val b = "https://boards.4chan.org/g/"',
+            "iosApp/Orbin/Sync.swift": 'let u = "https://Sync.Example-Cloud.com/x"',
+        }
+
+        validate_repo.check_privacy_hosts(sources, "We contact `boards.4chan.org` only.")
+
+        self.assertEqual(
+            [
+                "[privacy-hosts] api.tracker.io (in app/src/main/kotlin/Api.kt) is not listed in PRIVACY.md "
+                "under 'Who the app talks to'",
+                "[privacy-hosts] sync.example-cloud.com (in iosApp/Orbin/Sync.swift) is not listed in PRIVACY.md "
+                "under 'Who the app talks to'",
+            ],
+            validate_repo.failures,
+        )
+
+    def test_privacy_hosts_ignores_tests_tooling_and_placeholders(self) -> None:
+        sources = {
+            "app/src/test/kotlin/ApiTest.kt": '"https://only-in-a-test.io/"',
+            "app-ios/src/androidHostTest/kotlin/T.kt": '"https://host-test-only.io/"',
+            "scripts/run-orbin/src/Drive.kt": '"https://tooling-only.io/"',
+            "core/testing/src/main/kotlin/Fakes.kt": '"https://fake-only.io/"',
+            "app/src/main/kotlin/Docs.kt": '// https://www.apache.org/licenses "https://i.example.org/a" "https://x.invalid/"',
+        }
+
+        validate_repo.check_privacy_hosts(sources, "")
+
+        self.assertEqual([], validate_repo.failures)
+
+    def test_privacy_hosts_passes_for_the_repository_as_it_is(self) -> None:
+        validate_repo.check_privacy_hosts()
+
+        self.assertEqual([], validate_repo.failures)
+
     def test_tracked_hygiene_flags_forbidden_files(self) -> None:
         tracked_files = "\n".join(
             [

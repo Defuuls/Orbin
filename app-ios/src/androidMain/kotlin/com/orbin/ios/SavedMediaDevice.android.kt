@@ -8,6 +8,11 @@ internal actual suspend fun stageSavedMedia(
     record: MediaLibraryRecord,
 ): String = error("Native saved-media staging is unavailable in the host-test target")
 
+internal actual suspend fun stageFetchedMedia(
+    bytes: ByteArray,
+    fileName: String,
+): String = error("Native media staging is unavailable in the host-test target")
+
 internal actual suspend fun releaseSavedMedia(path: String) = Unit
 
 internal actual fun savedMediaFileUrl(path: String): String = "file://$path"

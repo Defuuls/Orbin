@@ -183,3 +183,15 @@ enum class PreloadThrottleMode(
     AGGRESSIVE("Aggressive"),
     UNLIMITED("Unlimited"),
 }
+
+/**
+ * Whether features that load through the operating system's own network stack may run.
+ *
+ * The app's HTTP client resolves names over encrypted DNS. A system web view (the "All of 4chan"
+ * search on both platforms) and, on iOS, the system media players and background transfers do
+ * their own lookups with the device's resolver, outside anything the app controls. Under strict
+ * encrypted DNS the reader has asked for a failure rather than a leaked hostname, so those
+ * features are turned off instead of quietly using the network's DNS.
+ */
+val AppSettings.allowsSystemNetworkFeatures: Boolean
+    get() = !strictDohEnabled

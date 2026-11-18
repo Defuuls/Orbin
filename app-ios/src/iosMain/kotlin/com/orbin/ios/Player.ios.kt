@@ -88,6 +88,12 @@ internal actual fun NativePlayer(
     onPlaybackReadyChange: ((Boolean) -> Unit)?,
     onPlaybackEnded: (() -> Unit)?,
 ) {
+    // AVPlayer streams in a system media process, outside this app's encrypted DNS.
+    if (!systemLoadPermitted(url)) {
+        // A feed or inline card keeps its thumbnail; the full viewer has room to say why.
+        if (!feedMode) StreamingBlockedNotice(modifier)
+        return
+    }
     val handoff = remember(url, preloader) { NativePlaybackContinuity.takeNative(url) }
     val bookmark = remember(url, preloader) { handoff?.bookmark ?: NativePlaybackContinuity.bookmark(url) }
     val player =
@@ -372,6 +378,12 @@ internal actual fun NativeWebMPlayer(
     onPlaybackReadyChange: ((Boolean) -> Unit)?,
     onPlaybackEnded: (() -> Unit)?,
 ) {
+    // WebKit fetches the file in its own network process, outside this app's encrypted DNS.
+    if (!systemLoadPermitted(url)) {
+        // A feed or inline card keeps its thumbnail; the full viewer has room to say why.
+        if (!feedMode) StreamingBlockedNotice(modifier)
+        return
+    }
     val handoff = remember(url, preloader) { NativePlaybackContinuity.takeWebM(url) }
     val bookmark = remember(url, preloader) { handoff?.bookmark ?: NativePlaybackContinuity.bookmark(url) }
     var muted by remember(url, initiallyMuted) { mutableStateOf(bookmark?.muted ?: initiallyMuted) }
@@ -663,6 +675,8 @@ internal actual fun NativeInlineLoop(
     loop: Boolean,
     muted: Boolean,
 ) {
+    // A preview is not worth a lookup the reader asked not to make; the thumbnail stays.
+    if (!systemLoadPermitted(url)) return
     val navigation = remember(url) { WebMPageDelegate() }
     val webView =
         remember(url, loop, muted) {
@@ -713,6 +727,7 @@ internal actual fun NativeVideoFrame(
     modifier: Modifier,
 ) {
     if (isWebMUrl(url)) return
+    if (!systemLoadPermitted(url)) return
     var frame by remember(url) { mutableStateOf(VideoFrames.cached(url)) }
     LaunchedEffect(url) {
         if (frame == null) {

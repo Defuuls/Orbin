@@ -117,7 +117,7 @@ final class OrbinMediaConverter {
                                       ofItemAtPath: stagedInput.path)
             try job.checkCancellation()
             // The pinned ffprobe parser requires a quoted input to remain the last argument.
-            let probe = try? command(["-v", "error", "-protocol_whitelist", "file,pipe", "-show_entries",
+            let probe = try? command(["-v", "error", "-protocol_whitelist", "file,pipe", "-f", Self.inputFormat, "-show_entries",
                                       "format=duration,bit_rate", "-of", "json", stagedInput.path], probe: true, job: job)
             let probeData = probe?.data(using: .utf8)
             let probeRoot = probeData.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
@@ -129,7 +129,8 @@ final class OrbinMediaConverter {
             try job.checkCancellation()
             _ = try command([
                 "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-                "-protocol_whitelist", "file,pipe", "-i", stagedInput.path,
+                "-protocol_whitelist", "file,pipe",
+                "-f", Self.inputFormat, "-codec_whitelist", Self.inputCodecs, "-i", stagedInput.path,
                 "-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn",
                 "-vf", "crop=trunc(iw/2)*2:trunc(ih/2)*2:0:0",
                 "-c:v", "h264_videotoolbox", "-allow_sw", "1", "-b:v", String(bitrate),
@@ -150,6 +151,14 @@ final class OrbinMediaConverter {
     }
 
     /// Exact pinned parser has raw double-quote delimiters, no escapes, and loses empty tokens.
+    /// The file comes from an anonymous poster, and the bundled FFmpeg can open far more formats
+    /// than a WebM needs. Naming the container stops FFmpeg guessing a different demuxer from
+    /// the file's contents, and the codec list refuses every decoder but the ones WebM uses, so
+    /// a file that only claims to be WebM cannot reach the rest of the library's parsers.
+    static let inputFormat = "matroska"
+    /// Native and library decoder names for VP8, VP9, Opus and Vorbis; a build has one or the other.
+    static let inputCodecs = "vp8,vp9,libvpx,libvpx-vp9,opus,libopus,vorbis,libvorbis"
+
     static func supportsPinnedArgument(_ value: String) -> Bool {
         !value.isEmpty && !value.contains("\"") &&
             value.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) }

@@ -56,30 +56,32 @@ internal fun ThreadInlineMedia(
     ThreadInlineMediaFrame(state, identity, lifecycle.isAtLeast(Lifecycle.State.RESUMED), modifier) { active ->
         ReaderThumbnail(attachment, Modifier.fillMaxSize(), attachment.originalFileName)
         if (active && started) {
-            if (attachment.isWebM) {
-                NativeWebMPlayer(
-                    requireNotNull(source),
-                    Modifier.fillMaxSize(),
-                    active = true,
-                    autoPlay = requested,
-                    initiallyMuted = muted,
-                    loop = playback.loopVideos,
-                    feedMode = true,
-                    onPlayIntentChange = { requested = it },
-                    onMuteIntentChange = { muted = it },
-                )
-            } else {
-                NativePlayer(
-                    requireNotNull(source),
-                    active = true,
-                    loop = playback.loopVideos,
-                    Modifier.fillMaxSize(),
-                    autoPlay = requested,
-                    initiallyMuted = muted,
-                    feedMode = true,
-                    onPlayIntentChange = { requested = it },
-                    onMuteIntentChange = { muted = it },
-                )
+            SystemPlayable(requireNotNull(source), showStatus = false) { playableUrl ->
+                if (attachment.isWebM) {
+                    NativeWebMPlayer(
+                        playableUrl,
+                        Modifier.fillMaxSize(),
+                        active = true,
+                        autoPlay = requested,
+                        initiallyMuted = muted,
+                        loop = playback.loopVideos,
+                        feedMode = true,
+                        onPlayIntentChange = { requested = it },
+                        onMuteIntentChange = { muted = it },
+                    )
+                } else {
+                    NativePlayer(
+                        playableUrl,
+                        active = true,
+                        loop = playback.loopVideos,
+                        Modifier.fillMaxSize(),
+                        autoPlay = requested,
+                        initiallyMuted = muted,
+                        feedMode = true,
+                        onPlayIntentChange = { requested = it },
+                        onMuteIntentChange = { muted = it },
+                    )
+                }
             }
         } else {
             FeedPlaybackControls(
