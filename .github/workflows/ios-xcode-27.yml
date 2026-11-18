@@ -1,0 +1,145 @@
+name: iOS (Xcode 27)
+
+# Early warning for the move to Xcode 27. From April 2027 App Store Connect refuses uploads not
+# built with the iOS 27 SDK (ITMS-90725). The shipping workflows still use Xcode 26: the
+# `macos-26` images carry no Xcode 27, and GitHub's only Xcode 27 image (`xcode-27`) is Apple
+# Silicon with 7 GB of memory, too little for the TestFlight archive's 8 GB Gradle heap (see
+# testflight.yml). Until a larger Xcode 27 image exists, this runs the same simulator build
+# and tests as ios.yml's simulator job, but with Xcode 27 against an iOS 27 simulator, so a
+# Kotlin/Native, Swift or SDK incompatibility shows up here rather than at the deadline.
+#
+# It is deliberately not a pull-request check. The image is a preview, and a failure here
+# means "the Xcode 27 move needs work", not "this change is wrong", so it must not block
+# merges or releases. It runs weekly, when this file changes on main, and on demand.
+on:
+  schedule:
+    # Mondays 07:23 UTC: odd minute, away from the top-of-hour queue.
+    - cron: '23 7 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-xcode-27.yml'
+      - 'scripts/boot_ios_simulator.py'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-xcode-27-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: iOS app (simulator, Xcode 27)
+    runs-on: xcode-27
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The point of the job is the SDK it builds against, so fail early and say so if the
+      # image ever stops providing it.
+      - name: Require Xcode 27 and the iOS 27 SDK
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcodebuild -showsdks
+          version=$(xcodebuild -version | sed -n 's/^Xcode \([0-9]*\).*/\1/p')
+          sdk=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "Xcode major version: ${version}; iOS SDK: ${sdk}"
+          if [ "${version:-0}" -lt 27 ] || [ "${sdk%%.*}" -lt 27 ]; then
+            echo "::error::Expected Xcode 27 with the iOS 27 SDK, found Xcode ${version:-unknown} / iOS SDK ${sdk}"
+            exit 1
+          fi
+          echo "### Xcode 27 check" >> "$GITHUB_STEP_SUMMARY"
+          echo "Built with $(xcodebuild -version | head -1) and the iOS ${sdk} SDK." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start booting an iOS 27 simulator
+        run: python3 scripts/boot_ios_simulator.py --min-version 27.0
+
+      - name: Set up JDK and Gradle
+        uses: ./.github/actions/setup-jdk-gradle
+
+      - name: Wait for simulator system services
+        run: xcrun simctl bootstatus "$ORBIN_IOS_TEST_DEVICE" -b
+
+      # The Kotlin/Native toolchain is the likeliest part to need an update for a new Xcode,
+      # so the shared native suites run first, exactly as ios.yml runs them.
+      - name: Shared tests on the iOS simulator
+        id: native_tests
+        env:
+          SIMCTL_CHILD_ORBIN_REQUIRE_WEBM_DECODE: "1"
+          SIMCTL_CHILD_ORBIN_IOS_TEST_RUNTIME: ${{ env.ORBIN_IOS_TEST_RUNTIME }}
+        run: ./gradlew :app-ios:iosSimulatorArm64Test :storage:iosSimulatorArm64Test
+
+      - name: Set up XcodeGen
+        id: setup_xcodegen
+        # Still build the Swift app after a native-test failure, to report both problems at once.
+        if: ${{ !cancelled() && (steps.native_tests.outcome == 'success' || steps.native_tests.outcome == 'failure') }}
+        uses: ./.github/actions/setup-xcodegen
+
+      - name: Generate the Xcode project
+        id: generate_project
+        if: ${{ !cancelled() && steps.setup_xcodegen.outcome == 'success' }}
+        run: xcodegen --spec iosApp/project.yml
+
+      - name: Build the app for the simulator
+        id: simulator_build
+        if: ${{ !cancelled() && steps.generate_project.outcome == 'success' }}
+        run: >-
+          xcodebuild build
+          -project iosApp/Orbin.xcodeproj
+          -scheme Orbin
+          -configuration Debug
+          -destination "platform=iOS Simulator,id=$ORBIN_IOS_TEST_DEVICE"
+          -skipPackagePluginValidation
+          CODE_SIGNING_ALLOWED=NO
+          COMPILER_INDEX_STORE_ENABLE=NO
+          ONLY_ACTIVE_ARCH=YES
+
+      - name: Native and startup tests on iOS 27
+        if: ${{ !cancelled() && steps.simulator_build.outcome == 'success' }}
+        timeout-minutes: 15
+        run: >-
+          xcodebuild test
+          -project iosApp/Orbin.xcodeproj
+          -scheme Orbin
+          -configuration Debug
+          -destination "platform=iOS Simulator,id=$ORBIN_IOS_TEST_DEVICE"
+          -parallel-testing-enabled NO
+          -only-testing:OrbinUITests/StartupSmokeTests
+          -only-testing:OrbinNativeTests
+          -resultBundlePath "$RUNNER_TEMP/orbin-xcode-27.xcresult"
+          -skipPackagePluginValidation
+          CODE_SIGNING_ALLOWED=NO
+          COMPILER_INDEX_STORE_ENABLE=NO
+          ONLY_ACTIVE_ARCH=YES
+
+      - name: Upload the test result bundle
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-xcode-27-xcresult
+          path: ${{ runner.temp }}/orbin-xcode-27.xcresult
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ios-xcode-27-test-reports
+          path: '**/build/reports/tests/**'
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Shut down test simulator
+        if: always()
+        run: |
+          if [ -n "${ORBIN_IOS_TEST_DEVICE:-}" ]; then
+            xcrun simctl shutdown "$ORBIN_IOS_TEST_DEVICE" || true
+          fi
