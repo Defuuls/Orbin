@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [217-Amber] - 2026-11-18
+
+### Testing
+- Added a weekly Xcode 27 check that builds the iOS app and runs its tests on an iOS 27 simulator, ahead of App Store Connect requiring the iOS 27 SDK from April 2027.
+
+
 ## [216-Amazonite] - 2026-11-18
 
 ### Fixed
@@ -3278,7 +3284,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v216-Amazonite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v217-Amber...HEAD
+[217-Amber]: https://github.com/Defuuls/Orbin/compare/v216-Amazonite...v217-Amber
 [216-Amazonite]: https://github.com/Defuuls/Orbin/compare/v215-Almandine...v216-Amazonite
 [215-Almandine]: https://github.com/Defuuls/Orbin/compare/v214-Allanite...v215-Almandine
 [214-Allanite]: https://github.com/Defuuls/Orbin/compare/v213-Alexandrite...v214-Allanite
