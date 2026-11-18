@@ -196,7 +196,8 @@ The archive step is bounded to 90 minutes and keeps release optimizations enable
 (warning ITMS-90725 until then). The `macos-26` images only carry Xcode 26, and GitHub's
 Xcode 27 image (`runs-on: xcode-27`) is Apple silicon with 7 GB, too small for the 8 GB archive
 heap above. Until a larger Xcode 27 image exists, `.github/workflows/ios-xcode-27.yml` runs the
-simulator build and tests with Xcode 27 every week as an early warning; it is not a PR check.
+simulator build and tests with Xcode 27 every week as an early warning. It runs on a pull
+request only when the workflow itself changes, so it never blocks ordinary merges.
 Move the Release archive and TestFlight to an Xcode 27 runner by February 2027 at the latest.
 
 Before distribution export, the archive tooling fills missing FFmpeg framework deployment

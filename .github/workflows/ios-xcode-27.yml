@@ -8,18 +8,21 @@ name: iOS (Xcode 27)
 # and tests as ios.yml's simulator job, but with Xcode 27 against an iOS 27 simulator, so a
 # Kotlin/Native, Swift or SDK incompatibility shows up here rather than at the deadline.
 #
-# It is deliberately not a pull-request check. The image is a preview, and a failure here
-# means "the Xcode 27 move needs work", not "this change is wrong", so it must not block
-# merges or releases. It runs weekly, when this file changes on main, and on demand.
+# It is deliberately not a check on ordinary pull requests. The image is a preview, and a
+# failure here means "the Xcode 27 move needs work", not "this change is wrong", so it must not
+# block merges or releases. It runs weekly, on demand, and when this workflow or its simulator
+# script changes, so an edit to the check is itself tested before it merges.
 on:
   schedule:
     # Mondays 07:23 UTC: odd minute, away from the top-of-hour queue.
     - cron: '23 7 * * 1'
   push:
     branches: [main]
-    paths:
+    paths: &xcode-27-paths
       - '.github/workflows/ios-xcode-27.yml'
       - 'scripts/boot_ios_simulator.py'
+  pull_request:
+    paths: *xcode-27-paths
   workflow_dispatch:
 
 concurrency:
