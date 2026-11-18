@@ -4,9 +4,9 @@ Privacy-focused, read-only **Android & iOS imageboard browser** built with Kotli
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [License](LICENSE)
 
-**Current release:** [215 — Almandine](https://github.com/Defuuls/Orbin/releases/tag/v215-Almandine)
+**Current release:** [216 — Amazonite](https://github.com/Defuuls/Orbin/releases/tag/v216-Amazonite)
 
-**What's new in 215:** Privacy hardening: encrypted DNS always on for iOS, strict mode keeps every lookup private, and a policy that matches the app.
+**What's new in 216:** Videos playing in grid and catalog tiles now fill the whole tile.
 
 - **Read-only browsing:** Combined multi-site feed, board directories, List/Grid/Card catalogs, and adaptive two-pane layout (`4chan` & `BBWChan`).
 - **Thread & media reader:** Posts, Files, and Card views, inline quote expansion, backlinks, Coil 3 images, Media3 / AVPlayer video, and swipe gallery.
