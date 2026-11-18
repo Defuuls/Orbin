@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
@@ -25,6 +26,11 @@ import com.orbin.media.R
  * Uses [MediaVideo] (backed by the bounded [VideoPlayers] pool and [VideoServer] cache) and a
  * `TextureView`-backed [PlayerView] so scrolling in Compose lists stays smooth without
  * `SurfaceView` hole-punching jank or main-thread player allocation spikes.
+ *
+ * [contentScale] must be the one the thumbnail underneath was drawn with. The loop is drawn over
+ * that thumbnail, so if the two scale differently (a cropped thumbnail under a fitted video) the
+ * video shrinks inside the tile and the still thumbnail shows around it, looking like a frozen
+ * part of the frame.
  */
 @Suppress("UnsafeOptInUsageError")
 @Composable
@@ -32,7 +38,9 @@ fun InlineLoop(
     url: String,
     modifier: Modifier = Modifier,
     active: Boolean = true,
+    contentScale: ContentScale = ContentScale.Fit,
 ) {
+    val resizeMode = inlineLoopResizeMode(contentScale)
     val context = LocalContext.current
     val currentActive by rememberUpdatedState(active)
     val video = remember(url) { MediaVideo.obtain(source = url, muted = true) }
@@ -83,12 +91,29 @@ fun InlineLoop(
                 .apply {
                     this.player = player
                     useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+                    this.resizeMode = resizeMode
                     isClickable = false
                     isFocusable = false
                 }
         },
-        update = { view -> view.player = player },
+        update = { view ->
+            view.player = player
+            view.resizeMode = resizeMode
+        },
         onRelease = { view -> view.player = null },
     )
 }
+
+/**
+ * The player's resize mode that draws a video the way [contentScale] draws its thumbnail.
+ *
+ * Crop fills the tile and trims the overflow, which is the player's zoom mode. Every other
+ * scale keeps the whole frame visible, which is fit.
+ */
+@Suppress("UnsafeOptInUsageError")
+internal fun inlineLoopResizeMode(contentScale: ContentScale): Int =
+    if (contentScale == ContentScale.Crop) {
+        AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+    } else {
+        AspectRatioFrameLayout.RESIZE_MODE_FIT
+    }
