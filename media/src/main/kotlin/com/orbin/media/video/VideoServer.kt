@@ -64,6 +64,10 @@ class VideoServer internal constructor(
 
     private val downloads = ConcurrentHashMap<String, Download>()
     private val ids = ConcurrentHashMap<String, Download>()
+
+    // A short clip may finish before the player connects to its loopback URI. Keep a bounded
+    // set of completed streams answerable until their cached files are cleared or evicted.
+    private val finished = LinkedHashMap<String, Download>()
     private val progressFlows = ConcurrentHashMap<String, MutableStateFlow<Float?>>()
     private val loadedFlows = ConcurrentHashMap<String, MutableStateFlow<List<Pair<Float, Float>>>>()
     private val watched = mutableSetOf<String>()
@@ -185,6 +189,7 @@ class VideoServer internal constructor(
         withContext(Dispatchers.IO) {
             val download =
                 synchronized(lock) {
+                    finished.values.removeAll { it.url == url }
                     downloads.remove(url)?.also { d ->
                         ids.remove(d.id)
                         queued.remove(d)
@@ -220,6 +225,7 @@ class VideoServer internal constructor(
 
     suspend fun clearCache() =
         withContext(Dispatchers.IO) {
+            synchronized(lock) { finished.clear() }
             runCatching {
                 val dir = cacheDirProvider()
                 val files = dir.listFiles()
@@ -248,6 +254,7 @@ class VideoServer internal constructor(
         downloads.clear()
         ids.clear()
         queued.clear()
+        synchronized(lock) { finished.clear() }
     }
 
     private fun ensureServer(): Int {
@@ -298,7 +305,7 @@ class VideoServer internal constructor(
                 }
             }
 
-            val download = ids[path]
+            val download = ids[path] ?: synchronized(lock) { finished[path] }
             if (download == null) {
                 writeHttpStatus(output, HTTP_NOT_FOUND, "Not Found")
                 return
@@ -544,6 +551,10 @@ class VideoServer internal constructor(
                 if (downloads[url] === this@Download) {
                     downloads.remove(url)
                     ids.remove(id)
+                    if (!failed && !cancelled) {
+                        finished[id] = this@Download
+                        while (finished.size > MAX_FINISHED) finished.remove(finished.keys.first())
+                    }
                 }
                 queued.remove(this@Download)
             }
@@ -830,6 +841,7 @@ class VideoServer internal constructor(
         const val DEFAULT_MAX_CACHE_BYTES = 300L * 1024 * 1024
         private const val MAX_BACKGROUND = 2
         private const val MAX_QUEUED = 6
+        private const val MAX_FINISHED = 16
         private const val MAX_RETRIES = 4
         private const val AHEAD_FETCH_THRESHOLD_BYTES = 256L * 1024L
         private const val SERVER_BACKLOG = 50
