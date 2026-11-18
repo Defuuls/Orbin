@@ -63,14 +63,23 @@ internal object SystemMediaPolicy {
     fun permits(url: String): Boolean = permitsSystemLoad(url, allowed.value)
 }
 
-/** A local file is always playable; anything else only when [systemNetworkAllowed]. */
+/** Media that needs no lookup is always playable; anything else only when [systemNetworkAllowed]. */
 internal fun permitsSystemLoad(
     url: String,
     systemNetworkAllowed: Boolean,
-): Boolean = systemNetworkAllowed || isLocalFileUrl(url)
+): Boolean = systemNetworkAllowed || needsNoNameLookup(url)
 
-/** Only `file:` is local. An unrecognised scheme is treated as remote, which is the safe guess. */
-internal fun isLocalFileUrl(url: String): Boolean = url.trimStart().startsWith("file:", ignoreCase = true)
+/**
+ * Whether loading [url] cannot involve a DNS lookup: a `file:` path on the device, or a `data:`
+ * URL, which carries its bytes inline. Every other scheme, including an unrecognised one, is
+ * treated as needing the network, which is the safe guess.
+ */
+internal fun needsNoNameLookup(url: String): Boolean {
+    val trimmed = url.trimStart()
+    return LOOKUP_FREE_SCHEMES.any { trimmed.startsWith(it, ignoreCase = true) }
+}
+
+private val LOOKUP_FREE_SCHEMES = listOf("file:", "data:")
 
 /** Recomposes the caller when the reader changes the setting while a player is on screen. */
 @Composable

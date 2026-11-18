@@ -42,10 +42,20 @@ class SystemMediaPolicyTest {
         }
     }
 
+    /** Inline bytes need no lookup, so strict mode has nothing to protect them from. */
+    @Test
+    fun inlineDataAlwaysPlays() {
+        listOf("data:video/webm;base64,GkXfow==", "DATA:video/mp4;base64,AA", " data:,").forEach { url ->
+            assertTrue(permitsSystemLoad(url, systemNetworkAllowed = false), url)
+        }
+    }
+
     /** Anything that is not plainly a local file is treated as something that needs the network. */
     @Test
     fun anUnrecognisedSchemeIsTreatedAsRemote() {
-        listOf("", "a.mp4", "/var/a.mp4", "data:video/mp4;base64,AA", "blob:x", "ftp://h/a.mp4", "filez://a").forEach {
+        val remote =
+            listOf("", "a.mp4", "/var/a.mp4", "blob:x", "ftp://h/a.mp4", "filez://a", "datax:a", "https://h/data:a")
+        remote.forEach {
             assertFalse(permitsSystemLoad(it, systemNetworkAllowed = false), it)
         }
     }
