@@ -32,6 +32,8 @@ on:
       - 'scripts/tests/test_prepare_ios_framework_metadata.py'
       - 'scripts/prepare_ios_purpose_strings.py'
       - 'scripts/tests/test_prepare_ios_purpose_strings.py'
+      - 'scripts/boot_ios_simulator.py'
+      - 'scripts/tests/test_boot_ios_simulator.py'
       - '.github/actions/setup-jdk-gradle/**'
       - '.github/actions/setup-xcodegen/**'
       - '.github/workflows/ios.yml'
@@ -138,38 +140,8 @@ jobs:
       # Pick a modern WebM-capable runtime and start booting it before JDK/Gradle setup, then wait for
       # bootstatus only when the suites are about to run.
       - name: Start booting simulator with system services
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import re
-          import subprocess
-
-          listing = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "--json"]))
-          candidates = []
-          for runtime, devices in listing["devices"].items():
-              match = re.search(r"\.iOS-(\d+)(?:-(\d+))?(?:-(\d+))?$", runtime)
-              if match is None:
-                  continue
-              version = tuple(int(part or "0") for part in match.groups())
-              if version < (17, 4, 0):
-                  continue
-              candidates.extend(
-                  (version, runtime, device)
-                  for device in devices
-                  if device.get("isAvailable") and device["name"].startswith("iPhone")
-              )
-          if not candidates:
-              raise SystemExit("No available iPhone simulator on iOS 17.4 or later for required WebM decode tests")
-          version, runtime, device = max(candidates, key=lambda candidate: candidate[0])
-          print(f"Native test simulator: {device['name']} | runtime={runtime} | "
-                f"OS={'.'.join(map(str, version))} | UDID={device['udid']}")
-          if device["state"] != "Booted":
-              subprocess.run(["xcrun", "simctl", "boot", device["udid"]], check=True)
-          with open(os.environ["GITHUB_ENV"], "a") as env:
-              env.write("ORBIN_IOS_TEST_DEVICE=" + device["udid"] + "\n")
-              env.write("ORBIN_IOS_TEST_RUNTIME=" + runtime + "\n")
-          PY
+        # Booting overlaps JDK/Gradle setup; bootstatus is awaited just before the suites run.
+        run: python3 scripts/boot_ios_simulator.py --min-version 17.4
 
       - name: Set up JDK and Gradle
         uses: ./.github/actions/setup-jdk-gradle
