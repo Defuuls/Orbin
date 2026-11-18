@@ -6,6 +6,25 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [215-Almandine] - 2026-11-18
+
+### Security
+- iOS now always requires encrypted DNS for the app's own requests; previously a default install used the device's resolver.
+- Strict encrypted DNS turns off 4chan web search on both platforms; on iOS it also turns off video previews, keeps saves in the app, and plays video from a copy the app downloads over encrypted DNS.
+- Android's 4chan search web view no longer leaves cookies or site data on disk: they are removed when the search closes, when local activity is cleared, and at the next launch.
+- The local video streaming server now requires a per-session token and rejects oversized requests, so other apps on the device cannot see which video is playing.
+- With App lock on, Android empties its streaming video cache when you leave the app, except the video that is open.
+- iCloud sync stores what you follow and save in CloudKit encrypted fields.
+- Saved thread pages no longer contact the site when opened and carry a content security policy.
+- Update downloads are capped at 200 MB; iOS WebM conversion accepts only WebM's own formats; releases carry a build provenance attestation.
+
+### Fixed
+- Fixed Android video playback through the local streaming server, including short clips that finish before the player connects.
+
+### Changed
+- Rewrote the privacy policy and security policy to list every host the app contacts, iCloud sync, web search, reverse image search and the limits of encrypted DNS and App lock.
+
+
 ## [214-Allanite] - 2026-11-16
 
 ### Changed
@@ -3253,7 +3272,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v214-Allanite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v215-Almandine...HEAD
+[215-Almandine]: https://github.com/Defuuls/Orbin/compare/v214-Allanite...v215-Almandine
 [214-Allanite]: https://github.com/Defuuls/Orbin/compare/v213-Alexandrite...v214-Allanite
 [213-Alexandrite]: https://github.com/Defuuls/Orbin/compare/v212-Albite...v213-Alexandrite
 [212-Albite]: https://github.com/Defuuls/Orbin/compare/v211-Alabaster...v212-Albite
