@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [216-Amazonite] - 2026-11-18
+
+### Fixed
+- Videos playing in Android grid and catalog tiles now fill the whole tile instead of playing smaller with part of the still thumbnail frozen around them.
+
+
 ## [215-Almandine] - 2026-11-18
 
 ### Security
@@ -3272,7 +3278,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v215-Almandine...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v216-Amazonite...HEAD
+[216-Amazonite]: https://github.com/Defuuls/Orbin/compare/v215-Almandine...v216-Amazonite
 [215-Almandine]: https://github.com/Defuuls/Orbin/compare/v214-Allanite...v215-Almandine
 [214-Allanite]: https://github.com/Defuuls/Orbin/compare/v213-Alexandrite...v214-Allanite
 [213-Alexandrite]: https://github.com/Defuuls/Orbin/compare/v212-Albite...v213-Alexandrite
