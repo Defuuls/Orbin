@@ -1,33 +1,18 @@
-# Orbin 215 - Almandine
+# Orbin 216 - Amazonite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 215
-codename = "Almandine"
-version_code = 233
+number = 216
+codename = "Amazonite"
+version_code = 234
 
-highlight = "Privacy hardening: encrypted DNS always on for iOS, strict mode keeps every lookup private, and a policy that matches the app."
+highlight = "Videos playing in grid and catalog tiles now fill the whole tile."
 
 summary = [
-  "bump Orbin to 215-Almandine / versionCode 233",
-  "require encrypted DNS for the iOS app's own requests and keep strict mode off the device's DNS",
-  "clear the search web view's data, harden the local video server and encrypt iCloud sync fields",
-  "rewrite PRIVACY.md and SECURITY.md to match the app",
+  "bump Orbin to 216-Amazonite / versionCode 234",
+  "make inline videos fill their tile the way the thumbnail does",
 ]
 
 [changelog]
-Security = [
-  "iOS now always requires encrypted DNS for the app's own requests; previously a default install used the device's resolver.",
-  "Strict encrypted DNS turns off 4chan web search on both platforms; on iOS it also turns off video previews, keeps saves in the app, and plays video from a copy the app downloads over encrypted DNS.",
-  "Android's 4chan search web view no longer leaves cookies or site data on disk: they are removed when the search closes, when local activity is cleared, and at the next launch.",
-  "The local video streaming server now requires a per-session token and rejects oversized requests, so other apps on the device cannot see which video is playing.",
-  "With App lock on, Android empties its streaming video cache when you leave the app, except the video that is open.",
-  "iCloud sync stores what you follow and save in CloudKit encrypted fields.",
-  "Saved thread pages no longer contact the site when opened and carry a content security policy.",
-  "Update downloads are capped at 200 MB; iOS WebM conversion accepts only WebM's own formats; releases carry a build provenance attestation.",
-]
 Fixed = [
-  "Fixed Android video playback through the local streaming server, including short clips that finish before the player connects.",
-]
-Changed = [
-  "Rewrote the privacy policy and security policy to list every host the app contacts, iCloud sync, web search, reverse image search and the limits of encrypted DNS and App lock.",
+  "Videos playing in Android grid and catalog tiles now fill the whole tile instead of playing smaller with part of the still thumbnail frozen around them.",
 ]
