@@ -225,6 +225,8 @@ fun MediaThumbnail(
                     url = attachment.sourceUrl,
                     active = loopsInPlace,
                     modifier = Modifier.fillMaxSize(),
+                    // Scaled like the thumbnail it plays over, so none of the still image shows.
+                    contentScale = contentScale,
                 )
             }
         }
