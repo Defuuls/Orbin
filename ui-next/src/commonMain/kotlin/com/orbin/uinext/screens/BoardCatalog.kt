@@ -92,6 +92,7 @@ import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderMenuItem
 import com.orbin.uinext.components.ReaderNavigation
 import com.orbin.uinext.components.ReaderPostLayout
+import com.orbin.uinext.components.ReaderScrollJumpButtons
 import com.orbin.uinext.components.ReaderSpoilerCover
 import com.orbin.uinext.components.UnreadLabel
 import com.orbin.uinext.components.bottomInset
@@ -102,6 +103,7 @@ import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.readerBackSwipe
 import com.orbin.uinext.components.readerKeyboardShortcuts
 import com.orbin.uinext.components.readerPostInset
+import com.orbin.uinext.components.rememberScrollJumpTarget
 import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.next_board_media
@@ -324,6 +326,10 @@ fun BoardScreen(
                     )
                 }
             }
+            ReaderScrollJumpButtons(
+                target = rememberScrollJumpTarget(gridState),
+                modifier = Modifier.padding(end = ReaderSpace.gap, bottom = ReaderSpace.gap + bottomInset()),
+            )
         }
     }
 }

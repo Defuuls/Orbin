@@ -71,6 +71,8 @@ object ReaderIcons {
     val Refresh: ImageVector get() = Icons.Filled.Refresh
     val Back: ImageVector by lazy { outline("Back", "M15 4l-8 8 8 8", autoMirror = true) }
     val ChevronDown: ImageVector by lazy { outline("ChevronDown", "M6 9l6 6 6-6") }
+    val ScrollTop: ImageVector by lazy { outline("ScrollTop", "M5 4h14M12 20V9M7 13l5-5 5 5") }
+    val ScrollBottom: ImageVector by lazy { outline("ScrollBottom", "M5 20h14M12 4v11M7 11l5 5 5-5") }
     val ChevronRight: ImageVector by lazy { outline("ChevronRight", "M9 5l7 7-7 7", autoMirror = true) }
     val Close: ImageVector by lazy { outline("Close", "M6 6l12 12M6 18 18 6") }
     val Pin: ImageVector by lazy { outline("Pin", "M8 3h8M9 3v6l-3 4v2h12v-2l-3-4V3M12 15v7") }

@@ -97,6 +97,8 @@
     <string name="next_thread_download_everything">Everything</string>
     <string name="next_thread_back_to">Back to No.%1$s</string>
     <string name="next_thread_scroll_top">Scroll to top</string>
+    <string name="reader_scroll_to_top">Scroll to top</string>
+    <string name="reader_scroll_to_bottom">Scroll to bottom</string>
     <plurals name="next_thread_new_posts">
         <item quantity="one">%1$d new</item>
         <item quantity="other">%1$d new</item>
