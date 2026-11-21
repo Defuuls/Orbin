@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -46,7 +47,9 @@ import com.orbin.uinext.components.ReaderAction
 import com.orbin.uinext.components.ReaderCatalogSearch
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderMenuItem
+import com.orbin.uinext.components.ReaderScrollJumpButtons
 import com.orbin.uinext.components.reader
+import com.orbin.uinext.components.rememberScrollJumpTarget
 import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
 import com.orbin.uinext.resources.feed_redesign_empty_hint
@@ -58,6 +61,7 @@ import com.orbin.uinext.resources.reader_nav_boards
 import com.orbin.uinext.resources.reader_reload
 import com.orbin.uinext.tokens.OrbinType
 import com.orbin.uinext.tokens.ReaderSize
+import com.orbin.uinext.tokens.ReaderSpace
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.stringResource
 
@@ -320,6 +324,14 @@ private fun ReaderFeedGrid(
                 }
             }
         }
+        ReaderScrollJumpButtons(
+            target = rememberScrollJumpTarget(gridState),
+            modifier =
+                Modifier.padding(
+                    end = ReaderSpace.gap,
+                    bottom = ReaderSpace.gap + bottomPadding.calculateBottomPadding(),
+                ),
+        )
     }
 }
 

@@ -92,12 +92,14 @@ import com.orbin.uinext.components.ReaderHairline
 import com.orbin.uinext.components.ReaderIcons
 import com.orbin.uinext.components.ReaderMenuItem
 import com.orbin.uinext.components.ReaderNavigation
+import com.orbin.uinext.components.ReaderScrollJumpButtons
 import com.orbin.uinext.components.ReaderSpoilerCover
 import com.orbin.uinext.components.bottomInset
 import com.orbin.uinext.components.nextClickable
 import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.readerBackSwipe
 import com.orbin.uinext.components.readerKeyboardShortcuts
+import com.orbin.uinext.components.rememberScrollJumpTarget
 import com.orbin.uinext.components.sourceLabel
 import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
@@ -689,6 +691,18 @@ fun ThreadScreen(
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
+            ReaderScrollJumpButtons(
+                target = rememberScrollJumpTarget(if (showingPosts) state else filesState),
+                modifier =
+                    Modifier
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                        ).padding(
+                            // Beside the fast-scroll thumb and above the jump pills' row.
+                            end = ReaderSize.touchTarget + ReaderSpace.gapSmall,
+                            bottom = ReaderSpace.gutter + ReaderSize.pillHeight + ReaderSpace.gapSmall,
+                        ),
+            )
         }
     }
     postMenu?.let { post ->
