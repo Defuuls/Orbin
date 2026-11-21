@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [218-Amblygonite] - 2026-11-21
+
+### Added
+- Scroll-to-top and scroll-to-bottom buttons in threads, board catalogs and the home feed. They appear while you scroll a screen or more from the top and fade two seconds after you stop.
+
+
 ## [217-Amber] - 2026-11-18
 
 ### Testing
@@ -3284,7 +3290,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v217-Amber...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v218-Amblygonite...HEAD
+[218-Amblygonite]: https://github.com/Defuuls/Orbin/compare/v217-Amber...v218-Amblygonite
 [217-Amber]: https://github.com/Defuuls/Orbin/compare/v216-Amazonite...v217-Amber
 [216-Amazonite]: https://github.com/Defuuls/Orbin/compare/v215-Almandine...v216-Amazonite
 [215-Almandine]: https://github.com/Defuuls/Orbin/compare/v214-Allanite...v215-Almandine

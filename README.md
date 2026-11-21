@@ -4,9 +4,9 @@ Privacy-focused, read-only **Android & iOS imageboard browser** built with Kotli
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [License](LICENSE)
 
-**Current release:** [217 — Amber](https://github.com/Defuuls/Orbin/releases/tag/v217-Amber)
+**Current release:** [218 — Amblygonite](https://github.com/Defuuls/Orbin/releases/tag/v218-Amblygonite)
 
-**What's new in 217:** A weekly Xcode 27 check keeps the iOS app ready for Apple's 2027 SDK requirement.
+**What's new in 218:** Scroll-to-top and scroll-to-bottom buttons in threads, catalogs and the home feed.
 
 - **Read-only browsing:** Combined multi-site feed, board directories, List/Grid/Card catalogs, and adaptive two-pane layout (`4chan` & `BBWChan`).
 - **Thread & media reader:** Posts, Files, and Card views, inline quote expansion, backlinks, Coil 3 images, Media3 / AVPlayer video, and swipe gallery.
