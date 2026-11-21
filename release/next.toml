@@ -1,18 +1,18 @@
-# Orbin 217 - Amber
+# Orbin 218 - Amblygonite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 217
-codename = "Amber"
-version_code = 235
+number = 218
+codename = "Amblygonite"
+version_code = 236
 
-highlight = "A weekly Xcode 27 check keeps the iOS app ready for Apple's 2027 SDK requirement."
+highlight = "Scroll-to-top and scroll-to-bottom buttons in threads, catalogs and the home feed."
 
 summary = [
-  "bump Orbin to 217-Amber / versionCode 235",
-  "add a weekly Xcode 27 build-and-test check ahead of Apple's iOS 27 SDK requirement",
+  "bump Orbin to 218-Amblygonite / versionCode 236",
+  "add scroll-to-top and scroll-to-bottom buttons to threads, board catalogs and the home feed",
 ]
 
 [changelog]
-Testing = [
-  "Added a weekly Xcode 27 check that builds the iOS app and runs its tests on an iOS 27 simulator, ahead of App Store Connect requiring the iOS 27 SDK from April 2027.",
+Added = [
+  "Scroll-to-top and scroll-to-bottom buttons in threads, board catalogs and the home feed. They appear while you scroll a screen or more from the top and fade two seconds after you stop.",
 ]

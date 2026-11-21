@@ -6,9 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
-- Scroll-to-top and scroll-to-bottom buttons in threads, board catalogs and the home feed. They appear while you scroll a screen or more from the top and fade two seconds after you stop.
-
 ## [217-Amber] - 2026-11-18
 
 ### Testing
