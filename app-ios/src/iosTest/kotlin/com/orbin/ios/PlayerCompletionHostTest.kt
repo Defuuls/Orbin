@@ -25,6 +25,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PlayerCompletionHostTest {
+    /** The latest state read from WebKit, reported when a wait times out. */
+    private var lastSnapshot: MediaSnapshot? = null
+
     @Test
     fun completedGalleryWebMStaysEndedAcrossForegroundingAndCanReplay() {
         val webMCase = "PlayerCompletionHostTest.completedGalleryWebMStaysEndedAcrossForegroundingAndCanReplay"
@@ -53,10 +56,10 @@ class PlayerCompletionHostTest {
         window.rootViewController = root
         window.makeKeyAndVisible()
         try {
-            await { root.view.webViews().size == 1 }
+            await("mount the WebM view") { root.view.webViews().size == 1 }
             val webView = root.view.webViews().single()
-            await { webView.mediaSnapshot()?.let { it.position > 0.05 && !it.paused } == true }
-            await { webView.mediaSnapshot()?.ended == true }
+            await("start autoplay") { webView.mediaSnapshot()?.let { it.position > 0.05 && !it.paused } == true }
+            await("play to the end") { webView.mediaSnapshot()?.ended == true }
             // Allow the regular controls poll to reconcile completion before any lifecycle event.
             NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.35))
 
@@ -74,21 +77,26 @@ class PlayerCompletionHostTest {
 
             // A fresh playback request still replays the ended element from its beginning.
             autoplay.value = false
-            await {
+            await("record the stop request") {
                 webView.mediaSnapshot()?.let { it.command > completed.command && !it.requestedPlaying } == true
             }
             autoplay.value = true
-            await {
+            await("replay from the beginning") {
                 webView.mediaSnapshot()?.let {
                     !it.paused && !it.ended && it.position > 0.05 && it.position < it.duration - 0.5
                 } == true
             }
-            await { completedEvents == 2 }
+            // Sample WebKit while waiting, so a timeout shows whether the replay stalled or
+            // ended without the player reporting it.
+            await("emit the replay completion") {
+                webView.mediaSnapshot()
+                completedEvents == 2
+            }
             assertEquals(2, completedEvents, "Explicit replay may emit a fresh completion event")
         } finally {
             try {
                 visible.value = false
-                await { root.view.webViews().isEmpty() }
+                await("remove the WebM view") { root.view.webViews().isEmpty() }
             } finally {
                 window.hidden = true
                 window.rootViewController = null
@@ -115,7 +123,7 @@ class PlayerCompletionHostTest {
             failure = error?.localizedDescription
             completed = true
         }
-        await { completed }
+        await("answer the media query") { completed }
         assertNull(failure, "Query actual WebKit media state")
         val values = result?.split(',')?.map(String::toDouble) ?: return null
         return MediaSnapshot(
@@ -125,15 +133,25 @@ class PlayerCompletionHostTest {
             ended = values[3] == 1.0,
             command = values[4].toInt(),
             requestedPlaying = values[5] == 1.0,
-        )
+        ).also { lastSnapshot = it }
     }
 
-    private fun await(condition: () -> Boolean) {
+    /**
+     * Polls for up to five seconds. A failure names the step and the last media state WebKit
+     * reported, so a timeout on a slow runner can be told apart from playback that stalled.
+     */
+    private fun await(
+        step: String,
+        condition: () -> Boolean,
+    ) {
         repeat(100) {
             if (condition()) return
             NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.05))
         }
-        assertTrue(condition(), "WebKit did not reach the expected playback state within five seconds")
+        assertTrue(
+            condition(),
+            "WebKit did not $step within five seconds; last media state: ${lastSnapshot ?: "none reported"}",
+        )
     }
 
     private fun UIView.webViews(): List<WKWebView> =

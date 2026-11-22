@@ -1,13 +1,13 @@
 [versions]
 # Android / Build
-agp = "9.5.1"
+agp = "9.5.2"
 # Kotlin 2.4.20+ fixes CVE-2026-53914 (unsafe build-cache metadata deserialization).
 # Keep production at or above 2.4.20; `.github/workflows/codeql.yml` steps down its isolated
 # analysis checkout to 2.4.10 until the runner's CodeQL extractor bundle supports 2.4.20+.
 kotlin = "2.4.21"
 # KSP is versioned independently of Kotlin since 2.3.0. 2.3.1+ is required for AGP 9's
 # built-in Kotlin; 2.3.3+ migrated off deprecated KGP APIs; 2.3.6 is the recommended release.
-ksp = "2.3.13"
+ksp = "2.3.14"
 kotlinInject = "0.9.0"
 kermit = "2.2.0"
 slf4j = "2.0.20"
@@ -52,7 +52,7 @@ sqlcipher = "4.20.0"
 
 # Async / Serialization
 coroutines = "1.11.0"
-serialization = "1.12.0"
+serialization = "1.13.0"
 
 # Networking
 okhttp = "5.5.1"
@@ -74,7 +74,7 @@ testRunner = "1.7.0"
 turbine = "1.2.1"
 mockk = "1.14.12"
 truth = "1.4.5"
-robolectric = "4.17"
+robolectric = "4.18"
 # The newest stable (1.4.1) predates AGP 9; the 1.5.0 line is the first that supports it, so this
 # tracks its prereleases until 1.5.0 goes stable.
 benchmark = "1.5.0"
@@ -84,7 +84,7 @@ roborazzi = "1.79.0"
 
 # Quality
 detekt = "1.23.8"
-dependencyAnalysis = "3.20.1"
+dependencyAnalysis = "3.20.3"
 ktlintGradle = "14.2.0"
 kover = "0.9.11"
 
