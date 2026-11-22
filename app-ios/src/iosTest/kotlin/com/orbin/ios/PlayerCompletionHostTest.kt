@@ -86,7 +86,12 @@ class PlayerCompletionHostTest {
                     !it.paused && !it.ended && it.position > 0.05 && it.position < it.duration - 0.5
                 } == true
             }
-            await("emit the replay completion") { completedEvents == 2 }
+            // Sample WebKit while waiting, so a timeout shows whether the replay stalled or
+            // ended without the player reporting it.
+            await("emit the replay completion") {
+                webView.mediaSnapshot()
+                completedEvents == 2
+            }
             assertEquals(2, completedEvents, "Explicit replay may emit a fresh completion event")
         } finally {
             try {
