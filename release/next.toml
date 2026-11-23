@@ -1,18 +1,26 @@
-# Orbin 218 - Amblygonite
+# Orbin 219 - Amethyst
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 218
-codename = "Amblygonite"
-version_code = 236
+number = 219
+codename = "Amethyst"
+version_code = 237
 
-highlight = "Scroll-to-top and scroll-to-bottom buttons in threads, catalogs and the home feed."
+highlight = "Updated build and test dependencies, and more reliable builds."
 
 summary = [
-  "bump Orbin to 218-Amblygonite / versionCode 236",
-  "add scroll-to-top and scroll-to-bottom buttons to threads, board catalogs and the home feed",
+  "bump Orbin to 219-Amethyst / versionCode 237",
+  "update the Android Gradle plugin to 9.5.2, KSP to 2.3.14 and kotlinx-serialization to 1.13.0",
+  "download build dependencies from Google's Maven Central mirror first",
 ]
 
 [changelog]
-Added = [
-  "Scroll-to-top and scroll-to-bottom buttons in threads, board catalogs and the home feed. They appear while you scroll a screen or more from the top and fade two seconds after you stop.",
+Dependencies = [
+  "Updated the Android Gradle plugin to 9.5.2, KSP to 2.3.14, kotlinx-serialization to 1.13.0 and Gradle to 9.9.1.",
+  "Updated the test tooling: Robolectric 4.18 and Roborazzi 1.79.0.",
+]
+Reliability = [
+  "Builds download dependencies from Google's mirror of Maven Central first, so Maven Central rate limits no longer fail them.",
+]
+Testing = [
+  "The iOS video-replay test now reports the step it stalled on, the video's state and the player view's window and size when it times out, to diagnose an intermittent failure on iOS 27.",
 ]
