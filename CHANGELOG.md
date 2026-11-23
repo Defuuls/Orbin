@@ -6,6 +6,19 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [219-Amethyst] - 2026-11-23
+
+### Dependencies
+- Updated the Android Gradle plugin to 9.5.2, KSP to 2.3.14, kotlinx-serialization to 1.13.0 and Gradle to 9.9.1.
+- Updated the test tooling: Robolectric 4.18 and Roborazzi 1.79.0.
+
+### Reliability
+- Builds download dependencies from Google's mirror of Maven Central first, so Maven Central rate limits no longer fail them.
+
+### Testing
+- The iOS video-replay test now reports the step it stalled on, the video's state and the player view's window and size when it times out, to diagnose an intermittent failure on iOS 27.
+
+
 ## [218-Amblygonite] - 2026-11-21
 
 ### Added
@@ -3290,7 +3303,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v218-Amblygonite...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v219-Amethyst...HEAD
+[219-Amethyst]: https://github.com/Defuuls/Orbin/compare/v218-Amblygonite...v219-Amethyst
 [218-Amblygonite]: https://github.com/Defuuls/Orbin/compare/v217-Amber...v218-Amblygonite
 [217-Amber]: https://github.com/Defuuls/Orbin/compare/v216-Amazonite...v217-Amber
 [216-Amazonite]: https://github.com/Defuuls/Orbin/compare/v215-Almandine...v216-Amazonite
