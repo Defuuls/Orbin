@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
+import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGRectMake
 import platform.Foundation.NSDate
 import platform.Foundation.NSNotificationCenter
@@ -133,6 +134,11 @@ class PlayerCompletionHostTest {
             ended = values[3] == 1.0,
             command = values[4].toInt(),
             requestedPlaying = values[5] == 1.0,
+            // What the player checks before it sends a command or polls (hasPlaybackSurface):
+            // without a window or a visible size it skips both, silently, and retries later.
+            inWindow = window != null,
+            width = bounds.useContents { size.width },
+            height = bounds.useContents { size.height },
         ).also { lastSnapshot = it }
     }
 
@@ -166,5 +172,8 @@ class PlayerCompletionHostTest {
         val ended: Boolean,
         val command: Int,
         val requestedPlaying: Boolean,
+        val inWindow: Boolean,
+        val width: Double,
+        val height: Double,
     )
 }

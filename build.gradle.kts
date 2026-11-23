@@ -157,7 +157,17 @@ kover {
     }
 }
 
+// Robolectric downloads its Android runtime jars itself, outside Gradle's repositories, from Maven
+// Central by default; point it at the same mirror (see gradle/maven-central-mirror.txt).
+val mavenCentralMirror: String =
+    file("gradle/maven-central-mirror.txt").readLines().map(String::trim).single { it.isNotEmpty() && !it.startsWith("#") }
+
 subprojects {
+    tasks.withType<Test>().configureEach {
+        systemProperty("robolectric.dependency.repo.url", mavenCentralMirror)
+        systemProperty("robolectric.dependency.repo.id", "MavenCentralMirror")
+    }
+
     tasks.withType<KspAATask>().configureEach {
         usesService(kspExecutionGate)
         // Invalidate outputs cached before the processor concurrency guard existed.

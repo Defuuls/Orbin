@@ -290,6 +290,62 @@ def check_privacy_hosts(sources: dict[str, str] | None = None, policy: str | Non
             fail("privacy-hosts", f"{host} (in {rel}) is not listed in PRIVACY.md under 'Who the app talks to'")
 
 
+MIRROR_FILE = "gradle/maven-central-mirror.txt"
+# Each Gradle settings file whose repositories must try the mirror before Maven Central.
+MIRROR_SETTINGS = ("settings.gradle.kts", "build-logic/settings.gradle.kts")
+REPOSITORIES_OPEN = re.compile(r"\brepositories\s*\{")
+
+
+def mirror_url(text: str) -> str | None:
+    """The single URL in the mirror file, or None when it is missing, repeated or not HTTPS."""
+    lines = [line.strip() for line in text.splitlines() if line.strip() and not line.strip().startswith("#")]
+    if len(lines) != 1 or not lines[0].startswith("https://"):
+        return None
+    return lines[0]
+
+
+def repositories_blocks(text: str) -> list[tuple[int, str]]:
+    """(line, body) of each `repositories { ... }` block, matching braces so nested blocks such as
+    `google { content { ... } }` stay inside the body they belong to."""
+    blocks = []
+    for opening in REPOSITORIES_OPEN.finditer(text):
+        depth, index = 1, opening.end()
+        while depth and index < len(text):
+            depth += {"{": 1, "}": -1}.get(text[index], 0)
+            index += 1
+        blocks.append((text.count("\n", 0, opening.start()) + 1, text[opening.end() : index - 1]))
+    return blocks
+
+
+def check_maven_mirror(files: dict[str, str] | None = None) -> None:
+    """Every repository list tries the Maven Central mirror before Maven Central itself.
+
+    Gradle stops at a repository that answers with an error such as HTTP 429 rather than trying
+    the next one, so the mirror only helps when it comes first. It is wired in by hand in each
+    settings file and in the root build file (for Robolectric's own downloads), which cannot share
+    code, so this check keeps the copies from drifting apart.
+    """
+    if files is None:
+        names = (MIRROR_FILE, *MIRROR_SETTINGS, "build.gradle.kts")
+        files = {rel: read(rel) for rel in names if (ROOT / rel).exists()}
+    if MIRROR_FILE not in files or mirror_url(files[MIRROR_FILE]) is None:
+        fail("maven-mirror", f"{MIRROR_FILE} must hold exactly one https:// URL")
+    for rel in MIRROR_SETTINGS:
+        text = files.get(rel, "")
+        if "maven-central-mirror.txt" not in text:
+            fail("maven-mirror", f"{rel} does not read {MIRROR_FILE}")
+        for line, body in repositories_blocks(text):
+            central = body.find("mavenCentral()")
+            if central == -1:
+                continue
+            mirror = body.find('name = "MavenCentralMirror"')
+            if mirror == -1 or mirror > central:
+                fail("maven-mirror", f"{rel}:{line} lists mavenCentral() without the mirror before it")
+    root = files.get("build.gradle.kts", "")
+    if "robolectric.dependency.repo.url" not in root or "maven-central-mirror.txt" not in root:
+        fail("maven-mirror", "build.gradle.kts does not point Robolectric's downloads at the mirror")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fix-links", action="store_true", help="backfill missing CHANGELOG link refs")
@@ -308,6 +364,7 @@ def main() -> int:
     check_emulator_options()
     check_tracked_hygiene()
     check_privacy_hosts()
+    check_maven_mirror()
 
     for note in notes:
         print(f"note: {note}")
