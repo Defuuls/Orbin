@@ -53,6 +53,98 @@ class ValidateRepoTest(unittest.TestCase):
 
         self.assertEqual([], validate_repo.failures)
 
+    MIRROR = "# comment\nhttps://mirror.example/maven2/\n"
+    ROOT_BUILD = 'file("gradle/maven-central-mirror.txt")\nsystemProperty("robolectric.dependency.repo.url", m)'
+    GOOD_SETTINGS = (
+        'val m = file("gradle/maven-central-mirror.txt")\n'
+        "repositories {\n"
+        "    google()\n"
+        '    maven(m) { name = "MavenCentralMirror" }\n'
+        "    mavenCentral()\n"
+        "}\n"
+    )
+
+    def mirror_files(self, **overrides: str) -> dict[str, str]:
+        files = {
+            validate_repo.MIRROR_FILE: self.MIRROR,
+            "settings.gradle.kts": self.GOOD_SETTINGS,
+            "build-logic/settings.gradle.kts": self.GOOD_SETTINGS,
+            "build.gradle.kts": self.ROOT_BUILD,
+        }
+        files.update(overrides)
+        return files
+
+    def test_maven_mirror_accepts_mirror_before_central_everywhere(self) -> None:
+        validate_repo.check_maven_mirror(self.mirror_files())
+
+        self.assertEqual([], validate_repo.failures)
+
+    def test_maven_mirror_rejects_mirror_listed_after_central(self) -> None:
+        after = self.GOOD_SETTINGS.replace(
+            '    maven(m) { name = "MavenCentralMirror" }\n    mavenCentral()\n',
+            '    mavenCentral()\n    maven(m) { name = "MavenCentralMirror" }\n',
+        )
+
+        validate_repo.check_maven_mirror(self.mirror_files(**{"build-logic/settings.gradle.kts": after}))
+
+        self.assertEqual(
+            ["[maven-mirror] build-logic/settings.gradle.kts:2 lists mavenCentral() without the mirror before it"],
+            validate_repo.failures,
+        )
+
+    def test_maven_mirror_rejects_a_repository_block_without_the_mirror(self) -> None:
+        settings = self.GOOD_SETTINGS + "pluginManagement {\n    repositories {\n        mavenCentral()\n    }\n}\n"
+
+        validate_repo.check_maven_mirror(self.mirror_files(**{"settings.gradle.kts": settings}))
+
+        self.assertEqual(
+            ["[maven-mirror] settings.gradle.kts:8 lists mavenCentral() without the mirror before it"],
+            validate_repo.failures,
+        )
+
+    def test_maven_mirror_sees_past_nested_blocks(self) -> None:
+        # The plugin repositories nest `google { content { ... } }`; a shortcut match ending at the
+        # first closing brace would end the block there and never see the misplaced mirror.
+        nested = (
+            'val m = file("gradle/maven-central-mirror.txt")\n'
+            "pluginManagement {\n"
+            "    repositories {\n"
+            "        google {\n"
+            "            content {\n"
+            '                includeGroupByRegex("androidx.*")\n'
+            "            }\n"
+            "        }\n"
+            "        mavenCentral()\n"
+            '        maven(m) { name = "MavenCentralMirror" }\n'
+            "    }\n"
+            "}\n"
+        )
+
+        validate_repo.check_maven_mirror(self.mirror_files(**{"settings.gradle.kts": nested}))
+
+        self.assertEqual(
+            ["[maven-mirror] settings.gradle.kts:3 lists mavenCentral() without the mirror before it"],
+            validate_repo.failures,
+        )
+
+    def test_maven_mirror_requires_one_https_url_and_robolectric_wiring(self) -> None:
+        validate_repo.check_maven_mirror(
+            self.mirror_files(**{validate_repo.MIRROR_FILE: "http://a/\nhttp://b/\n", "build.gradle.kts": ""})
+        )
+
+        self.assertEqual(
+            [
+                "[maven-mirror] gradle/maven-central-mirror.txt must hold exactly one https:// URL",
+                "[maven-mirror] build.gradle.kts does not point Robolectric's downloads at the mirror",
+            ],
+            validate_repo.failures,
+        )
+
+    def test_maven_mirror_passes_for_the_repository_as_it_is(self) -> None:
+        validate_repo.check_maven_mirror()
+
+        self.assertEqual([], validate_repo.failures)
+
     def test_privacy_hosts_passes_for_the_repository_as_it_is(self) -> None:
         validate_repo.check_privacy_hosts()
 

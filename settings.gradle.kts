@@ -2,6 +2,8 @@
 
 pluginManagement {
     includeBuild("build-logic")
+    // Evaluated before the rest of this file, so it reads the mirror URL itself.
+    val mirror = file("gradle/maven-central-mirror.txt").readLines().map(String::trim).single { it.isNotEmpty() && !it.startsWith("#") }
     repositories {
         google {
             content {
@@ -10,15 +12,21 @@ pluginManagement {
                 includeGroupByRegex("androidx.*")
             }
         }
+        maven(mirror) { name = "MavenCentralMirror" }
         mavenCentral()
         gradlePluginPortal()
     }
 }
 
+// See gradle/maven-central-mirror.txt for why the mirror is listed before Maven Central.
+val mavenCentralMirror: String =
+    file("gradle/maven-central-mirror.txt").readLines().map(String::trim).single { it.isNotEmpty() && !it.startsWith("#") }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
+        maven(mavenCentralMirror) { name = "MavenCentralMirror" }
         mavenCentral()
     }
 }

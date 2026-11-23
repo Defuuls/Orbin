@@ -1,0 +1,10 @@
+# Google's mirror of Maven Central, tried before Maven Central itself.
+#
+# Maven Central rate-limits busy CI runners with HTTP 429. Gradle treats any error other than
+# "not found" as a broken repository and stops there instead of trying the next one, so a
+# fallback listed after Maven Central would never be reached. The mirror is listed first;
+# anything it lacks (a 404, e.g. a release minutes old) falls through to Maven Central.
+#
+# Read by settings.gradle.kts, build-logic/settings.gradle.kts, and the root build file, which
+# points Robolectric's own runtime-jar downloader here too. One non-comment line: the URL.
+https://maven-central.storage-download.googleapis.com/maven2/
