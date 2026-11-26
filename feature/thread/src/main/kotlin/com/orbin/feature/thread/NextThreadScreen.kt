@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -411,6 +412,66 @@ private fun LoadedThread(
     }
 
     val collapsedSet = memory.foldedPaths
+    // Saving the reading position and marking posts read both re-emit the memory while scrolling.
+    // Recomputing this per recomposition walked every post on the main thread and handed the
+    // thread a new set each time, so every visible row re-ran its unread-replies count.
+    val unreadPostIds =
+        remember(presentation, memory.seenPostIds) {
+            presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() }
+        }
+
+    // The comment and media slots run inside every visible row. A slot lambda written inline here
+    // is a new block each time this screen recomposes (the reading position is saved and posts
+    // are marked read while scrolling), and a new block re-runs that slot in every visible row
+    // even though the rows themselves are unchanged. Keeping each slot for as long as what it
+    // draws is unchanged lets those rows skip; callbacks read their latest values when invoked.
+    val latestOpenMedia by rememberUpdatedState<(Int) -> Unit> { openMedia(it) }
+    val playback =
+        remember(preferences.playbackPreferences, thread.key) {
+            preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board)
+        }
+    val sharpPreviews = preferences.sharpPreviews
+    val postBody: @Composable (com.orbin.uinext.screens.Post) -> Unit =
+        remember(presentation, thread.key, viewModel, context) {
+            { row ->
+                presentation.rowsById[row.id]?.let { entry ->
+                    ReaderPostComment(
+                        row = entry,
+                        onQuoteClick = { target ->
+                            val id = target.value.toString()
+                            id.toLongOrNull()?.let(viewModel::expandToPost)
+                            scrollTarget = id
+                        },
+                        onLinkClick = { link -> SafeExternalLinks.open(context, link) },
+                    )
+                }
+            }
+        }
+    val postMedia: @Composable (com.orbin.uinext.screens.Post, Modifier) -> Unit =
+        remember(presentation, thread.key, inlineMedia, playback, sharpPreviews, isMetered, isDataSaver) {
+            { row, tileModifier ->
+                presentation.rowsById[row.id]?.post?.attachments?.firstOrNull()?.let { attachment ->
+                    ThreadInlineMedia(
+                        // One copy per attachment: a fresh copy each pass re-ran the whole tile.
+                        attachment = remember(attachment) { attachment.copy(isSpoiler = false) },
+                        identity = "${thread.key}/${row.stableKey}",
+                        state = inlineMedia,
+                        playback = playback,
+                        onOpenFullscreen = { presentation.firstMediaIndex(row.id)?.let { latestOpenMedia(it) } },
+                        modifier = tileModifier,
+                        fullResolution =
+                            shouldLoadSharpPreview(
+                                modeWantsSharp = true,
+                                setting = sharpPreviews,
+                                isMetered = isMetered,
+                                isDataSaver = isDataSaver,
+                                mediaType = attachment.type,
+                                sizeBytes = attachment.sizeBytes,
+                            ),
+                    )
+                }
+            }
+        }
 
     NextPullToRefresh(
         isRefreshing = isRefreshing,
@@ -431,7 +492,7 @@ private fun LoadedThread(
                 onRevealPost = { it.id.toLongOrNull()?.let(viewModel::revealPost) },
                 onVisiblePosts = viewModel::markVisible,
                 onMarkAllRead = viewModel::markAllRead,
-                unreadPostIds = presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() },
+                unreadPostIds = unreadPostIds,
                 onMediaFilterChange = { mediaFilter = it },
                 onAddPostFilter = { post, target ->
                     val pattern =
@@ -508,40 +569,8 @@ private fun LoadedThread(
                         Intent.createChooser(sendIntent, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
                 },
-                body = { row ->
-                    presentation.rowsById[row.id]?.let { entry ->
-                        ReaderPostComment(
-                            row = entry,
-                            onQuoteClick = { target ->
-                                val id = target.value.toString()
-                                id.toLongOrNull()?.let(viewModel::expandToPost)
-                                scrollTarget = id
-                            },
-                            onLinkClick = { link -> SafeExternalLinks.open(context, link) },
-                        )
-                    }
-                },
-                media = { row, tileModifier ->
-                    presentation.rowsById[row.id]?.post?.attachments?.firstOrNull()?.let { attachment ->
-                        ThreadInlineMedia(
-                            attachment = attachment.copy(isSpoiler = false),
-                            identity = "${thread.key}/${row.stableKey}",
-                            state = inlineMedia,
-                            playback = preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board),
-                            onOpenFullscreen = { presentation.firstMediaIndex(row.id)?.let(::openMedia) },
-                            modifier = tileModifier,
-                            fullResolution =
-                                shouldLoadSharpPreview(
-                                    modeWantsSharp = true,
-                                    setting = preferences.sharpPreviews,
-                                    isMetered = isMetered,
-                                    isDataSaver = isDataSaver,
-                                    mediaType = attachment.type,
-                                    sizeBytes = attachment.sizeBytes,
-                                ),
-                        )
-                    }
-                },
+                body = postBody,
+                media = postMedia,
                 onReload = viewModel::refresh,
                 onOpenBrowser =
                     viewModel.threadWebUrl?.let { url ->

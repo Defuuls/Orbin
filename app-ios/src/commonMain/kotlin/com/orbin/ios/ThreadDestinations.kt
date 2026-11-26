@@ -340,6 +340,21 @@ internal fun ThreadContent(
         updateMemory { it.copy(foldedPaths = it.foldedPaths - row.ancestorPaths.toSet() - row.branchPath) }
     }
     val byId = presentation.rowsById
+    // The memory re-emits each time the reading position is saved (180ms after every scroll) and
+    // whenever posts are marked read. Both values walk every post, so they are kept per change of
+    // what has been read rather than recomputed on the main thread at each of those emissions.
+    val unreadPostIds =
+        remember(presentation, memory.seenPostIds) {
+            presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() }
+        }
+    val firstUnreadPostId =
+        remember(presentation, memory.seenPostIds) {
+            presentation.thread.replies
+                .firstOrNull { it.id.value !in memory.seenPostIds }
+                ?.id
+                ?.value
+                ?.toString()
+        }
     val boardLabel = "/${thread.key.board.value}/"
     val visibleOwners =
         remember(posts, memory.foldedPaths) {
@@ -500,6 +515,48 @@ internal fun ThreadContent(
         }
     }
     OnPencilRoll { turn -> listState.scrollBy(turn * rollScroll) }
+    // The comment and media slots run inside every visible row. Written inline, each is a new
+    // block whenever this screen recomposes, which it does each time the reading position is
+    // saved while scrolling, and a new block re-runs the slot in every visible row. Each slot is
+    // kept while what it draws is unchanged; callbacks read their latest values when invoked.
+    val latestExpandPost by rememberUpdatedState<(String) -> Unit> { expandPost(it) }
+    val latestOpenFile by rememberUpdatedState<(Int) -> Unit> { openFile(it) }
+    val playback =
+        remember(preferences.playbackPreferences, thread.key) {
+            preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board)
+        }
+    val postBody: @Composable (com.orbin.uinext.screens.Post) -> Unit =
+        remember(byId, thread, uriHandler) {
+            { post ->
+                byId[post.id]?.let { entry ->
+                    ReaderPostComment(
+                        row = entry,
+                        onQuoteClick = { target ->
+                            val id = target.value.toString()
+                            latestExpandPost(id)
+                            scrollTarget = id
+                        },
+                        onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
+                    )
+                }
+            }
+        }
+    val postMedia: @Composable (com.orbin.uinext.screens.Post, Modifier) -> Unit =
+        remember(byId, presentation, thread.key, inlineMedia, playback) {
+            { post, modifier ->
+                byId[post.id]?.post?.attachments?.firstOrNull()?.let { attachment ->
+                    ThreadInlineMedia(
+                        // One copy per attachment: a fresh copy each pass re-ran the whole tile.
+                        attachment = remember(attachment) { attachment.copy(isSpoiler = false) },
+                        identity = "${thread.key}/${post.stableKey}",
+                        state = inlineMedia,
+                        playback = playback,
+                        onOpenFullscreen = { presentation.firstMediaIndex(post.id)?.let { latestOpenFile(it) } },
+                        modifier = modifier,
+                    )
+                }
+            }
+        }
     Box(Modifier.fillMaxSize()) {
         ThreadScreen(
             listState = listState,
@@ -588,7 +645,7 @@ internal fun ThreadContent(
                 }
                 onAllRead()
             },
-            unreadPostIds = presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() },
+            unreadPostIds = unreadPostIds,
             subtitle = statusText,
             statusText = statusText,
             reloading = refreshing,
@@ -631,40 +688,11 @@ internal fun ThreadContent(
             onDownloadAll = downloadVisibleFiles,
             onSavePage = onSavePage,
             onShare = onShare,
-            firstUnreadPostId =
-                presentation.thread.replies
-                    .firstOrNull {
-                        it.id.value !in memory.seenPostIds
-                    }?.id
-                    ?.value
-                    ?.toString(),
+            firstUnreadPostId = firstUnreadPostId,
             scrollToPostId = scrollTarget,
             onScrollConsumed = { scrollTarget = null },
-            body = { post ->
-                byId[post.id]?.let { entry ->
-                    ReaderPostComment(
-                        row = entry,
-                        onQuoteClick = { target ->
-                            val id = target.value.toString()
-                            expandPost(id)
-                            scrollTarget = id
-                        },
-                        onLinkClick = { url -> safeExternalLink(url)?.let(uriHandler::openUri) },
-                    )
-                }
-            },
-            media = { post, modifier ->
-                byId[post.id]?.post?.attachments?.firstOrNull()?.let { attachment ->
-                    ThreadInlineMedia(
-                        attachment = attachment.copy(isSpoiler = false),
-                        identity = "${thread.key}/${post.stableKey}",
-                        state = inlineMedia,
-                        playback = preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board),
-                        onOpenFullscreen = { presentation.firstMediaIndex(post.id)?.let(::openFile) },
-                        modifier = modifier,
-                    )
-                }
-            },
+            body = postBody,
+            media = postMedia,
             onReload = onReload,
             onOpenBrowser = onOpenBrowser,
             onPostReference = { id ->

@@ -35,6 +35,7 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -158,7 +159,13 @@ enum class PostFilterTarget { TEXT, NAME, TRIPCODE, COUNTRY }
  * [mediaCount] above one puts a count badge on the thumbnail.
  * [replyNumbers] are the posts that answer this one, each shown as a link; when a host does not
  * supply them, [replies] is shown as a plain count instead.
+ *
+ * Immutable: hosts rebuild the whole list whenever a post is read, hidden or folded, and each
+ * rebuild is a new set of equal instances for every post that did not change. Comparing by value
+ * lets the rows on screen skip recomposing their header, comment and media for those posts, which
+ * the read-marking done while scrolling would otherwise trigger every time the list settles.
  */
+@Immutable
 data class Post(
     val number: String,
     val time: String,
@@ -273,23 +280,25 @@ fun ThreadScreen(
     var mediaFilter by rememberSaveable(subject, board, siteName) { mutableStateOf(MediaKindFilter.ALL) }
     LaunchedEffect(externalPostId) { if (externalPostId != null) detailPostId = null }
     val displayedPosts =
-        detailPost?.let { root ->
-            allPosts
-                .distinctBy { it.id }
-                .filter { post ->
-                    if (detailById) post.posterId == root.posterId else post.id in root.descendantIds
-                }.map {
-                    if (detailById) {
-                        it.copy(
-                            depth = 0,
-                            hiddenReason = null,
-                            preview = false,
-                        )
-                    } else {
-                        it.copy(depth = 0)
+        remember(detailPost, detailById, allPosts, posts) {
+            detailPost?.let { root ->
+                allPosts
+                    .distinctBy { it.id }
+                    .filter { post ->
+                        if (detailById) post.posterId == root.posterId else post.id in root.descendantIds
+                    }.map {
+                        if (detailById) {
+                            it.copy(
+                                depth = 0,
+                                hiddenReason = null,
+                                preview = false,
+                            )
+                        } else {
+                            it.copy(depth = 0)
+                        }
                     }
-                }
-        } ?: posts
+            } ?: posts
+        }
     val detailState = rememberLazyListState()
     val colors = reader
     val rootState = listState ?: rememberLazyListState()
@@ -297,14 +306,19 @@ fun ThreadScreen(
     val filesState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    fun openDetail(
-        post: Post,
-        byId: Boolean,
-    ) {
-        detailPostId = post.id
-        detailById = byId
-        scope.launch { detailState.scrollToItem(0) }
-    }
+    // Row callbacks are remembered: a local function or a fresh lambda here is a new instance on
+    // each pass, which made every visible row recompose whenever the thread did.
+    val openDetail: (Post, Boolean) -> Unit =
+        remember(detailState, scope) {
+            { post, byId ->
+                detailPostId = post.id
+                detailById = byId
+                scope.launch { detailState.scrollToItem(0) }
+            }
+        }
+    val showIdDetail: (Post) -> Unit = remember(openDetail) { { openDetail(it, true) } }
+    val showRepliesDetail: (Post) -> Unit = remember(openDetail) { { openDetail(it, false) } }
+    val openPostMenu: (Post) -> Unit = remember { { postMenu = it } }
     val showingPosts = layout != ThreadLayout.FILES
     val cardMode = layout == ThreadLayout.CARDS
     val closeDetail: () -> Unit = { detailPostId = null }
@@ -357,7 +371,7 @@ fun ThreadScreen(
     var handledReference by remember { mutableStateOf<String?>(null) }
     var returnDetailPostId by rememberSaveable { mutableStateOf<String?>(null) }
     var returnDetailById by rememberSaveable { mutableStateOf(false) }
-    val openReference: ((String) -> Unit)? =
+    val referenceHandler: ((String) -> Unit)? =
         onPostReference?.let { outer ->
             { id ->
                 if (detailPost != null && displayedPosts.none { it.id == id }) {
@@ -376,6 +390,9 @@ fun ThreadScreen(
                 outer(id)
             }
         }
+    val latestReferenceHandler by rememberUpdatedState(referenceHandler)
+    val stableReference: (String) -> Unit = remember { { id -> latestReferenceHandler?.invoke(id) } }
+    val openReference: ((String) -> Unit)? = stableReference.takeIf { referenceHandler != null }
     val resolvedBackLabel =
         backToLabel
             ?: returnToNumber?.let { number ->
@@ -619,6 +636,8 @@ fun ThreadScreen(
                         }
                     }
                     if (showingPosts) {
+                        val originalId = allPosts.firstOrNull()?.id
+                        val hasHideActions = onHidePost != null || onHidePosterId != null || onAddPostFilter != null
                         itemsIndexed(displayedPosts, key = {
                             _,
                             post,
@@ -628,13 +647,12 @@ fun ThreadScreen(
                             index,
                             post,
                             ->
-                            val hasHideActions = onHidePost != null || onHidePosterId != null || onAddPostFilter != null
                             val hasPostDetails = post.descendantIds.isNotEmpty() || !post.posterId.isNullOrBlank()
                             Column(Modifier.fillMaxWidth()) {
                                 if (index > 0 && post.id == firstUnreadPostId) UnreadMarker()
                                 PostCell(
                                     post = post,
-                                    original = post.id == allPosts.firstOrNull()?.id,
+                                    original = post.id == originalId,
                                     collapsed = post.branchPath in collapsed || post.id in collapsed,
                                     wideWindow = wideWindow,
                                     cardImageHeight = if (cardMode) cardImageHeight else null,
@@ -645,15 +663,10 @@ fun ThreadScreen(
                                         ),
                                     onToggleCollapse = onToggleCollapse,
                                     onClick = onPostClick,
-                                    onMenu =
-                                        if (hasHideActions || hasPostDetails) {
-                                            { postMenu = it }
-                                        } else {
-                                            null
-                                        },
+                                    onMenu = openPostMenu.takeIf { hasHideActions || hasPostDetails },
                                     onReveal = onRevealPost,
-                                    onShowId = { openDetail(it, true) },
-                                    onReplies = { openDetail(it, false) },
+                                    onShowId = showIdDetail,
+                                    onReplies = showRepliesDetail,
                                     unreadReplies = post.descendantIds.count { it in unreadPostIds },
                                     onReference = openReference,
                                     body = body,
@@ -662,9 +675,10 @@ fun ThreadScreen(
                             }
                         }
                         item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
+                            val distinctPosts = remember(displayedPosts) { displayedPosts.distinctBy { it.id } }
                             ThreadStatus(
-                                replies = maxOf(0, displayedPosts.distinctBy { it.id }.size - 1),
-                                fileCount = displayedPosts.distinctBy { it.id }.sumOf { it.mediaCount },
+                                replies = maxOf(0, distinctPosts.size - 1),
+                                fileCount = distinctPosts.sumOf { it.mediaCount },
                                 statusText = statusText,
                             )
                         }
@@ -1211,21 +1225,23 @@ private fun PostHeader(
 ) {
     val colors = reader
     val author =
-        if (listOf(
-                post.posterName,
-                post.posterTripcode,
-                post.posterCountry,
-                post.posterCapcode,
-            ).any { !it.isNullOrBlank() }
-        ) {
-            listOfNotNull(
-                post.posterName,
-                post.posterTripcode,
-                post.posterCapcode,
-                post.posterCountry,
-            ).filter(String::isNotBlank).joinToString(" · ")
-        } else {
-            post.author
+        remember(post) {
+            if (listOf(
+                    post.posterName,
+                    post.posterTripcode,
+                    post.posterCountry,
+                    post.posterCapcode,
+                ).any { !it.isNullOrBlank() }
+            ) {
+                listOfNotNull(
+                    post.posterName,
+                    post.posterTripcode,
+                    post.posterCapcode,
+                    post.posterCountry,
+                ).filter(String::isNotBlank).joinToString(" · ")
+            } else {
+                post.author
+            }
         }
     val expandLabel = stringResource(Res.string.next_post_expand)
     val collapseLabel = stringResource(Res.string.next_post_collapse)
