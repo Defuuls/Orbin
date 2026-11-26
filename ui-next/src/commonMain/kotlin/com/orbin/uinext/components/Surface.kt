@@ -415,8 +415,7 @@ fun MediaTile(
     Box(
         modifier =
             modifier
-                .clip(RoundedCornerShape(radius))
-                .background(placeholderArt(seed)),
+                .rowFill(placeholderArt(seed), RoundedCornerShape(radius), LocalClipShapedRowFills.current),
         contentAlignment = Alignment.BottomStart,
     ) {
         if (badge != null) {

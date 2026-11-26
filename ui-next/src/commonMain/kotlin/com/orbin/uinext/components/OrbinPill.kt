@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -92,6 +91,9 @@ fun OrbinPill(
     val resolved = pillColors(variant, reader, tint)
     val shape = RoundedCornerShape(OrbinRadius.pill)
     val button = onClick != null
+    // A pill button always clips, to bound its press ripple; a label pill clips only where the
+    // platform keeps clipped row fills (see [clipShapedRowFills]).
+    val clip = button || LocalClipShapedRowFills.current
     val style =
         if (button) {
             OrbinType.labelLarge.copy(fontWeight = FontWeight.SemiBold)
@@ -103,8 +105,7 @@ fun OrbinPill(
             modifier
                 .width(IntrinsicSize.Max)
                 .then(if (button) Modifier.heightIn(min = ReaderSize.touchTarget) else Modifier)
-                .clip(shape)
-                .background(resolved.container)
+                .rowFill(resolved.container, shape, clip)
                 .then(
                     if (onClick != null) {
                         Modifier
