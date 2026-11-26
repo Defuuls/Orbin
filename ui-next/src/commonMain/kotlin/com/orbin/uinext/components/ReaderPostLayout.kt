@@ -21,6 +21,14 @@ import com.orbin.uinext.tokens.ReaderSpace
 val LocalReaderPostBodyStyle = staticCompositionLocalOf { OrbinType.postBody }
 
 /**
+ * True inside a list that already wraps its post bodies in one shared selection container.
+ *
+ * A rich comment then renders plain text and is selected through that container, instead of
+ * building its own container for every row that scrolls into view.
+ */
+val LocalPostTextSelectionHoisted = staticCompositionLocalOf { false }
+
+/**
  * Clover 3.0.2 post geometry: a leading 72/100dp thumbnail and an inset text column.
  *
  * Insets belong to the text, rather than the image. At 2x text size Orbin keeps its accessible

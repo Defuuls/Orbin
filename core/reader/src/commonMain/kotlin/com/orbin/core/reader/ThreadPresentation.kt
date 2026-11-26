@@ -18,6 +18,7 @@ import com.orbin.domain.filter.ContentPolicy
 import com.orbin.domain.thread.replyCounts
 import com.orbin.domain.thread.replyDepths
 import com.orbin.provider.api.UriParts
+import com.orbin.uinext.components.LocalPostTextSelectionHoisted
 import com.orbin.uinext.components.LocalReaderPostBodyStyle
 import com.orbin.uinext.components.MediaKind
 import com.orbin.uinext.components.next
@@ -264,7 +265,8 @@ fun ReaderPostComment(
             prepared = row.comment,
             palette = palette,
             modifier = modifier,
-            selectable = true,
+            // A thread list hoists one container above its rows; elsewhere the comment owns one.
+            selectable = !LocalPostTextSelectionHoisted.current,
             style = style,
             onQuoteClick = onQuoteClick,
             onLinkClick = { safeExternalLink(it)?.let(onLinkClick) },

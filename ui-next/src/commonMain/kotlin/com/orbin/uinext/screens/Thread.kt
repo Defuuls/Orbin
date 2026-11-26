@@ -27,6 +27,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.ViewAgenda
@@ -74,6 +76,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.orbin.uinext.components.LocalClipShapedRowFills
+import com.orbin.uinext.components.LocalPostTextSelectionHoisted
 import com.orbin.uinext.components.LocalReaderInputState
 import com.orbin.uinext.components.LocalReaderPostBodyStyle
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
@@ -572,111 +575,120 @@ fun ThreadScreen(
                 val cardImageHeight = orbinCatalogCardSpec(maxWidth).imageHeight
                 val postImageWidth = (maxWidth - 28.dp).coerceAtLeast(1.dp)
                 val viewportHeight = maxHeight
-                LazyColumn(
-                    state = if (showingPosts) state else filesState,
-                    modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
-                    verticalArrangement = if (cardMode) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
-                    contentPadding =
-                        when {
-                            cardMode ->
-                                PaddingValues(
-                                    top = ORBIN_CATALOG_GAP,
-                                    bottom = bottomInset() + ORBIN_CATALOG_GAP,
-                                )
-                            showingPosts -> PaddingValues(bottom = bottomInset())
-                            else ->
-                                PaddingValues(
-                                    start = ReaderSpace.albumPadding,
-                                    end = ReaderSpace.albumPadding,
-                                    top = ReaderSpace.albumPadding,
-                                    bottom = bottomInset() + ReaderSpace.albumPadding,
-                                )
-                        },
-                ) {
-                    item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
-                        if (!showingPosts) {
-                            MediaFilterPills(
-                                filter = mediaFilter,
-                                images = files.count { it.kind == MediaKind.IMAGE },
-                                videos = files.count { it.kind == MediaKind.VIDEO },
-                                onChange = {
-                                    mediaFilter = it
-                                    onMediaFilterChange(it)
-                                },
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                total = files.size,
-                            )
-                        }
-                        if (!subtitle.isNullOrBlank()) {
-                            Text(
-                                text = subtitle,
-                                style = OrbinType.meta.withReaderFont(),
-                                color = colors.inkMuted,
-                                modifier =
-                                    Modifier.fillMaxWidth().padding(
-                                        horizontal = ReaderSpace.gutter,
-                                        vertical = ReaderSpace.gapSmall,
-                                    ),
-                            )
-                        }
-                    }
-                    if (showingPosts) {
-                        itemsIndexed(displayedPosts, key = {
-                            _,
-                            post,
-                            ->
-                            post.stableKey
-                        }, contentType = { _, _ -> layout }) {
-                            index,
-                            post,
-                            ->
-                            val hasHideActions = onHidePost != null || onHidePosterId != null || onAddPostFilter != null
-                            val hasPostDetails = post.descendantIds.isNotEmpty() || !post.posterId.isNullOrBlank()
-                            Column(Modifier.fillMaxWidth()) {
-                                if (index > 0 && post.id == firstUnreadPostId) UnreadMarker()
-                                PostCell(
-                                    post = post,
-                                    original = post.id == allPosts.firstOrNull()?.id,
-                                    collapsed = post.branchPath in collapsed || post.id in collapsed,
-                                    wideWindow = wideWindow,
-                                    cardImageHeight = if (cardMode) cardImageHeight else null,
-                                    inlineImageHeight =
-                                        readerPostMediaHeight(
-                                            postImageWidth - ReaderSpace.gap * post.depth.coerceIn(0, MAX_REPLY_DEPTH),
-                                            viewportHeight,
-                                        ),
-                                    onToggleCollapse = onToggleCollapse,
-                                    onClick = onPostClick,
-                                    onMenu =
-                                        if (hasHideActions || hasPostDetails) {
-                                            { postMenu = it }
-                                        } else {
-                                            null
+                PostTextSelection {
+                    LazyColumn(
+                        state = if (showingPosts) state else filesState,
+                        modifier = Modifier.fillMaxSize().testTag(ThreadTags.LIST),
+                        verticalArrangement =
+                            if (cardMode) Arrangement.spacedBy(ORBIN_CATALOG_GAP) else Arrangement.Top,
+                        contentPadding =
+                            when {
+                                cardMode ->
+                                    PaddingValues(
+                                        top = ORBIN_CATALOG_GAP,
+                                        bottom = bottomInset() + ORBIN_CATALOG_GAP,
+                                    )
+                                showingPosts -> PaddingValues(bottom = bottomInset())
+                                else ->
+                                    PaddingValues(
+                                        start = ReaderSpace.albumPadding,
+                                        end = ReaderSpace.albumPadding,
+                                        top = ReaderSpace.albumPadding,
+                                        bottom = bottomInset() + ReaderSpace.albumPadding,
+                                    )
+                            },
+                    ) {
+                        item(key = THREAD_HEADER_KEY, contentType = THREAD_HEADER_KEY) {
+                            DisableSelection {
+                                if (!showingPosts) {
+                                    MediaFilterPills(
+                                        filter = mediaFilter,
+                                        images = files.count { it.kind == MediaKind.IMAGE },
+                                        videos = files.count { it.kind == MediaKind.VIDEO },
+                                        onChange = {
+                                            mediaFilter = it
+                                            onMediaFilterChange(it)
                                         },
-                                    onReveal = onRevealPost,
-                                    onShowId = { openDetail(it, true) },
-                                    onReplies = { openDetail(it, false) },
-                                    unreadReplies = post.descendantIds.count { it in unreadPostIds },
-                                    onReference = openReference,
-                                    body = body,
-                                    media = media,
-                                )
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        total = files.size,
+                                    )
+                                }
+                                if (!subtitle.isNullOrBlank()) {
+                                    Text(
+                                        text = subtitle,
+                                        style = OrbinType.meta.withReaderFont(),
+                                        color = colors.inkMuted,
+                                        modifier =
+                                            Modifier.fillMaxWidth().padding(
+                                                horizontal = ReaderSpace.gutter,
+                                                vertical = ReaderSpace.gapSmall,
+                                            ),
+                                    )
+                                }
                             }
                         }
-                        item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
-                            ThreadStatus(
-                                replies = maxOf(0, displayedPosts.distinctBy { it.id }.size - 1),
-                                fileCount = displayedPosts.distinctBy { it.id }.sumOf { it.mediaCount },
-                                statusText = statusText,
-                            )
-                        }
-                    } else {
-                        items(
-                            fileRows,
-                            key = { row -> row.joinToString(separator = "|") { it.id } },
-                            contentType = { ThreadLayout.FILES },
-                        ) { rowOfFiles ->
-                            FileRow(rowOfFiles, fileColumns, onOpenFile, fileTile)
+                        if (showingPosts) {
+                            itemsIndexed(displayedPosts, key = {
+                                _,
+                                post,
+                                ->
+                                post.stableKey
+                            }, contentType = { _, _ -> layout }) {
+                                index,
+                                post,
+                                ->
+                                val hasHideActions =
+                                    onHidePost != null || onHidePosterId != null || onAddPostFilter != null
+                                val hasPostDetails = post.descendantIds.isNotEmpty() || !post.posterId.isNullOrBlank()
+                                Column(Modifier.fillMaxWidth()) {
+                                    if (index > 0 && post.id == firstUnreadPostId) DisableSelection { UnreadMarker() }
+                                    PostCell(
+                                        post = post,
+                                        original = post.id == allPosts.firstOrNull()?.id,
+                                        collapsed = post.branchPath in collapsed || post.id in collapsed,
+                                        wideWindow = wideWindow,
+                                        cardImageHeight = if (cardMode) cardImageHeight else null,
+                                        inlineImageHeight =
+                                            readerPostMediaHeight(
+                                                postImageWidth -
+                                                    ReaderSpace.gap * post.depth.coerceIn(0, MAX_REPLY_DEPTH),
+                                                viewportHeight,
+                                            ),
+                                        onToggleCollapse = onToggleCollapse,
+                                        onClick = onPostClick,
+                                        onMenu =
+                                            if (hasHideActions || hasPostDetails) {
+                                                { postMenu = it }
+                                            } else {
+                                                null
+                                            },
+                                        onReveal = onRevealPost,
+                                        onShowId = { openDetail(it, true) },
+                                        onReplies = { openDetail(it, false) },
+                                        unreadReplies = post.descendantIds.count { it in unreadPostIds },
+                                        onReference = openReference,
+                                        body = body,
+                                        media = media,
+                                    )
+                                }
+                            }
+                            item(key = THREAD_STATUS_KEY, contentType = THREAD_STATUS_KEY) {
+                                DisableSelection {
+                                    ThreadStatus(
+                                        replies = maxOf(0, displayedPosts.distinctBy { it.id }.size - 1),
+                                        fileCount = displayedPosts.distinctBy { it.id }.sumOf { it.mediaCount },
+                                        statusText = statusText,
+                                    )
+                                }
+                            }
+                        } else {
+                            items(
+                                fileRows,
+                                key = { row -> row.joinToString(separator = "|") { it.id } },
+                                contentType = { ThreadLayout.FILES },
+                            ) { rowOfFiles ->
+                                DisableSelection { FileRow(rowOfFiles, fileColumns, onOpenFile, fileTile) }
+                            }
                         }
                     }
                 }
@@ -1036,17 +1048,19 @@ private fun PostCell(
                 ).padding(start = 14.dp + indent, end = 14.dp, top = 12.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(post.number, style = detailStyle, color = colors.inkMuted)
-            Text(
-                post.hiddenReason ?: "Reply shown in another branch",
-                style = bodyStyle,
-                color = colors.inkMuted,
-                modifier = Modifier.testTag("thread-placeholder:${post.branchPath}"),
-            )
-            if (post.hiddenReason != null && onReveal != null) OrbinTextButton("Reveal post", { onReveal(post) })
-            if (post.preview && onReference != null) OrbinTextButton("Go to full post", { onReference(post.id) })
-            if (post.replies > 0) Text("${post.replies} replies", style = detailStyle, color = colors.accent)
-            if (unreadReplies > 0) Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+            DisableSelection {
+                Text(post.number, style = detailStyle, color = colors.inkMuted)
+                Text(
+                    post.hiddenReason ?: "Reply shown in another branch",
+                    style = bodyStyle,
+                    color = colors.inkMuted,
+                    modifier = Modifier.testTag("thread-placeholder:${post.branchPath}"),
+                )
+                if (post.hiddenReason != null && onReveal != null) OrbinTextButton("Reveal post", { onReveal(post) })
+                if (post.preview && onReference != null) OrbinTextButton("Go to full post", { onReference(post.id) })
+                if (post.replies > 0) Text("${post.replies} replies", style = detailStyle, color = colors.accent)
+                if (unreadReplies > 0) Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+            }
         }
         return
     }
@@ -1074,22 +1088,26 @@ private fun PostCell(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle, onShowId)
-                    if (collapsed &&
-                        unreadReplies > 0
-                    ) {
-                        Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+                    DisableSelection {
+                        PostHeader(post, original, collapsed, onToggleCollapse, detailStyle, onShowId)
+                        if (collapsed &&
+                            unreadReplies > 0
+                        ) {
+                            Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+                        }
                     }
                     if (!collapsed) {
                         PostBody(post, body)
-                        if (showThumbnail) {
-                            PostThumbnail(post, media, Modifier.fillMaxWidth().height(cardImageHeight))
-                        }
-                        PostReplies(post, onReference)
-                        if (post.descendantIds.isNotEmpty() &&
-                            onReplies != null
-                        ) {
-                            OrbinTextButton("${post.replies} replies", { onReplies(post) })
+                        DisableSelection {
+                            if (showThumbnail) {
+                                PostThumbnail(post, media, Modifier.fillMaxWidth().height(cardImageHeight))
+                            }
+                            PostReplies(post, onReference)
+                            if (post.descendantIds.isNotEmpty() &&
+                                onReplies != null
+                            ) {
+                                OrbinTextButton("${post.replies} replies", { onReplies(post) })
+                            }
                         }
                     }
                 }
@@ -1120,22 +1138,26 @@ private fun PostCell(
                         }.padding(start = 14.dp + indent, end = 14.dp, top = 11.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    PostHeader(post, original, collapsed, onToggleCollapse, detailStyle, onShowId)
-                    if (collapsed &&
-                        unreadReplies > 0
-                    ) {
-                        Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+                    DisableSelection {
+                        PostHeader(post, original, collapsed, onToggleCollapse, detailStyle, onShowId)
+                        if (collapsed &&
+                            unreadReplies > 0
+                        ) {
+                            Text("$unreadReplies unread replies", style = detailStyle, color = colors.accent)
+                        }
                     }
                     if (!collapsed) {
                         PostBody(post, body)
-                        if (showThumbnail) {
-                            PostThumbnail(post, media, Modifier.fillMaxWidth().height(inlineImageHeight))
-                        }
-                        PostReplies(post, onReference)
-                        if (post.descendantIds.isNotEmpty() &&
-                            onReplies != null
-                        ) {
-                            OrbinTextButton("${post.replies} replies", { onReplies(post) })
+                        DisableSelection {
+                            if (showThumbnail) {
+                                PostThumbnail(post, media, Modifier.fillMaxWidth().height(inlineImageHeight))
+                            }
+                            PostReplies(post, onReference)
+                            if (post.descendantIds.isNotEmpty() &&
+                                onReplies != null
+                            ) {
+                                OrbinTextButton("${post.replies} replies", { onReplies(post) })
+                            }
                         }
                     }
                 }
@@ -1330,12 +1352,12 @@ private fun PostBody(
                     .padding(horizontal = ReaderSpace.gap),
             contentAlignment = Alignment.CenterStart,
         ) {
-            Text(text = revealLabel, style = OrbinType.label.withReaderFont(), color = colors.ink)
+            DisableSelection { Text(text = revealLabel, style = OrbinType.label.withReaderFont(), color = colors.ink) }
         }
     } else if (body != null) {
         ProvideTextStyle(LocalReaderPostBodyStyle.current.copy(color = colors.ink)) { body(post) }
     } else {
-        Text(text = post.body, style = LocalReaderPostBodyStyle.current, color = colors.ink)
+        DisableSelection { Text(text = post.body, style = LocalReaderPostBodyStyle.current, color = colors.ink) }
     }
 }
 
@@ -1377,6 +1399,19 @@ private fun PostReplies(
             color = colors.inkMuted,
             modifier = modifier,
         )
+    }
+}
+
+/**
+ * One selection container for the whole thread list, rather than one around every post body: a
+ * per-post container was built again for each row that scrolled into view. Rich comments inside
+ * render plain text and are selected through this one; everything else in a row opts out with
+ * [DisableSelection], so a long press there still opens the post menu.
+ */
+@Composable
+private fun PostTextSelection(content: @Composable () -> Unit) {
+    SelectionContainer(Modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalPostTextSelectionHoisted provides true, content = content)
     }
 }
 
