@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.exoplayer.ExoPlayer
 import com.orbin.app.R
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.InlineStyle
@@ -53,7 +54,9 @@ import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
 import com.orbin.media.video.VideoPlayer
+import com.orbin.media.video.rememberInlineVideoPlayerPool
 import com.orbin.uinext.components.FeedRow
+import com.orbin.uinext.components.InlinePlayerPool
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.ReaderTwoPane
 import com.orbin.uinext.components.ThreadInlineMediaFrame
@@ -136,6 +139,7 @@ private fun ReaderBenchmarkFixture(
     val catalogState = rememberLazyGridState()
     val threadState = rememberLazyListState()
     val inlineMedia = rememberThreadInlineMediaState("benchmark/bench/1")
+    val inlinePlayers = rememberInlineVideoPlayerPool("benchmark/bench/1")
     var selected by remember { mutableStateOf<FeedRow?>(null) }
     BackHandler(enabled = journey == "two-pane" && selected != null) { selected = null }
     val painter = painterResource(R.drawable.reader_benchmark_thumbnail)
@@ -229,7 +233,13 @@ private fun ReaderBenchmarkFixture(
                             ?.attachments
                             ?.firstOrNull()
                     if (attachment?.type == MediaType.VIDEO) {
-                        BenchmarkInlineVideo("benchmark/bench/1/${row.stableKey}", inlineMedia, modifier, thumbnail)
+                        BenchmarkInlineVideo(
+                            "benchmark/bench/1/${row.stableKey}",
+                            inlineMedia,
+                            inlinePlayers,
+                            modifier,
+                            thumbnail,
+                        )
                     } else {
                         thumbnail(modifier)
                     }
@@ -274,12 +284,14 @@ private fun ReaderBenchmarkFixture(
 /**
  * An inline thread video as the thread screen shows one: elected by [ThreadInlineMediaFrame] (one
  * plays, after the settle) and played muted and looping by the production [VideoPlayer], from a
- * small local clip so the measurement does not depend on the network.
+ * small local clip so the measurement does not depend on the network. Players come from the
+ * screen's pool, as in NextThreadScreen.
  */
 @Composable
 private fun BenchmarkInlineVideo(
     id: String,
     state: ThreadInlineMediaState,
+    players: InlinePlayerPool<ExoPlayer>,
     modifier: Modifier,
     thumbnail: @Composable (Modifier) -> Unit,
 ) {
@@ -296,6 +308,7 @@ private fun BenchmarkInlineVideo(
                 active = true,
                 loop = true,
                 feedMode = true,
+                playerPool = players,
             )
         }
     }
