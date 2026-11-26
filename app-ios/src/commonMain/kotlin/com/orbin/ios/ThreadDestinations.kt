@@ -340,6 +340,21 @@ internal fun ThreadContent(
         updateMemory { it.copy(foldedPaths = it.foldedPaths - row.ancestorPaths.toSet() - row.branchPath) }
     }
     val byId = presentation.rowsById
+    // The memory re-emits each time the reading position is saved (180ms after every scroll) and
+    // whenever posts are marked read. Both values walk every post, so they are kept per change of
+    // what has been read rather than recomputed on the main thread at each of those emissions.
+    val unreadPostIds =
+        remember(presentation, memory.seenPostIds) {
+            presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() }
+        }
+    val firstUnreadPostId =
+        remember(presentation, memory.seenPostIds) {
+            presentation.thread.replies
+                .firstOrNull { it.id.value !in memory.seenPostIds }
+                ?.id
+                ?.value
+                ?.toString()
+        }
     val boardLabel = "/${thread.key.board.value}/"
     val visibleOwners =
         remember(posts, memory.foldedPaths) {
@@ -588,7 +603,7 @@ internal fun ThreadContent(
                 }
                 onAllRead()
             },
-            unreadPostIds = presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() },
+            unreadPostIds = unreadPostIds,
             subtitle = statusText,
             statusText = statusText,
             reloading = refreshing,
@@ -631,13 +646,7 @@ internal fun ThreadContent(
             onDownloadAll = downloadVisibleFiles,
             onSavePage = onSavePage,
             onShare = onShare,
-            firstUnreadPostId =
-                presentation.thread.replies
-                    .firstOrNull {
-                        it.id.value !in memory.seenPostIds
-                    }?.id
-                    ?.value
-                    ?.toString(),
+            firstUnreadPostId = firstUnreadPostId,
             scrollToPostId = scrollTarget,
             onScrollConsumed = { scrollTarget = null },
             body = { post ->

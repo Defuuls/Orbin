@@ -55,10 +55,13 @@ class ThreadInlineMediaVisibilityTest {
                 }
             }
         }
+        // A player is built once its tile has held the election briefly, not mid-scroll.
+        compose.mainClock.advanceTimeBy(THREAD_INLINE_MEDIA_SETTLE_MILLIS)
         compose.onAllNodesWithTag("player-first").assertCountEquals(1)
         compose.onAllNodesWithTag("player-second").assertCountEquals(0)
         compose.onAllNodesWithTag("player-offscreen").assertCountEquals(0)
         compose.onNodeWithTag("tile-second").performScrollTo()
+        compose.mainClock.advanceTimeBy(THREAD_INLINE_MEDIA_SETTLE_MILLIS)
         compose.onAllNodesWithTag("player-first").assertCountEquals(0)
         compose.onAllNodesWithTag("player-second").assertCountEquals(1)
         compose.runOnIdle { foreground = false }

@@ -411,6 +411,13 @@ private fun LoadedThread(
     }
 
     val collapsedSet = memory.foldedPaths
+    // The memory re-emits whenever posts are marked read, and this screen also recomposes each time
+    // the reading position is saved, both of which happen as the reader scrolls. Recomputing the
+    // unread set at every one of those passes walked every post on the main thread.
+    val unreadPostIds =
+        remember(presentation, memory.seenPostIds) {
+            presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() }
+        }
 
     NextPullToRefresh(
         isRefreshing = isRefreshing,
@@ -431,7 +438,7 @@ private fun LoadedThread(
                 onRevealPost = { it.id.toLongOrNull()?.let(viewModel::revealPost) },
                 onVisiblePosts = viewModel::markVisible,
                 onMarkAllRead = viewModel::markAllRead,
-                unreadPostIds = presentation.unseenPostIds(memory.seenPostIds).mapTo(mutableSetOf()) { it.toString() },
+                unreadPostIds = unreadPostIds,
                 onMediaFilterChange = { mediaFilter = it },
                 onAddPostFilter = { post, target ->
                     val pattern =
