@@ -362,7 +362,7 @@ private fun readerFixtureThread(media: Boolean): Thread {
                                     InlineStyle.SPOILER,
                                     persistentListOf(PostNode.Text("Hidden fixture text")),
                                 ),
-                            ).addAll(if (media) longReply(index) else persistentListOf()),
+                            ).addingAll(if (media) longReply(index) else persistentListOf()),
                     ),
                 repliesTo = if (index > 0) persistentListOf(previous) else persistentListOf(),
                 attachments =
