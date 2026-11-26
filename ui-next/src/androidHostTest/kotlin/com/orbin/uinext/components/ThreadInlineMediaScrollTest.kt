@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
@@ -33,6 +34,7 @@ class ThreadInlineMediaScrollTest {
     private lateinit var scroll: ScrollState
     private lateinit var mediaState: ThreadInlineMediaState
     private val compositions = mutableMapOf<String, Int>()
+    private val frameCompositions = mutableMapOf<String, Int>()
 
     /** Lays out the moved tiles, then gives the election two frames to recompose. */
     private fun settleLayout() {
@@ -59,7 +61,16 @@ class ThreadInlineMediaScrollTest {
                         state,
                         id,
                         enabled = true,
-                        modifier = Modifier.fillMaxWidth().height(250.dp).testTag("tile-$id"),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(250.dp)
+                                .testTag("tile-$id")
+                                // Materialized by the frame's own Box, so this counts each time the frame recomposes.
+                                .composed {
+                                    SideEffect { frameCompositions[id] = (frameCompositions[id] ?: 0) + 1 }
+                                    Modifier
+                                },
                     ) { active ->
                         SideEffect { compositions[id] = (compositions[id] ?: 0) + 1 }
                         if (active) Box(Modifier.fillMaxSize().testTag("player-$id"))
@@ -75,13 +86,15 @@ class ThreadInlineMediaScrollTest {
         compose.mainClock.advanceTimeBy(THREAD_INLINE_MEDIA_SETTLE_MILLIS)
         compose.onAllNodesWithTag("player-first").assertCountEquals(1)
         val before = compositions.toMap()
+        val framesBefore = frameCompositions.toMap()
         // Ten small scroll frames: every tile moves and reports new bounds, the owner stays.
         repeat(10) {
             compose.runOnIdle { scroll.dispatchRawDelta(2f) }
             compose.waitForIdle()
         }
         compose.onAllNodesWithTag("player-first").assertCountEquals(1)
-        assertEquals("Scroll frames must not recompose media tiles", before, compositions.toMap())
+        assertEquals("Scroll frames must not recompose the tiles' frames", framesBefore, frameCompositions.toMap())
+        assertEquals("Scroll frames must not recompose the tiles' content", before, compositions.toMap())
     }
 
     @Test
