@@ -46,6 +46,7 @@ import com.orbin.core.reader.readerRows
 import com.orbin.core.reader.readerThreadStatus
 import com.orbin.core.reader.unseenPostIds
 import com.orbin.media.image.MediaThumbnail
+import com.orbin.media.video.rememberInlineVideoPlayerPool
 import com.orbin.uinext.components.MessageScreen
 import com.orbin.uinext.components.NextConfirmDialog
 import com.orbin.uinext.components.NextPullToRefresh
@@ -279,6 +280,8 @@ private fun LoadedThread(
         }
 
     val inlineMedia = rememberThreadInlineMediaState(thread.key.toString())
+    // Inline videos hand one player along as playback moves down the thread.
+    val inlinePlayers = rememberInlineVideoPlayerPool(thread.key.toString())
     var scrollTarget by remember(thread.key) { mutableStateOf<String?>(null) }
     var downloadSheet by rememberSaveable(thread.key) { mutableStateOf(false) }
     var pendingPublicDownload by rememberSaveable(thread.key) { mutableStateOf<Boolean?>(null) }
@@ -537,6 +540,7 @@ private fun LoadedThread(
                             playback = preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board),
                             onOpenFullscreen = { presentation.firstMediaIndex(row.id)?.let(::openMedia) },
                             modifier = tileModifier,
+                            playerPool = inlinePlayers,
                             fullResolution =
                                 shouldLoadSharpPreview(
                                     modeWantsSharp = true,

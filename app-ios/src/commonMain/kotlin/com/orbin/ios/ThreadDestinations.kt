@@ -392,6 +392,8 @@ internal fun ThreadContent(
     }
     val listState = rememberLazyListState()
     val inlineMedia = rememberThreadInlineMediaState(thread.key.toString())
+    // Inline videos hand one player along as playback moves down the thread.
+    val inlinePlayers = rememberInlineNativePlayers(thread.key.toString())
     var restored by remember(thread.key) { mutableStateOf(false) }
     var requestedPostUnavailable by remember(thread.key) { mutableStateOf(false) }
     LaunchedEffect(initialMemory, posts, initialPostId) {
@@ -671,6 +673,7 @@ internal fun ThreadContent(
                         playback = preferences.playbackPreferences.resolve(thread.key.provider, thread.key.board),
                         onOpenFullscreen = { presentation.firstMediaIndex(post.id)?.let(::openFile) },
                         modifier = modifier,
+                        players = inlinePlayers,
                     )
                 }
             },

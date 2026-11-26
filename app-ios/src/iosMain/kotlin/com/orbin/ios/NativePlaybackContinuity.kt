@@ -83,16 +83,21 @@ internal object NativePlaybackContinuity {
         return retained.second
     }
 
+    /**
+     * Keeps [player] for the viewer when it asked for [url]; otherwise it is done with, and goes
+     * to [recycle] (an inline tile's pool) or is released.
+     */
     fun retain(
         url: String,
         player: AVPlayer,
         bookmark: PlaybackBookmark,
+        recycle: ((AVPlayer) -> Unit)? = null,
     ) {
         remember(url, bookmark)
         player.pause()
         // Local library staging is removed by its owner immediately on dismissal.
         if (!requested.remove(url) || "/Orbin/MediaExport/" in url || url.startsWith("data:")) {
-            release(player)
+            if (recycle != null) recycle(player) else release(player)
             return
         }
         nativeExpiry?.cancel()
@@ -152,7 +157,7 @@ internal object NativePlaybackContinuity {
         requested.clear()
     }
 
-    private fun release(player: AVPlayer) {
+    fun release(player: AVPlayer) {
         player.pause()
         player.currentItem?.asset?.cancelLoading()
         player.replaceCurrentItemWithPlayerItem(null)

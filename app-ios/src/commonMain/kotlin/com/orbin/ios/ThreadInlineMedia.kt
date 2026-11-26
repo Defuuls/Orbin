@@ -32,6 +32,7 @@ internal fun ThreadInlineMedia(
     playback: PlaybackSettings,
     onOpenFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    players: InlineNativePlayers? = null,
 ) {
     val source = safeExternalLink(attachment.sourceUrl)
     val playable =
@@ -70,17 +71,19 @@ internal fun ThreadInlineMedia(
                         onMuteIntentChange = { muted = it },
                     )
                 } else {
-                    NativePlayer(
-                        playableUrl,
-                        active = true,
-                        loop = playback.loopVideos,
-                        Modifier.fillMaxSize(),
-                        autoPlay = requested,
-                        initiallyMuted = muted,
-                        feedMode = true,
-                        onPlayIntentChange = { requested = it },
-                        onMuteIntentChange = { muted = it },
-                    )
+                    ProvideInlineNativePlayers(players) {
+                        NativePlayer(
+                            playableUrl,
+                            active = true,
+                            loop = playback.loopVideos,
+                            Modifier.fillMaxSize(),
+                            autoPlay = requested,
+                            initiallyMuted = muted,
+                            feedMode = true,
+                            onPlayIntentChange = { requested = it },
+                            onMuteIntentChange = { muted = it },
+                        )
+                    }
                 }
             }
         } else {

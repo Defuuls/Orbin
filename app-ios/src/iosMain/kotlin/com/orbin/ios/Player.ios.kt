@@ -29,7 +29,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryAmbient
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
-import platform.AVFoundation.AVPlayer
 import platform.AVFoundation.AVPlayerItemDidPlayToEndTimeNotification
 import platform.AVFoundation.AVPlayerItemStatusReadyToPlay
 import platform.AVFoundation.AVPlayerItemStatusUnknown
@@ -96,10 +95,12 @@ internal actual fun NativePlayer(
     }
     val handoff = remember(url, preloader) { NativePlaybackContinuity.takeNative(url) }
     val bookmark = remember(url, preloader) { handoff?.bookmark ?: NativePlaybackContinuity.bookmark(url) }
+    // Inline thread tiles share their screen's players; elsewhere this is null and each is new.
+    val inlinePlayers = LocalInlineAVPlayers.current
     val player =
         remember(url, preloader) {
             handoff?.player ?: preloader?.takeNative(url)
-                ?: NSURL.URLWithString(url)?.let { AVPlayer(uRL = it).apply { muted = initiallyMuted } }
+                ?: NSURL.URLWithString(url)?.let { inlinePlayers.playerFor(it).apply { muted = initiallyMuted } }
         } ?: return
     val controller =
         remember {
@@ -187,6 +188,7 @@ internal actual fun NativePlayer(
                 url,
                 player,
                 PlaybackBookmark(seconds(player.currentTime()), playRequested, muted),
+                recycle = inlinePlayers?.let { pool -> pool::recycle },
             )
             reportReady?.invoke(false)
         }
