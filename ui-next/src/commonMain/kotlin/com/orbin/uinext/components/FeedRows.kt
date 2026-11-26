@@ -263,6 +263,7 @@ internal fun FeedGridCell(
                         MediaTile(modifier = Modifier.matchParentSize(), seed = seed, radius = 0.dp)
                     }
                     if (row.mediaLabel.isNotBlank()) {
+                        val clipLabel = LocalClipShapedRowFills.current
                         Text(
                             row.mediaLabel,
                             style = OrbinType.caption1,
@@ -271,7 +272,7 @@ internal fun FeedGridCell(
                                 Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(8.dp)
-                                    .background(next.background.copy(alpha = 0.9f), MEDIA_LABEL_SHAPE)
+                                    .rowFill(next.background.copy(alpha = 0.9f), MEDIA_LABEL_SHAPE, clipLabel)
                                     .padding(horizontal = 6.dp, vertical = 3.dp),
                         )
                     }
@@ -393,7 +394,7 @@ private const val MAX_TILE_ASPECT = 3f
 private const val UNIFORM_TILE_ASPECT = 4f / 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
 
-/** The media label's corners, painted with its fill: no clip layer per scrolled row. */
+/** The media label's corners: clipped on Android, painted with the fill on iOS ([rowFill]). */
 private val MEDIA_LABEL_SHAPE = RoundedCornerShape(OrbinRadius.small)
 
 @Composable

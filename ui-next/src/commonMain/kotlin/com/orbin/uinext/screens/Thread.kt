@@ -73,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.orbin.uinext.components.LocalClipShapedRowFills
 import com.orbin.uinext.components.LocalReaderInputState
 import com.orbin.uinext.components.LocalReaderPostBodyStyle
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
@@ -100,6 +101,7 @@ import com.orbin.uinext.components.reader
 import com.orbin.uinext.components.readerBackSwipe
 import com.orbin.uinext.components.readerKeyboardShortcuts
 import com.orbin.uinext.components.rememberScrollJumpTarget
+import com.orbin.uinext.components.rowFill
 import com.orbin.uinext.components.sourceLabel
 import com.orbin.uinext.components.withReaderFont
 import com.orbin.uinext.resources.Res
@@ -1184,6 +1186,7 @@ private fun PostThumbnail(
         }
         if (post.mediaCount > 1) {
             val badgeShape = RoundedCornerShape(topStart = 6.dp)
+            val clipBadge = LocalClipShapedRowFills.current
             Text(
                 text = stringResource(Res.string.reader_media_more, post.mediaCount - 1),
                 style = OrbinType.meta.withReaderFont().copy(textDirection = TextDirection.Ltr),
@@ -1191,8 +1194,7 @@ private fun PostThumbnail(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        // Shaped fill rather than a clip: no graphics layer per post with files.
-                        .background(colors.surfaceVariant, badgeShape)
+                        .rowFill(colors.surfaceVariant, badgeShape, clipBadge)
                         .border(ReaderSize.hairline, colors.hairline, badgeShape)
                         .padding(horizontal = ReaderSpace.line),
             )

@@ -415,8 +415,7 @@ fun MediaTile(
     Box(
         modifier =
             modifier
-                // A shaped fill rather than a clip: the badge sits inside, so no layer is needed.
-                .background(placeholderArt(seed), RoundedCornerShape(radius)),
+                .rowFill(placeholderArt(seed), RoundedCornerShape(radius), LocalClipShapedRowFills.current),
         contentAlignment = Alignment.BottomStart,
     ) {
         if (badge != null) {
