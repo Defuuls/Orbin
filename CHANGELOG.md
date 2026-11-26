@@ -6,6 +6,20 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [220-Ametrine] - 2026-11-26
+
+### Performance
+- A thread now uses one text-selection container for the whole post list instead of one per post. Selection can span several posts, and copying still works after the selected post scrolls off screen.
+- Inline video players are reused across a thread instead of creating a new one for each video.
+- Video tiles in a thread no longer redraw on every scroll frame, and a video starts about 0.15 seconds after you stop on it.
+- List-row pills, badges and placeholders on iPhone and iPad no longer use clip layers, which cuts the offscreen layers per screen substantially (the catalog grid goes from 108 to 38). Android drawing is unchanged.
+- Recorded a fresh Android startup profile.
+
+### Testing
+- The thread scroll benchmark now uses long, selectable posts and inline videos, so thread-scrolling changes can be measured against the content they affect.
+- Added a test that selecting text in a thread, scrolling, and copying does not crash and puts the expected text on the clipboard.
+
+
 ### Performance
 - On iPhone and iPad, catalog grids, cards and lists and thread posts draw with fewer offscreen layers while scrolling: label pills, media badges and placeholder tiles paint their rounded fill directly instead of clipping. Android draws them as before. Placeholder gradients are now built once on both. Nothing looks different.
 
@@ -3306,7 +3320,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v219-Amethyst...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v220-Ametrine...HEAD
+[220-Ametrine]: https://github.com/Defuuls/Orbin/compare/v219-Amethyst...v220-Ametrine
 [219-Amethyst]: https://github.com/Defuuls/Orbin/compare/v218-Amblygonite...v219-Amethyst
 [218-Amblygonite]: https://github.com/Defuuls/Orbin/compare/v217-Amber...v218-Amblygonite
 [217-Amber]: https://github.com/Defuuls/Orbin/compare/v216-Amazonite...v217-Amber
