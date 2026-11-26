@@ -23,6 +23,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -51,9 +52,13 @@ import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
+import com.orbin.media.video.VideoPlayer
 import com.orbin.uinext.components.FeedRow
 import com.orbin.uinext.components.NextTheme
 import com.orbin.uinext.components.ReaderTwoPane
+import com.orbin.uinext.components.ThreadInlineMediaFrame
+import com.orbin.uinext.components.ThreadInlineMediaState
+import com.orbin.uinext.components.rememberThreadInlineMediaState
 import com.orbin.uinext.screens.BoardScreen
 import com.orbin.uinext.screens.BoardScreenActions
 import com.orbin.uinext.screens.BoardScreenState
@@ -85,7 +90,7 @@ class ReaderBenchmarkActivity : ComponentActivity() {
             val data =
                 withContext(Dispatchers.Default) {
                     counters.modelBuilds += 1
-                    readerFixtureData()
+                    readerFixtureData(media = journey == THREAD)
                 }
             setContent { NextTheme(darkTheme = false) { ReaderBenchmarkFixture(journey, data, counters) } }
         }
@@ -94,7 +99,8 @@ class ReaderBenchmarkActivity : ComponentActivity() {
     private companion object {
         const val JOURNEY_EXTRA = "readerJourney"
         const val CATALOG_LIST = "catalog-list"
-        val JOURNEYS = setOf(CATALOG_LIST, "catalog-grid", "catalog-card", "home-feed", "thread", "files", "two-pane")
+        const val THREAD = "thread"
+        val JOURNEYS = setOf(CATALOG_LIST, "catalog-grid", "catalog-card", "home-feed", THREAD, "files", "two-pane")
     }
 }
 
@@ -129,6 +135,7 @@ private fun ReaderBenchmarkFixture(
     val density = LocalDensity.current
     val catalogState = rememberLazyGridState()
     val threadState = rememberLazyListState()
+    val inlineMedia = rememberThreadInlineMediaState("benchmark/bench/1")
     var selected by remember { mutableStateOf<FeedRow?>(null) }
     BackHandler(enabled = journey == "two-pane" && selected != null) { selected = null }
     val painter = painterResource(R.drawable.reader_benchmark_thumbnail)
@@ -215,7 +222,18 @@ private fun ReaderBenchmarkFixture(
                     } else {
                         null
                     },
-                media = { _, modifier -> thumbnail(modifier) },
+                media = { row, modifier ->
+                    val attachment =
+                        data.thread.rowsById[row.id]
+                            ?.post
+                            ?.attachments
+                            ?.firstOrNull()
+                    if (attachment?.type == MediaType.VIDEO) {
+                        BenchmarkInlineVideo("benchmark/bench/1/${row.stableKey}", inlineMedia, modifier, thumbnail)
+                    } else {
+                        thumbnail(modifier)
+                    }
+                },
                 fileTile = { cell, modifier -> thumbnail(modifier.semantics { contentDescription = cell.id }) },
                 body = { post -> ReaderPostComment(data.thread.rowsById.getValue(post.id)) },
                 wideWindow = wide,
@@ -253,7 +271,37 @@ private fun ReaderBenchmarkFixture(
     }
 }
 
-private suspend fun readerFixtureData(): ReaderFixtureData =
+/**
+ * An inline thread video as the thread screen shows one: elected by [ThreadInlineMediaFrame] (one
+ * plays, after the settle) and played muted and looping by the production [VideoPlayer], from a
+ * small local clip so the measurement does not depend on the network.
+ */
+@Composable
+private fun BenchmarkInlineVideo(
+    id: String,
+    state: ThreadInlineMediaState,
+    modifier: Modifier,
+    thumbnail: @Composable (Modifier) -> Unit,
+) {
+    val context = LocalContext.current
+    val url = remember(context) { "android.resource://${context.packageName}/${R.raw.reader_benchmark_video}" }
+    ThreadInlineMediaFrame(state, id, enabled = true, modifier = modifier) { active ->
+        thumbnail(Modifier.fillMaxSize())
+        if (active) {
+            VideoPlayer(
+                url,
+                Modifier.fillMaxSize(),
+                autoPlay = true,
+                muted = true,
+                active = true,
+                loop = true,
+                feedMode = true,
+            )
+        }
+    }
+}
+
+private suspend fun readerFixtureData(media: Boolean): ReaderFixtureData =
     ReaderFixtureData(
         rows =
             List(FIXTURE_ITEMS) { index ->
@@ -271,10 +319,15 @@ private suspend fun readerFixtureData(): ReaderFixtureData =
                     hasPreview = true,
                 )
             },
-        thread = readerFixtureThread().preparePresentation(nowMillis = FIXTURE_TIME_MILLIS),
+        thread = readerFixtureThread(media).preparePresentation(nowMillis = FIXTURE_TIME_MILLIS),
     )
 
-private fun readerFixtureThread(): Thread {
+/**
+ * With [media] (the thread journey), every post is a long, selectable rich comment and every
+ * [VIDEO_INTERVAL]th post carries an inline video, so scrolling measures text selection and
+ * inline players as a real thread does. The files and two-pane journeys keep the short posts.
+ */
+private fun readerFixtureThread(media: Boolean): Thread {
     val key = ThreadKey(ProviderId("benchmark"), BoardId("bench"), ThreadId(1))
     val posts =
         List(FIXTURE_ITEMS) { index ->
@@ -309,16 +362,23 @@ private fun readerFixtureThread(): Thread {
                                     InlineStyle.SPOILER,
                                     persistentListOf(PostNode.Text("Hidden fixture text")),
                                 ),
-                            ),
+                            ).addingAll(if (media) longReply(index) else persistentListOf()),
                     ),
                 repliesTo = if (index > 0) persistentListOf(previous) else persistentListOf(),
                 attachments =
                     persistentListOf(
                         MediaAttachment(
                             id = "file-$index",
-                            originalFileName = "thumbnail.png",
-                            extension = "png",
-                            type = MediaType.IMAGE,
+                            originalFileName =
+                                if (media &&
+                                    index % VIDEO_INTERVAL == 1
+                                ) {
+                                    "clip.mp4"
+                                } else {
+                                    "thumbnail.png"
+                                },
+                            extension = if (media && index % VIDEO_INTERVAL == 1) "mp4" else "png",
+                            type = if (media && index % VIDEO_INTERVAL == 1) MediaType.VIDEO else MediaType.IMAGE,
                             sourceUrl = "https://example.invalid/unused-original",
                             thumbnailUrl = "https://example.invalid/unused-thumbnail",
                             sizeBytes = FIXTURE_FILE_BYTES,
@@ -334,7 +394,34 @@ private fun readerFixtureThread(): Thread {
     )
 }
 
+/** Several paragraphs, the length of a long reply, after the short fixture comment. */
+private fun longReply(index: Int) =
+    persistentListOf(
+        PostNode.LineBreak,
+        PostNode.LineBreak,
+        PostNode.Text(
+            "Long benchmark reply ${index + 1}. A reader post that runs over several lines, the way long " +
+                "thread replies do, so each row lays out and measures a tall block of selectable text " +
+                "while the thread scrolls past it.",
+        ),
+        PostNode.LineBreak,
+        PostNode.Styled(
+            InlineStyle.GREENTEXT,
+            persistentListOf(PostNode.Text(">A quoted line from the post it answers, kept green.")),
+        ),
+        PostNode.LineBreak,
+        PostNode.Text(
+            "A second paragraph adds the rest: some detail, a ",
+        ),
+        PostNode.Styled(InlineStyle.BOLD, persistentListOf(PostNode.Text("bold aside"))),
+        PostNode.Text(
+            ", and a closing thought that wraps onto another line or two on a phone-width screen " +
+                "before the post ends.",
+        ),
+    )
+
 private const val FIXTURE_ITEMS = 200
+private const val VIDEO_INTERVAL = 3
 private const val READ_INTERVAL = 3
 private const val UNREAD_INTERVAL = 5
 private const val FIXTURE_TIME_MILLIS = 1_700_000_000_000L
