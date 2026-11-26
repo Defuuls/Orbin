@@ -1,26 +1,27 @@
-# Orbin 219 - Amethyst
+# Orbin 220 - Ametrine
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 219
-codename = "Amethyst"
-version_code = 237
+number = 220
+codename = "Ametrine"
+version_code = 238
 
-highlight = "Updated build and test dependencies, and more reliable builds."
+highlight = "Smoother thread scrolling, and cheaper drawing on iPhone and iPad."
 
 summary = [
-  "bump Orbin to 219-Amethyst / versionCode 237",
-  "update the Android Gradle plugin to 9.5.2, KSP to 2.3.14 and kotlinx-serialization to 1.13.0",
-  "download build dependencies from Google's Maven Central mirror first",
+  "bump Orbin to 220-Ametrine / versionCode 238",
+  "use one text-selection container for a whole thread, and reuse inline video players",
+  "draw list rows with fewer layers on iPhone and iPad",
 ]
 
 [changelog]
-Dependencies = [
-  "Updated the Android Gradle plugin to 9.5.2, KSP to 2.3.14, kotlinx-serialization to 1.13.0 and Gradle to 9.9.1.",
-  "Updated the test tooling: Robolectric 4.18 and Roborazzi 1.79.0.",
-]
-Reliability = [
-  "Builds download dependencies from Google's mirror of Maven Central first, so Maven Central rate limits no longer fail them.",
+Performance = [
+  "A thread now uses one text-selection container for the whole post list instead of one per post. Selection can span several posts, and copying still works after the selected post scrolls off screen.",
+  "Inline video players are reused across a thread instead of creating a new one for each video.",
+  "Video tiles in a thread no longer redraw on every scroll frame, and a video starts about 0.15 seconds after you stop on it.",
+  "List-row pills, badges and placeholders on iPhone and iPad no longer use clip layers, which cuts the offscreen layers per screen substantially (the catalog grid goes from 108 to 38). Android drawing is unchanged.",
+  "Recorded a fresh Android startup profile.",
 ]
 Testing = [
-  "The iOS video-replay test now reports the step it stalled on, the video's state and the player view's window and size when it times out, to diagnose an intermittent failure on iOS 27.",
+  "The thread scroll benchmark now uses long, selectable posts and inline videos, so thread-scrolling changes can be measured against the content they affect.",
+  "Added a test that selecting text in a thread, scrolling, and copying does not crash and puts the expected text on the clipboard.",
 ]
