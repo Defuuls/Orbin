@@ -9,10 +9,13 @@ import androidx.compose.runtime.rememberUpdatedState
  * Players a thread screen hands from one inline video tile to the next.
  *
  * Only the elected tile plays, so the screen needs one player at a time. Rather than build a new
- * one each time playback moves to another video (an ExoPlayer brings its own threads and
- * renderers), a tile that stops gives its player back, reset to empty, and the next tile takes it.
- * At most [spares] idle players are kept; the rest, and every idle player once the screen leaves,
- * are released. Main thread only, like the players themselves.
+ * one each time playback moves to another video, a tile that stops gives its player back, reset
+ * to empty, and the next tile takes it. At most [spares] idle players are kept; the rest, and every
+ * idle player once the screen leaves, are released. Main thread only, like the players themselves.
+ *
+ * Only iOS pools its AVPlayers. Android builds a player per tile and releases it off the frame
+ * instead: sharing one ExoPlayer made a disposed tile's surface detach wait behind the next
+ * tile's codec setup on the shared playback thread, and its reset freed the codec anyway.
  */
 class InlinePlayerPool<P : Any>(
     private val create: () -> P,

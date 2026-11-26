@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.exoplayer.ExoPlayer
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.core.model.PlaybackSettings
@@ -21,7 +20,6 @@ import com.orbin.media.image.MediaThumbnail
 import com.orbin.media.video.VideoPlayer
 import com.orbin.media.video.prepareVideoPlaybackHandoff
 import com.orbin.uinext.components.FeedPlaybackControls
-import com.orbin.uinext.components.InlinePlayerPool
 import com.orbin.uinext.components.ThreadInlineFullscreenButton
 import com.orbin.uinext.components.ThreadInlineMediaFrame
 import com.orbin.uinext.components.ThreadInlineMediaState
@@ -35,7 +33,6 @@ internal fun ThreadInlineMedia(
     onOpenFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
     fullResolution: Boolean = false,
-    playerPool: InlinePlayerPool<ExoPlayer>? = null,
 ) {
     val playable = attachment.type == MediaType.VIDEO && attachment.sourceUrl.startsWith("https://")
     if (!playable) {
@@ -76,7 +73,6 @@ internal fun ThreadInlineMedia(
                 feedMode = true,
                 onPlayIntentChange = { requested = it },
                 onMuteIntentChange = { muted = it },
-                playerPool = playerPool,
             )
         } else {
             FeedPlaybackControls(
