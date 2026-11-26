@@ -46,8 +46,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.common.AudioAttributes
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -64,6 +62,7 @@ import com.orbin.network.interceptor.RetryAfter
 import com.orbin.network.interceptor.RetryAfterTracker
 import com.orbin.uinext.components.FeedPlaybackControls
 import com.orbin.uinext.components.InlineAction
+import com.orbin.uinext.components.InlinePlayerPool
 import com.orbin.uinext.components.NextCircularProgress
 import com.orbin.uinext.components.mediaPlaybackSpeed
 import com.orbin.uinext.tokens.OrbinType
@@ -99,6 +98,8 @@ fun VideoPlayer(
     playbackSpeed: Float = 1f,
     onDoubleTapSave: (() -> Unit)? = null,
     onPlaybackEnded: (() -> Unit)? = null,
+    /** Inline thread tiles share a screen's players instead of building one per video. */
+    playerPool: InlinePlayerPool<ExoPlayer>? = null,
 ) {
     val context = LocalContext.current
     val appContext = context.applicationContext
@@ -144,24 +145,16 @@ fun VideoPlayer(
         }
 
     val exoPlayer =
-        remember(url, context, mediaSourceFactory) {
-            ExoPlayer
-                .Builder(context)
-                .setMediaSourceFactory(mediaSourceFactory)
-                .setAudioAttributes(
-                    AudioAttributes
-                        .Builder()
-                        .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
-                        .setUsage(C.USAGE_MEDIA)
-                        .build(),
-                    // handleAudioFocus =
-                    !muted,
-                ).build()
-                .apply {
-                    repeatMode = repeatModeFor(loop ?: shouldLoop(0L))
-                    volume = if (muted) 0f else 1f
-                    playWhenReady = playbackSession.shouldPlay(active, hasError = false)
-                }
+        remember(url, context, mediaSourceFactory, playerPool) {
+            // handleAudioFocus follows the mute state, for a pooled player as for a new one.
+            val player =
+                playerPool?.acquire()?.apply { setAudioAttributes(MovieAudio, !muted) }
+                    ?: buildVideoPlayer(context, mediaSourceFactory, muted)
+            player.apply {
+                repeatMode = repeatModeFor(loop ?: shouldLoop(0L))
+                volume = if (muted) 0f else 1f
+                playWhenReady = playbackSession.shouldPlay(active, hasError = false)
+            }
         }
 
     val currentActive by rememberUpdatedState(active)
@@ -361,7 +354,7 @@ fun VideoPlayer(
             activity?.disableAutomaticVideoPip()
             PlaybackPositions.remember(url, exoPlayer.currentPosition, exoPlayer.duration)
             exoPlayer.removeListener(listener)
-            exoPlayer.release()
+            if (playerPool != null) playerPool.recycle(exoPlayer) else exoPlayer.release()
         }
     }
 
