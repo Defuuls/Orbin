@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Performance
+- On iPhone and iPad, catalog grids, cards and lists and thread posts draw with fewer offscreen layers while scrolling: label pills, media badges and placeholder tiles paint their rounded fill directly instead of clipping. Android draws them as before. Placeholder gradients are now built once on both. Nothing looks different.
+
 ## [219-Amethyst] - 2026-11-23
 
 ### Dependencies

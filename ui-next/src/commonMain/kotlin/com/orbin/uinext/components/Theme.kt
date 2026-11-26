@@ -269,25 +269,26 @@ fun boardHue(board: String): Color {
  */
 @Composable
 fun placeholderArt(seed: Int): Brush {
-    val dark = next.dark
-    val pairs =
-        if (dark) {
-            listOf(
-                Color(0xFF1C2029) to Color(0xFF12151C),
-                Color(0xFF231C1A) to Color(0xFF161211),
-                Color(0xFF1A2226) to Color(0xFF11171A),
-                Color(0xFF20221C) to Color(0xFF141612),
-                Color(0xFF221E26) to Color(0xFF151318),
-            )
-        } else {
-            listOf(
-                Color(0xFFE4E1D8) to Color(0xFFD5D1C7),
-                Color(0xFFE8DDD5) to Color(0xFFD8C8BD),
-                Color(0xFFDCE2E4) to Color(0xFFC8D1D4),
-                Color(0xFFE0E2D8) to Color(0xFFCFD2C4),
-                Color(0xFFE5DFD5) to Color(0xFFD4CCC0),
-            )
-        }
-    val (start, end) = pairs[((seed % pairs.size) + pairs.size) % pairs.size]
-    return Brush.linearGradient(listOf(start, end))
+    // Built once: every placeholder tile in a scrolled list used to allocate its colour table
+    // and gradient on each composition.
+    val brushes = if (next.dark) DarkPlaceholderArt else LightPlaceholderArt
+    return brushes[((seed % brushes.size) + brushes.size) % brushes.size]
 }
+
+private val DarkPlaceholderArt: List<Brush> =
+    listOf(
+        Color(0xFF1C2029) to Color(0xFF12151C),
+        Color(0xFF231C1A) to Color(0xFF161211),
+        Color(0xFF1A2226) to Color(0xFF11171A),
+        Color(0xFF20221C) to Color(0xFF141612),
+        Color(0xFF221E26) to Color(0xFF151318),
+    ).map { (start, end) -> Brush.linearGradient(listOf(start, end)) }
+
+private val LightPlaceholderArt: List<Brush> =
+    listOf(
+        Color(0xFFE4E1D8) to Color(0xFFD5D1C7),
+        Color(0xFFE8DDD5) to Color(0xFFD8C8BD),
+        Color(0xFFDCE2E4) to Color(0xFFC8D1D4),
+        Color(0xFFE0E2D8) to Color(0xFFCFD2C4),
+        Color(0xFFE5DFD5) to Color(0xFFD4CCC0),
+    ).map { (start, end) -> Brush.linearGradient(listOf(start, end)) }
