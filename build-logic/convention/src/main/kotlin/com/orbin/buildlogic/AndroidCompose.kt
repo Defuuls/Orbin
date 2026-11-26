@@ -29,6 +29,7 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension) {
     }
 
     extensions.configure(ComposeCompilerGradlePluginExtension::class.java) {
+        configureComposeStability(this)
         // Strong skipping is enabled by default in Kotlin 2.0.20+. Compiler metrics/reports are
         // useful for chasing recomposition regressions but add measurable compile-time overhead,
         // so they are opt-in: ./gradlew assembleDebug -Porbin.composeMetrics=true
@@ -37,4 +38,14 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension) {
             reportsDestination.set(layout.buildDirectory.dir("compose_compiler"))
         }
     }
+}
+
+/**
+ * Points the Compose compiler at the shared stability configuration, so read-only collections and
+ * the immutable `core:model` types count as stable and unchanged rows can skip recomposition.
+ */
+internal fun Project.configureComposeStability(extension: ComposeCompilerGradlePluginExtension) {
+    extension.stabilityConfigurationFiles.add(
+        rootProject.layout.projectDirectory.file("config/compose/stability.conf"),
+    )
 }

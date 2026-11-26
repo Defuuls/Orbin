@@ -1,7 +1,9 @@
+import com.orbin.buildlogic.configureComposeStability
 import com.orbin.buildlogic.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
@@ -16,6 +18,10 @@ class KmpComposeConventionPlugin : Plugin<Project> {
                 apply("orbin.kmp.android")
                 apply("org.jetbrains.compose")
                 apply("org.jetbrains.kotlin.plugin.compose")
+            }
+
+            extensions.configure<ComposeCompilerGradlePluginExtension> {
+                configureComposeStability(this)
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
