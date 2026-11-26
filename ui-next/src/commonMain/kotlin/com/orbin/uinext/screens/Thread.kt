@@ -1191,8 +1191,8 @@ private fun PostThumbnail(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .clip(badgeShape)
-                        .background(colors.surfaceVariant)
+                        // Shaped fill rather than a clip: no graphics layer per post with files.
+                        .background(colors.surfaceVariant, badgeShape)
                         .border(ReaderSize.hairline, colors.hairline, badgeShape)
                         .padding(horizontal = ReaderSpace.line),
             )

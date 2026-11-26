@@ -102,9 +102,11 @@ fun OrbinPill(
         modifier =
             modifier
                 .width(IntrinsicSize.Max)
-                .then(if (button) Modifier.heightIn(min = ReaderSize.touchTarget) else Modifier)
-                .clip(shape)
-                .background(resolved.container)
+                // Only a pill button clips, to bound its press ripple. A label pill paints its
+                // rounded ground directly: a clip is a graphics layer, and grid cards and catalog
+                // rows carry several label pills each, so every scrolled frame paid for them.
+                .then(if (button) Modifier.heightIn(min = ReaderSize.touchTarget).clip(shape) else Modifier)
+                .background(resolved.container, shape)
                 .then(
                     if (onClick != null) {
                         Modifier

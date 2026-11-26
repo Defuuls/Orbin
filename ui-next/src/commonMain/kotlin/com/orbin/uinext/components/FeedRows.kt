@@ -25,7 +25,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -272,8 +271,7 @@ internal fun FeedGridCell(
                                 Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(8.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(next.background.copy(alpha = 0.9f))
+                                    .background(next.background.copy(alpha = 0.9f), MEDIA_LABEL_SHAPE)
                                     .padding(horizontal = 6.dp, vertical = 3.dp),
                         )
                     }
@@ -394,6 +392,9 @@ private const val MIN_TALL_TILE_ASPECT = 0.5625f
 private const val MAX_TILE_ASPECT = 3f
 private const val UNIFORM_TILE_ASPECT = 4f / 3f
 private val FALLBACK_TILE_HEIGHT = 240.dp
+
+/** The media label's corners, painted with its fill: no clip layer per scrolled row. */
+private val MEDIA_LABEL_SHAPE = RoundedCornerShape(OrbinRadius.small)
 
 @Composable
 private fun CollapsedFeedRow(
