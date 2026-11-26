@@ -1,5 +1,8 @@
 package com.orbin.core.reader
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Magnifier
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -8,12 +11,25 @@ import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.CompositionGroup
 import androidx.compose.runtime.tooling.LocalInspectionTables
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.TextToolbar
+import androidx.compose.ui.platform.TextToolbarStatus
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isPopup
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.withKeyDown
+import androidx.test.core.app.ApplicationProvider
 import com.orbin.core.model.BoardId
 import com.orbin.core.model.Post
 import com.orbin.core.model.PostComment
@@ -31,6 +47,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -55,6 +72,7 @@ class ReaderThreadTextSelectionTest {
 
     private val tables = mutableSetOf<CompositionData>()
     private lateinit var listState: LazyListState
+    private val toolbar = RecordingTextToolbar()
 
     private fun setThread(
         replies: Int,
@@ -63,7 +81,7 @@ class ReaderThreadTextSelectionTest {
         val presentation = runBlocking { thread(replies).preparePresentation(nowMillis = CREATED_AT) }
         compose.setContent {
             currentComposer.collectParameterInformation()
-            CompositionLocalProvider(LocalInspectionTables provides tables) {
+            CompositionLocalProvider(LocalInspectionTables provides tables, LocalTextToolbar provides toolbar) {
                 listState = rememberLazyListState()
                 NextTheme {
                     ThreadScreen(
@@ -133,6 +151,100 @@ class ReaderThreadTextSelectionTest {
         compose.onNodeWithText("Hide this post").assertExists()
     }
 
+    @Test
+    fun aSelectionStillCopiesAfterItsPostScrollsOffScreen() {
+        setThread(replies = POSTS, menu = false)
+        // On the first word, "Reply".
+        compose
+            .onNodeWithText(REPLY_2, useUnmergedTree = true)
+            .performTouchInput { longClick(Offset(FIRST_WORD_X, centerY / 2)) }
+        compose.waitForIdle()
+        compose.onAllNodes(isPopup()).assertCountEquals(2)
+        copySelection()
+        val before = clipboardText()
+        assertEquals("The long-pressed word is selected", "Reply", before)
+        clipboard().setPrimaryClip(ClipData.newPlainText("", ""))
+
+        // Two screens down: the selected post leaves the viewport.
+        repeat(2) {
+            compose.runOnIdle { listState.dispatchRawDelta(SCREEN_PX) }
+            compose.waitForIdle()
+        }
+        val visible = listState.layoutInfo.visibleItemsInfo.map { it.index }
+        assertTrue("The selected post must be off screen, visible: $visible", visible.min() > REPLY_2_INDEX + 2)
+        val kept = compose.onAllNodesWithText(REPLY_2, useUnmergedTree = true).fetchSemanticsNodes().size
+        println("ReaderThreadTextSelectionTest selected post still composed off screen: ${kept > 0}")
+
+        copySelection()
+        val after = clipboardText()
+        println("ReaderThreadTextSelectionTest copied before \"$before\", after scrolling away \"$after\"")
+        assertEquals("Copy after scrolling away puts the same selection on the clipboard", before, after)
+
+        // Ending the selection lets the list dispose the post it kept for it.
+        compose.onAllNodes(isRoot())[0].performTouchInput { click(center) }
+        compose.waitForIdle()
+        compose.onAllNodes(isPopup()).assertCountEquals(0)
+        compose.onAllNodesWithText(REPLY_2, useUnmergedTree = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun aSelectionAcrossPostsStillCopiesAfterScrollingAway() {
+        setThread(replies = POSTS, menu = false)
+        val start = compose.onNodeWithText(REPLY_2, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val end = compose.onNodeWithText(reply(4), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        // Long-press "Reply" in post 2, then drag into the first word of post 4.
+        compose.onAllNodes(isRoot())[0].performTouchInput {
+            down(Offset(start.left + FIRST_WORD_X, start.top + start.height / 4))
+            advanceEventTime(viewConfiguration.longPressTimeoutMillis + 100)
+            moveTo(Offset(end.left + FIRST_WORD_X, end.top + end.height / 4))
+            up()
+        }
+        compose.waitForIdle()
+        copySelection()
+        val before = clipboardText()
+        println("ReaderThreadTextSelectionTest selected across posts: \"$before\"")
+        assertTrue("The selection starts in post 2: \"$before\"", before.orEmpty().startsWith("Reply text 2"))
+        assertTrue("The selection runs through post 3: \"$before\"", before.orEmpty().contains(reply(3)))
+        assertFalse("Headers stay out of the selection: \"$before\"", before.orEmpty().contains("No. 10"))
+        clipboard().setPrimaryClip(ClipData.newPlainText("", ""))
+
+        repeat(2) {
+            compose.runOnIdle { listState.dispatchRawDelta(SCREEN_PX) }
+            compose.waitForIdle()
+        }
+        assertTrue("Every selected post is off screen", listState.firstVisibleItemIndex > REPLY_2_INDEX + 4)
+        copySelection()
+        assertEquals("The whole selection copies after scrolling away", before, clipboardText())
+
+        repeat(2) {
+            compose.runOnIdle { listState.dispatchRawDelta(-SCREEN_PX) }
+            compose.waitForIdle()
+        }
+        copySelection()
+        assertEquals("And again after scrolling back", before, clipboardText())
+    }
+
+    /** Copy as the toolbar's Copy or Ctrl+C does; both call the selection's one copy. */
+    private fun copySelection() {
+        val toolbarCopy = toolbar.copy
+        if (toolbarCopy != null) {
+            compose.runOnIdle { toolbarCopy() }
+        } else {
+            compose.onAllNodes(isRoot())[0].performKeyInput { withKeyDown(Key.CtrlLeft) { pressKey(Key.C) } }
+        }
+        compose.waitForIdle()
+    }
+
+    private fun clipboard(): ClipboardManager =
+        ApplicationProvider.getApplicationContext<Context>().getSystemService(ClipboardManager::class.java)
+
+    private fun clipboardText(): String? =
+        clipboard()
+            .primaryClip
+            ?.getItemAt(0)
+            ?.text
+            ?.toString()
+
     private fun thread(replies: Int): Thread {
         val key = ThreadKey(ProviderId("fourchan"), BoardId("g"), ThreadId(100))
         val opening =
@@ -156,7 +268,7 @@ class ReaderThreadTextSelectionTest {
                         PostComment(
                             "",
                             persistentListOf(
-                                PostNode.Text("Reply text $index with enough words to wrap onto a second line."),
+                                PostNode.Text(reply(index)),
                             ),
                         ),
                 )
@@ -170,6 +282,33 @@ class ReaderThreadTextSelectionTest {
         const val SCROLL_STEPS = 20
         const val SCROLL_STEP_PX = 400f
         const val CONTAINER_SOURCE = "C(SelectionContainer)"
+        const val SCREEN_PX = 844f
+        const val FIRST_WORD_X = 12f
+        const val REPLY_2_INDEX = 3
+        val REPLY_2 = reply(2)
+
+        fun reply(index: Int) = "Reply text $index with enough words to wrap onto a second line."
+    }
+}
+
+/** Records the Copy action a selection offers, as the platform toolbar would show it. */
+private class RecordingTextToolbar : TextToolbar {
+    var copy: (() -> Unit)? = null
+    override var status: TextToolbarStatus = TextToolbarStatus.Hidden
+
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?,
+    ) {
+        copy = onCopyRequested
+        status = TextToolbarStatus.Shown
+    }
+
+    override fun hide() {
+        status = TextToolbarStatus.Hidden
     }
 }
 
