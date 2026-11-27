@@ -1,27 +1,20 @@
-# Orbin 220 - Ametrine
+# Orbin 221 - Ammolite
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 220
-codename = "Ametrine"
-version_code = 238
+number = 221
+codename = "Ammolite"
+version_code = 239
 
-highlight = "Smoother thread scrolling, and cheaper drawing on iPhone and iPad."
+highlight = "Smooth thread scrolling past videos on Android again."
 
 summary = [
-  "bump Orbin to 220-Ametrine / versionCode 238",
-  "use one text-selection container for a whole thread, and reuse inline video players",
-  "draw list rows with fewer layers on iPhone and iPad",
+  "bump Orbin to 221-Ammolite / versionCode 239",
+  "give each Android video tile its own player and release removed players off the frame",
 ]
 
 [changelog]
 Performance = [
-  "A thread now uses one text-selection container for the whole post list instead of one per post. Selection can span several posts, and copying still works after the selected post scrolls off screen.",
-  "Inline video players are reused across a thread instead of creating a new one for each video.",
-  "Video tiles in a thread no longer redraw on every scroll frame, and a video starts about 0.15 seconds after you stop on it.",
-  "List-row pills, badges and placeholders on iPhone and iPad no longer use clip layers, which cuts the offscreen layers per screen substantially (the catalog grid goes from 108 to 38). Android drawing is unchanged.",
-  "Recorded a fresh Android startup profile.",
-]
-Testing = [
-  "The thread scroll benchmark now uses long, selectable posts and inline videos, so thread-scrolling changes can be measured against the content they affect.",
-  "Added a test that selecting text in a thread, scrolling, and copying does not crash and puts the expected text on the clipboard.",
+  "On Android, each video tile in a thread gets its own player again instead of sharing one, which fixes the scroll stutter in threads with videos that came with 220.",
+  "On Android, players for videos that scroll away are stopped right away and released about half a second later when the app is idle, never in the middle of a frame.",
+  "iPhone and iPad keep reusing video players across a thread, unchanged from 220.",
 ]
