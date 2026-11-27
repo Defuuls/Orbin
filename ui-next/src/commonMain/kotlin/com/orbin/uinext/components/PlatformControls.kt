@@ -56,19 +56,6 @@ import com.orbin.uinext.tokens.OrbinRadius
 import com.orbin.uinext.tokens.OrbinType
 import org.jetbrains.compose.resources.stringResource
 
-/**
- * The app's shared reader palette for [dark] / [amoled], shared across Android and iOS.
- */
-fun materialPalette(
-    dark: Boolean,
-    amoled: Boolean = false,
-): NextPalette =
-    when {
-        dark && amoled -> AmoledPalette
-        dark -> DarkPalette
-        else -> LightPalette
-    }
-
 @Composable
 fun PlatformSwitch(
     checked: Boolean,

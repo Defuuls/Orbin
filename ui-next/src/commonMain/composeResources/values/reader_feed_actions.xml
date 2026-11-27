@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="reader_feed_home">Feed</string>
     <string name="reader_feed_all_boards">All boards</string>
     <string name="reader_feed_post_metadata">%1$s · No. %2$s · %3$s</string>
-    <string name="reader_feed_poster_time">%1$s · %2$s</string>
-    <string name="reader_feed_muted">Hidden preview</string>
     <string name="reader_feed_watch">Watch %1$s</string>
     <string name="reader_feed_unwatch">Stop watching %1$s</string>
     <string name="reader_feed_view_replies">View replies to %1$s</string>
@@ -16,5 +13,4 @@
     <string name="reader_feed_choose_source">Choose source</string>
     <string name="reader_feed_sources">Sites</string>
     <string name="reader_feed_more">Options for %1$s</string>
-    <string name="reader_feed_open_thread">Open thread</string>
 </resources>

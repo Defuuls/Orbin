@@ -1,6 +1,5 @@
 package com.orbin.uinext.components
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.runtime.Composable
@@ -36,7 +35,6 @@ internal fun scrollingUp(
     return up
 }
 
-internal const val GRID_TILE_ASPECT = 1.1f
 internal val GRID_MIN_CELL = 170.dp
 internal val IMAGE_MIN_CELL = 112.dp
 
@@ -53,16 +51,6 @@ internal val GRID_TEXT_INSET = 16.dp
 
 internal fun LazyGridScope.fullWidthItem(content: @Composable () -> Unit) =
     item(key = FEED_HEADER_KEY, span = { GridItemSpan(maxLineSpan) }) { content() }
-
-internal fun gridPadding(
-    bottom: PaddingValues,
-    top: androidx.compose.ui.unit.Dp = 0.dp,
-) = PaddingValues(
-    start = GRID_SIDE_INSET,
-    end = GRID_SIDE_INSET,
-    top = top,
-    bottom = bottom.calculateBottomPadding(),
-)
 
 internal val GRID_SIDE_INSET = 16.dp
 internal const val FEED_HEADER_KEY = "header"

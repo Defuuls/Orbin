@@ -65,9 +65,5 @@ gradlePlugin {
             id = "orbin.kmp.compose"
             implementationClass = "KmpComposeConventionPlugin"
         }
-        register("jvmLibrary") {
-            id = "orbin.jvm.library"
-            implementationClass = "JvmLibraryConventionPlugin"
-        }
     }
 }

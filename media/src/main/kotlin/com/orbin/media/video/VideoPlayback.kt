@@ -3,8 +3,6 @@ package com.orbin.media.video
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -70,13 +68,6 @@ internal fun Long.progressIn(durationMs: Long): Float =
     } else {
         0f
     }
-
-internal fun Long.formatTimestamp(): String {
-    val totalSeconds = (this / MILLIS_PER_SECOND).coerceAtLeast(0L)
-    val minutes = totalSeconds / SECONDS_PER_MINUTE
-    val seconds = totalSeconds % SECONDS_PER_MINUTE
-    return "$minutes:${seconds.toString().padStart(2, '0')}"
-}
 
 internal fun PlaybackException.mediaLoadMessage(): String =
     if (hasHttpStatus(RetryAfter.HTTP_TOO_MANY_REQUESTS)) {

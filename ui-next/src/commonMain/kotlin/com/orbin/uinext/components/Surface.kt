@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -30,11 +29,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -43,14 +40,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -80,17 +73,6 @@ enum class NextDestination {
 
     /** Watched, Saved and Downloads, grouped behind one primary tab; see [LibrarySection]. */
     LIBRARY,
-}
-
-/** Space to keep scrolling content clear of [CompactTitleBar]. */
-val COMPACT_TITLE_CLEARANCE = 56.dp
-
-/** Clearance for compact chrome when text has been enlarged by the system. */
-@Composable
-fun compactTitleClearance(): Dp {
-    if (LocalReaderFramePresent.current) return 0.dp
-    val textHeight = with(LocalDensity.current) { OrbinType.headline.lineHeight.toDp() }
-    return maxOf(24.dp, textHeight) + 32.dp
 }
 
 /** Semantics tags distinguishing the large in-content title from the compact overlay. */
@@ -231,70 +213,6 @@ fun GroupedSection(
     }
 }
 
-/** Divider drawn inside a [GroupedSection]. */
-@Composable
-fun GroupedDivider(modifier: Modifier = Modifier) {
-    HorizontalDivider(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = NextSpace.rowX),
-        thickness = 0.5.dp,
-        color = next.hairline,
-    )
-}
-
-/** Shape for an item in a grouped card sequence. */
-fun groupedCardShape(
-    index: Int,
-    count: Int,
-): Shape =
-    when {
-        count <= 1 -> RoundedCornerShape(OrbinRadius.compactCard)
-        index == 0 -> RoundedCornerShape(topStart = OrbinRadius.compactCard, topEnd = OrbinRadius.compactCard)
-        index == count - 1 ->
-            RoundedCornerShape(
-                bottomStart = OrbinRadius.compactCard,
-                bottomEnd = OrbinRadius.compactCard,
-            )
-        else -> RectangleShape
-    }
-
-/**
- * Emits individual lazy items with grouped card styling and virtualization.
- *
- * Each item is rendered in its own slot with top/middle/bottom card corner radii,
- * allowing Compose to virtualize long lists without eager measurement.
- */
-inline fun <T> LazyListScope.groupedItems(
-    items: List<T>,
-    noinline key: ((T) -> Any)? = null,
-    crossinline itemContent: @Composable (index: Int, item: T) -> Unit,
-) {
-    itemsIndexed(
-        items = items,
-        key = if (key != null) { _, item -> key(item) } else null,
-    ) { index, item ->
-        val shape = groupedCardShape(index, items.size)
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = NextSpace.gutterTight)
-                    .clip(shape)
-                    .background(next.raised)
-                    .border(1.dp, next.hairline, shape),
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                itemContent(index, item)
-                if (index < items.size - 1) {
-                    GroupedDivider()
-                }
-            }
-        }
-    }
-}
-
 /** A row's secondary line: counts and timestamps. */
 @Composable
 fun MetaLine(
@@ -312,22 +230,6 @@ fun MetaLine(
         minLines = minLines,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,
-    )
-}
-
-/** The machined indicator mark that identifies which board a row came from. */
-@Composable
-fun BoardDot(
-    board: String,
-    modifier: Modifier = Modifier,
-    size: Dp = 6.dp,
-) {
-    Box(
-        modifier =
-            modifier
-                .size(size)
-                .clip(RoundedCornerShape(OrbinRadius.compact))
-                .background(boardHue(board)),
     )
 }
 
@@ -488,7 +390,6 @@ fun NextScaffold(
 
 /** Vertical rhythm and the height of the one bar. */
 val GUTTER = NextSpace.gutter
-internal val NO_RAIL_CLEARANCE = 16.dp
 
 /** The smallest thing a finger should have to hit. */
 val MIN_TOUCH_TARGET = 48.dp

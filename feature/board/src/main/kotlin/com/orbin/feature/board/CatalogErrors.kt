@@ -50,17 +50,6 @@ internal val CatalogFailure.readerCause: ReaderFailureCause
             CatalogFailure.OTHER -> ReaderFailureCause.UNKNOWN
         }
 
-internal val CatalogFailure.messageRes: Int
-    get() =
-        when (this) {
-            CatalogFailure.OFFLINE -> R.string.board_error_offline
-            CatalogFailure.SLOW -> R.string.board_error_slow
-            CatalogFailure.RATE_LIMITED -> R.string.board_error_rate_limited
-            CatalogFailure.GONE -> R.string.board_error_gone
-            CatalogFailure.SERVER -> R.string.board_error_server
-            CatalogFailure.OTHER -> R.string.board_load_error
-        }
-
 private val HTTP_STATUS = Regex("\\bHTTP\\s+(\\d{3})\\b", RegexOption.IGNORE_CASE)
 private const val HTTP_NOT_FOUND = 404
 private const val HTTP_RATE_LIMITED = 429

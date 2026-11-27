@@ -37,8 +37,6 @@ class UserContentFilters(
 
 fun Post.matchesUserPostFilter(rule: PostFilterRule): Boolean = UserContentFilters(listOf(rule)).reasonFor(this) != null
 
-fun Post.userHiddenReason(rules: List<PostFilterRule>): String? = UserContentFilters(rules).reasonFor(this)
-
 fun CatalogThread.matchesUserThreadPatterns(patterns: List<String>): Boolean =
     UserContentFilters(threadPatterns = patterns).hidesThread(this)
 

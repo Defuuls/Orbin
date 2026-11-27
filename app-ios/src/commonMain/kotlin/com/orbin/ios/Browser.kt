@@ -33,9 +33,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,8 +47,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
@@ -910,23 +905,6 @@ data class FollowedBoard(
     val provider: ProviderId,
     val board: BoardId,
 )
-
-/**
- * [load] over every board, at most [MAX_CONCURRENT_BOARD_LOADS] at a time, each board's outcome
- * kept apart so one failing leaves the others.
- */
-internal suspend fun <T> loadEach(
-    boards: List<FollowedBoard>,
-    load: suspend (FollowedBoard) -> T,
-): List<Result<T>> {
-    val gate = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
-    return coroutineScope {
-        boards.map { board -> async { gate.withPermit { runCatching { load(board) } } } }.awaitAll()
-    }
-}
-
-/** Android loads at most this many followed catalogs at once; so does iOS, for the feed and search. */
-private const val MAX_CONCURRENT_BOARD_LOADS = 4
 
 // Filtering before adapting keeps both providers consistent with the Android directory.
 internal suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =
