@@ -6,6 +6,14 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+## [221-Ammolite] - 2026-11-27
+
+### Performance
+- On Android, each video tile in a thread gets its own player again instead of sharing one, which fixes the scroll stutter in threads with videos that came with 220.
+- On Android, players for videos that scroll away are stopped right away and released about half a second later when the app is idle, never in the middle of a frame.
+- iPhone and iPad keep reusing video players across a thread, unchanged from 220.
+
+
 ## [220-Ametrine] - 2026-11-26
 
 ### Performance
@@ -3320,7 +3328,8 @@ included, so this is equally safe as a fresh install.
 - **Gallery:** media can be swiped between items again — a zoomable image no longer
   consumes single-finger swipes unless it is zoomed in, so the pager scrolls as intended.
 
-[Unreleased]: https://github.com/Defuuls/Orbin/compare/v220-Ametrine...HEAD
+[Unreleased]: https://github.com/Defuuls/Orbin/compare/v221-Ammolite...HEAD
+[221-Ammolite]: https://github.com/Defuuls/Orbin/compare/v220-Ametrine...v221-Ammolite
 [220-Ametrine]: https://github.com/Defuuls/Orbin/compare/v219-Amethyst...v220-Ametrine
 [219-Amethyst]: https://github.com/Defuuls/Orbin/compare/v218-Amblygonite...v219-Amethyst
 [218-Amblygonite]: https://github.com/Defuuls/Orbin/compare/v217-Amber...v218-Amblygonite

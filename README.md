@@ -4,9 +4,9 @@ Privacy-focused, read-only **Android & iOS imageboard browser** built with Kotli
 
 [Website](https://defuuls.github.io/Orbin/) · [Architecture](docs/architecture/README.md) · [Developer Guide](docs/wiki/Developer-Guide.md) · [iOS Build](docs/ios.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [License](LICENSE)
 
-**Current release:** [220 — Ametrine](https://github.com/Defuuls/Orbin/releases/tag/v220-Ametrine)
+**Current release:** [221 — Ammolite](https://github.com/Defuuls/Orbin/releases/tag/v221-Ammolite)
 
-**What's new in 220:** Smoother thread scrolling, and cheaper drawing on iPhone and iPad.
+**What's new in 221:** Smooth thread scrolling past videos on Android again.
 
 - **Read-only browsing:** Combined multi-site feed, board directories, List/Grid/Card catalogs, and adaptive two-pane layout (`4chan` & `BBWChan`).
 - **Thread & media reader:** Posts, Files, and Card views, inline quote expansion, backlinks, Coil 3 images, Media3 / AVPlayer video, and swipe gallery.
