@@ -10,8 +10,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.AccentTheme
-import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppInterface
+import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider

@@ -35,8 +35,8 @@ class PulseMappingTest {
         attachments: Int = 0,
         backlinks: Int = 0,
         original: Boolean = false,
-    ): Post {
-        return Post(
+    ) =
+        Post(
             id = PostId(id),
             board = BoardId(board),
             threadId = ThreadId(1L),
@@ -58,7 +58,6 @@ class PulseMappingTest {
                 }.toImmutableList(),
             backlinks = List(backlinks) { PostId(100L + it) }.toImmutableList(),
         )
-    }
 
     private fun catalog(
         provider: String = "p",
@@ -68,25 +67,23 @@ class PulseMappingTest {
         comment: String = "",
         lastModified: Long = now - hour,
         replies: Int = 0,
-    ): CatalogThread {
-        return CatalogThread(
+    ) =
+        CatalogThread(
             key = ThreadKey(ProviderId(provider), BoardId(board), ThreadId(no)),
             originalPost = post(no, board, comment, subject, original = true),
             stats = ThreadStats(replyCount = replies, lastModifiedMillis = lastModified),
         )
-    }
 
     private fun feed(
         board: String,
         title: String,
         vararg threads: CatalogThread,
-    ): SubscribedBoardFeed {
-        return SubscribedBoardFeed(
+    ) =
+        SubscribedBoardFeed(
             board = Board(id = BoardId(board), title = title),
             threads = threads.toList().toImmutableList(),
             threadLimitOverride = null,
         )
-    }
 
     @Test
     fun threadsFromEveryBoardAreMergedMostRecentlyActiveFirst() {

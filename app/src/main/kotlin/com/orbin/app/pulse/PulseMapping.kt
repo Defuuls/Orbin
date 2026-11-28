@@ -77,17 +77,19 @@ private fun postLine(
 ): PulseLineUi {
     val number = post.id.value
     val body = post.comment.plainText().takeIf { it.isNotBlank() } ?: post.subject
+    val posterName = post.poster.name?.takeIf { it.isNotBlank() } ?: words.anonymous
+    val mediaCount = post.attachments.size
     val details =
         listOfNotNull(
             "No.$number",
-            post.poster.name?.takeIf { it.isNotBlank() } ?: words.anonymous,
-            post.attachments.size.takeIf { it > 0 }?.let(words.media),
+            posterName,
+            if (mediaCount > 0) words.media(mediaCount) else null,
         )
     return PulseLineUi(
         id = StreamIds.post(number),
         age = StreamText.age(nowMillis, post.createdAtMillis),
         title = StreamText.headline(subject = body, body = null, fallbackNo = number, max = POST_MAX),
         sub = details.joinToString(" · "),
-        trailing = post.backlinks.size.takeIf { it > 0 }?.let { "+$it" }.orEmpty(),
+        trailing = if (post.backlinks.isNotEmpty()) "+${post.backlinks.size}" else "",
     )
 }
