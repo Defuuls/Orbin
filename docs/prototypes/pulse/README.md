@@ -5,7 +5,7 @@ one continuous stream of text lines instead of tabs, cards and a bottom bar. It 
 **design reference**, not part of the Gradle build, and mock data only (no network).
 
 Original work, written from scratch for this repository. No Orbin source was used and
-no other client's code was copied (see [DESIGN_NOTES.md](design-notes.md) for what it
+no other client's code was copied (see [design-notes.md](design-notes.md) for what it
 deliberately does *not* resemble).
 
 ## Ideas worth porting
