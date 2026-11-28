@@ -15,13 +15,17 @@ import com.orbin.ios.resources.Res
 import com.orbin.ios.resources.ios_collection_history
 import com.orbin.ios.resources.ios_collection_saved
 import com.orbin.ios.resources.ios_collection_watched
+import com.orbin.ios.resources.ios_primary_home
 import com.orbin.uinext.components.NextDestination
 import com.orbin.uinext.components.ReaderScaffold
 import com.orbin.uinext.components.ReaderTwoPane
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
-/** Collections and search retain their own identity while selecting threads from any board/site. */
+/**
+ * Home, collections and search retain their own identity while selecting threads from any
+ * board/site: on a tablet the source stays on the left with the thread beside it.
+ */
 internal data class SourceReaderRoute(
     val source: Route,
     val thread: Route.ThreadPage? = null,
@@ -32,7 +36,12 @@ internal data class SourceReaderRoute(
 }
 
 internal val Route.isThreadReaderSource: Boolean
-    get() = this == Route.Saved || this == Route.Watched || this == Route.History || this == Route.Search
+    get() =
+        this == Route.Feed ||
+            this == Route.Saved ||
+            this == Route.Watched ||
+            this == Route.History ||
+            this == Route.Search
 
 /** Only the immediately preceding source can own the selected thread, preserving normal Back. */
 internal fun sourceReaderRoute(backStack: List<Route>): SourceReaderRoute? =
@@ -58,7 +67,11 @@ internal fun SourceReaderDestination(
         route = route,
         stateHolder = stateHolder,
         sourceContent = { source, _ ->
-            if (source == Route.Search) SearchDestination(browser) else ThreadCollectionsDestination(browser, source)
+            when (source) {
+                Route.Feed -> FeedDestination(browser, downloads)
+                Route.Search -> SearchDestination(browser)
+                else -> ThreadCollectionsDestination(browser, source)
+            }
         },
         threadContent = { ThreadDestination(browser, downloads, pages) },
         onDestination = browser::openDestination,
@@ -94,6 +107,7 @@ internal fun SourceReaderFrame(
             ReaderScaffold(
                 title =
                     when (route.source) {
+                        Route.Feed -> stringResource(Res.string.ios_primary_home)
                         Route.Search -> "Search"
                         Route.Watched -> stringResource(Res.string.ios_collection_watched)
                         Route.History -> stringResource(Res.string.ios_collection_history)
@@ -101,6 +115,7 @@ internal fun SourceReaderFrame(
                     },
                 destination =
                     when (route.source) {
+                        Route.Feed -> NextDestination.FEED
                         Route.Search -> NextDestination.SEARCH
                         Route.Watched -> NextDestination.WATCHED
                         else -> NextDestination.SAVED

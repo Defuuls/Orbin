@@ -85,9 +85,19 @@ fun OrbinNavHost(
         popEnterTransition = { nextPopEnter(threadPresentation) },
         popExitTransition = { nextPopExit(threadPresentation) },
     ) {
-        composable<Route.NextFeed> {
+        // Home is a thread source like Watched or Saved: on a tablet the feed stays on the left
+        // and the thread it opens takes the right, instead of the thread covering the feed.
+        composable<Route.NextFeed> { backStackEntry ->
+            SourceReaderRouteDestination(
+                navController = navController,
+                backStackEntry = backStackEntry,
+                twoPane = twoPaneBoardDetail,
+                title = stringResource(R.string.nav_home),
+                destination = NextDestination.FEED,
+                onDestination = onDestination,
+            ) { sourceOpenThread ->
             NextFeedWithSiteSwitcherScreen(
-                onOpenThread = openThread,
+                onOpenThread = sourceOpenThread,
                 onOpenThreadVideos = { provider, board, thread, _ ->
                     navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
                 },
@@ -107,6 +117,7 @@ fun OrbinNavHost(
                 onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
                 watchedBadge = primaryWatchedBadge(),
             )
+            }
         }
 
         composable<Route.BoardGallery> {

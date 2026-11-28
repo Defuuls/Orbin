@@ -159,7 +159,7 @@ The historical Roboto Medium, Medium Italic and Condensed Regular faces remain a
 | `size.readingMax` | 720dp | Maximum constrained reading or settings content width. |
 | `size.drawerMax` | 336dp | Maximum navigation drawer width. |
 | `size.wideMin` | 600dp | Both window sides must reach this to count as wide. |
-| `size.twoPaneMinWidth` | 800dp | Wide windows at least this wide show two panes. |
+| `size.twoPaneMinWidth` | 700dp | Wide windows at least this wide show two panes. |
 | `size.listPaneMax` | 420dp | Maximum catalog pane width in two panes. |
 | `size.paneDivider` | 1dp | Divider between the two panes. |
 
@@ -297,7 +297,7 @@ The List/Grid/Card choice is remembered per device and shared by Home and board 
 ![Two panes: catalog and thread](diagrams/two-pane.svg)
 
 - A window is wide when both of its sides are at least `size.wideMin`.
-- A wide window that is at least `size.twoPaneMinWidth` across shows the catalog and the open thread side by side. Every other window shows one at a time.
+- A wide window that is at least `size.twoPaneMinWidth` across shows the list and the open thread side by side. The list is the board's catalog, Home, Saved, Watched, History or search results, and it stays on the left while threads open beside it. Every other window shows one at a time.
 - The catalog pane is five twelfths of the window width after the divider is removed, rounded down, and never wider than `size.listPaneMax`. The thread pane takes the rest.
 - The divider is `size.paneDivider` wide in `color.hairline`.
 - Each pane has its own app bar. The status bar spans both.
@@ -306,6 +306,8 @@ The List/Grid/Card choice is remembered per device and shared by Home and board 
 
 | Window width | Catalog pane | Divider | Thread pane |
 | --- | --- | --- | --- |
+| 700dp | 291dp | 1dp | 408dp |
+| 744dp | 309dp | 1dp | 434dp |
 | 800dp | 332dp | 1dp | 467dp |
 | 960dp | 399dp | 1dp | 560dp |
 | 1280dp | 420dp | 1dp | 859dp |
