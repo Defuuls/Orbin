@@ -1,20 +1,27 @@
-# Orbin 221 - Ammolite
+# Orbin 222 - Analcime
 # Prepared with scripts/prepare_release.py; see release/README.md.
 
-number = 221
-codename = "Ammolite"
-version_code = 239
+number = 222
+codename = "Analcime"
+version_code = 240
 
-highlight = "Smooth thread scrolling past videos on Android again."
+highlight = "Links open in Orbin's own browser on Android, iPhone and iPad."
 
 summary = [
-  "bump Orbin to 221-Ammolite / versionCode 239",
-  "give each Android video tile its own player and release removed players off the frame",
+  "bump Orbin to 222-Analcime / versionCode 240",
+  "open links in an in-app browser on Android and iOS, behind one shared HTTPS link rule",
+  "open Home threads beside the feed on tablets, with two panes from 700 wide",
 ]
 
 [changelog]
-Performance = [
-  "On Android, each video tile in a thread gets its own player again instead of sharing one, which fixes the scroll stutter in threads with videos that came with 220.",
-  "On Android, players for videos that scroll away are stopped right away and released about half a second later when the app is idle, never in the middle of a frame.",
-  "iPhone and iPad keep reusing video players across a thread, unchanged from 220.",
+Added = [
+  "iPhone and iPad: links open in Orbin's own browser too, as a screen of the app, so App lock and the screen privacy shield cover it. It keeps sites' logins until you clear local activity and blocks pages from your camera, microphone, location and other apps. Turn off \"Open links in the app\" in Settings to keep using your default browser.",
+  "Android: links open in Orbin's own browser, so you stay in the app. It runs separately from the reader, keeps sites' logins until you clear local activity, and blocks pages from reaching your camera, location, files or other apps. Turn off \"Open links in the app\" in Settings to keep opening links in your default browser.",
+]
+Changed = [
+  "On iPad and Android tablets, a thread opened from Home opens beside the feed, which stays on the left, as threads from a board, Saved, Watched, History and search already did.",
+  "The side-by-side view now starts at 700 points wide instead of 800, so it covers every iPad in portrait, including iPad mini. Split View halves still show one pane at a time.",
+]
+Security = [
+  "Android and iOS now check links with the same rule, and Android rejects malformed links (spaces, backslashes) it previously let through.",
 ]
