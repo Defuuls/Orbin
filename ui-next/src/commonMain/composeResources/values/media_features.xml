@@ -11,9 +11,6 @@
     <string name="media_file_bytes">Size: %1$d bytes</string>
     <string name="media_file_duration">Duration: %1$d seconds</string>
     <string name="media_file_unknown">Not supplied by the source</string>
-    <string name="media_reverse_search">Search image</string>
     <string name="media_reverse_search_title">Search image with</string>
     <string name="media_features_done">Done</string>
-    <string name="media_auto_advance_on">Play next video when this ends</string>
-    <string name="media_auto_advance_off">Keep this video when it ends</string>
 </resources>

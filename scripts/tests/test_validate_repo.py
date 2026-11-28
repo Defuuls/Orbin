@@ -62,6 +62,12 @@ class ValidateRepoTest(unittest.TestCase):
         '    maven(m) { name = "MavenCentralMirror" }\n'
         "    mavenCentral()\n"
         "}\n"
+        "pluginManagement {\n"
+        "    repositories {\n"
+        '        maven(m) { name = "MavenCentralMirror" }\n'
+        "        gradlePluginPortal()\n"
+        "    }\n"
+        "}\n"
     )
 
     def mirror_files(self, **overrides: str) -> dict[str, str]:
@@ -88,7 +94,7 @@ class ValidateRepoTest(unittest.TestCase):
         validate_repo.check_maven_mirror(self.mirror_files(**{"build-logic/settings.gradle.kts": after}))
 
         self.assertEqual(
-            ["[maven-mirror] build-logic/settings.gradle.kts:2 lists mavenCentral() without the mirror before it"],
+            ["[maven-mirror] build-logic/settings.gradle.kts:2 lists Maven Central or the plugin portal without the mirror before it"],
             validate_repo.failures,
         )
 
@@ -98,7 +104,31 @@ class ValidateRepoTest(unittest.TestCase):
         validate_repo.check_maven_mirror(self.mirror_files(**{"settings.gradle.kts": settings}))
 
         self.assertEqual(
-            ["[maven-mirror] settings.gradle.kts:8 lists mavenCentral() without the mirror before it"],
+            ["[maven-mirror] settings.gradle.kts:14 lists Maven Central or the plugin portal without the mirror before it"],
+            validate_repo.failures,
+        )
+
+    def test_maven_mirror_requires_plugin_repositories(self) -> None:
+        # build-logic once had none, so its kotlin-dsl plugin still came from the plugin portal.
+        without = self.GOOD_SETTINGS[: self.GOOD_SETTINGS.index("pluginManagement")]
+
+        validate_repo.check_maven_mirror(self.mirror_files(**{"build-logic/settings.gradle.kts": without}))
+
+        self.assertEqual(
+            ["[maven-mirror] build-logic/settings.gradle.kts has no pluginManagement repositories listing the mirror"],
+            validate_repo.failures,
+        )
+
+    def test_maven_mirror_must_precede_the_plugin_portal(self) -> None:
+        settings = self.GOOD_SETTINGS.replace(
+            '        maven(m) { name = "MavenCentralMirror" }\n        gradlePluginPortal()\n',
+            '        gradlePluginPortal()\n        maven(m) { name = "MavenCentralMirror" }\n',
+        )
+
+        validate_repo.check_maven_mirror(self.mirror_files(**{"settings.gradle.kts": settings}))
+
+        self.assertEqual(
+            ["[maven-mirror] settings.gradle.kts:8 lists Maven Central or the plugin portal without the mirror before it"],
             validate_repo.failures,
         )
 
@@ -123,7 +153,7 @@ class ValidateRepoTest(unittest.TestCase):
         validate_repo.check_maven_mirror(self.mirror_files(**{"settings.gradle.kts": nested}))
 
         self.assertEqual(
-            ["[maven-mirror] settings.gradle.kts:3 lists mavenCentral() without the mirror before it"],
+            ["[maven-mirror] settings.gradle.kts:3 lists Maven Central or the plugin portal without the mirror before it"],
             validate_repo.failures,
         )
 

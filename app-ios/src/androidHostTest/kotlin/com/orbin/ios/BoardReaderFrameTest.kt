@@ -57,7 +57,7 @@ class BoardReaderFrameTest {
 
     @Test
     fun catalogScrollAndCompositionSurviveBothResizeDirections() {
-        var width by mutableStateOf(700.dp)
+        var width by mutableStateOf(600.dp)
         showFrame(width = { width })
         composeRule.onNodeWithTag(CATALOG).performScrollToIndex(20)
         val initialState = observed.catalogState
@@ -72,7 +72,7 @@ class BoardReaderFrameTest {
             assertSame(initialIdentity, observed.catalogIdentity)
             assertEquals(1, observed.catalogMounts)
             assertEquals(0, observed.catalogDisposals)
-            width = 700.dp
+            width = 600.dp
         }
 
         composeRule.onNodeWithText("Catalog wide=false selected=none").assertIsDisplayed()
@@ -86,7 +86,7 @@ class BoardReaderFrameTest {
 
     @Test
     fun threadFilesAndCollapseStateSurviveBothResizeDirections() {
-        var width by mutableStateOf(700.dp)
+        var width by mutableStateOf(600.dp)
         showFrame(width = { width }, route = { BoardReaderRoute(catalog, selected) })
         composeRule.onNodeWithTag(FILES).performClick()
         composeRule.onNodeWithTag(COLLAPSE).performClick()
@@ -101,7 +101,7 @@ class BoardReaderFrameTest {
             assertSame(initialIdentity, observed.threadIdentity)
             assertEquals(1, observed.threadMounts)
             assertEquals(0, observed.threadDisposals)
-            width = 700.dp
+            width = 600.dp
         }
 
         composeRule.onNodeWithTag(CATALOG).assertDoesNotExist()
@@ -123,7 +123,7 @@ class BoardReaderFrameTest {
         composeRule.runOnIdle { route = BoardReaderRoute(catalog, selected) }
         composeRule.onNodeWithTag(FILES).performClick()
         composeRule.onNodeWithTag(COLLAPSE).performClick()
-        composeRule.runOnIdle { width = 700.dp }
+        composeRule.runOnIdle { width = 600.dp }
         composeRule.onNodeWithTag(CATALOG).assertDoesNotExist()
         composeRule.runOnIdle { assertEquals(1, observed.catalogDisposals) }
         assertThreadReadingState()
@@ -174,7 +174,7 @@ class BoardReaderFrameTest {
         }
         composeRule.runOnIdle {
             assertEquals(Triple(true, true, true), reports.last())
-            width = 700.dp
+            width = 600.dp
         }
         composeRule.runOnIdle {
             assertEquals(Triple(false, false, true), reports.last())

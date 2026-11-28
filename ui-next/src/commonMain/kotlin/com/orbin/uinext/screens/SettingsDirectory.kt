@@ -48,7 +48,7 @@ internal fun settingsSectionId(id: String): String =
         "hideNsfw", "coverViolent", "nsfwEachSession", "nsfwReveal", "coverNsfwMedia",
         "hiddenThreadPatterns", "postFilterRules",
         -> "hidden"
-        "biometric", "screenPrivacy", "dohProvider", "strictDns", "privateSavedFiles",
+        "biometric", "screenPrivacy", "openLinksInApp", "dohProvider", "strictDns", "privateSavedFiles",
         "askBeforePhotos", "showSavedMediaTab",
         -> "privacy"
         "saveSearchHistory", "saveBrowsingHistory", "historySessionOnly" -> "history"

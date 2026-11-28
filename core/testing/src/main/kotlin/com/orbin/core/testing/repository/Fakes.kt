@@ -254,6 +254,10 @@ class FakeSettingsRepository(
         update { copy(screenPrivacyEnabled = enabled) }
     }
 
+    override suspend fun setOpenLinksInApp(enabled: Boolean) {
+        update { copy(openLinksInApp = enabled) }
+    }
+
     override suspend fun setDohProvider(provider: DohProvider) {
         update { copy(dohProvider = provider) }
     }

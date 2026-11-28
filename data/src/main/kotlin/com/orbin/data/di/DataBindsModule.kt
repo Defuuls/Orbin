@@ -6,10 +6,12 @@ import com.orbin.data.repository.AndroidDownloadQueue
 import com.orbin.data.repository.DownloadPlatformQueue
 import com.orbin.data.update.AppUpdaterImpl
 import com.orbin.data.version.VersionGuardRepositoryImpl
+import com.orbin.data.web.AndroidInAppBrowserDataRepository
 import com.orbin.data.web.WebViewSearchDataRepository
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.DiagnosticsRepository
+import com.orbin.domain.repository.InAppBrowserDataRepository
 import com.orbin.domain.repository.VersionGuardRepository
 import com.orbin.domain.repository.WebSearchDataRepository
 import dagger.Binds
@@ -37,6 +39,10 @@ interface DataBindsModule {
     @Binds
     @Singleton
     fun bindsWebSearchDataRepository(impl: WebViewSearchDataRepository): WebSearchDataRepository
+
+    @Binds
+    @Singleton
+    fun bindsInAppBrowserDataRepository(impl: AndroidInAppBrowserDataRepository): InAppBrowserDataRepository
 
     @Binds
     @Singleton

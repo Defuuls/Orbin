@@ -95,7 +95,7 @@ class SourceReaderDestinationTest {
         val promoted = mutableListOf<Route.Thread>()
         composeRule.setContent {
             NextTheme {
-                Box(Modifier.size(if (wide) 960.dp else 700.dp, 700.dp)) {
+                Box(Modifier.size(if (wide) 960.dp else 600.dp, 700.dp)) {
                     SourceReaderDestination(
                         twoPane = wide,
                         title = "History",

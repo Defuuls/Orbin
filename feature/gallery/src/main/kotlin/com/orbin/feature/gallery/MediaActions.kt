@@ -17,9 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.uinext.components.ReaderMediaSpeedOptions
@@ -43,10 +43,11 @@ internal fun MediaActionsMenu(
     onShowMediaFilter: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val actions =
         listOf<Pair<String, () -> Unit>>(
             stringResource(R.string.gallery_open_in_browser) to
-                { SafeExternalLinks.open(context, attachment.sourceUrl) },
+                { uriHandler.openUri(attachment.sourceUrl) },
             stringResource(R.string.gallery_share) to { context.shareLink(attachment.sourceUrl) },
             stringResource(R.string.gallery_copy_link) to { context.copyLink(attachment.sourceUrl) },
             stringResource(R.string.gallery_download) to { onSave(attachment) },

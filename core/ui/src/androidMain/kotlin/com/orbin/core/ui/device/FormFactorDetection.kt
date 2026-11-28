@@ -2,9 +2,6 @@ package com.orbin.core.ui.device
 
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import com.orbin.core.model.FormFactor
 
 /**
@@ -21,12 +18,5 @@ fun Context.formFactor(): FormFactor =
         resources.configuration.smallestScreenWidthDp >= TABLET_SMALLEST_WIDTH_DP -> FormFactor.TABLET
         else -> FormFactor.PHONE
     }
-
-/** [formFactor] for this composition's context; it cannot change while the app runs. */
-@Composable
-fun rememberFormFactor(): FormFactor {
-    val context = LocalContext.current
-    return remember(context) { context.formFactor() }
-}
 
 private const val TABLET_SMALLEST_WIDTH_DP = 600

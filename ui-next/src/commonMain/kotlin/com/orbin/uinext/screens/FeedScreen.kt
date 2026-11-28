@@ -423,9 +423,6 @@ private fun ReaderFeedEmpty(
     }
 }
 
-/** Legacy density constants remain available to source-compatible integrations. */
-internal val FEED_CARD_MIN_WIDTH = 360.dp
-internal const val FEED_EXCERPT_LINES = 3
 internal const val FEED_SIZE_MIN_DP = MEDIA_SIZE_MIN_DP
 internal const val FEED_SIZE_MAX_DP = MEDIA_SIZE_MAX_DP
 internal const val FEED_SIZE_STEPS = MEDIA_SIZE_STEPS

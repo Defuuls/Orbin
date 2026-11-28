@@ -205,6 +205,11 @@ class FakeSettings : SettingsRepository {
             it.copy(screenPrivacyEnabled = enabled)
         }
 
+    override suspend fun setOpenLinksInApp(enabled: Boolean) =
+        settings.update {
+            it.copy(openLinksInApp = enabled)
+        }
+
     override suspend fun setDohProvider(provider: DohProvider) =
         settings.update {
             it.copy(dohProvider = provider)

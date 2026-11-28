@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Velocity
@@ -54,7 +55,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
 import com.orbin.media.image.MediaThumbnail
@@ -112,6 +112,7 @@ fun GalleryScreen(
     val density = LocalDensity.current
     var toolbarHeight by remember { mutableStateOf(ReaderSize.appBar) }
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     var fileInfo by remember { mutableStateOf<MediaAttachment?>(null) }
     var imageSearch by remember { mutableStateOf<String?>(null) }
@@ -430,7 +431,7 @@ fun GalleryScreen(
                     imageUrl = target,
                     onOpenUrl = { url ->
                         imageSearch = null
-                        SafeExternalLinks.open(context, url)
+                        uriHandler.openUri(url)
                     },
                     onDismiss = { imageSearch = null },
                 )

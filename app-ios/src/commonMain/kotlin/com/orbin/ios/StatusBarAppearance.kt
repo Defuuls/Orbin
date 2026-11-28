@@ -13,7 +13,7 @@ private val Route.hasBlackMediaChrome: Boolean
         when (this) {
             Route.Feed, Route.Boards, Route.Watched, Route.Saved, Route.Search,
             Route.Settings, Route.Downloads, Route.History,
-            is Route.Catalog, is Route.BoardMedia, is Route.ThreadPage,
+            is Route.Catalog, is Route.BoardMedia, is Route.ThreadPage, is Route.WebPage,
             -> false
             is Route.Media, is Route.ThreadVideos -> true
         }

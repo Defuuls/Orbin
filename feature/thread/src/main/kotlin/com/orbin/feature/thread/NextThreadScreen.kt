@@ -24,6 +24,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,7 +33,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.core.common.result.DataError
 import com.orbin.core.model.PostFilterKind
 import com.orbin.core.model.PostId
@@ -177,6 +177,7 @@ private fun LoadedThread(
     onInitialPostConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val windowSize = LocalWindowInfo.current.containerSize
     val density = LocalDensity.current
     val wideWindow =
@@ -524,7 +525,7 @@ private fun LoadedThread(
                                 id.toLongOrNull()?.let(viewModel::expandToPost)
                                 scrollTarget = id
                             },
-                            onLinkClick = { link -> SafeExternalLinks.open(context, link) },
+                            onLinkClick = { link -> uriHandler.openUri(link) },
                         )
                     }
                 },
@@ -553,7 +554,7 @@ private fun LoadedThread(
                 onOpenBrowser =
                     viewModel.threadWebUrl?.let { url ->
                         {
-                            SafeExternalLinks.open(context, url)
+                            uriHandler.openUri(url)
                         }
                     },
                 onPostReference = { id ->

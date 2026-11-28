@@ -15,7 +15,6 @@
     <string name="next_downloads_tab">Downloads</string>
     <string name="next_board_media">Media wall</string>
     <string name="next_media_saved">Saved ›</string>
-    <string name="next_search_threads">Search threads ›</string>
     <string name="next_search_title">Search</string>
     <string name="next_search_query_label">Search the boards you follow</string>
     <string name="next_search_idle_hint">Search the catalogs of followed boards across all sites.</string>
@@ -27,24 +26,14 @@
     <string name="next_board_media_subtitle">Every file on this board</string>
     <string name="next_media_actions">Save or share</string>
     <string name="next_all_media_subtitle">Every file from every board you follow</string>
-    <string name="next_settings_title">Settings</string>
     <string name="next_settings_search">Search settings</string>
     <string name="next_settings_no_matches">No settings match your search</string>
 
-    <string name="next_launchpad_boards">Boards</string>
     <string name="next_boards_search">Search boards...</string>
     <string name="next_provider_unknown">Select a site</string>
-    <string name="next_boards_discover">Discover</string>
-    <string name="next_boards_following_tab">Following (%1$d)</string>
-    <string name="next_boards_following">Following</string>
-    <string name="next_boards_tap_to_follow">Tap to follow</string>
     <string name="next_boards_no_match">No boards match your selection</string>
     <string name="next_boards_random">Surprise me</string>
     <string name="next_boards_nsfw">NSFW</string>
-    <plurals name="next_boards_count">
-        <item quantity="one">%1$d board</item>
-        <item quantity="other">%1$d boards</item>
-    </plurals>
     <plurals name="next_boards_thread_count">
         <item quantity="one">%1$s thread</item>
         <item quantity="other">%1$s threads</item>
@@ -60,17 +49,13 @@
         <item quantity="other">%1$d files</item>
     </plurals>
     <string name="next_row_counts">%1$s · %2$s</string>
-    <string name="next_row_counts_unread">%1$s · +%2$d</string>
     <string name="reader_catalog_counts">%1$s, %2$s</string>
-    <string name="reader_catalog_stats">%1$dR %2$dI</string>
     <plurals name="next_feed_thread_count">
         <item quantity="one">%1$d thread</item>
         <item quantity="other">%1$d threads</item>
     </plurals>
-    <string name="next_row_no_image">no image</string>
 
     <!-- What pressing something does, for readers who are told rather than shown -->
-    <string name="next_open_thread">Open thread</string>
     <string name="next_open_file">Open file</string>
     <string name="next_media_cell_description">File from %1$s</string>
 
@@ -93,21 +78,21 @@
     <string name="next_thread_files">Files</string>
     <string name="next_thread_download_all">Download all</string>
     <string name="next_thread_download_title">Download</string>
-    <string name="next_thread_download_videos">Videos only</string>
-    <string name="next_thread_download_everything">Everything</string>
     <string name="next_thread_back_to">Back to No.%1$s</string>
     <string name="next_thread_scroll_top">Scroll to top</string>
     <string name="reader_scroll_to_top">Scroll to top</string>
+    <string name="browser_reload">Reload</string>
+    <string name="browser_back">Previous page</string>
+    <string name="browser_forward">Next page</string>
+    <string name="browser_share">Share link</string>
+    <string name="browser_open_external">Open in browser</string>
+    <string name="browser_loading">Loading</string>
     <string name="reader_scroll_to_bottom">Scroll to bottom</string>
     <plurals name="next_thread_new_posts">
         <item quantity="one">%1$d new</item>
         <item quantity="other">%1$d new</item>
     </plurals>
     <string name="next_thread_save_page">Save page</string>
-    <string name="next_thread_share">Save links as text</string>
-    <string name="next_thread_jump_top">Top</string>
-    <string name="next_thread_jump_unread">Unread</string>
-    <string name="next_thread_jump_bottom">Bottom</string>
     <string name="next_post_expand">Expand post</string>
     <string name="next_post_collapse">Collapse post</string>
     <string name="next_post_collapsed_state">Collapsed</string>
@@ -129,24 +114,7 @@
     <string name="next_snackbar_dismiss">Dismiss</string>
 
     <!-- Feed/Boards -->
-    <string name="next_search_boards">Search boards</string>
-    <string name="next_discover">Discover</string>
-    <string name="next_no_boards_match">No boards match your selection</string>
-    <string name="next_following">Following</string>
-    <string name="next_tap_to_follow">Tap to follow</string>
-    <string name="next_nothing_here_yet">Nothing here yet</string>
-    <string name="next_try_different_search">Try a different search, or follow a few more boards.</string>
-    <string name="next_explore_boards">Explore boards</string>
     <string name="next_clear_search">Clear search</string>
-    <plurals name="next_threads_count">
-        <item quantity="one">%1$d thread</item>
-        <item quantity="other">%1$d threads</item>
-    </plurals>
-    <string name="next_search_threads_prompt">Sift through your threads</string>
-    <plurals name="next_thread_posts_count">
-        <item quantity="one">%1$d post</item>
-        <item quantity="other">%1$d posts</item>
-    </plurals>
 
     <!-- Onboarding -->
     <string name="next_onboarding_title">Welcome to Orbin</string>

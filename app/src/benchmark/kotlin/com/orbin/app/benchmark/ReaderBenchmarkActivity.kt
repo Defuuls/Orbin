@@ -42,10 +42,12 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
 import com.orbin.core.model.PosterInfo
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.TWO_PANE_MIN_WIDTH_DP
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
+import com.orbin.core.model.WIDE_SCREEN_MIN_DP
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.readerPaneWidths
 import com.orbin.core.model.showsTwoPanes
@@ -173,7 +175,7 @@ private fun ReaderBenchmarkFixture(
         val height = maxHeight.value.toInt()
         val wide = isWideWindow(width, height)
         require(!twoPane || showsTwoPanes(width, height)) {
-            "Two-pane benchmark needs a window at least 800dp wide and 600dp high"
+            "Two-pane benchmark needs a window at least ${TWO_PANE_MIN_WIDTH_DP}dp wide and ${WIDE_SCREEN_MIN_DP}dp high"
         }
         val catalog: @Composable () -> Unit = {
             DisposableEffect(Unit) {

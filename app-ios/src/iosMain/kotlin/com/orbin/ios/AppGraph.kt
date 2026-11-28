@@ -152,9 +152,3 @@ internal object AppGraph {
 
     private fun infoString(key: String): String? = NSBundle.mainBundle.objectForInfoDictionaryKey(key) as? String
 }
-
-private val MEDIA_EXTENSIONS =
-    setOf("jpg", "jpeg", "png", "gif", "webp", "avif", "bmp", "webm", "mp4", "m4v", "mov", "mp3", "ogg", "m4a", "wav")
-
-/** A picture, video or sound file, which may come from the cache; anything else is page data. */
-internal fun isMediaUrl(path: String): Boolean = path.substringAfterLast('.', "").lowercase() in MEDIA_EXTENSIONS
