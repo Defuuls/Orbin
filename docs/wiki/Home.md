@@ -14,7 +14,7 @@ catalogs, threads, links, and media but does not post, reply, or create threads.
 
 | | |
 | --- | --- |
-| Current release | **v221 — Ammolite** (2026-11-27) |
+| Current release | **v222 — Analcime** (2026-11-28) |
 | Platform | Android 12+ (`minSdk` 31) and iOS 16+ |
 | Providers | 4chan/Vichan-compatible reference provider; BBW Chan/LynxChan |
 | UI | Adaptive grid-first Compose interface for phones, tablets and foldables |
