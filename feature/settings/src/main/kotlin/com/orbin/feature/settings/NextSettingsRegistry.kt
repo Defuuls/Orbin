@@ -1,6 +1,7 @@
 package com.orbin.feature.settings
 
 import com.orbin.core.model.AccentTheme
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -39,7 +40,7 @@ internal fun buildSettings(
             rows.historyAndMediaExtras(settings, vm) + rows.readingExtras(settings, vm) +
             rows.filterEditors(settings) + rows.strictDns(dns, vm)
     val data = rows.data(settings, vm, updateState, imageCacheLabel, videoCacheLabel, clearArmed, mediaCacheLabel)
-    val appearanceIds = setOf("themeMode", "accentTheme", "amoled", "catalogMode", "sharpPreviews")
+    val appearanceIds = setOf("themeMode", "accentTheme", "amoled", "catalogMode", "sharpPreviews", "appInterface")
     val groups =
         listOf(
             strings.get(R.string.settings_section_appearance) to preferences.filter { it.id in appearanceIds },
@@ -84,6 +85,15 @@ private class Rows(
             settings.accentTheme,
             Enum<*>::titleCase,
             vm::setAccentTheme,
+        ),
+        choice(
+            "appInterface",
+            strings.get(R.string.settings_interface),
+            AppInterface.entries,
+            settings.appInterface,
+            Enum<*>::titleCase,
+            vm::setAppInterface,
+            hint = strings.get(R.string.settings_interface_hint),
         ),
     )
 

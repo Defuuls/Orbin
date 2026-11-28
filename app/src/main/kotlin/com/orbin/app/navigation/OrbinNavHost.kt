@@ -22,7 +22,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.orbin.app.LocalOrbinSnackbarHostState
 import com.orbin.app.R
+import com.orbin.app.pulse.PulseHomeRoute
+import com.orbin.app.pulse.PulseThreadRoute
+import com.orbin.app.pulse.destination
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.ThreadPresentation
+import com.orbin.core.model.stream.StreamLens
 import com.orbin.feature.board.NextBoardScreen
 import com.orbin.feature.downloads.DownloadsScreen
 import com.orbin.feature.gallery.GalleryScreen
@@ -58,6 +63,7 @@ fun OrbinNavHost(
     chromeHidesOnScroll: Boolean = true,
     twoPaneBoardDetail: Boolean = false,
     threadPresentation: ThreadPresentation = ThreadPresentation.PAGE,
+    appInterface: AppInterface = AppInterface.CORAL,
     onChromeVisibleChange: (Boolean) -> Unit = {},
     onOnboardingCompleted: () -> Unit = {},
 ) {
@@ -72,6 +78,13 @@ fun OrbinNavHost(
     }
     val openPrimary: (NextDestination) -> Unit = { destination ->
         navController.openPrimaryDestination(destination, library)
+    }
+    val openLens: (StreamLens) -> Unit = { lens ->
+        when (val destination = lens.destination()) {
+            null -> Unit
+            NextDestination.SETTINGS -> openPrimary(destination)
+            else -> onDestination(destination)
+        }
     }
     val pickBoard: (String, String, String) -> Unit = { provider, board, title ->
         navController.selectCatalogBoard(Route.Board(provider, board, title))
@@ -88,6 +101,10 @@ fun OrbinNavHost(
         // Home is a thread source like Watched or Saved: on a tablet the feed stays on the left
         // and the thread it opens takes the right, instead of the thread covering the feed.
         composable<Route.NextFeed> { backStackEntry ->
+            if (appInterface == AppInterface.PULSE) {
+                PulseHomeRoute(onOpenThread = openThread, onOpenLens = openLens)
+                return@composable
+            }
             SourceReaderRouteDestination(
                 navController = navController,
                 backStackEntry = backStackEntry,
@@ -243,6 +260,10 @@ fun OrbinNavHost(
         }
 
         composable<Route.Thread> { backStackEntry ->
+            if (appInterface == AppInterface.PULSE) {
+                PulseThreadRoute(onBack = { navController.navigateUp() }, onOpenLens = openLens)
+                return@composable
+            }
             val route = backStackEntry.toRoute<Route.Thread>()
             val mediaScrollIndex by
                 backStackEntry.savedStateHandle

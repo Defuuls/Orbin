@@ -58,6 +58,8 @@ suspend fun SettingsRepository.restorePortableSettings(
     beforeEach()
     setAmoled(restored.amoled)
     beforeEach()
+    setAppInterface(restored.appInterface)
+    beforeEach()
     setCatalogMode(restored.catalogMode)
     beforeEach()
     setVideoCacheMegabytes(restored.videoCacheMegabytes)

@@ -63,6 +63,7 @@ import com.orbin.app.navigation.openPendingRoute
 import com.orbin.app.navigation.openPrimaryDestination
 import com.orbin.app.navigation.primaryNavigationDestination
 import com.orbin.app.navigation.primaryWatchedBadge
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.feature.home.FeedDownloadBadgeViewModel
 import com.orbin.uinext.components.LibraryNavigation
@@ -87,6 +88,7 @@ fun OrbinApp(
     navController: NavHostController = rememberNavController(),
     startWithOnboarding: Boolean = false,
     isOnline: Boolean = true,
+    appInterface: AppInterface = AppInterface.CORAL,
     pendingRoute: Route? = null,
     onPendingRouteHandled: () -> Unit = {},
     onOnboardingCompleted: () -> Unit = {},
@@ -165,6 +167,7 @@ fun OrbinApp(
                                 startDestination = initialStartDestination,
                                 chromeHidesOnScroll = false,
                                 twoPaneBoardDetail = twoPaneBoardDetail,
+                                appInterface = appInterface,
                                 onOnboardingCompleted = acknowledgeCompletion,
                             )
                         }

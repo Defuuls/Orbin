@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.FormFactor
@@ -66,6 +67,7 @@ class SettingsRepositoryImplTest {
         repository.setDeepMediaScan(true)
         repository.setThemeMode(AppThemeMode.DARK)
         repository.setAmoled(true)
+        repository.setAppInterface(AppInterface.PULSE)
         repository.setBiometricLockEnabled(true)
         repository.setActiveProviderId(ProviderId("test-provider"))
         repository.setOnboardingCompleted(true)
@@ -81,6 +83,7 @@ class SettingsRepositoryImplTest {
             deepMediaScan = true,
             themeMode = AppThemeMode.DARK,
             amoled = true,
+            appInterface = AppInterface.PULSE,
             biometricLockEnabled = true,
             activeProviderId = "test-provider",
             onboardingCompleted = true,

@@ -2,6 +2,7 @@ package com.orbin.core.testing.repository
 
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AccentTheme
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.Board
@@ -244,6 +245,10 @@ class FakeSettingsRepository(
 
     override suspend fun setAmoled(enabled: Boolean) {
         update { copy(amoled = enabled) }
+    }
+
+    override suspend fun setAppInterface(value: AppInterface) {
+        update { copy(appInterface = value) }
     }
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {

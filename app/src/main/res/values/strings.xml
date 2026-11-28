@@ -60,4 +60,30 @@
     <string name="shortcut_downloads_long">Saved Media</string>
     <string name="shortcut_boards_short">Boards</string>
     <string name="shortcut_boards_long">Browse Boards</string>
+
+    <!-- Pulse: the experimental single-stream interface -->
+    <string name="pulse_controls_hold">Menu</string>
+    <string name="pulse_controls_title">Controls</string>
+    <string name="pulse_refresh">Refresh</string>
+    <string name="pulse_back">Back</string>
+    <string name="pulse_close">Close</string>
+    <string name="pulse_command_hint">filter · / for commands</string>
+    <string name="pulse_lens_home">Home</string>
+    <string name="pulse_lens_watched">Watched</string>
+    <string name="pulse_lens_saved">Saved</string>
+    <string name="pulse_lens_settings">Settings</string>
+    <string name="pulse_thread">Thread</string>
+    <string name="pulse_loading">Loading…</string>
+    <string name="pulse_empty_feed">No threads yet. Follow boards from the Coral interface in Settings.</string>
+    <string name="pulse_blocked">Hidden by your content filter</string>
+    <string name="pulse_anonymous">Anon</string>
+    <string name="pulse_media_count">%1$d media</string>
+    <plurals name="pulse_summary_threads">
+        <item quantity="one">%1$d thread</item>
+        <item quantity="other">%1$d threads</item>
+    </plurals>
+    <plurals name="pulse_summary_posts">
+        <item quantity="one">%1$d post</item>
+        <item quantity="other">%1$d posts</item>
+    </plurals>
 </resources>
