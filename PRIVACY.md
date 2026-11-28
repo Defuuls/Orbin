@@ -12,10 +12,10 @@ Your followed boards, bookmarks and watched threads, reading history and read po
 threads and pages, downloads and settings are stored on your device. You can delete them at any
 time from Settings (Clear local activity, Clear image cache), or by uninstalling the app.
 
-Sites you open in the in-app browser (Android) keep their cookies, site storage and cached pages
-on your device, so a site you log into stays logged in. They are kept, unencrypted, in the
-browser's own WebView directory, separate from the rest of the app, until you clear local
-activity.
+Sites you open in the in-app browser keep their cookies, site storage and cached pages on your
+device, so a site you log into stays logged in. They are kept, unencrypted, in the browser's own
+web storage, separate from the rest of the app (on Android, its own WebView directory; on iOS, the
+system's web storage, which nothing else in Orbin uses), until you clear local activity.
 
 How that data is protected depends on the platform:
 
@@ -53,8 +53,8 @@ from other sites in turn, as it would in any browser. See "In-app browser" below
 | `cloudflare-dns.com`, `dns.google`, `doh.opendns.com`, `dns.nextdns.io` | Looking up site names; only the resolver you chose | The site names looked up |
 | `api.github.com`, `github.com` | Android only: checking for and downloading updates | Your IP address and the request |
 | `lens.google.com`, `www.bing.com`, `yandex.com`, `saucenao.com` | Only when you choose a reverse image search | The address of that image, opened in Orbin's browser or yours |
-| Sites you open from a link | Android only: a link you open in the in-app browser | What any browser sends: your IP address, the page requested and that site's cookies |
-| Google Safe Browsing | Android only: while the in-app browser loads a page | Shortened hashes of page addresses, not the addresses themselves |
+| Sites you open from a link | A link you open in the in-app browser | What any browser sends: your IP address, the page requested and that site's cookies |
+| Google Safe Browsing | While the in-app browser loads a page (on iOS, relayed by Apple, and Tencent's list in mainland China) | Shortened hashes of page addresses, not the addresses themselves |
 | Apple iCloud | iOS only, only if you turn on iCloud sync | See "iCloud sync" below |
 
 - **The imageboards you browse.** Opening a board, thread or file requests it from that site, as a
@@ -91,17 +91,23 @@ from other sites in turn, as it would in any browser. See "In-app browser" below
   or a build you install yourself.
 - **Reverse image search.** Choosing one opens the search engine you picked, in Orbin's browser
   or your own (see below), with the image's address. Nothing is sent unless you choose it.
-- **In-app browser (Android).** Links open in Orbin's own browser unless you turn off "Open links
-  in the app"; then they open in your default browser, as before. The in-app browser is Android's
-  system WebView, run in a separate process from the reader:
+- **In-app browser.** Links open in Orbin's own browser unless you turn off "Open links in the
+  app"; then they open in your default browser, as before. On Android it is the system WebView,
+  run in a separate process from the reader; on iOS it is the system's WebKit view, shown as a
+  screen of the app, so App lock and the screen privacy shield cover it too.
   - It looks sites up with **the device's DNS, not encrypted DNS, even with Strict encrypted DNS
-    on**, and identifies itself as Android WebView rather than as Orbin.
+    on**, and identifies itself as the system's web view (Android WebView or iOS WebKit) rather
+    than as Orbin.
   - It keeps sites' cookies and storage so logins persist, until you clear local activity. It
-    refuses cookies from sites other than the one you are on.
-  - Pages cannot reach your camera, microphone, location or files, open other apps, download
-    files, or load anything over unencrypted http.
-  - WebView's Safe Browsing checks pages against Google's list of dangerous sites, sending Google
-    shortened hashes of page addresses.
+    refuses cookies from sites other than the one you are on (on iOS, WebKit's own tracking
+    prevention does this).
+  - Pages cannot reach your camera, microphone or location, open other apps, download files, or
+    load anything over unencrypted http. On Android they cannot reach your files either. On iOS a
+    page's upload button opens the system picker, which iOS does not let apps turn off: a page
+    gets only a photo or file you pick there.
+  - Its safe-browsing check compares pages against Google's list of dangerous sites, sending
+    shortened hashes of page addresses. On iOS this is WebKit's fraudulent website warning, which
+    Apple relays (and which uses Tencent's list in mainland China).
 
 ## iCloud sync (iOS, off by default)
 

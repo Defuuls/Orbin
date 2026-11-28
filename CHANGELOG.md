@@ -7,6 +7,7 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- iPhone and iPad: links open in Orbin's own browser too, as a screen of the app, so App lock and the screen privacy shield cover it. It keeps sites' logins until you clear local activity and blocks pages from your camera, microphone, location and other apps. Turn off "Open links in the app" in Settings to keep using your default browser.
 - Android: links open in Orbin's own browser, so you stay in the app. It runs separately from the reader, keeps sites' logins until you clear local activity, and blocks pages from reaching your camera, location, files or other apps. Turn off "Open links in the app" in Settings to keep opening links in your default browser.
 
 ### Changed

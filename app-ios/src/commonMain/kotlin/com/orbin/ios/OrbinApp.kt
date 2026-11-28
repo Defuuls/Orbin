@@ -16,6 +16,8 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -99,104 +101,118 @@ fun OrbinApp(
     val palette = canonicalNextPalette(dark, settings.amoled, settings.accentTheme.name)
     val lightIcons = lightStatusBarIcons(backStack.last(), palette.dark, firstRun.needed, lockState)
     SideEffect { onStatusBarAppearance(lightIcons) }
-    NextTheme(
-        darkTheme = palette.dark,
-        amoled = palette.amoled,
-        palette = palette,
-        fontScale = fontScale,
-        platform = NextPlatform.IOS,
-        showSavedMediaTab = settings.showSavedMediaTab,
-    ) {
-        // Each screen's scroll position outlives it being covered or left, as on Android.
-        val stateHolder = rememberSaveableStateHolder()
-        val routeStates = remember { RouteStates() }
-        LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
-        val readerContent: @Composable (Boolean) -> Unit = { _ ->
-            Box(
-                Modifier.fillMaxSize().readerKeyboardShortcuts(
-                    onDestination = { destination ->
-                        if (readerReady &&
-                            !lockState.locked &&
-                            !lockState.obscured
-                        ) {
-                            browser.openPrimaryDestination(destination)
-                        }
-                    },
-                ),
-            ) {
-                if (!lockState.locked && !firstRun.initialized) {
-                    NextLoading(Modifier.fillMaxSize())
-                } else if (!lockState.locked && firstRun.needed) {
-                    OnboardingDestination(browser)
-                } else if (!lockState.locked) {
-                    val route = backStack.last()
-                    val sourceReader = sourceReaderRoute(backStack)
-                    val primaryDestination = primaryNavigationDestination(sourceReader?.source ?: route)
-                    val downloadBadge = rememberActiveDownloadBadge(downloads)
-                    val watchedBadge = rememberWatchedBadge(browser)
-                    CompositionLocalProvider(
-                        LocalLibraryNavigation provides
-                            LibraryNavigation(
-                                onSelect = browser::openLibrary,
-                                onPrimary = browser::openPrimaryDestination,
-                                watchedBadge = watchedBadge,
-                                downloadBadge = downloadBadge,
-                                // Library sits above Feed: the edge swipe returns there, as Android's Back does.
-                                onBack = { browser.back() },
-                            ),
-                    ) {
-                        OrbinAdaptiveNavigation(
-                            enabled = primaryDestination != null,
-                            navigation = {
-                                OrbinSideBar(
-                                    selected = checkNotNull(primaryDestination),
-                                    onSelect = browser::openPrimaryDestination,
-                                    downloadBadge = downloadBadge,
+    // Every link goes through one handler, as on Android; "Open in browser" keeps the system's.
+    val systemLinks = LocalUriHandler.current
+    val links =
+        remember(browser, systemLinks) {
+            ReaderUriHandler(
+                openLinksInApp = { browser.settings.current.value.openLinksInApp },
+                inAppAvailable = supportsInAppBrowser,
+                openInApp = browser::openWebPage,
+                external = systemLinks,
+            )
+        }
+    CompositionLocalProvider(LocalUriHandler provides links) {
+        NextTheme(
+            darkTheme = palette.dark,
+            amoled = palette.amoled,
+            palette = palette,
+            fontScale = fontScale,
+            platform = NextPlatform.IOS,
+            showSavedMediaTab = settings.showSavedMediaTab,
+        ) {
+            // Each screen's scroll position outlives it being covered or left, as on Android.
+            val stateHolder = rememberSaveableStateHolder()
+            val routeStates = remember { RouteStates() }
+            LaunchedEffect(backStack) { routeStates.visit(backStack).forEach(stateHolder::removeState) }
+            val readerContent: @Composable (Boolean) -> Unit = { _ ->
+                Box(
+                    Modifier.fillMaxSize().readerKeyboardShortcuts(
+                        onDestination = { destination ->
+                            if (readerReady &&
+                                !lockState.locked &&
+                                !lockState.obscured
+                            ) {
+                                browser.openPrimaryDestination(destination)
+                            }
+                        },
+                    ),
+                ) {
+                    if (!lockState.locked && !firstRun.initialized) {
+                        NextLoading(Modifier.fillMaxSize())
+                    } else if (!lockState.locked && firstRun.needed) {
+                        OnboardingDestination(browser)
+                    } else if (!lockState.locked) {
+                        val route = backStack.last()
+                        val sourceReader = sourceReaderRoute(backStack)
+                        val primaryDestination = primaryNavigationDestination(sourceReader?.source ?: route)
+                        val downloadBadge = rememberActiveDownloadBadge(downloads)
+                        val watchedBadge = rememberWatchedBadge(browser)
+                        CompositionLocalProvider(
+                            LocalLibraryNavigation provides
+                                LibraryNavigation(
+                                    onSelect = browser::openLibrary,
+                                    onPrimary = browser::openPrimaryDestination,
                                     watchedBadge = watchedBadge,
-                                )
-                            },
+                                    downloadBadge = downloadBadge,
+                                    // Library sits above Feed: the edge swipe returns there, as Android's Back does.
+                                    onBack = { browser.back() },
+                                ),
                         ) {
-                            val boardReader = boardReaderRoute(backStack)
-                            if (boardReader != null) {
-                                BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
-                            } else if (sourceReader != null) {
-                                SourceReaderDestination(browser, sourceReader, downloads, pages, stateHolder)
-                            } else {
-                                stateHolder.SaveableStateProvider(route.stateKey) {
-                                    Destination(
-                                        browser,
-                                        lock,
-                                        downloads,
-                                        backup,
-                                        formFactor,
-                                        version,
-                                        route,
-                                        pages,
-                                        cloudSync,
+                            OrbinAdaptiveNavigation(
+                                enabled = primaryDestination != null,
+                                navigation = {
+                                    OrbinSideBar(
+                                        selected = checkNotNull(primaryDestination),
+                                        onSelect = browser::openPrimaryDestination,
+                                        downloadBadge = downloadBadge,
+                                        watchedBadge = watchedBadge,
                                     )
+                                },
+                            ) {
+                                val boardReader = boardReaderRoute(backStack)
+                                if (boardReader != null) {
+                                    BoardReaderDestination(browser, boardReader, downloads, pages, stateHolder)
+                                } else if (sourceReader != null) {
+                                    SourceReaderDestination(browser, sourceReader, downloads, pages, stateHolder)
+                                } else {
+                                    stateHolder.SaveableStateProvider(route.stateKey) {
+                                        Destination(
+                                            browser,
+                                            lock,
+                                            downloads,
+                                            backup,
+                                            formFactor,
+                                            version,
+                                            route,
+                                            pages,
+                                            cloudSync,
+                                            systemLinks,
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+                    LockCover(lock, lockState)
                 }
-                LockCover(lock, lockState)
             }
-        }
-        // This release's notes, once after an update, never over the lock.
-        if (whatsNew != null) {
-            WhatsNewOnUpdate(
-                whatsNew.lastSeen,
-                whatsNew::markSeen,
-                visible = !lockState.locked && !lockState.obscured && readerReady,
-                themeConfig =
-                    UpdateThemeConfig(
-                        theme = settings.toSetupThemeOption(),
-                        onThemeChange = { option -> browser.settings.applySetupTheme(option) },
-                    ),
-                content = readerContent,
-            )
-        } else {
-            readerContent(false)
+            // This release's notes, once after an update, never over the lock.
+            if (whatsNew != null) {
+                WhatsNewOnUpdate(
+                    whatsNew.lastSeen,
+                    whatsNew::markSeen,
+                    visible = !lockState.locked && !lockState.obscured && readerReady,
+                    themeConfig =
+                        UpdateThemeConfig(
+                            theme = settings.toSetupThemeOption(),
+                            onThemeChange = { option -> browser.settings.applySetupTheme(option) },
+                        ),
+                    content = readerContent,
+                )
+            } else {
+                readerContent(false)
+            }
         }
     }
 }
@@ -316,7 +332,8 @@ private fun Destination(
     version: AppVersion,
     route: Route,
     pages: ThreadPages?,
-    cloudSync: CloudSyncController? = null,
+    cloudSync: CloudSyncController?,
+    systemLinks: UriHandler,
 ) {
     when (route) {
         Route.Feed -> FeedDestination(browser, downloads)
@@ -330,6 +347,7 @@ private fun Destination(
         is Route.ThreadPage -> ThreadDestination(browser, downloads, pages)
         is Route.Media -> MediaDestination(browser, downloads, route)
         is Route.ThreadVideos -> ThreadVideosDestination(browser, downloads, route)
+        is Route.WebPage -> WebPageDestination(browser, route, systemLinks)
     }
 }
 

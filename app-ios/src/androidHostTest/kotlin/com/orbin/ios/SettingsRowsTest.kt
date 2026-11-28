@@ -33,7 +33,7 @@ class SettingsRowsTest {
         assertTrue(groups.all { it.second.isNotEmpty() })
         val ids = groups.flatMap { it.second }.map { it.id }
         assertEquals(ids.size, ids.toSet().size)
-        assertEquals(32, ids.size)
+        assertEquals(33, ids.size)
         assertEquals(
             setOf(
                 "themeMode",
@@ -45,6 +45,7 @@ class SettingsRowsTest {
                 "coverViolent",
                 "biometric",
                 "screenPrivacy",
+                "openLinksInApp",
                 "dohProvider",
                 "strictDns",
                 "saveSearchHistory",
@@ -74,6 +75,50 @@ class SettingsRowsTest {
         assertTrue("colorTheme" !in ids)
         assertTrue("color_theme" !in ids)
     }
+
+    @Test
+    fun linksOpenInTheAppByDefaultAndTheRowSaysWhatThatMeans() {
+        val row = rowFor(AppSettings.Default, SettingIds.OPEN_LINKS_IN_APP)
+        assertEquals("Open links in the app", row.label)
+        assertEquals(ON_LABEL, row.value)
+        assertTrue("device's DNS" in row.hint.orEmpty())
+        assertTrue("clear local activity" in row.hint.orEmpty())
+        assertEquals(OFF_LABEL, rowFor(AppSettings(openLinksInApp = false), SettingIds.OPEN_LINKS_IN_APP).value)
+        // Strict encrypted DNS does not turn the browser off, and says so.
+        assertTrue("in-app browser still use the device's DNS" in STRICT_DNS_HINT)
+    }
+
+    @Test
+    fun openLinksInAppWritesThroughTheSharedRepository() =
+        runTest {
+            val repository = FakeSettings()
+            val reader = ReaderSettings(repository, FakeHistory(), backgroundScope)
+            runCurrent()
+            reader.setOpenLinksInApp(false).join()
+            assertEquals(false, repository.settings.value.openLinksInApp)
+            reader.setOpenLinksInApp(true).join()
+            assertEquals(true, repository.settings.value.openLinksInApp)
+        }
+
+    @Test
+    fun clearingActivityAlsoClearsTheInAppBrowsersSiteData() =
+        runTest {
+            val cleared = mutableListOf<String>()
+            val reader =
+                ReaderSettings(
+                    FakeSettings(),
+                    FakeHistory(),
+                    backgroundScope,
+                    clearBrowserData = { cleared += "browser" },
+                )
+            reader.clearActivity { cleared += "caches" }.join()
+            assertEquals(listOf("browser", "caches"), cleared)
+        }
+
+    private fun rowFor(
+        settings: AppSettings,
+        id: String,
+    ) = settingsGroups(settings, false, false).flatMap { it.second }.single { it.id == id }
 
     @Test
     fun everyCatalogViewShowsItsSavedSelection() {
