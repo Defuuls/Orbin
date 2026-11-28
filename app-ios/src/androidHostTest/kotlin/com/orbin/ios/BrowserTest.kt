@@ -25,8 +25,6 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,9 +41,7 @@ import kotlin.test.assertTrue
  */
 @Suppress("LargeClass")
 class BrowserTest {
-    private val requested = mutableListOf<String>()
-    private val userAgents = mutableSetOf<String?>()
-    private val recording = Mutex()
+    private val requests = RequestLog()
     private val bookmarks = FakeBookmarks()
     private val history = FakeHistory()
     private val boardPreferences = FakeBoardPreferences()
@@ -61,11 +57,7 @@ class BrowserTest {
     ): Browser {
         val engine =
             MockEngine { request ->
-                // The engine answers on several threads at once (both sites load together).
-                recording.withLock {
-                    requested += request.url.toString()
-                    userAgents += request.headers[HttpHeaders.UserAgent]
-                }
+                requests.record(request.url.toString(), request.headers[HttpHeaders.UserAgent])
                 reply(request, routes)
             }
         return Browser(
@@ -129,8 +121,8 @@ class BrowserTest {
             assertTrue(browser.back())
             assertFalse(browser.back(), "the start tab is the bottom of the stack")
 
-            assertEquals(setOf<String?>(ORBIN_USER_AGENT), userAgents)
-            assertTrue("https://a.4cdn.org/g/thread/7.json" in requested)
+            assertEquals(setOf<String?>(ORBIN_USER_AGENT), requests.userAgents())
+            assertTrue("https://a.4cdn.org/g/thread/7.json" in requests.urls())
         }
 
     @Test
@@ -293,7 +285,7 @@ class BrowserTest {
             browser.openThread(WATCHED_KEY)
             val retained = browser.thread.settled()
             browser.boards.settled()
-            val before = requested.size
+            val before = requests.urls().size
             repeat(3) {
                 browser.openPrimaryPage(Route.Settings)
                 browser.openPrimaryPage(Route.Downloads)
@@ -306,7 +298,11 @@ class BrowserTest {
             assertTrue(browser.back())
             assertEquals(Route.ThreadPage(WATCHED_KEY), browser.backStack.value.last())
             assertSame(retained, browser.thread.value)
-            assertEquals(before, requested.size, "utility switching never mounts a hidden feed or reloads the thread")
+            assertEquals(
+                before,
+                requests.urls().size,
+                "utility switching never mounts a hidden feed or reloads the thread",
+            )
         }
 
     @Test
@@ -396,7 +392,7 @@ class BrowserTest {
             val selectedReader = boardReaderRoute(browser.backStack.value)!!
             assertEquals(emptyReader.catalog.stateKey, selectedReader.catalog.stateKey)
             assertEquals(ThreadId(7), selectedReader.thread?.key?.thread)
-            val before = requested.size
+            val before = requests.urls().size
 
             browser.openMedia(0)
             assertEquals(Route.Media(ThreadKey(g.provider, g.board.id, ThreadId(7)), 0), browser.backStack.value.last())
@@ -406,14 +402,14 @@ class BrowserTest {
             val closedReader = boardReaderRoute(browser.backStack.value)!!
             assertEquals(emptyReader.catalog.stateKey, closedReader.catalog.stateKey)
             assertNull(closedReader.thread)
-            assertEquals(before, requested.size, "nothing was fetched again")
+            assertEquals(before, requests.urls().size, "nothing was fetched again")
 
             val retained = browser.catalog.value
             browser.retry()
             assertSame(retained, browser.catalog.value, "retry retains the loaded catalog while it fetches")
             browser.catalogRefreshing.first { !it }
             assertIs<Load.Ready<*>>(browser.catalog.value)
-            assertEquals(before + 1, requested.size, "retry always fetches")
+            assertEquals(before + 1, requests.urls().size, "retry always fetches")
         }
 
     @Test
@@ -434,7 +430,7 @@ class BrowserTest {
             val originalStack = browser.backStack.value
             val originalThread = browser.thread.value
             val originalFiles = assertIs<Load.Ready<Thread>>(originalThread).value.files
-            val requestCount = requested.size
+            val requestCount = requests.urls().size
 
             browser.mediaScroll.select(route, 0)
             assertNull(browser.mediaScroll.target.value, "no swipe preserves the original offset")
@@ -455,7 +451,7 @@ class BrowserTest {
             assertSame(originalThread, browser.thread.value, "selection cannot reload or replace media")
             val selectedFiles = assertIs<Load.Ready<Thread>>(browser.thread.value).value.files
             originalFiles.zip(selectedFiles).forEach { (before, after) -> assertSame(before, after) }
-            assertEquals(requestCount, requested.size, "selection cannot refetch a URL")
+            assertEquals(requestCount, requests.urls().size, "selection cannot refetch a URL")
 
             assertTrue(browser.back(), "both Close and edge-back use this navigation path")
             assertEquals(Route.ThreadPage(WATCHED_KEY), browser.backStack.value.last())
@@ -673,7 +669,7 @@ class BrowserTest {
             assertEquals(setOf(FollowedBoard(otherSite, BoardId("b"))), browser.favorites.first { it.isNotEmpty() })
             assertTrue(browser.followed.value.isEmpty())
             assertEquals(Load.Ready(emptyList()), browser.feed.settled())
-            assertTrue(requested.none { "/catalog.json" in it })
+            assertTrue(requests.urls().none { "/catalog.json" in it })
         }
 
     @Test
