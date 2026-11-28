@@ -35,29 +35,28 @@ class PulseMappingTest {
         attachments: Int = 0,
         backlinks: Int = 0,
         original: Boolean = false,
-    ) =
-        Post(
-            id = PostId(id),
-            board = BoardId(board),
-            threadId = ThreadId(1L),
-            isOriginalPost = original,
-            subject = subject,
-            comment = PostComment(raw = comment, nodes = persistentListOf()),
-            poster = PosterInfo(name = name),
-            createdAtMillis = createdAt,
-            attachments =
-                List(attachments) {
-                    MediaAttachment(
-                        id = "m$it",
-                        originalFileName = "f$it",
-                        extension = "jpg",
-                        type = MediaType.IMAGE,
-                        sourceUrl = "https://x.example/$it.jpg",
-                        thumbnailUrl = "https://x.example/${it}s.jpg",
-                    )
-                }.toImmutableList(),
-            backlinks = List(backlinks) { PostId(100L + it) }.toImmutableList(),
-        )
+    ) = Post(
+        id = PostId(id),
+        board = BoardId(board),
+        threadId = ThreadId(1L),
+        isOriginalPost = original,
+        subject = subject,
+        comment = PostComment(raw = comment, nodes = persistentListOf()),
+        poster = PosterInfo(name = name),
+        createdAtMillis = createdAt,
+        attachments =
+            List(attachments) {
+                MediaAttachment(
+                    id = "m$it",
+                    originalFileName = "f$it",
+                    extension = "jpg",
+                    type = MediaType.IMAGE,
+                    sourceUrl = "https://x.example/$it.jpg",
+                    thumbnailUrl = "https://x.example/${it}s.jpg",
+                )
+            }.toImmutableList(),
+        backlinks = List(backlinks) { PostId(100L + it) }.toImmutableList(),
+    )
 
     private fun catalog(
         provider: String = "p",
@@ -67,23 +66,21 @@ class PulseMappingTest {
         comment: String = "",
         lastModified: Long = now - hour,
         replies: Int = 0,
-    ) =
-        CatalogThread(
-            key = ThreadKey(ProviderId(provider), BoardId(board), ThreadId(no)),
-            originalPost = post(no, board, comment, subject, original = true),
-            stats = ThreadStats(replyCount = replies, lastModifiedMillis = lastModified),
-        )
+    ) = CatalogThread(
+        key = ThreadKey(ProviderId(provider), BoardId(board), ThreadId(no)),
+        originalPost = post(no, board, comment, subject, original = true),
+        stats = ThreadStats(replyCount = replies, lastModifiedMillis = lastModified),
+    )
 
     private fun feed(
         board: String,
         title: String,
         vararg threads: CatalogThread,
-    ) =
-        SubscribedBoardFeed(
-            board = Board(id = BoardId(board), title = title),
-            threads = threads.toList().toImmutableList(),
-            threadLimitOverride = null,
-        )
+    ) = SubscribedBoardFeed(
+        board = Board(id = BoardId(board), title = title),
+        threads = threads.toList().toImmutableList(),
+        threadLimitOverride = null,
+    )
 
     @Test
     fun threadsFromEveryBoardAreMergedMostRecentlyActiveFirst() {
