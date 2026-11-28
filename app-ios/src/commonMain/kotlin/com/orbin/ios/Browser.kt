@@ -17,6 +17,7 @@ import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.filter.ContentPolicy
+import com.orbin.domain.link.LinkPolicy
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -125,6 +126,11 @@ sealed interface Route {
     /** Videos from every post in a thread, opened directly from Home's chat action. */
     data class ThreadVideos(
         val key: ThreadKey,
+    ) : Route
+
+    /** A page opened from a link, in the in-app browser. Only links [LinkPolicy] allows get here. */
+    data class WebPage(
+        val url: String,
     ) : Route
 
     /** Full-screen media, optionally anchored by the catalog's attachment and thumbnail identity. */
@@ -608,6 +614,13 @@ class Browser(
         loadCurrent()
     }
 
+    /** Opens [url] in the in-app browser above the current screen; closing it returns here. */
+    fun openWebPage(url: String) {
+        val safe = LinkPolicy.sanitize(url) ?: return
+        _backStack.update { it + Route.WebPage(safe) }
+        loadCurrent()
+    }
+
     /** Opens thread videos without inserting a comments page beneath the viewer. */
     fun openThreadVideos(key: ThreadKey) {
         mediaScroll.clear()
@@ -723,6 +736,7 @@ class Browser(
             Route.Watched,
             Route.Search,
             Route.Settings,
+            is Route.WebPage,
             -> Unit
             is Route.Catalog, is Route.BoardMedia -> {
                 val board = route.catalogBoard ?: return

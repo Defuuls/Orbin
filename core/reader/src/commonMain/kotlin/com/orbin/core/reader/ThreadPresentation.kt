@@ -15,9 +15,9 @@ import com.orbin.core.ui.post.PreparedPostComment
 import com.orbin.core.ui.post.PreparedPostCommentText
 import com.orbin.core.ui.post.preparePostComment
 import com.orbin.domain.filter.ContentPolicy
+import com.orbin.domain.link.LinkPolicy
 import com.orbin.domain.thread.replyCounts
 import com.orbin.domain.thread.replyDepths
-import com.orbin.provider.api.UriParts
 import com.orbin.uinext.components.LocalPostTextSelectionHoisted
 import com.orbin.uinext.components.LocalReaderPostBodyStyle
 import com.orbin.uinext.components.MediaKind
@@ -274,13 +274,8 @@ fun ReaderPostComment(
     }
 }
 
-/** The common HTTPS grammar is also checked against java.net.URI in provider SPI tests. */
-fun safeExternalLink(url: String): String? {
-    val trimmed = url.trim()
-    if (!trimmed.startsWith("https://", ignoreCase = true)) return null
-    val parts = UriParts.parse(trimmed) ?: return null
-    return trimmed.takeIf { parts.scheme.equals("https", ignoreCase = true) && !parts.host.isNullOrBlank() }
-}
+/** The shared HTTPS link rule; see [LinkPolicy.sanitize]. */
+fun safeExternalLink(url: String): String? = LinkPolicy.sanitize(url)
 
 /** Files and ownership helpers also serve navigation before a reader snapshot is subscribed. */
 val Thread.threadFiles: List<MediaAttachment> get() = allPosts.flatMap { it.attachments }

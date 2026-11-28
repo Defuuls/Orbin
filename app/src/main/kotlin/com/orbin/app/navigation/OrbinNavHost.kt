@@ -85,28 +85,39 @@ fun OrbinNavHost(
         popEnterTransition = { nextPopEnter(threadPresentation) },
         popExitTransition = { nextPopExit(threadPresentation) },
     ) {
-        composable<Route.NextFeed> {
-            NextFeedWithSiteSwitcherScreen(
-                onOpenThread = openThread,
-                onOpenThreadVideos = { provider, board, thread, _ ->
-                    navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
-                },
-                onOpenMedia = { provider, board, thread, attachment ->
-                    navController.navigate(selectedMediaRoute(provider, board, thread, attachment))
-                },
-                onOpenBoard = { provider, board, title ->
-                    navController.navigate(Route.Board(provider, board, title))
-                },
-                onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
-                onChromeVisibleChange = onChromeVisibleChange,
-                onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },
-                onOpenSearch = { navController.navigateToTab(Route.Search) },
-                onOpenSaved = { onDestination(NextDestination.SAVED) },
-                onOpenWatched = { onDestination(NextDestination.WATCHED) },
-                onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
-                watchedBadge = primaryWatchedBadge(),
-            )
+        // Home is a thread source like Watched or Saved: on a tablet the feed stays on the left
+        // and the thread it opens takes the right, instead of the thread covering the feed.
+        composable<Route.NextFeed> { backStackEntry ->
+            SourceReaderRouteDestination(
+                navController = navController,
+                backStackEntry = backStackEntry,
+                twoPane = twoPaneBoardDetail,
+                title = stringResource(R.string.nav_home),
+                destination = NextDestination.FEED,
+                onDestination = onDestination,
+            ) { sourceOpenThread ->
+                NextFeedWithSiteSwitcherScreen(
+                    onOpenThread = sourceOpenThread,
+                    onOpenThreadVideos = { provider, board, thread, _ ->
+                        navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
+                    },
+                    onOpenMedia = { provider, board, thread, attachment ->
+                        navController.navigate(selectedMediaRoute(provider, board, thread, attachment))
+                    },
+                    onOpenBoard = { provider, board, title ->
+                        navController.navigate(Route.Board(provider, board, title))
+                    },
+                    onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
+                    onChromeVisibleChange = onChromeVisibleChange,
+                    onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
+                    onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },
+                    onOpenSearch = { navController.navigateToTab(Route.Search) },
+                    onOpenSaved = { onDestination(NextDestination.SAVED) },
+                    onOpenWatched = { onDestination(NextDestination.WATCHED) },
+                    onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
+                    watchedBadge = primaryWatchedBadge(),
+                )
+            }
         }
 
         composable<Route.BoardGallery> {

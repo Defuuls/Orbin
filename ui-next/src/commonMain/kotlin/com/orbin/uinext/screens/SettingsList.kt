@@ -818,7 +818,7 @@ internal fun settingsRowIcon(id: String): ImageVector =
         "hideNsfw", "coverViolent" -> ReaderIcons.Hide
         "biometric" -> ReaderIcons.Lock
         "screenPrivacy", "privacy", "strictDns" -> ReaderIcons.Shield
-        "dohProvider", "contact" -> ReaderIcons.Globe
+        "openLinksInApp", "dohProvider", "contact" -> ReaderIcons.Globe
         "history", "saveSearchHistory", "saveBrowsingHistory" -> ReaderIcons.Clock
         "downloads" -> ReaderIcons.Download
         "clearActivity", "clearImageCache", "videoCacheLimit", "clearVideoCache" -> ReaderIcons.Storage

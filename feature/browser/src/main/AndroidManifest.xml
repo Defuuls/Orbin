@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            The in-app browser runs in its own process with its own WebView data directory, so it
+            is isolated from the reader (see InAppBrowser). Not exported: only Orbin opens it.
+        -->
+        <activity
+            android:name=".BrowserActivity"
+            android:exported="false"
+            android:process=":browser"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|density"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="com.orbin.action.OPEN_IN_APP_BROWSER" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
+
+        <!-- Clears the browser's cookies and site data from inside its process ("Clear local activity"). -->
+        <service
+            android:name=".BrowserDataService"
+            android:exported="false"
+            android:process=":browser">
+            <intent-filter>
+                <action android:name="com.orbin.action.CLEAR_IN_APP_BROWSER_DATA" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

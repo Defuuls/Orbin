@@ -98,6 +98,7 @@ dependencies {
     implementation(project(":feature:thread"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:search"))
+    implementation(project(":feature:browser"))
     implementation(project(":feature:gallery"))
     implementation(project(":feature:downloads"))
     implementation(project(":feature:onboarding"))

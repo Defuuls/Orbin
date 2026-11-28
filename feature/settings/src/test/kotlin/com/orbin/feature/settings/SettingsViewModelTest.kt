@@ -26,6 +26,7 @@ import com.orbin.core.testing.repository.FakeSettingsRepository
 import com.orbin.core.testing.repository.FakeUpdateRepository
 import com.orbin.domain.repository.BookmarkRepository
 import com.orbin.domain.repository.ImageCacheRepository
+import com.orbin.domain.repository.InAppBrowserDataRepository
 import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.ThreadMemoryRepository
 import com.orbin.domain.repository.VideoCacheRepository
@@ -154,6 +155,33 @@ class SettingsViewModelTest {
 
             coVerify(exactly = 1) { webSearchData.clear() }
             assertThat(results).containsExactly(true)
+        }
+
+    @Test
+    fun `clearLocalActivity removes the in-app browser's saved logins and site data`() =
+        runTest {
+            val browserData = mockk<InAppBrowserDataRepository>()
+            coEvery { browserData.clear() } returns Unit
+            val viewModel = createViewModel(browserData = browserData)
+            val results = mutableListOf<Boolean>()
+
+            viewModel.clearLocalActivity { results += it }
+
+            coVerify(exactly = 1) { browserData.clear() }
+            assertThat(results).containsExactly(true)
+        }
+
+    @Test
+    fun `clearing reports failure when the in-app browser's data cannot be removed`() =
+        runTest {
+            val browserData = mockk<InAppBrowserDataRepository>()
+            coEvery { browserData.clear() } throws IllegalStateException("Browser data service unavailable")
+            val viewModel = createViewModel(browserData = browserData)
+            val results = mutableListOf<Boolean>()
+
+            viewModel.clearLocalActivity { results += it }
+
+            assertThat(results).containsExactly(false)
         }
 
     @Test
@@ -344,6 +372,7 @@ class SettingsViewModelTest {
         videoCache: VideoCacheRepository = mockk(relaxed = true),
         memory: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
         webSearchData: WebSearchDataRepository = mockk(relaxed = true),
+        browserData: InAppBrowserDataRepository = mockk(relaxed = true),
     ) = SettingsViewModel(
         repository = settings,
         historyRepository = history,
@@ -359,5 +388,6 @@ class SettingsViewModelTest {
         videoCacheRepository = videoCache,
         threadMemoryRepository = memory,
         webSearchDataRepository = webSearchData,
+        inAppBrowserDataRepository = browserData,
     )
 }

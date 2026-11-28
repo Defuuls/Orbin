@@ -69,7 +69,7 @@ an older backup containing a color theme. If a case cannot be produced, record i
 - [ ] On iPhone in portrait and landscape, a window whose shorter side is below 600 points stays
   single-pane and uses 72dp thumbnails; a long landscape width alone does not enable two panes.
 - [ ] On iPad, test portrait and landscape, then supported Split View and Stage Manager sizes.
-  Two panes appear only when width is at least 800 points and both sides reach 600 points.
+  Two panes appear only when width is at least 700 points and both sides reach 600 points.
 - [ ] At 800, 960 and 1280 points wide, where those sizes are available, the catalog / divider /
   thread widths follow 332 / 1 / 467, 399 / 1 / 560 and 420 / 1 / 859dp. Record unavailable sizes.
 - [ ] Wide catalog/posts use 100dp leading thumbnails, 10dp text insets, regular 16sp body and
