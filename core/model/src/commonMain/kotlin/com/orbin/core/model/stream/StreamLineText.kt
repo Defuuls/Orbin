@@ -31,8 +31,11 @@ object StreamIds {
     fun post(postNo: Long): String = "$POST_PREFIX$postNo"
 
     /** The post number in a post line's id, or `null` for any other id. */
-    fun parsePost(id: String?): Long? =
-        id?.takeIf { it.startsWith(POST_PREFIX) }?.removePrefix(POST_PREFIX)?.toLongOrNull()?.takeIf { it > 0L }
+    fun parsePost(id: String?): Long? {
+        val digits = id?.takeIf { it.startsWith(POST_PREFIX) }?.removePrefix(POST_PREFIX)
+        val number = digits?.toLongOrNull()
+        return number?.takeIf { it > 0L }
+    }
 
     fun parseThread(id: String?): ThreadRef? {
         val parts = id?.takeIf { it.startsWith(THREAD_PREFIX) }?.removePrefix(THREAD_PREFIX)?.split(SEPARATOR)

@@ -2,8 +2,8 @@ package com.orbin.app.pulse
 
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.Board
-import com.orbin.core.model.Bookmark
 import com.orbin.core.model.BoardId
+import com.orbin.core.model.Bookmark
 import com.orbin.core.model.CatalogThread
 import com.orbin.core.model.MediaAttachment
 import com.orbin.core.model.MediaType
@@ -17,7 +17,6 @@ import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
 import com.orbin.feature.home.SubscribedBoardFeed
-import com.orbin.uipulse.PulseBodyLine
 import com.orbin.uipulse.PulsePart
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -318,9 +317,10 @@ class PulseMappingTest {
     @Test
     fun aLinkIsShownAsPlainTextNeverALink() {
         val lines = body("see https://example.com/a. ok")
-        assertThat(lines.single().parts.none { it is PulsePart.Ref }).isTrue()
-        assertThat(lines.single().parts.filterIsInstance<PulsePart.Text>().joinToString("") { it.value })
-            .isEqualTo("see https://example.com/a. ok")
+        val parts = lines.single().parts
+        assertThat(parts.none { it is PulsePart.Ref }).isTrue()
+        val shown = parts.filterIsInstance<PulsePart.Text>().map { it.value }
+        assertThat(shown.joinToString("")).isEqualTo("see https://example.com/a. ok")
     }
 
     @Test
