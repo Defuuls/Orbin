@@ -18,8 +18,6 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,8 +28,7 @@ import kotlin.test.assertTrue
 
 /** Source filtering, five-tab navigation and local collections across both providers. */
 class BrowserScreensTest {
-    private val requested = mutableListOf<String>()
-    private val recording = Mutex()
+    private val requests = RequestLog()
     private val bookmarks = FakeBookmarks()
     private val history = FakeHistory()
     private val boardPreferences = FakeBoardPreferences()
@@ -45,10 +42,7 @@ class BrowserScreensTest {
     ): Browser {
         val engine =
             MockEngine { request ->
-                // The engine answers on several threads at once (both sites load together).
-                recording.withLock {
-                    requested += request.url.toString()
-                }
+                requests.record(request.url.toString(), request.headers[HttpHeaders.UserAgent])
                 reply(request, routes)
             }
         return Browser(
@@ -197,7 +191,7 @@ class BrowserScreensTest {
                 row.thread.key,
                 bookmarks.observeBookmark(row.thread.key).first { it?.isWatched == false }?.key,
             )
-            assertTrue(requested.none { "/thread/" in it }, "feed actions use the catalog's identity")
+            assertTrue(requests.urls().none { "/thread/" in it }, "feed actions use the catalog's identity")
             browser.toggleFeedSaved(row)
             assertNull(bookmarks.observeBookmark(row.thread.key).first { it == null })
         }
