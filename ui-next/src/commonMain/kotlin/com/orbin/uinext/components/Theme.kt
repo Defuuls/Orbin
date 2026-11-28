@@ -255,13 +255,6 @@ private val PinnedBoardHues =
 
 internal fun boardHueIndex(board: String): Int = PinnedBoardHues[board] ?: board.hashCode().mod(BoardHues.size)
 
-/** A board's accent color, contrast-safe on the current ground. */
-@Composable
-fun boardHue(board: String): Color {
-    val hue = BoardHues[boardHueIndex(board)]
-    return if (next.dark) hue.dark else hue.light
-}
-
 /**
  * Placeholder artwork for unloaded thumbnails.
  *

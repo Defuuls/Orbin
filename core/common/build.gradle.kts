@@ -12,8 +12,6 @@ kotlin {
         jvmTest.dependencies {
             implementation(libs.junit)
             implementation(libs.truth)
-            implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.turbine)
         }
     }
 }

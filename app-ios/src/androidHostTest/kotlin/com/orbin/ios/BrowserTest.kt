@@ -352,6 +352,23 @@ class BrowserTest {
         }
 
     @Test
+    fun threadsPickedFromHomeReplaceTheSelectionSoBackReturnsToHome() =
+        runTest {
+            val browser = browser(backgroundScope, BOTH_SITES + (WATCHED_THREAD to threadWithReplies(1)))
+            val other = WATCHED_KEY.copy(thread = ThreadId(8))
+
+            browser.openThread(WATCHED_KEY)
+            browser.openThread(other)
+            assertEquals(listOf(Route.Feed, Route.ThreadPage(other)), browser.backStack.value)
+            assertEquals(
+                SourceReaderRoute(Route.Feed, Route.ThreadPage(other)),
+                sourceReaderRoute(browser.backStack.value),
+            )
+            assertTrue(browser.back())
+            assertEquals(listOf(Route.Feed), browser.backStack.value)
+        }
+
+    @Test
     fun goingBackShowsTheLoadedPageWithoutFetchingItAgain() =
         runTest {
             // An established reader has a real saved follow; an empty old install stays in setup,

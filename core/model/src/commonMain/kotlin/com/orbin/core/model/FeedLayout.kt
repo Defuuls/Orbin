@@ -37,10 +37,12 @@ fun isWideWindow(
 ): Boolean = windowWidthDp >= WIDE_SCREEN_MIN_DP && windowHeightDp >= WIDE_SCREEN_MIN_DP
 
 /**
- * A wide window at least this wide shows a board's catalog and the open thread side by side. Low
- * enough for both unfolded Fold8 screens: the Fold8's held landscape and the Ultra's either way up.
+ * A wide window at least this wide shows a list and the open thread side by side. Low enough for
+ * an iPad mini held upright (744pt) and both unfolded Fold8 screens (the Fold8 held landscape, the
+ * Ultra either way up); not lower, because at 700 the thread pane is already down to 408dp, about
+ * the narrowest a post reads comfortably at. The Fold8 held upright (696dp) stays one pane.
  */
-const val TWO_PANE_MIN_WIDTH_DP = 800
+const val TWO_PANE_MIN_WIDTH_DP = 700
 
 /** Whether a board's catalog and its open thread share the window rather than taking turns. */
 fun showsTwoPanes(
@@ -61,7 +63,9 @@ data class ReaderPaneWidths(
  * below [TWO_PANE_MIN_WIDTH_DP] are rejected, and the caller still checks the window height.
  */
 fun readerPaneWidths(windowWidthDp: Int): ReaderPaneWidths {
-    require(windowWidthDp >= TWO_PANE_MIN_WIDTH_DP) { "Two panes require a window at least 800dp wide." }
+    require(windowWidthDp >= TWO_PANE_MIN_WIDTH_DP) {
+        "Two panes require a window at least ${TWO_PANE_MIN_WIDTH_DP}dp wide."
+    }
     val catalog =
         ((windowWidthDp.toLong() - PANE_DIVIDER_DP) * CATALOG_PANE_NUMERATOR / CATALOG_PANE_DENOMINATOR)
             .coerceAtMost(CATALOG_PANE_MAX_DP.toLong())

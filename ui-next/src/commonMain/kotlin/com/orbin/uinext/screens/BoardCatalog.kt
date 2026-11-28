@@ -75,13 +75,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isFinite
 import com.orbin.uinext.components.FeedRow
-import com.orbin.uinext.components.GUTTER
-import com.orbin.uinext.components.Gap
 import com.orbin.uinext.components.GridScrim
 import com.orbin.uinext.components.MIN_TOUCH_TARGET
 import com.orbin.uinext.components.OrbinCard
 import com.orbin.uinext.components.OrbinPill
-import com.orbin.uinext.components.PendingBar
 import com.orbin.uinext.components.PillVariant
 import com.orbin.uinext.components.PreviewLine
 import com.orbin.uinext.components.READER_TRAILING_BELOW_FONT_SCALE
@@ -1274,20 +1271,6 @@ private fun CatalogTitle(
     )
 }
 
-/** A grid card: a full-width image [imageHeight] tall with the text below it, which grows with the font scale. */
-@Composable
-fun ReaderCatalogCardLayout(
-    imageHeight: Dp,
-    modifier: Modifier = Modifier,
-    image: @Composable (Modifier) -> Unit,
-    content: @Composable (Modifier) -> Unit,
-) {
-    Column(modifier.fillMaxWidth()) {
-        image(Modifier.fillMaxWidth().height(imageHeight))
-        content(Modifier.fillMaxWidth().heightIn(min = ReaderSize.gridCardText).padding(ReaderSpace.cardPad))
-    }
-}
-
 /** The opening post's text with quoted lines in `color.quote` and the rest in `color.ink`. */
 internal fun previewText(
     excerpt: String,
@@ -1377,22 +1360,6 @@ private fun CatalogSortTabRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-    }
-}
-
-@Composable
-internal fun PendingRow() {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = GUTTER, vertical = 15.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            PendingBar(width = 54.dp, height = 11.dp)
-            Gap(9)
-            PendingBar(width = 240.dp, height = 15.dp)
-            Gap(8)
-            PendingBar(width = 120.dp, height = 11.dp)
         }
     }
 }

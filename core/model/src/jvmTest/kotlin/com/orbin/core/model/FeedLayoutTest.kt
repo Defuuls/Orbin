@@ -85,6 +85,22 @@ class FeedLayoutTest {
     }
 
     @Test
+    fun `an iPad mini shows two panes held upright, and iPad Split View halves do not`() {
+        // iPad mini (7th gen) is 744 x 1133pt upright.
+        assertThat(showsTwoPanes(windowWidthDp = 744, windowHeightDp = 1133)).isTrue()
+        assertThat(showsTwoPanes(windowWidthDp = 1133, windowHeightDp = 744)).isTrue()
+        // Half of a 13-inch iPad in landscape is 683pt: too narrow for a readable thread pane.
+        assertThat(showsTwoPanes(windowWidthDp = 683, windowHeightDp = 1032)).isFalse()
+    }
+
+    @Test
+    fun `the two pane threshold leaves the thread pane at least 400dp`() {
+        assertThat(showsTwoPanes(TWO_PANE_MIN_WIDTH_DP, 1000)).isTrue()
+        assertThat(showsTwoPanes(TWO_PANE_MIN_WIDTH_DP - 1, 1000)).isFalse()
+        assertThat(readerPaneWidths(TWO_PANE_MIN_WIDTH_DP).threadDp).isAtLeast(400)
+    }
+
+    @Test
     fun `a cover screen turned sideways never shows two panes`() {
         assertThat(showsTwoPanes(windowWidthDp = 751, windowHeightDp = 475)).isFalse()
         assertThat(showsTwoPanes(windowWidthDp = 960, windowHeightDp = 411)).isFalse()
@@ -92,6 +108,8 @@ class FeedLayoutTest {
 
     @Test
     fun `reader pane widths match the specified windows`() {
+        assertThat(readerPaneWidths(700)).isEqualTo(ReaderPaneWidths(catalogDp = 291, dividerDp = 1, threadDp = 408))
+        assertThat(readerPaneWidths(744)).isEqualTo(ReaderPaneWidths(catalogDp = 309, dividerDp = 1, threadDp = 434))
         assertThat(readerPaneWidths(800)).isEqualTo(ReaderPaneWidths(catalogDp = 332, dividerDp = 1, threadDp = 467))
         assertThat(readerPaneWidths(960)).isEqualTo(ReaderPaneWidths(catalogDp = 399, dividerDp = 1, threadDp = 560))
         assertThat(readerPaneWidths(1280)).isEqualTo(ReaderPaneWidths(catalogDp = 420, dividerDp = 1, threadDp = 859))
@@ -99,7 +117,7 @@ class FeedLayoutTest {
 
     @Test
     fun `reader panes fill every supported width and give the thread more space`() {
-        for (width in 800..5000) {
+        for (width in TWO_PANE_MIN_WIDTH_DP..5000) {
             val panes = readerPaneWidths(width)
             assertThat(panes.catalogDp + panes.dividerDp + panes.threadDp).isEqualTo(width)
             assertThat(panes.threadDp).isGreaterThan(panes.catalogDp)
@@ -118,7 +136,7 @@ class FeedLayoutTest {
 
     @Test
     fun `reader pane widths reject windows narrower than the two pane threshold`() {
-        for (width in listOf(Int.MIN_VALUE, -1, 0, 1, 799)) {
+        for (width in listOf(Int.MIN_VALUE, -1, 0, 1, TWO_PANE_MIN_WIDTH_DP - 1)) {
             assertThrows(IllegalArgumentException::class.java) { readerPaneWidths(width) }
         }
     }

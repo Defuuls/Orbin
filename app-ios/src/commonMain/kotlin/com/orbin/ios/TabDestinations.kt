@@ -551,6 +551,10 @@ internal fun SettingsDestination(
                         Haptics.light()
                         browser.settings.setScreenPrivacy(!settings.screenPrivacyEnabled)
                     }
+                    SettingIds.OPEN_LINKS_IN_APP -> {
+                        Haptics.light()
+                        browser.settings.setOpenLinksInApp(!settings.openLinksInApp)
+                    }
                     SettingIds.STRICT_DOH -> {
                         Haptics.light()
                         browser.settings.setStrictDns(!settings.strictDohEnabled)

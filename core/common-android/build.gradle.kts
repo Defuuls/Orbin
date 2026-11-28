@@ -12,6 +12,8 @@ android {
 // re-exports so a module needs only one of the two.
 dependencies {
     api(project(":core:common"))
+    // The shared HTTPS link rule (LinkPolicy), so Android and iOS open exactly the same links.
+    implementation(project(":domain"))
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)

@@ -43,6 +43,7 @@ class ReaderSettings(
     private val scope: CoroutineScope,
     private val downloadDao: DownloadDao? = null,
     private val threadMemory: ThreadMemoryRepository? = null,
+    private val clearBrowserData: suspend () -> Unit = ::clearInAppBrowserData,
 ) {
     val current: StateFlow<AppSettings> =
         repository.settings.stateIn(
@@ -219,18 +220,24 @@ class ReaderSettings(
 
     fun setDohProvider(provider: DohProvider): Job = scope.launch { repository.setDohProvider(provider) }
 
+    fun setOpenLinksInApp(enabled: Boolean): Job = scope.launch { repository.setOpenLinksInApp(enabled) }
+
     fun setStrictDns(enabled: Boolean): Job = scope.launch { repository.setStrictDohEnabled(enabled) }
 
     fun setSaveSearchHistory(enabled: Boolean): Job = scope.launch { repository.setSaveSearchHistory(enabled) }
 
     fun setSaveBrowsingHistory(enabled: Boolean): Job = scope.launch { repository.setSaveBrowsingHistory(enabled) }
 
-    /** Deletes the reading history, download records, and invokes cache clearance. */
+    /**
+     * Deletes the reading history, download records and the in-app browser's site data (logins
+     * included), and invokes cache clearance.
+     */
     fun clearActivity(onClearCaches: (suspend () -> Unit)? = null): Job =
         scope.launch {
             history.clear()
             threadMemory?.clear()
             downloadDao?.clear()
+            clearBrowserData()
             onClearCaches?.invoke()
         }
 }
@@ -249,6 +256,7 @@ internal object SettingIds {
     const val SHARP_PREVIEWS = "sharpPreviews"
     const val APP_LOCK = "biometric"
     const val SCREEN_PRIVACY = "screenPrivacy"
+    const val OPEN_LINKS_IN_APP = "openLinksInApp"
     const val DOH_PROVIDER = "dohProvider"
     const val STRICT_DOH = "strictDns"
     const val SAVE_SEARCH_HISTORY = "saveSearchHistory"
@@ -328,6 +336,12 @@ private fun appearanceAndPrivacyRows(settings: AppSettings): List<SettingItem> =
             "Screen privacy shield",
             settings.screenPrivacyEnabled,
             hint = "Hides app preview in app switcher",
+        ),
+        toggle(
+            SettingIds.OPEN_LINKS_IN_APP,
+            "Open links in the app",
+            settings.openLinksInApp,
+            hint = OPEN_LINKS_IN_APP_HINT,
         ),
         SettingItem(
             id = SettingIds.DOH_PROVIDER,
@@ -595,4 +609,9 @@ internal const val PRIVACY_POLICY_URL = "https://github.com/Defuuls/Orbin/blob/m
 internal const val CONTACT_URL = "https://github.com/Defuuls/Orbin"
 
 internal const val STRICT_DNS_HINT =
-    "Load each video fully before playing and turn off 4chan web search, so nothing uses the device's DNS"
+    "Load each video fully before playing and turn off 4chan web search, so they never use the device's DNS. " +
+        "Pages in the in-app browser still use the device's DNS."
+
+internal const val OPEN_LINKS_IN_APP_HINT =
+    "Pages open in Orbin's own browser. It uses the device's DNS, not encrypted DNS, and keeps sites' logins " +
+        "until you clear local activity."

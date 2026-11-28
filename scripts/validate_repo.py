@@ -373,13 +373,18 @@ def check_maven_mirror(files: dict[str, str] | None = None) -> None:
         text = files.get(rel, "")
         if "maven-central-mirror.txt" not in text:
             fail("maven-mirror", f"{rel} does not read {MIRROR_FILE}")
+        if "pluginManagement" not in text:
+            # Without one, plugins come from the Gradle Plugin Portal alone, which redirects
+            # their jars to Maven Central: the mirror would never be tried for them.
+            fail("maven-mirror", f"{rel} has no pluginManagement repositories listing the mirror")
         for line, body in repositories_blocks(text):
-            central = body.find("mavenCentral()")
-            if central == -1:
+            # The plugin portal redirects to Maven Central, so the mirror must come before it too.
+            upstream = [i for i in (body.find("mavenCentral()"), body.find("gradlePluginPortal()")) if i != -1]
+            if not upstream:
                 continue
             mirror = body.find('name = "MavenCentralMirror"')
-            if mirror == -1 or mirror > central:
-                fail("maven-mirror", f"{rel}:{line} lists mavenCentral() without the mirror before it")
+            if mirror == -1 or mirror > min(upstream):
+                fail("maven-mirror", f"{rel}:{line} lists Maven Central or the plugin portal without the mirror before it")
     root = files.get("build.gradle.kts", "")
     if "robolectric.dependency.repo.url" not in root or "maven-central-mirror.txt" not in root:
         fail("maven-mirror", "build.gradle.kts does not point Robolectric's downloads at the mirror")

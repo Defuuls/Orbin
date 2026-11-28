@@ -17,6 +17,7 @@ import com.orbin.core.reader.ThreadPresentationIndex
 import com.orbin.core.reader.preparePresentation
 import com.orbin.data.database.dao.DownloadDao
 import com.orbin.domain.filter.ContentPolicy
+import com.orbin.domain.link.LinkPolicy
 import com.orbin.domain.notification.ThreadNotifier
 import com.orbin.domain.repository.BoardPreferencesRepository
 import com.orbin.domain.repository.BookmarkRepository
@@ -33,9 +34,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,8 +48,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 
@@ -125,6 +121,11 @@ sealed interface Route {
     /** Videos from every post in a thread, opened directly from Home's chat action. */
     data class ThreadVideos(
         val key: ThreadKey,
+    ) : Route
+
+    /** A page opened from a link, in the in-app browser. Only links [LinkPolicy] allows get here. */
+    data class WebPage(
+        val url: String,
     ) : Route
 
     /** Full-screen media, optionally anchored by the catalog's attachment and thumbnail identity. */
@@ -608,6 +609,13 @@ class Browser(
         loadCurrent()
     }
 
+    /** Opens [url] in the in-app browser above the current screen; closing it returns here. */
+    fun openWebPage(url: String) {
+        val safe = LinkPolicy.sanitize(url) ?: return
+        _backStack.update { it + Route.WebPage(safe) }
+        loadCurrent()
+    }
+
     /** Opens thread videos without inserting a comments page beneath the viewer. */
     fun openThreadVideos(key: ThreadKey) {
         mediaScroll.clear()
@@ -723,6 +731,7 @@ class Browser(
             Route.Watched,
             Route.Search,
             Route.Settings,
+            is Route.WebPage,
             -> Unit
             is Route.Catalog, is Route.BoardMedia -> {
                 val board = route.catalogBoard ?: return
@@ -910,23 +919,6 @@ data class FollowedBoard(
     val provider: ProviderId,
     val board: BoardId,
 )
-
-/**
- * [load] over every board, at most [MAX_CONCURRENT_BOARD_LOADS] at a time, each board's outcome
- * kept apart so one failing leaves the others.
- */
-internal suspend fun <T> loadEach(
-    boards: List<FollowedBoard>,
-    load: suspend (FollowedBoard) -> T,
-): List<Result<T>> {
-    val gate = Semaphore(MAX_CONCURRENT_BOARD_LOADS)
-    return coroutineScope {
-        boards.map { board -> async { gate.withPermit { runCatching { load(board) } } } }.awaitAll()
-    }
-}
-
-/** Android loads at most this many followed catalogs at once; so does iOS, for the feed and search. */
-private const val MAX_CONCURRENT_BOARD_LOADS = 4
 
 // Filtering before adapting keeps both providers consistent with the Android directory.
 internal suspend fun ImageBoardProvider.siteBoards(): List<SiteBoard> =

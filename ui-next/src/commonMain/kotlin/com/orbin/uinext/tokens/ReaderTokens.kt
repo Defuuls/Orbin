@@ -242,8 +242,11 @@ object ReaderSize {
     /** Both window sides must reach this to count as wide. */
     val wideMin: Dp = 600.dp
 
-    /** Wide windows at least this wide show two panes. */
-    val twoPaneMinWidth: Dp = 800.dp
+    /**
+     * Wide windows at least this wide show two panes. ui-next may not depend on core:model, so
+     * this mirrors TWO_PANE_MIN_WIDTH_DP there; TwoPaneThresholdTest keeps the two equal.
+     */
+    val twoPaneMinWidth: Dp = 700.dp
 
     /** Maximum catalog pane width in two panes. */
     val listPaneMax: Dp = 420.dp

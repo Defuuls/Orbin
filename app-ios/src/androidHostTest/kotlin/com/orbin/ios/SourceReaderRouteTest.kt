@@ -21,6 +21,18 @@ class SourceReaderRouteTest {
     }
 
     @Test
+    fun homeKeepsTheFeedBesideTheThreadItOpened() {
+        assertEquals(SourceReaderRoute(Route.Feed), sourceReaderRoute(listOf(Route.Feed)))
+        assertEquals(SourceReaderRoute(Route.Feed, thread), sourceReaderRoute(listOf(Route.Feed, thread)))
+    }
+
+    @Test
+    fun aThreadOpenedFromAnotherThreadOnHomeIsNotHomesSelection() {
+        val next = Route.ThreadPage(thread.key.copy(thread = ThreadId(43)))
+        assertNull(sourceReaderRoute(listOf(Route.Feed, thread, next)))
+    }
+
+    @Test
     fun unrelatedEarlierSourcesAndOtherDetailPagesNeverBecomeTheThreadSource() {
         assertNull(sourceReaderRoute(emptyList()))
         assertNull(sourceReaderRoute(listOf(Route.Search, Route.Settings, thread)))

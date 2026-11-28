@@ -18,7 +18,6 @@ kotlin {
             implementation(libs.junit)
             implementation(libs.truth)
             implementation(libs.mockk)
-            implementation(libs.turbine)
             implementation(libs.kotlinx.coroutines.test)
         }
     }
