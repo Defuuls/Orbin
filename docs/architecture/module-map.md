@@ -8,7 +8,7 @@ large repository locally understandable without tracing the whole dependency gra
 | `app` | application lifecycle, navigation, DI aggregation | a route, top-level shell or process concern is wrong |
 | `app-ios` | the iOS app: provider wiring, navigation/loading state, screen adapters (see [docs/ios.md](../ios.md)) | something is wrong only on iOS |
 | `ui-next` | stateless screen/layout vocabulary, Compose resources and build-time `CurrentReleaseNotes` generator (Compose Multiplatform, shared with iOS; depends only on `:core:designsystem`) | presentation, spacing or screen composition changes |
-| `ui-pulse` | stateless Compose screens for the single-stream design: the stream and the centered controls (Compose Multiplatform, shared with iOS; depends only on `:core:designsystem`; not wired into the apps yet) | the single-stream presentation changes |
+| `ui-pulse` | stateless Compose screens for the single-stream design: the stream and the centered controls (Compose Multiplatform, shared with iOS; depends only on `:core:designsystem`; on Android it is drawn by `app`'s `com.orbin.app.pulse` when Settings → Interface is Pulse, and iOS does not use it yet) | the single-stream presentation changes |
 | `feature:home` | subscribed feed state/adapters | feed loading, ordering or read-state presentation changes |
 | `feature:board` | board catalog state/adapters | a board/catalog interaction changes |
 | `feature:thread` | thread reader state/adapters | reading, watch, save/export, scrolling or thread actions change |

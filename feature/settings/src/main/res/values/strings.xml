@@ -10,6 +10,8 @@
     <string name="settings_hide_nsfw">Hide NSFW boards</string>
     <string name="settings_cover_violent">Cover violent media</string>
     <string name="settings_theme">Theme</string>
+    <string name="settings_interface">Interface</string>
+    <string name="settings_interface_hint">Pulse is an experimental single-stream design. Coral stays the default.</string>
     <string name="settings_catalog_view">Catalog view</string>
     <string name="settings_sharp_previews">Sharp previews</string>
     <string name="settings_sharp_previews_hint">Load full-size still images in card and grid views. Videos, GIFs, and files over 4 MB keep the thumbnail. Wi-Fi only also stays on the thumbnail when Data Saver is on.</string>

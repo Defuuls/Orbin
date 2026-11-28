@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.orbin.core.common.network.DnsPrivacyMonitor
 import com.orbin.core.common.result.OrbinResult
 import com.orbin.core.model.AccentTheme
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -245,6 +246,8 @@ class SettingsViewModel
         fun setFullscreenAutoAdvance(enabled: Boolean) = update { repository.setFullscreenAutoAdvance(enabled) }
 
         fun setAmoled(enabled: Boolean) = update { repository.setAmoled(enabled) }
+
+        fun setAppInterface(value: AppInterface) = update { repository.setAppInterface(value) }
 
         fun refreshImageCacheUsage() =
             update {

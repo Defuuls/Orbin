@@ -1,6 +1,7 @@
 package com.orbin.ios
 
 import com.orbin.core.model.AccentTheme
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -194,6 +195,8 @@ class FakeSettings : SettingsRepository {
     override suspend fun setThemeMode(mode: AppThemeMode) = settings.update { it.copy(themeMode = mode) }
 
     override suspend fun setAmoled(enabled: Boolean) = settings.update { it.copy(amoled = enabled) }
+
+    override suspend fun setAppInterface(value: AppInterface) = settings.update { it.copy(appInterface = value) }
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) =
         settings.update {

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.AccentTheme
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -142,6 +143,10 @@ class SettingsStore(
         edit { it[Keys.amoled] = enabled }
     }
 
+    override suspend fun setAppInterface(value: AppInterface) {
+        edit { it[Keys.appInterface] = value.name }
+    }
+
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
         edit { it[Keys.biometricLock] = enabled }
     }
@@ -259,6 +264,8 @@ class SettingsStore(
             openThreadComments = this[Keys.openThreadComments] ?: false,
             themeMode = AppThemeMode.entries.firstOrNull { it.name == this[Keys.themeMode] } ?: AppThemeMode.SYSTEM,
             amoled = this[Keys.amoled] ?: false,
+            appInterface =
+                AppInterface.entries.firstOrNull { it.name == this[Keys.appInterface] } ?: AppInterface.CORAL,
             biometricLockEnabled = this[Keys.biometricLock] ?: false,
             screenPrivacyEnabled = this[Keys.screenPrivacy] ?: false,
             openLinksInApp = this[Keys.openLinksInApp] ?: true,
@@ -308,6 +315,7 @@ class SettingsStore(
         val openThreadComments = booleanPreferencesKey("open_thread_comments")
         val themeMode = stringPreferencesKey("theme_mode")
         val amoled = booleanPreferencesKey("amoled")
+        val appInterface = stringPreferencesKey("app_interface")
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val screenPrivacy = booleanPreferencesKey("screen_privacy")
         val openLinksInApp = booleanPreferencesKey("open_links_in_app")

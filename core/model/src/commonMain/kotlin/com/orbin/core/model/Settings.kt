@@ -130,6 +130,8 @@ data class AppSettings(
     val deepMediaScan: Boolean = false,
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val amoled: Boolean = false,
+    /** Coral unless the person opted in to Pulse; an unknown stored value also reads as Coral. */
+    val appInterface: AppInterface = AppInterface.CORAL,
     val biometricLockEnabled: Boolean = false,
     val screenPrivacyEnabled: Boolean = false,
     /** Open links in Orbin's own browser rather than the system browser. */

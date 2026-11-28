@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.orbin.core.model.AccentTheme
 import com.orbin.core.model.AppSettings
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
 import com.orbin.core.model.DohProvider
@@ -293,6 +294,53 @@ class SettingsStoreTest {
             assertTrue(settings.hideNsfwBoards)
             assertEquals(AppThemeMode.DARK, settings.themeMode)
             assertTrue(settings.amoled)
+        }
+
+    @Test
+    fun theInterfaceIsCoralUntilPulseIsChosen() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            assertEquals(AppInterface.CORAL, SettingsStore(dataStore).settings.first().appInterface)
+        }
+
+    @Test
+    fun everyInterfaceSurvivesAStoreWrapperRecreation() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            val store = SettingsStore(dataStore)
+            AppInterface.entries.forEach { value ->
+                store.setAppInterface(value)
+                assertEquals(value, SettingsStore(dataStore).settings.first().appInterface)
+            }
+        }
+
+    @Test
+    fun anUnknownStoredInterfaceReadsAsCoralAndKeepsOtherSettings() =
+        runTest {
+            val dataStore = backgroundScope.dataStore()
+            dataStore.edit {
+                it[stringPreferencesKey("app_interface")] = "HOLOGRAM"
+                it[booleanPreferencesKey("hide_nsfw_boards")] = true
+            }
+
+            val settings = SettingsStore(dataStore).settings.first()
+            assertEquals(AppInterface.CORAL, settings.appInterface)
+            assertTrue(settings.hideNsfwBoards)
+        }
+
+    @Test
+    fun choosingAnInterfaceLeavesTheThemeAlone() =
+        runTest {
+            val store = SettingsStore(backgroundScope.dataStore())
+            store.setThemeMode(AppThemeMode.DARK)
+            store.setAmoled(true)
+
+            store.setAppInterface(AppInterface.PULSE)
+
+            val settings = store.settings.first()
+            assertEquals(AppThemeMode.DARK, settings.themeMode)
+            assertTrue(settings.amoled)
+            assertEquals(AppInterface.PULSE, settings.appInterface)
         }
 
     @Test

@@ -129,6 +129,7 @@ internal fun AppContent(
                     OrbinApp(
                         startWithOnboarding = !settings.onboardingCompleted,
                         isOnline = isOnline,
+                        appInterface = settings.appInterface,
                         pendingRoute = pendingRoute,
                         onPendingRouteHandled = onPendingRouteHandled,
                         onOnboardingCompleted = onOnboardingCompleted,

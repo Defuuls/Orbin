@@ -6,6 +6,9 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Android: an experimental Interface setting (Settings, Appearance) switches Home and thread reading to Pulse, a single stream of text lines with a centered controls pop-up opened by holding the screen. Coral stays the default, Watched, Saved and Settings still open their existing screens, and the choice is kept in backups.
+
 ## [222-Analcime] - 2026-11-28
 
 ### Added

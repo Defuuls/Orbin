@@ -1,6 +1,7 @@
 package com.orbin.feature.settings
 
 import com.google.common.truth.Truth.assertThat
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.BoardId
@@ -45,6 +46,7 @@ class BackupServiceTest {
             themeMode = AppThemeMode.DARK,
             catalogMode = CatalogMode.CARD,
             amoled = true,
+            appInterface = AppInterface.PULSE,
             biometricLockEnabled = true,
             onboardingCompleted = true,
             openThreadComments = true,
@@ -112,6 +114,19 @@ class BackupServiceTest {
                 assertThat(destination.current.themeMode).isEqualTo(AppThemeMode.DARK)
                 assertThat(destination.current.catalogMode).isEqualTo(CatalogMode.GRID)
             }
+        }
+
+    @Test
+    fun aBackupWithoutAnInterfaceRestoresCoral() =
+        runTest {
+            val destination = FakeSettingsRepository(AppSettings(appInterface = AppInterface.PULSE))
+
+            service(destination)
+                .importFromJson("""{ "settings": { "themeMode": "DARK" } }""")
+                .getOrThrow()
+
+            assertThat(destination.current.appInterface).isEqualTo(AppInterface.CORAL)
+            assertThat(destination.current.themeMode).isEqualTo(AppThemeMode.DARK)
         }
 
     @Test

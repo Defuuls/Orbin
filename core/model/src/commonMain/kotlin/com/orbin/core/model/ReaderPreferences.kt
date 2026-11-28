@@ -25,6 +25,13 @@ enum class AccentTheme {
 @Serializable
 enum class ThreadLayout { NESTED, FLAT }
 
+/**
+ * Which presentation the app draws. [CORAL] is the default and the only one every install has
+ * used so far; [PULSE] is the single-stream design and is opt-in.
+ */
+@Serializable
+enum class AppInterface { CORAL, PULSE }
+
 /** Poster IDs belong to a thread and are kept in ThreadMemory, never in a global rule. */
 @Serializable
 enum class PostFilterKind { TEXT, NAME, TRIPCODE, COUNTRY }

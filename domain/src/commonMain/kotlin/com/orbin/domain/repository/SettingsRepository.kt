@@ -1,6 +1,7 @@
 package com.orbin.domain.repository
 
 import com.orbin.core.model.AccentTheme
+import com.orbin.core.model.AppInterface
 import com.orbin.core.model.AppSettings
 import com.orbin.core.model.AppThemeMode
 import com.orbin.core.model.CatalogMode
@@ -64,6 +65,8 @@ interface SettingsRepository {
     suspend fun setThemeMode(mode: AppThemeMode)
 
     suspend fun setAmoled(enabled: Boolean)
+
+    suspend fun setAppInterface(value: AppInterface)
 
     suspend fun setBiometricLockEnabled(enabled: Boolean)
 

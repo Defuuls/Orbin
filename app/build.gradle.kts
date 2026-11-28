@@ -93,6 +93,7 @@ dependencies {
 
     // Feature modules
     implementation(project(":ui-next"))
+    implementation(project(":ui-pulse"))
     implementation(project(":feature:home"))
     implementation(project(":feature:board"))
     implementation(project(":feature:thread"))
