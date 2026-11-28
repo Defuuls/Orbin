@@ -2,20 +2,33 @@ package com.orbin.core.model.stream
 
 /** A piece of one line of post text. Never markup: renderers draw it as plain text. */
 sealed interface PostPart {
-    data class Text(val value: String) : PostPart
+    data class Text(
+        val value: String,
+    ) : PostPart
 
     /** `>>123`, a reference to another post. */
-    data class Ref(val raw: String, val postNo: Long) : PostPart
+    data class Ref(
+        val raw: String,
+        val postNo: Long,
+    ) : PostPart
 
     /** An `https` link, shown as text (never made tappable) with room for a clip button. */
-    data class Link(val url: String) : PostPart
+    data class Link(
+        val url: String,
+    ) : PostPart
 }
 
 /** One line of a post. [isQuote] is greentext: a single leading `>`, which is not part of [parts]. */
-data class PostLine(val isQuote: Boolean, val parts: List<PostPart>)
+data class PostLine(
+    val isQuote: Boolean,
+    val parts: List<PostPart>,
+)
 
 /** A post's number and text, the minimum needed to work out who replies to whom. */
-data class PostSource(val no: Long, val text: String)
+data class PostSource(
+    val no: Long,
+    val text: String,
+)
 
 /** Splits post text into plain segments, so the UI never sees markup. */
 object PostText {
@@ -27,8 +40,7 @@ object PostText {
     private val SAFE_LINK = Regex("""^https://[^\s<>"']+$""")
 
     /** True for a well-formed, bounded `https` URL. Anything else is never treated as a link. */
-    fun isSafeLink(url: String?): Boolean =
-        url != null && url.length <= MAX_SAFE_LINK_LENGTH && SAFE_LINK.matches(url)
+    fun isSafeLink(url: String?): Boolean = url != null && url.length <= MAX_SAFE_LINK_LENGTH && SAFE_LINK.matches(url)
 
     fun parse(text: String?): List<PostLine> =
         text.orEmpty().split('\n').map { raw ->

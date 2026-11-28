@@ -9,9 +9,13 @@ data class PaletteCommand(
 
 /** What the person typed: `/theme` is a command search; anything else filters the current view. */
 sealed interface PaletteInput {
-    data class Command(val query: String) : PaletteInput
+    data class Command(
+        val query: String,
+    ) : PaletteInput
 
-    data class Filter(val query: String) : PaletteInput
+    data class Filter(
+        val query: String,
+    ) : PaletteInput
 }
 
 /**
@@ -31,7 +35,10 @@ object CommandRanking {
     private val NON_WORD = Regex("[^a-z0-9]+")
 
     /** 0 means no match; higher is better. A blank [query] matches everything equally (1). */
-    fun scoreText(text: String, query: String?): Double {
+    fun scoreText(
+        text: String,
+        query: String?,
+    ): Double {
         val q = query.orEmpty().trim().lowercase()
         if (q.isEmpty()) return 1.0
         val t = text.lowercase()
@@ -45,18 +52,25 @@ object CommandRanking {
     }
 
     /** Best matches first; ties keep their original order so the list never reshuffles. */
-    fun rank(commands: List<PaletteCommand>, query: String?, limit: Int = DEFAULT_LIMIT): List<PaletteCommand> {
+    fun rank(
+        commands: List<PaletteCommand>,
+        query: String?,
+        limit: Int = DEFAULT_LIMIT,
+    ): List<PaletteCommand> {
         val q = query.orEmpty().trim()
-        return commands
-            .withIndex()
-            .map { (index, command) ->
-                val keyword = command.keywords.maxOfOrNull { scoreText(it, q) * KEYWORD_WEIGHT } ?: 0.0
-                Ranked(command, maxOf(scoreText(command.label, q), keyword), index)
-            }
-            .filter { it.score > 0.0 }
+        val ranked = commands.mapIndexed { index, command -> rankOf(command, index, q) }
+        val ordered = ranked.filter { it.score > 0.0 }
             .sortedWith(compareByDescending<Ranked> { it.score }.thenBy { it.index })
-            .take(limit.coerceAtLeast(0))
-            .map { it.command }
+        return ordered.take(limit.coerceAtLeast(0)).map { it.command }
+    }
+
+    private fun rankOf(
+        command: PaletteCommand,
+        index: Int,
+        query: String,
+    ): Ranked {
+        val keyword = command.keywords.maxOfOrNull { scoreText(it, query) * KEYWORD_WEIGHT } ?: 0.0
+        return Ranked(command, maxOf(scoreText(command.label, query), keyword), index)
     }
 
     fun parseInput(text: String?): PaletteInput {
@@ -69,7 +83,10 @@ object CommandRanking {
         }
     }
 
-    private fun isSubsequence(query: String, text: String): Boolean {
+    private fun isSubsequence(
+        query: String,
+        text: String,
+    ): Boolean {
         var matched = 0
         for (ch in text) {
             if (matched < query.length && ch == query[matched]) matched++
@@ -77,5 +94,9 @@ object CommandRanking {
         return matched == query.length
     }
 
-    private class Ranked(val command: PaletteCommand, val score: Double, val index: Int)
+    private class Ranked(
+        val command: PaletteCommand,
+        val score: Double,
+        val index: Int,
+    )
 }

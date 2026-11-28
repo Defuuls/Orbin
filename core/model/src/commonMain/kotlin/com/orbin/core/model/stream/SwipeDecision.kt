@@ -14,7 +14,11 @@ object SwipeDecision {
     const val DISMISS_MIN_DY = 96.0
 
     /** `+1` for a swipe to the next view (finger moved left), `-1` for the previous, `0` for none. */
-    fun horizontal(dx: Double, dy: Double, dtMillis: Long): Int {
+    fun horizontal(
+        dx: Double,
+        dy: Double,
+        dtMillis: Long,
+    ): Int {
         if (!dx.isFinite() || !dy.isFinite()) return 0
         val ax = abs(dx)
         val ay = abs(dy)
@@ -23,11 +27,18 @@ object SwipeDecision {
     }
 
     /** A quick, mostly vertical, downward drag: dismisses the media viewer. */
-    fun dismiss(dx: Double, dy: Double, dtMillis: Long): Boolean {
+    fun dismiss(
+        dx: Double,
+        dy: Double,
+        dtMillis: Long,
+    ): Boolean {
         if (!dx.isFinite() || !dy.isFinite()) return false
         return dtMillis <= MAX_MILLIS && dy >= DISMISS_MIN_DY && dy >= RATIO * abs(dx)
     }
 
     /** [index] limited to a list of [length]; `0` for an empty list. */
-    fun clampIndex(index: Int, length: Int): Int = index.coerceIn(0, maxOf(length - 1, 0))
+    fun clampIndex(
+        index: Int,
+        length: Int,
+    ): Int = index.coerceIn(0, maxOf(length - 1, 0))
 }

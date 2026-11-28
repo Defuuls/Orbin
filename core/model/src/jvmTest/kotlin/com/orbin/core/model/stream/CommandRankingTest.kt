@@ -4,7 +4,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class CommandRankingTest {
-    private fun cmd(label: String, vararg keywords: String) = PaletteCommand(label, label, keywords.toList())
+    private fun cmd(
+        label: String,
+        vararg keywords: String,
+    ) = PaletteCommand(label, label, keywords.toList())
 
     @Test
     fun scoresOrderPrefixOverWordPrefixOverSubstringOverLetters() {
@@ -33,13 +36,14 @@ class CommandRankingTest {
 
     @Test
     fun keywordsFindCommandsButALabelMatchWinsOverAKeywordMatch() {
-        val commands = listOf(
-            cmd("Slow connection", "offline"),
-            cmd("Go offline mode"),
-            cmd("Refresh everything", "reload"),
-        )
-        assertThat(CommandRanking.rank(commands, "offline").map { it.label })
-            .containsExactly("Go offline mode", "Slow connection").inOrder()
+        val commands =
+            listOf(
+                cmd("Slow connection", "offline"),
+                cmd("Go offline mode"),
+                cmd("Refresh everything", "reload"),
+            )
+        val offline = CommandRanking.rank(commands, "offline").map { it.label }
+        assertThat(offline).containsExactly("Go offline mode", "Slow connection").inOrder()
         assertThat(CommandRanking.rank(commands, "reload").map { it.label }).containsExactly("Refresh everything")
     }
 

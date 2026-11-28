@@ -30,23 +30,26 @@ class PostTextTest {
     @Test
     fun httpsLinksBecomeLinkPartsAndTrailingPunctuationStaysText() {
         val lines = PostText.parse("see https://pics.example/a/1.jpg, ok\n(https://x.test/p?q=1&r=2#h)")
-        assertThat(lines[0].parts).containsExactly(
-            PostPart.Text("see "),
-            PostPart.Link("https://pics.example/a/1.jpg"),
-            PostPart.Text(", ok"),
-        ).inOrder()
-        assertThat(lines[1].parts).containsExactly(
-            PostPart.Text("("),
-            PostPart.Link("https://x.test/p?q=1&r=2#h"),
-            PostPart.Text(")"),
-        ).inOrder()
+        val first =
+            listOf(
+                PostPart.Text("see "),
+                PostPart.Link("https://pics.example/a/1.jpg"),
+                PostPart.Text(", ok"),
+            )
+        val second =
+            listOf(
+                PostPart.Text("("),
+                PostPart.Link("https://x.test/p?q=1&r=2#h"),
+                PostPart.Text(")"),
+            )
+        assertThat(lines[0].parts).isEqualTo(first)
+        assertThat(lines[1].parts).isEqualTo(second)
     }
 
     @Test
     fun otherSchemesAndUnusableLinksStayLiteralText() {
-        val lines = PostText.parse(
-            "http://insecure.test and javascript:alert(1) and https:// alone\nhttps://" + "a".repeat(600),
-        )
+        val text = "http://insecure.test and javascript:alert(1) and https:// alone\nhttps://" + "a".repeat(600)
+        val lines = PostText.parse(text)
         assertThat(lines[0].parts.all { it is PostPart.Text }).isTrue()
         assertThat(lines[1].parts.all { it is PostPart.Text }).isTrue()
     }
@@ -82,12 +85,13 @@ class PostTextTest {
 
     @Test
     fun backlinksListEachReplierOnceInReadingOrder() {
-        val posts = listOf(
-            PostSource(10, "OP"),
-            PostSource(11, ">>10 a >>10"),
-            PostSource(12, ">>10\n>>11"),
-            PostSource(13, ">>13 self >>999 missing"),
-        )
+        val posts =
+            listOf(
+                PostSource(10, "OP"),
+                PostSource(11, ">>10 a >>10"),
+                PostSource(12, ">>10\n>>11"),
+                PostSource(13, ">>13 self >>999 missing"),
+            )
         val backlinks = PostText.backlinks(posts)
         assertThat(backlinks[10]).containsExactly(11L, 12L).inOrder()
         assertThat(backlinks[11]).containsExactly(12L)
