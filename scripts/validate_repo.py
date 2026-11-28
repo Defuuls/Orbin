@@ -212,15 +212,54 @@ def check_release_tooling() -> None:
         fail("release-tooling", f"per-release cutter workflow(s) present, use release/next.toml instead: {stale}")
 
 
+# Top-level hidden files and directories the repository already ships.
+ALLOWED_TOP_LEVEL_DOTS = frozenset({
+    ".codespellrc",
+    ".editorconfig",
+    ".github",
+    ".gitignore",
+})
+# Top-level markdown files the repository already ships.
+ALLOWED_TOP_LEVEL_MARKDOWN = frozenset({
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "PRIVACY.md",
+    "README.md",
+    "REMAINING_PHASE3.md",
+    "SECURITY.md",
+})
+# All-caps markdown names already used in the tree. A tracked file whose
+# basename is only uppercase letters, digits, underscores or hyphens plus
+# ".md", and is not in this set, is treated as an unlisted instruction file.
+ALLOWED_CAPS_MARKDOWN = frozenset({
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "IMPLEMENTATION.md",
+    "PRIVACY.md",
+    "README.md",
+    "REMAINING_PHASE3.md",
+    "SECURITY.md",
+})
+CAPS_MARKDOWN = re.compile(r"^[A-Z0-9_-]+\.md$")
+
+
 def check_tracked_hygiene() -> None:
     tracked = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines()
-    forbidden_prefixes = (".agents/", ".antigravity/", ".claude/", ".codex/", ".cursor/", ".gemini/", ".windsurf/")
-    forbidden_names = {"CLAUDE.md", "AGENTS.md", "GEMINI.md", "SKILL.md"}
     for rel in tracked:
         if "__pycache__/" in rel or rel.endswith((".pyc", ".pyo")):
             fail("hygiene", f"tracked Python bytecode artifact: {rel}")
-        if rel.startswith(forbidden_prefixes) or Path(rel).name in forbidden_names:
-            fail("hygiene", f"tracked assistant/scratchpad file: {rel}")
+            continue
+        parts = Path(rel).parts
+        top = parts[0]
+        name = parts[-1]
+        if top.startswith(".") and top not in ALLOWED_TOP_LEVEL_DOTS:
+            fail("hygiene", f"tracked file not on the allowlist: {rel}")
+            continue
+        if len(parts) == 1 and name.endswith(".md") and name not in ALLOWED_TOP_LEVEL_MARKDOWN:
+            fail("hygiene", f"tracked file not on the allowlist: {rel}")
+            continue
+        if CAPS_MARKDOWN.fullmatch(name) and name not in ALLOWED_CAPS_MARKDOWN:
+            fail("hygiene", f"tracked file not on the allowlist: {rel}")
 
 
 def check_emulator_options() -> None:
