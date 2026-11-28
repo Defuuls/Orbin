@@ -110,9 +110,8 @@ pushing a branch, opening a PR, or dispatching a build.
   any existing tag; check `git tag --list` before writing one down.
 - **A multi-word codename is hyphenated in the tag and versionName but displayed with spaces**, so
   `Sirius B` becomes `v48-Sirius-B` while the README/SVG display `48 — Sirius B` / `48 · Sirius B`.
-- **The release title is derived from the tag, never typed** — see
-  [`retitle-release.yml`](../.github/workflows/retitle-release.yml) for the same derivation applied
-  to releases published under an older convention.
+- **The release title is derived from the tag, never typed** — see the "Derive the release name"
+  step in [`release.yml`](../.github/workflows/release.yml).
 
 ## Security checks that code cannot make
 
