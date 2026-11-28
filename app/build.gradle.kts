@@ -126,6 +126,7 @@ dependencies {
 
     debugImplementation(libs.compose.ui.tooling)
 
+    testImplementation(project(":core:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)

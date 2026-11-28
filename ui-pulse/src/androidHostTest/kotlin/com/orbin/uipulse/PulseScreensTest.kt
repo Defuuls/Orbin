@@ -2,9 +2,11 @@ package com.orbin.uipulse
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -56,6 +58,70 @@ class PulseScreensTest {
         composeRule.onNodeWithText("Tomato thread").assertExists()
         composeRule.onNodeWithText("Raised beds").performClick()
         assertEquals(listOf("t:2"), tapped)
+    }
+
+    @Test
+    fun aPostShowsItsTextLinesAndGreentext() {
+        val post =
+            PulseLineUi(
+                id = "p:5",
+                age = "1h",
+                title = "",
+                sub = "No.5 · Anon",
+                number = 5L,
+                body =
+                    listOf(
+                        PulseBodyLine(listOf(PulsePart.Text("first line"))),
+                        PulseBodyLine(listOf(PulsePart.Text("be me")), quote = true),
+                    ),
+            )
+        composeRule.setContent {
+            MaterialTheme {
+                PulseStream("Thread", "1 post", "Menu", listOf(post), onLineClick = {}, onOpenControls = {})
+            }
+        }
+        composeRule.onNodeWithText("first line").assertExists()
+        composeRule.onNodeWithText(">be me").assertExists()
+        composeRule.onNodeWithText("No.5 · Anon").assertExists()
+    }
+
+    @Test
+    fun anUnreadLineCarriesTheLabelAndAReadOneDoesNot() {
+        val unread = PulseLineUi("t:1", "1h", "Fresh", "/g/", unread = true)
+        val read = PulseLineUi("t:2", "2h", "Old", "/g/")
+        composeRule.setContent {
+            MaterialTheme {
+                PulseStream(
+                    "Home",
+                    "2 threads",
+                    "Menu",
+                    listOf(unread, read),
+                    onLineClick = {},
+                    onOpenControls = {},
+                    unreadLabel = "NEW",
+                )
+            }
+        }
+        composeRule.onAllNodesWithText("NEW").assertCountEquals(1)
+    }
+
+    @Test
+    fun theStreamReportsWhichLinesAreOnScreen() {
+        val seen = mutableListOf<List<String>>()
+        composeRule.setContent {
+            MaterialTheme {
+                PulseStream(
+                    "Home",
+                    "2 new",
+                    "Menu",
+                    lines,
+                    onLineClick = {},
+                    onOpenControls = {},
+                    onVisibleLines = { seen += it },
+                )
+            }
+        }
+        composeRule.runOnIdle { assertEquals(listOf("t:1", "t:2"), seen.last()) }
     }
 
     @Test

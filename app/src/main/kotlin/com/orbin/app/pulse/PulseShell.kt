@@ -30,6 +30,7 @@ internal class PulseScreen(
     val onRefresh: () -> Unit,
     val onBack: () -> Unit,
     val onOpenLens: (StreamLens) -> Unit,
+    val onVisibleLines: (List<String>) -> Unit = {},
 )
 
 /**
@@ -68,6 +69,8 @@ internal fun PulseShell(screen: PulseScreen) {
             onLineClick = screen.onLineClick,
             onOpenControls = { controlsOpen = true },
             modifier = Modifier.safeDrawingPadding(),
+            unreadLabel = stringResource(R.string.pulse_unread),
+            onVisibleLines = screen.onVisibleLines,
         )
     }
     PulseControls(

@@ -7,6 +7,9 @@ All notable changes to Orbin are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Android, Pulse interface: a thread now shows each post's text line by line, with greentext and tappable `>>` references that scroll to the post they name. Unread replies carry a NEW label and clear as you read them, and watched threads with new replies come first in Home, marked with their count.
+
+### Added
 - Android: an experimental Interface setting (Settings, Appearance) switches Home and thread reading to Pulse, a single stream of text lines with a centered controls pop-up opened by holding the screen. Coral stays the default, Watched, Saved and Settings still open their existing screens, and the choice is kept in backups.
 
 ## [222-Analcime] - 2026-11-28

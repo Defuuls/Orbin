@@ -23,10 +23,16 @@ internal fun PulseHomeRoute(
     onOpenThread: (provider: String, board: String, thread: Long, title: String) -> Unit,
     onOpenLens: (StreamLens) -> Unit,
     viewModel: SubscribedFeedViewModel = hiltViewModel(),
+    watchedViewModel: PulseWatchedViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val needingYou by watchedViewModel.needingYou.collectAsStateWithLifecycle()
     val success = state as? SubscribedFeedUiState.Success
-    val lines = remember(success) { success?.let { feedLines(it.boards, it.loadedAtMillis) }.orEmpty() }
+    val lines =
+        remember(success, needingYou) {
+            success?.let { feedLines(it.boards, it.loadedAtMillis, needingYou) }.orEmpty()
+        }
+    val needing = lines.count { it.unread }
     val summary =
         when (val current = state) {
             SubscribedFeedUiState.Loading -> stringResource(R.string.pulse_loading)
@@ -34,6 +40,9 @@ internal fun PulseHomeRoute(
             is SubscribedFeedUiState.Success ->
                 if (lines.isEmpty()) {
                     stringResource(R.string.pulse_empty_feed)
+                } else if (needing > 0) {
+                    pluralStringResource(R.plurals.pulse_summary_threads, lines.size, lines.size) +
+                        " · " + stringResource(R.string.pulse_summary_needs_you, needing)
                 } else {
                     pluralStringResource(R.plurals.pulse_summary_threads, lines.size, lines.size)
                 }
@@ -63,11 +72,18 @@ internal fun PulseThreadRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val anonymous = stringResource(R.string.pulse_anonymous)
     val mediaFormat = stringResource(R.string.pulse_media_count)
+    val memory by viewModel.readerMemory.collectAsStateWithLifecycle()
+    val memoryLoaded by viewModel.initialScrollLoaded.collectAsStateWithLifecycle()
     val success = state as? ThreadUiState.Success
-    val lines =
+    val posts =
         remember(success, anonymous, mediaFormat) {
             val words = PulseThreadWords(anonymous) { count -> mediaFormat.format(Locale.getDefault(), count) }
             success?.let { threadLines(it.thread, System.currentTimeMillis(), words) }.orEmpty()
+        }
+    val lines =
+        remember(posts, success, memory.seenPostIds, memoryLoaded) {
+            val unread = success?.takeIf { memoryLoaded }?.let { unreadPosts(it.thread, memory.seenPostIds) }
+            markUnread(posts, unread.orEmpty())
         }
     val summary =
         when (val current = state) {
@@ -87,6 +103,7 @@ internal fun PulseThreadRoute(
             onRefresh = viewModel::refresh,
             onBack = onBack,
             onOpenLens = onOpenLens,
+            onVisibleLines = { ids -> viewModel.markVisible(visiblePostNumbers(ids)) },
         ),
     )
 }

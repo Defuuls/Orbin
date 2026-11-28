@@ -77,6 +77,8 @@
     <string name="pulse_empty_feed">No threads yet. Follow boards from the Coral interface in Settings.</string>
     <string name="pulse_blocked">Hidden by your content filter</string>
     <string name="pulse_anonymous">Anon</string>
+    <string name="pulse_unread">NEW</string>
+    <string name="pulse_summary_needs_you">%1$d need you</string>
     <string name="pulse_media_count">%1$d media</string>
     <plurals name="pulse_summary_threads">
         <item quantity="one">%1$d thread</item>

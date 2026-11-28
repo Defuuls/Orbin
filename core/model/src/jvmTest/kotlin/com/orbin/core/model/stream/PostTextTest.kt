@@ -102,3 +102,74 @@ class PostTextTest {
         assertThat(PostText.backlinks(emptyList())).isEmpty()
     }
 }
+
+class PostTextBoundTest {
+    private fun lines(vararg text: String) = text.map { PostLine(false, listOf(PostPart.Text(it))) }
+
+    private fun textOf(lines: List<PostLine>) =
+        lines.joinToString("\n") { line ->
+            line.parts.joinToString("") {
+                when (it) {
+                    is PostPart.Text -> it.value
+                    is PostPart.Ref -> it.raw
+                    is PostPart.Link -> it.url
+                }
+            }
+        }
+
+    @Test
+    fun textWithinTheLimitsIsReturnedUnchanged() {
+        val input = lines("one", "two")
+        assertThat(PostText.bound(input, maxChars = 100, maxLines = 10)).isEqualTo(input)
+        assertThat(PostText.bound(emptyList(), 10, 10)).isEmpty()
+    }
+
+    @Test
+    fun exactlyAtTheLimitsAddsNothing() {
+        val input = lines("abc", "de")
+        assertThat(PostText.bound(input, maxChars = 5, maxLines = 2)).isEqualTo(input)
+    }
+
+    @Test
+    fun tooManyLinesAreCutWithAnEllipsisLine() {
+        val out = PostText.bound(lines("a", "b", "c", "d"), maxChars = 100, maxLines = 2)
+        assertThat(textOf(out)).isEqualTo("a\nb\n…")
+    }
+
+    @Test
+    fun tooMuchTextIsCutMidLineAndMarked() {
+        val out = PostText.bound(lines("abcdefghij", "klm"), maxChars = 4, maxLines = 10)
+        assertThat(textOf(out)).isEqualTo("abcd\n…")
+    }
+
+    @Test
+    fun aReferenceOrLinkIsKeptWholeOrDroppedNeverSplit() {
+        val line =
+            PostLine(
+                false,
+                listOf(PostPart.Text("hi "), PostPart.Ref(">>12345", 12345L), PostPart.Link("https://example.com/x")),
+            )
+        val kept = PostText.bound(listOf(line), maxChars = 10, maxLines = 5)
+        assertThat(textOf(kept)).isEqualTo("hi >>12345\n…")
+        val dropped = PostText.bound(listOf(line), maxChars = 5, maxLines = 5)
+        assertThat(textOf(dropped)).isEqualTo("hi \n…")
+    }
+
+    @Test
+    fun cuttingNeverSplitsASurrogatePair() {
+        val out = PostText.bound(lines("ab😀cd"), maxChars = 3, maxLines = 5)
+        assertThat(textOf(out)).isEqualTo("ab\n…")
+    }
+
+    @Test
+    fun zeroLimitsLeaveOnlyTheMarker() {
+        assertThat(textOf(PostText.bound(lines("abc"), maxChars = 0, maxLines = 0))).isEqualTo("…")
+        assertThat(textOf(PostText.bound(lines("abc"), maxChars = -1, maxLines = -1))).isEqualTo("…")
+    }
+
+    @Test
+    fun aQuoteLineKeepsItsFlagWhenCut() {
+        val out = PostText.bound(listOf(PostLine(true, listOf(PostPart.Text("abcdef")))), maxChars = 3, maxLines = 5)
+        assertThat(out.first().isQuote).isTrue()
+    }
+}
