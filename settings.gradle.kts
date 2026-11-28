@@ -47,6 +47,7 @@ include(":core:graph")
 include(":core:network")
 include(":core:designsystem")
 include(":core:ui")
+include(":ui-pulse")
 include(":core:reader")
 include(":core:testing")
 
