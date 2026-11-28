@@ -33,15 +33,3 @@ fun Modifier.nextElevatedSurface(shape: Shape): Modifier =
     this
         .clip(shape)
         .background(next.elevated)
-
-/**
- * Accent container surface — M3 primaryContainer fill.
- *
- * Used for selected/active state fills: selected nav indicator, active chip background,
- * highlighted feed rows. The tonal coral fill communicates selection without a border.
- */
-@Composable
-fun Modifier.nextAccentSurface(shape: Shape): Modifier =
-    this
-        .clip(shape)
-        .background(next.accentContainer)

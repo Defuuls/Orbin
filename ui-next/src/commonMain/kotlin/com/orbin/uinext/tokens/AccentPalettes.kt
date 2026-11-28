@@ -56,9 +56,6 @@ private fun accentSpec(theme: NextAccentTheme): AccentSpec = namedAccentSwatches
 
 fun accentSecondary(theme: NextAccentTheme): Color = accentSpec(theme).secondary
 
-/** Swatches retain their bright hue even when light-mode text uses its contrast-safe darker ink. */
-fun accentSwatch(theme: NextAccentTheme): Color = accentSpec(theme).accent
-
 internal fun accentedReaderColors(
     base: ReaderColors,
     dark: Boolean,

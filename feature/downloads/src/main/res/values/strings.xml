@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="downloads_title">Downloads</string>
-    <string name="downloads_back">Back</string>
     <string name="downloads_clear_action">Clear</string>
     <string name="downloads_empty">No downloads yet</string>
     <string name="downloads_retry">Retry download</string>

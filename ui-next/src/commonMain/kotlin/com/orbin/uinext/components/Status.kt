@@ -159,16 +159,3 @@ fun NextLinearProgress(
 }
 
 private val PROGRESS_HEIGHT = 3.dp
-
-/**
- * Platform switch used by shared preference rows. Pass a null callback when the containing
- * row owns the action and accessibility semantics.
- */
-@Composable
-fun NextToggle(
-    checked: Boolean,
-    onCheckedChange: ((Boolean) -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    PlatformSwitch(checked, onCheckedChange, modifier)
-}
