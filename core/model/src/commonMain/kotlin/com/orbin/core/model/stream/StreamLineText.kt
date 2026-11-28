@@ -23,13 +23,9 @@ object StreamIds {
         board: String,
         thread: Long,
     ): String? {
-        val valid =
-            provider.isNotEmpty() &&
-                board.isNotEmpty() &&
-                thread > 0L &&
-                SEPARATOR !in provider &&
-                SEPARATOR !in board
-        return if (valid) "$THREAD_PREFIX$provider$SEPARATOR$board$SEPARATOR$thread" else null
+        val named = provider.isNotEmpty() && board.isNotEmpty() && thread > 0L
+        val unambiguous = SEPARATOR !in provider && SEPARATOR !in board
+        return if (named && unambiguous) "$THREAD_PREFIX$provider$SEPARATOR$board$SEPARATOR$thread" else null
     }
 
     fun post(postNo: Long): String = "$POST_PREFIX$postNo"
