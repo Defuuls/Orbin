@@ -157,6 +157,7 @@ internal fun bodyOf(
     text: String,
     present: Set<Long>,
 ): List<PulseBodyLine> {
+    if (text.isBlank()) return emptyList()
     val lines = PostText.bound(PostText.parse(text), BODY_MAX_CHARS, BODY_MAX_LINES)
     if (lines.all { it.parts.isEmpty() }) return emptyList()
     return lines.map { line ->
