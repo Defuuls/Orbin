@@ -8,7 +8,30 @@ data class PulseLineUi(
     val sub: String,
     val trailing: String = "",
     val unread: Boolean = false,
+    /** The post number this line shows, so a reference to it can scroll here. Zero for other lines. */
+    val number: Long = 0L,
+    /** The text of a post. When present it is shown in place of [title], line by line. */
+    val body: List<PulseBodyLine> = emptyList(),
 )
+
+/** One line of a post's text. Greentext is [quote]. */
+data class PulseBodyLine(
+    val parts: List<PulsePart>,
+    val quote: Boolean = false,
+)
+
+/** A piece of a body line. Never markup: it is always drawn as plain text. */
+sealed interface PulsePart {
+    data class Text(
+        val value: String,
+    ) : PulsePart
+
+    /** A reference such as `>>123` to another line of the same stream, tappable. */
+    data class Ref(
+        val label: String,
+        val postNo: Long,
+    ) : PulsePart
+}
 
 /** One view the person can switch to from the controls. */
 data class PulseLensUi(

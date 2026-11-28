@@ -41,6 +41,13 @@ class StreamIdsTest {
     }
 
     @Test
+    fun aPostIdRoundTripsAndNothingElseParsesAsOne() {
+        assertThat(StreamIds.parsePost("p:42")).isEqualTo(42L)
+        listOf(null, "", "p:", "p:0", "p:-3", "p:x", "t:a|g|1", "P:42", "p:99999999999999999999")
+            .forEach { assertThat(StreamIds.parsePost(it)).isNull() }
+    }
+
+    @Test
     fun aPostIdIsNotAThreadId() {
         assertThat(StreamIds.post(42L)).isEqualTo("p:42")
         assertThat(StreamIds.parseThread(StreamIds.post(42L))).isNull()

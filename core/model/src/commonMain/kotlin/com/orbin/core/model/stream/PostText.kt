@@ -33,6 +33,7 @@ data class PostSource(
 /** Splits post text into plain segments, so the UI never sees markup. */
 object PostText {
     const val MAX_LINK_LENGTH = 500
+    private const val ELLIPSIS = "…"
     private const val MAX_SAFE_LINK_LENGTH = 2000
 
     private val TOKEN = Regex(""">>(\d{1,12})(?!\d)|https://[^\s<>"'`]+""")
@@ -63,6 +64,52 @@ object PostText {
         }
         return out
     }
+
+    /**
+     * [lines] cut down to at most [maxLines] lines and [maxChars] characters of text, so one huge
+     * post cannot make the stream heavy. Text is cut with an ellipsis; a reference or link is kept
+     * whole or dropped, never split. Nothing is added when nothing was cut.
+     */
+    fun bound(
+        lines: List<PostLine>,
+        maxChars: Int,
+        maxLines: Int,
+    ): List<PostLine> {
+        var budget = maxChars.coerceAtLeast(0)
+        val kept = mutableListOf<PostLine>()
+        var cut = lines.size > maxLines.coerceAtLeast(0)
+        for (line in lines.take(maxLines.coerceAtLeast(0))) {
+            val parts = mutableListOf<PostPart>()
+            for (part in line.parts) {
+                val size = sizeOf(part)
+                if (size <= budget) {
+                    parts += part
+                    budget -= size
+                } else {
+                    if (part is PostPart.Text && budget > 0) parts += PostPart.Text(safePrefix(part.value, budget))
+                    budget = 0
+                    cut = true
+                    break
+                }
+            }
+            if (parts.isNotEmpty() || line.parts.isEmpty()) kept += PostLine(line.isQuote, parts)
+            if (budget == 0 && cut) break
+        }
+        if (cut) kept += PostLine(false, listOf(PostPart.Text(ELLIPSIS)))
+        return kept
+    }
+
+    private fun safePrefix(
+        text: String,
+        length: Int,
+    ): String = text.take(length).let { if (it.lastOrNull()?.isHighSurrogate() == true) it.dropLast(1) else it }
+
+    private fun sizeOf(part: PostPart): Int =
+        when (part) {
+            is PostPart.Text -> part.value.length
+            is PostPart.Ref -> part.raw.length
+            is PostPart.Link -> part.url.length
+        }
 
     private fun refsOf(text: String): List<Long> =
         parse(text).flatMap { it.parts }.filterIsInstance<PostPart.Ref>().map { it.postNo }
