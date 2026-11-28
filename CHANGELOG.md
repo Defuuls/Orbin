@@ -6,17 +6,6 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
-- iPhone and iPad: links open in Orbin's own browser too, as a screen of the app, so App lock and the screen privacy shield cover it. It keeps sites' logins until you clear local activity and blocks pages from your camera, microphone, location and other apps. Turn off "Open links in the app" in Settings to keep using your default browser.
-- Android: links open in Orbin's own browser, so you stay in the app. It runs separately from the reader, keeps sites' logins until you clear local activity, and blocks pages from reaching your camera, location, files or other apps. Turn off "Open links in the app" in Settings to keep opening links in your default browser.
-
-### Changed
-- On iPad and Android tablets, a thread opened from Home opens beside the feed, which stays on the left, as threads from a board, Saved, Watched, History and search already did.
-- The side-by-side view now starts at 700 points wide instead of 800, so it covers every iPad in portrait, including iPad mini. Split View halves still show one pane at a time.
-
-### Security
-- Android and iOS now check links with the same rule, and Android rejects malformed links (spaces, backslashes) it previously let through.
-
 ## [221-Ammolite] - 2026-11-27
 
 ### Performance
