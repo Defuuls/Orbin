@@ -33,10 +33,11 @@ object StreamIds {
     fun parseThread(id: String?): ThreadRef? {
         val parts = id?.takeIf { it.startsWith(THREAD_PREFIX) }?.removePrefix(THREAD_PREFIX)?.split(SEPARATOR)
         val thread = parts?.takeIf { it.size == THREAD_PARTS }?.get(2)?.toLongOrNull()
-        return if (parts == null || thread == null || thread <= 0L || parts[0].isEmpty() || parts[1].isEmpty()) {
-            null
-        } else {
-            ThreadRef(parts[0], parts[1], thread)
+        return when {
+            parts == null || thread == null -> null
+            thread <= 0L -> null
+            parts[0].isEmpty() || parts[1].isEmpty() -> null
+            else -> ThreadRef(parts[0], parts[1], thread)
         }
     }
 }
