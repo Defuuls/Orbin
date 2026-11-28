@@ -42,14 +42,14 @@ import com.orbin.core.model.PostId
 import com.orbin.core.model.PostNode
 import com.orbin.core.model.PosterInfo
 import com.orbin.core.model.ProviderId
+import com.orbin.core.model.TWO_PANE_MIN_WIDTH_DP
 import com.orbin.core.model.Thread
 import com.orbin.core.model.ThreadId
 import com.orbin.core.model.ThreadKey
 import com.orbin.core.model.ThreadStats
+import com.orbin.core.model.WIDE_SCREEN_MIN_DP
 import com.orbin.core.model.isWideWindow
 import com.orbin.core.model.readerPaneWidths
-import com.orbin.core.model.TWO_PANE_MIN_WIDTH_DP
-import com.orbin.core.model.WIDE_SCREEN_MIN_DP
 import com.orbin.core.model.showsTwoPanes
 import com.orbin.core.reader.ReaderPostComment
 import com.orbin.core.reader.ThreadPresentationIndex

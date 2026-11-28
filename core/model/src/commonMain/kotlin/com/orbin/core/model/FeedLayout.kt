@@ -63,7 +63,9 @@ data class ReaderPaneWidths(
  * below [TWO_PANE_MIN_WIDTH_DP] are rejected, and the caller still checks the window height.
  */
 fun readerPaneWidths(windowWidthDp: Int): ReaderPaneWidths {
-    require(windowWidthDp >= TWO_PANE_MIN_WIDTH_DP) { "Two panes require a window at least ${TWO_PANE_MIN_WIDTH_DP}dp wide." }
+    require(windowWidthDp >= TWO_PANE_MIN_WIDTH_DP) {
+        "Two panes require a window at least ${TWO_PANE_MIN_WIDTH_DP}dp wide."
+    }
     val catalog =
         ((windowWidthDp.toLong() - PANE_DIVIDER_DP) * CATALOG_PANE_NUMERATOR / CATALOG_PANE_DENOMINATOR)
             .coerceAtMost(CATALOG_PANE_MAX_DP.toLong())

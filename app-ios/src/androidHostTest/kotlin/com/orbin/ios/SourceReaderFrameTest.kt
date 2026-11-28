@@ -75,7 +75,7 @@ class SourceReaderFrameTest {
         composeRule.runOnIdle { route = SourceReaderRoute(Route.Search, thread) }
         composeRule.onNodeWithText("Query: trees").assertIsDisplayed()
         composeRule.onNodeWithTag("thread").performClick()
-        composeRule.runOnIdle { width = 700.dp }
+        composeRule.runOnIdle { width = 600.dp }
         composeRule.onNodeWithTag("source-list").assertDoesNotExist()
         composeRule.onNodeWithText("Files").assertIsDisplayed()
         composeRule.runOnIdle { width = 960.dp }

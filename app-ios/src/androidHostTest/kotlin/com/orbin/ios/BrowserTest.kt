@@ -360,7 +360,10 @@ class BrowserTest {
             browser.openThread(WATCHED_KEY)
             browser.openThread(other)
             assertEquals(listOf(Route.Feed, Route.ThreadPage(other)), browser.backStack.value)
-            assertEquals(SourceReaderRoute(Route.Feed, Route.ThreadPage(other)), sourceReaderRoute(browser.backStack.value))
+            assertEquals(
+                SourceReaderRoute(Route.Feed, Route.ThreadPage(other)),
+                sourceReaderRoute(browser.backStack.value),
+            )
             assertTrue(browser.back())
             assertEquals(listOf(Route.Feed), browser.backStack.value)
         }

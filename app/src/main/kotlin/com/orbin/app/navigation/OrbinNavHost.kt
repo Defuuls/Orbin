@@ -96,27 +96,27 @@ fun OrbinNavHost(
                 destination = NextDestination.FEED,
                 onDestination = onDestination,
             ) { sourceOpenThread ->
-            NextFeedWithSiteSwitcherScreen(
-                onOpenThread = sourceOpenThread,
-                onOpenThreadVideos = { provider, board, thread, _ ->
-                    navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
-                },
-                onOpenMedia = { provider, board, thread, attachment ->
-                    navController.navigate(selectedMediaRoute(provider, board, thread, attachment))
-                },
-                onOpenBoard = { provider, board, title ->
-                    navController.navigate(Route.Board(provider, board, title))
-                },
-                onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
-                onChromeVisibleChange = onChromeVisibleChange,
-                onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
-                onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },
-                onOpenSearch = { navController.navigateToTab(Route.Search) },
-                onOpenSaved = { onDestination(NextDestination.SAVED) },
-                onOpenWatched = { onDestination(NextDestination.WATCHED) },
-                onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
-                watchedBadge = primaryWatchedBadge(),
-            )
+                NextFeedWithSiteSwitcherScreen(
+                    onOpenThread = sourceOpenThread,
+                    onOpenThreadVideos = { provider, board, thread, _ ->
+                        navController.navigate(Route.ThreadVideos(provider, board, thread, videosOnly = true))
+                    },
+                    onOpenMedia = { provider, board, thread, attachment ->
+                        navController.navigate(selectedMediaRoute(provider, board, thread, attachment))
+                    },
+                    onOpenBoard = { provider, board, title ->
+                        navController.navigate(Route.Board(provider, board, title))
+                    },
+                    onOpenSettings = { openPrimary(NextDestination.SETTINGS) },
+                    onChromeVisibleChange = onChromeVisibleChange,
+                    onOpenBoards = { navController.navigateToTab(Route.BoardGallery) },
+                    onOpenDownloads = { openPrimary(NextDestination.DOWNLOADS) },
+                    onOpenSearch = { navController.navigateToTab(Route.Search) },
+                    onOpenSaved = { onDestination(NextDestination.SAVED) },
+                    onOpenWatched = { onDestination(NextDestination.WATCHED) },
+                    onOpenLibrary = { onDestination(NextDestination.LIBRARY) },
+                    watchedBadge = primaryWatchedBadge(),
+                )
             }
         }
 
