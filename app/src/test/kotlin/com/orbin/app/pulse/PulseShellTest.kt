@@ -1,14 +1,13 @@
 package com.orbin.app.pulse
 
 import android.app.Application
-import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import com.google.common.truth.Truth.assertThat
 import com.orbin.core.model.stream.StreamLens
 import com.orbin.uipulse.PULSE_COMMAND_TAG
@@ -20,10 +19,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [35], qualifiers = "w390dp-h844dp-mdpi")
+@Config(application = Application::class, sdk = [35])
 class PulseShellTest {
     @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    val composeRule = createComposeRule()
 
     private val lines =
         listOf(
@@ -116,7 +115,7 @@ class PulseShellTest {
     fun typingFiltersTheStream() {
         show()
         openControls()
-        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextInput("night")
+        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextReplacement("night")
         composeRule.onNodeWithText("Seed saving").assertDoesNotExist()
         composeRule.onNodeWithText("Night service").assertExists()
     }
@@ -125,7 +124,7 @@ class PulseShellTest {
     fun aSlashSuggestsCommandsAndKeepsTheStreamWhole() {
         show()
         openControls()
-        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextInput("/saved")
+        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextReplacement("/saved")
         composeRule.onNodeWithText("Seed saving").assertExists()
         composeRule.onNodeWithText("Night service").assertExists()
     }
@@ -134,7 +133,7 @@ class PulseShellTest {
     fun theKeyboardActionRunsTheBestCommand() {
         show()
         openControls()
-        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextInput("/watch")
+        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextReplacement("/watch")
         composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performImeAction()
         composeRule.runOnIdle { assertThat(lensesOpened).containsExactly(StreamLens.Watched) }
         composeRule.onNodeWithText("Controls").assertDoesNotExist()
@@ -144,7 +143,7 @@ class PulseShellTest {
     fun theKeyboardActionOnAPlainFilterJustClosesTheControls() {
         show()
         openControls()
-        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextInput("night")
+        composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performTextReplacement("night")
         composeRule.onNodeWithTag(PULSE_COMMAND_TAG).performImeAction()
         composeRule.runOnIdle { assertThat(lensesOpened).isEmpty() }
         composeRule.onNodeWithText("Controls").assertDoesNotExist()
