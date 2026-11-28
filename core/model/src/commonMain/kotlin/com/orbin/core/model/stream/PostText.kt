@@ -76,27 +76,43 @@ object PostText {
         maxLines: Int,
     ): List<PostLine> {
         var budget = maxChars.coerceAtLeast(0)
+        val limit = maxLines.coerceAtLeast(0)
         val kept = mutableListOf<PostLine>()
-        var cut = lines.size > maxLines.coerceAtLeast(0)
-        for (line in lines.take(maxLines.coerceAtLeast(0))) {
-            val parts = mutableListOf<PostPart>()
-            for (part in line.parts) {
-                val size = sizeOf(part)
-                if (size <= budget) {
-                    parts += part
-                    budget -= size
-                } else {
-                    if (part is PostPart.Text && budget > 0) parts += PostPart.Text(safePrefix(part.value, budget))
-                    budget = 0
-                    cut = true
-                    break
-                }
-            }
-            if (parts.isNotEmpty() || line.parts.isEmpty()) kept += PostLine(line.isQuote, parts)
+        var cut = lines.size > limit
+        for (line in lines.take(limit)) {
+            val taken = takeParts(line.parts, budget)
+            budget = taken.remaining
+            cut = cut || taken.cut
+            if (taken.parts.isNotEmpty() || line.parts.isEmpty()) kept += PostLine(line.isQuote, taken.parts)
             if (budget == 0 && cut) break
         }
         if (cut) kept += PostLine(false, listOf(PostPart.Text(ELLIPSIS)))
         return kept
+    }
+
+    private class Taken(
+        val parts: List<PostPart>,
+        val remaining: Int,
+        val cut: Boolean,
+    )
+
+    /** The leading [parts] that fit in [budget] characters; text may be trimmed, refs and links never. */
+    private fun takeParts(
+        parts: List<PostPart>,
+        budget: Int,
+    ): Taken {
+        var left = budget
+        val out = mutableListOf<PostPart>()
+        for (part in parts) {
+            val size = sizeOf(part)
+            if (size > left) {
+                if (part is PostPart.Text && left > 0) out += PostPart.Text(safePrefix(part.value, left))
+                return Taken(out, 0, true)
+            }
+            out += part
+            left -= size
+        }
+        return Taken(out, left, false)
     }
 
     private fun safePrefix(
