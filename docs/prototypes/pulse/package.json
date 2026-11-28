@@ -1,0 +1,10 @@
+{
+  "name": "pulse-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "test:browser": "python3 tests/browser/run.py",
+    "build": "node build.js"
+  }
+}
