@@ -59,8 +59,8 @@ object CommandRanking {
     ): List<PaletteCommand> {
         val q = query.orEmpty().trim()
         val ranked = commands.mapIndexed { index, command -> rankOf(command, index, q) }
-        val ordered = ranked.filter { it.score > 0.0 }
-            .sortedWith(compareByDescending<Ranked> { it.score }.thenBy { it.index })
+        val matching = ranked.filter { it.score > 0.0 }
+        val ordered = matching.sortedWith(compareByDescending<Ranked> { it.score }.thenBy { it.index })
         return ordered.take(limit.coerceAtLeast(0)).map { it.command }
     }
 
