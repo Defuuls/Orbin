@@ -56,16 +56,16 @@ object PostText {
         val present = posts.mapTo(HashSet()) { it.no }
         val out = LinkedHashMap<Long, MutableList<Long>>()
         for (post in posts) {
-            for (line in parse(post.text)) {
-                for (part in line.parts) {
-                    if (part !is PostPart.Ref || part.postNo !in present || part.postNo == post.no) continue
-                    val list = out.getOrPut(part.postNo) { mutableListOf() }
-                    if (post.no !in list) list.add(post.no)
-                }
+            for (target in refsOf(post.text).filter { it in present && it != post.no }) {
+                val list = out.getOrPut(target) { mutableListOf() }
+                if (post.no !in list) list.add(post.no)
             }
         }
         return out
     }
+
+    private fun refsOf(text: String): List<Long> =
+        parse(text).flatMap { it.parts }.filterIsInstance<PostPart.Ref>().map { it.postNo }
 
     private fun linkOf(raw: String): String? {
         val url = raw.replace(TRAILING_PUNCTUATION, "")

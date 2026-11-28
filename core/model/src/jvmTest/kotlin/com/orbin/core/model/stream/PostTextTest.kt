@@ -8,7 +8,9 @@ class PostTextTest {
 
     @Test
     fun refsGreentextAndPlainTextBecomeSegments() {
-        val (a, b, c, d) = PostText.parse(">>12 agreed\n>quoted line\n>>7>>8\n<b>x</b> >>99999999999999")
+        val lines = PostText.parse(">>12 agreed\n>quoted line\n>>7>>8\n<b>x</b> >>99999999999999")
+        val (a, b, c) = lines
+        val d = lines[3]
         assertThat(a).isEqualTo(PostLine(false, listOf(PostPart.Ref(">>12", 12), PostPart.Text(" agreed"))))
         assertThat(b).isEqualTo(PostLine(true, listOf(PostPart.Text("quoted line"))))
         assertThat(c.parts.map { (it as PostPart.Ref).postNo }).containsExactly(7L, 8L).inOrder()
