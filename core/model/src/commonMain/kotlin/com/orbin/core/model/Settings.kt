@@ -132,6 +132,8 @@ data class AppSettings(
     val amoled: Boolean = false,
     val biometricLockEnabled: Boolean = false,
     val screenPrivacyEnabled: Boolean = false,
+    /** Open links in Orbin's own browser rather than the system browser. */
+    val openLinksInApp: Boolean = true,
     val dohProvider: DohProvider = DohProvider.CLOUDFLARE,
     val strictDohEnabled: Boolean = false,
     val saveSearchHistory: Boolean = false,

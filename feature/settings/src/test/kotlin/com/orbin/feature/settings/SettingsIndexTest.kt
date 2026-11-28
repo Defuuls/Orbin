@@ -30,6 +30,7 @@ class SettingsIndexTest {
                     "coverViolent",
                     "biometric",
                     "screenPrivacy",
+                    "openLinksInApp",
                     "dohProvider",
                     "saveSearchHistory",
                     "saveBrowsingHistory",

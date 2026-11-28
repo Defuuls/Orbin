@@ -150,6 +150,10 @@ class SettingsStore(
         edit { it[Keys.screenPrivacy] = enabled }
     }
 
+    override suspend fun setOpenLinksInApp(enabled: Boolean) {
+        edit { it[Keys.openLinksInApp] = enabled }
+    }
+
     override suspend fun setDohProvider(provider: DohProvider) {
         edit { it[Keys.dohProvider] = provider.name }
     }
@@ -257,6 +261,7 @@ class SettingsStore(
             amoled = this[Keys.amoled] ?: false,
             biometricLockEnabled = this[Keys.biometricLock] ?: false,
             screenPrivacyEnabled = this[Keys.screenPrivacy] ?: false,
+            openLinksInApp = this[Keys.openLinksInApp] ?: true,
             dohProvider =
                 DohProvider.entries.firstOrNull { it.name == this[Keys.dohProvider] }
                     ?: DohProvider.CLOUDFLARE,
@@ -305,6 +310,7 @@ class SettingsStore(
         val amoled = booleanPreferencesKey("amoled")
         val biometricLock = booleanPreferencesKey("biometric_lock")
         val screenPrivacy = booleanPreferencesKey("screen_privacy")
+        val openLinksInApp = booleanPreferencesKey("open_links_in_app")
         val dohProvider = stringPreferencesKey("doh_provider")
         val strictDoh = booleanPreferencesKey("strict_doh")
         val saveSearchHistory = booleanPreferencesKey("save_search_history")

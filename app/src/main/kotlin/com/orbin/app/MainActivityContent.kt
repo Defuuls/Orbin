@@ -10,9 +10,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.orbin.app.navigation.Route
 import com.orbin.app.update.UpdateDialog
@@ -119,7 +121,11 @@ internal fun AppContent(
             color = next.background,
         ) {
             if (ready && (!shouldLock || unlocked)) {
-                OrbinAppProviders {
+                val context = LocalContext.current
+                val currentSettings by rememberUpdatedState(settings)
+                val dark by rememberUpdatedState(nextPalette.dark)
+                val uriHandler = remember(context) { OrbinUriHandler(context, { currentSettings }, { dark }) }
+                OrbinAppProviders(uriHandler) {
                     OrbinApp(
                         startWithOnboarding = !settings.onboardingCompleted,
                         isOnline = isOnline,

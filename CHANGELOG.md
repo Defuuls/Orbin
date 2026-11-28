@@ -6,6 +6,12 @@ All notable changes to Orbin are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Android: links open in Orbin's own browser, so you stay in the app. It runs separately from the reader, keeps sites' logins until you clear local activity, and blocks pages from reaching your camera, location, files or other apps. Turn off "Open links in the app" in Settings to keep opening links in your default browser.
+
+### Security
+- Android and iOS now check links with the same rule, and Android rejects malformed links (spaces, backslashes) it previously let through.
+
 ## [221-Ammolite] - 2026-11-27
 
 ### Performance

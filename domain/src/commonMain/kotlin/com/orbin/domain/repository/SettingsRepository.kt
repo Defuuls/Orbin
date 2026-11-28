@@ -69,6 +69,8 @@ interface SettingsRepository {
 
     suspend fun setScreenPrivacyEnabled(enabled: Boolean)
 
+    suspend fun setOpenLinksInApp(enabled: Boolean)
+
     suspend fun setDohProvider(provider: DohProvider)
 
     suspend fun setStrictDohEnabled(enabled: Boolean)

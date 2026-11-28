@@ -9,6 +9,7 @@ import co.touchlab.kermit.Logger
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
+import com.orbin.core.common.link.InAppBrowser
 import com.orbin.data.diagnostics.DiagnosticsRepositoryImpl
 import com.orbin.data.repository.AndroidDownloadQueue
 import com.orbin.data.settings.LegacySyncCleanup
@@ -42,7 +43,7 @@ class OrbinApplication :
     lateinit var watchScheduler: Lazy<WatchScheduler>
 
     @Inject
-    lateinit var diagnosticsRepository: DiagnosticsRepositoryImpl
+    lateinit var diagnosticsRepository: Lazy<DiagnosticsRepositoryImpl>
 
     @Inject
     lateinit var downloadQueue: Lazy<AndroidDownloadQueue>
@@ -58,6 +59,15 @@ class OrbinApplication :
                 .build()
 
     override fun onCreate() {
+        // The in-app browser's process (see InAppBrowser) gets its own WebView data directory and
+        // nothing else: no workers, no download queue, no settings store, and above all not the
+        // startup wipe below, which would delete the reader's live search data from under it.
+        // Every injected field is Lazy, so this process constructs none of them.
+        if (InAppBrowser.isBrowserProcess(getProcessName(), packageName)) {
+            InAppBrowser.useBrowserDataDirectory()
+            super.onCreate()
+            return
+        }
         super.onCreate()
         if (BuildConfig.DEBUG) {
             Logger.d(tag = "OrbinApplication") { "Debug build initialized" }
@@ -67,7 +77,7 @@ class OrbinApplication :
 
         // Before anything else that could throw: an uncaught exception during startup is exactly
         // the case this records, and a handler installed later would miss it.
-        diagnosticsRepository.install()
+        diagnosticsRepository.get().install()
         retireLegacyBrowsingCaches(this)
         removeLeftoverWebViewData(this)
         // Schedule watched thread updates on a background dispatcher to avoid blocking startup.

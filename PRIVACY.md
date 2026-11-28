@@ -12,6 +12,11 @@ Your followed boards, bookmarks and watched threads, reading history and read po
 threads and pages, downloads and settings are stored on your device. You can delete them at any
 time from Settings (Clear local activity, Clear image cache), or by uninstalling the app.
 
+Sites you open in the in-app browser (Android) keep their cookies, site storage and cached pages
+on your device, so a site you log into stays logged in. They are kept, unencrypted, in the
+browser's own WebView directory, separate from the rest of the app, until you clear local
+activity.
+
 How that data is protected depends on the platform:
 
 - **Android.** The database is encrypted with SQLCipher and settings with an encrypted DataStore,
@@ -36,7 +41,9 @@ so that background work such as watched-thread updates can run.
 
 ## Who the app talks to
 
-Every host the app can contact is listed here.
+Every host the app can contact is listed here, with one deliberate exception: a page you open
+from a link in the in-app browser goes to whatever site that link names, and that page can load
+from other sites in turn, as it would in any browser. See "In-app browser" below.
 
 | Host | When | What it receives |
 | --- | --- | --- |
@@ -45,7 +52,9 @@ Every host the app can contact is listed here.
 | `find.4chan.org` | Using "All of 4chan" search | Your IP address and your search text; see below |
 | `cloudflare-dns.com`, `dns.google`, `doh.opendns.com`, `dns.nextdns.io` | Looking up site names; only the resolver you chose | The site names looked up |
 | `api.github.com`, `github.com` | Android only: checking for and downloading updates | Your IP address and the request |
-| `lens.google.com`, `www.bing.com`, `yandex.com`, `saucenao.com` | Only when you choose a reverse image search | The address of that image, opened in your browser |
+| `lens.google.com`, `www.bing.com`, `yandex.com`, `saucenao.com` | Only when you choose a reverse image search | The address of that image, opened in Orbin's browser or yours |
+| Sites you open from a link | Android only: a link you open in the in-app browser | What any browser sends: your IP address, the page requested and that site's cookies |
+| Google Safe Browsing | Android only: while the in-app browser loads a page | Shortened hashes of page addresses, not the addresses themselves |
 | Apple iCloud | iOS only, only if you turn on iCloud sync | See "iCloud sync" below |
 
 - **The imageboards you browse.** Opening a board, thread or file requests it from that site, as a
@@ -72,15 +81,27 @@ Every host the app can contact is listed here.
     previews) with system components that use **the device's DNS** and their own identification,
     and so does a save that continues in the background.
   - **Strict encrypted DNS** additionally stops everything described above from using the
-    device's DNS. The "All of 4chan" search is turned off on both platforms. On iOS, a video is
+    device's DNS, except the in-app browser (see "In-app browser" below), which always uses it;
+    turn off "Open links in the app" to keep links out of the app. The "All of 4chan" search is turned off on both platforms. On iOS, a video is
     downloaded in full by the app itself, over encrypted DNS, and then played from a temporary
     copy that is deleted when you leave it, so playback starts later and a very large video has
     to be saved instead; video previews are off, and saves run only while the app is open.
 - **Updates (Android only).** The Android app checks GitHub for new releases once a day unless you
   turn that off, and downloads an update only when you ask. iOS updates come through TestFlight
   or a build you install yourself.
-- **Reverse image search.** Choosing one opens the search engine you picked in your browser with
-  the image's address. Nothing is sent unless you choose it.
+- **Reverse image search.** Choosing one opens the search engine you picked, in Orbin's browser
+  or your own (see below), with the image's address. Nothing is sent unless you choose it.
+- **In-app browser (Android).** Links open in Orbin's own browser unless you turn off "Open links
+  in the app"; then they open in your default browser, as before. The in-app browser is Android's
+  system WebView, run in a separate process from the reader:
+  - It looks sites up with **the device's DNS, not encrypted DNS, even with Strict encrypted DNS
+    on**, and identifies itself as Android WebView rather than as Orbin.
+  - It keeps sites' cookies and storage so logins persist, until you clear local activity. It
+    refuses cookies from sites other than the one you are on.
+  - Pages cannot reach your camera, microphone, location or files, open other apps, download
+    files, or load anything over unencrypted http.
+  - WebView's Safe Browsing checks pages against Google's list of dangerous sites, sending Google
+    shortened hashes of page addresses.
 
 ## iCloud sync (iOS, off by default)
 

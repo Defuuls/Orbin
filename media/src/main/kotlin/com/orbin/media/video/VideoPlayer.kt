@@ -36,6 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -56,7 +57,6 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.ui.PlayerView
 import co.touchlab.kermit.Logger
-import com.orbin.core.common.link.SafeExternalLinks
 import com.orbin.media.R
 import com.orbin.media.di.VideoMediaEntryPoint
 import com.orbin.media.hasHttpStatus
@@ -101,6 +101,7 @@ fun VideoPlayer(
     onPlaybackEnded: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val appContext = context.applicationContext
     val activity = remember(context) { context.findActivity() }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -522,7 +523,7 @@ fun VideoPlayer(
                     InlineAction(
                         label = stringResource(R.string.media_open_in_browser),
                         accent = true,
-                        onClick = { SafeExternalLinks.open(context, url) },
+                        onClick = { uriHandler.openUri(url) },
                     )
                 }
             }

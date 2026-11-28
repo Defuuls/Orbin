@@ -279,6 +279,29 @@ private class Rows(
         destructive: Boolean = false,
     ): SettingItem = SettingItem(id, label, value, SettingKind.ACTION, hint = hint, destructive = destructive)
 
+    private fun screenPrivacyRow(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+    ) = toggle(
+        "screenPrivacy",
+        strings.get(R.string.settings_screen_privacy),
+        settings.screenPrivacyEnabled,
+        vm::setScreenPrivacy,
+        hint = strings.get(R.string.settings_screen_privacy_hint),
+    )
+
+    /** Where links open; the hint says what the in-app browser does differently. */
+    private fun openLinksInAppRow(
+        settings: AppSettings,
+        vm: SettingsViewModel,
+    ) = toggle(
+        "openLinksInApp",
+        strings.get(R.string.settings_open_links_in_app),
+        settings.openLinksInApp,
+        vm::setOpenLinksInApp,
+        hint = strings.get(R.string.settings_open_links_in_app_hint),
+    )
+
     fun preferences(
         settings: AppSettings,
         vm: SettingsViewModel,
@@ -323,13 +346,8 @@ private class Rows(
             settings.biometricLockEnabled,
             vm::setBiometricLock,
         ),
-        toggle(
-            "screenPrivacy",
-            strings.get(R.string.settings_screen_privacy),
-            settings.screenPrivacyEnabled,
-            vm::setScreenPrivacy,
-            hint = strings.get(R.string.settings_screen_privacy_hint),
-        ),
+        screenPrivacyRow(settings, vm),
+        openLinksInAppRow(settings, vm),
         choice(
             "dohProvider",
             strings.get(R.string.settings_doh_provider),

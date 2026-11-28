@@ -22,6 +22,7 @@ import com.orbin.domain.repository.AppUpdater
 import com.orbin.domain.repository.DownloadRepository
 import com.orbin.domain.repository.HistoryRepository
 import com.orbin.domain.repository.ImageCacheRepository
+import com.orbin.domain.repository.InAppBrowserDataRepository
 import com.orbin.domain.repository.InMemoryThreadMemoryRepository
 import com.orbin.domain.repository.SearchRepository
 import com.orbin.domain.repository.SettingsRepository
@@ -64,6 +65,7 @@ class SettingsViewModel
         private val videoCacheRepository: VideoCacheRepository = EmptyVideoCacheRepository,
         private val threadMemoryRepository: ThreadMemoryRepository = InMemoryThreadMemoryRepository(),
         private val webSearchDataRepository: WebSearchDataRepository = EmptyWebSearchDataRepository,
+        private val inAppBrowserDataRepository: InAppBrowserDataRepository = EmptyInAppBrowserDataRepository,
     ) : ViewModel() {
         private val _backupStatus = MutableStateFlow<BackupStatus?>(null)
         private val _updateCheck = MutableStateFlow<UpdateCheckState>(UpdateCheckState.Idle)
@@ -288,6 +290,8 @@ class SettingsViewModel
 
         fun setScreenPrivacy(enabled: Boolean) = update { repository.setScreenPrivacyEnabled(enabled) }
 
+        fun setOpenLinksInApp(enabled: Boolean) = update { repository.setOpenLinksInApp(enabled) }
+
         fun setDohProvider(provider: DohProvider) = update { repository.setDohProvider(provider) }
 
         fun setSaveSearchHistory(enabled: Boolean) = update { repository.setSaveSearchHistory(enabled) }
@@ -303,6 +307,7 @@ class SettingsViewModel
                         searchRepository.clearRecentQueries()
                         downloadRepository.clearHistory()
                         webSearchDataRepository.clear()
+                        inAppBrowserDataRepository.clear()
                         imageCacheRepository.clear()
                         _imageCacheUsageBytes.value = imageCacheRepository.usageBytes()
                         videoCacheRepository.clear()
@@ -419,6 +424,10 @@ private object EmptyVideoCacheRepository : VideoCacheRepository {
 }
 
 private object EmptyWebSearchDataRepository : WebSearchDataRepository {
+    override suspend fun clear() = Unit
+}
+
+private object EmptyInAppBrowserDataRepository : InAppBrowserDataRepository {
     override suspend fun clear() = Unit
 }
 
